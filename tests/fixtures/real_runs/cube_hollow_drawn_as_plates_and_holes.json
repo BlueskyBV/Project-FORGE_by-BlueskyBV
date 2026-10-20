@@ -1,0 +1,211 @@
+{
+ "brief": "A 30 mm cube in PLA, hollow on the inside, with the left face of the square missing. 3mm Thickness Open on the left side. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 30 mm cube in PLA, hollow on the inside, with the left face of the square missing. 3mm Thickness Open on the left side. It carries no load, so there is no load case.",
+  "part_kind": "cube",
+  "stated": [
+   "30 mm cube",
+   "PLA",
+   "hollow on the inside",
+   "left face of the square missing",
+   "3mm Thickness Open on the left side"
+  ],
+  "implied": [
+   "the cube is a 30 mm cube",
+   "the cube is made of PLA",
+   "the cube is hollow on the inside",
+   "the cube has a left face",
+   "the cube has a 3mm thickness",
+   "the cube has an open left side"
+  ],
+  "unstated": [
+   "the cube has no load",
+   "there is no load case"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_SIDE_LENGTH",
+    "statement": "The side length of the cube shall be 30 mm.",
+    "measurement": "parameter:side_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the cube shall be 3 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "replay",
+  "document": {
+   "name": "30 mm Cube",
+   "components": [
+    {
+     "id": "cube",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "wall",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "thickness",
+          "side_length"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "floor",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "thickness",
+          "side_length"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "wall_hole",
+       "kind": "hole",
+       "inputs": [
+        "wall"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "side_length",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "floor_hole",
+       "kind": "hole",
+       "inputs": [
+        "floor"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "side_length",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         1.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "opening",
+       "kind": "subtract",
+       "inputs": [
+        "base",
+        "wall_hole",
+        "floor_hole"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "side_length",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 3.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261003T132456: the record had the whole hollow cube; the design was three 3 mm plates and two 30 mm holes, blocked after 26 minutes."
+}

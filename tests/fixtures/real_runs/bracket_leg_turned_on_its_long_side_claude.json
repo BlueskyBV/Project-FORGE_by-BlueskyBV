@@ -1,0 +1,618 @@
+{
+ "brief": "A PLA L-bracket 60 mm wide, made of 2 mm thick plate. The base leg is 50 mm long and lies flat; the upright leg stands on the back end of the base and is 40 mm tall overall. Two 10 mm holes pass through the base, 20 mm apart across its width, centred 25 mm from the front end. Two 5 mm holes pass through the upright, 20 mm apart across its width, centred 25 mm above the bottom. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An L-shaped mounting bracket made of PLA plate, with a flat base leg and an upright leg, each featuring a pair of through-holes for fastening to two other surfaces.",
+  "part_kind": "bracket",
+  "stated": [
+   "Material is PLA",
+   "Overall shape is an L-bracket",
+   "Width is 60 mm",
+   "Plate thickness is 2 mm",
+   "Base leg is 50 mm long and lies flat",
+   "Upright leg stands on the back end of the base and is 40 mm tall overall",
+   "Two 10 mm holes pass through the base",
+   "The two base holes are 20 mm apart across the width",
+   "The base holes are centred 25 mm from the front end",
+   "Two 5 mm holes pass through the upright",
+   "The two upright holes are 20 mm apart across the width",
+   "The upright holes are centred 25 mm above the bottom",
+   "It carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Base leg is flat and the upright stands perpendicular to it (an 'L' shape), so the two legs are implied to meet at roughly a 90-degree angle",
+   "Holes pass through the base and upright, so the bracket is meant to be fastened with bolts/pins to two separate mating surfaces or members",
+   "40 mm tall 'overall' height includes the 2 mm base thickness, so the upright leg itself is implied to be about 38 mm tall measured from the top of the base",
+   "Two holes per leg spaced symmetrically across a 60 mm width with 20 mm between them, implying the holes are meant to be centred as a pair (i.e., 20 mm apart from each other, likely centred on the 60 mm width) for symmetric bolting",
+   "Different hole diameters on base (10 mm) versus upright (5 mm) imply different fastener sizes/types are used on each leg, suggesting the two mounting interfaces serve different purposes or load paths"
+  ],
+  "unstated": [
+   "Material grade/specific PLA formulation and its mechanical properties (strength, stiffness, print orientation effects) are not given",
+   "No fillet radius or corner geometry at the junction between base and upright leg is specified",
+   "Exact lateral (across-width) centring of the hole pairs is not explicitly confirmed -- whether the 20 mm spacing is centred on the 60 mm width or offset",
+   "No tolerance or fit class for the hole diameters is given (reaming, clearance for a specific bolt size, press fit, etc.)",
+   "No specification of hole edge distances relative to the leg edges (e.g., distance from hole center to the side edges of the 60 mm width) beyond the width spacing",
+   "No fastener type, size, or torque specification is given despite through-holes being present",
+   "No surface finish, coating, or print settings (infill, layer orientation) are specified, which matter for PLA part strength",
+   "No operating/storage temperature range is given, which matters for PLA since it has a relatively low glass transition temperature",
+   "No statement of the environment (indoor/outdoor, humidity, UV exposure) the bracket will operate in",
+   "Despite stating 'no load,' no description of what the bracket is actually used for or attached to (purpose/application) is given, so the absence of load cannot be independently verified",
+   "No fillet/chamfer or deburring requirements for the cut holes or plate edges are specified",
+   "No assembly sequence or orientation relative to gravity/other parts is given beyond 'base lies flat'",
+   "No quantity, tolerance stack-up, or interchangeability requirements for multiple brackets are specified"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "Brief explicitly states 'it carries no load, so there is no load case' -- this is an assertion by the user rather than an engineering determination, and no supporting detail (application, mounting context) is given to substantiate that no load will ever be transmitted through the holes",
+   "PLA is a material with known limitations in temperature tolerance and long-term creep under sustained load; no mention of whether the part will experience any sustained or incidental loading despite the 'no load' claim"
+  ],
+  "suggested_name": "PLA_L-Bracket_60x50x40",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "Overall width of the bracket shall be 60 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the L-bracket is 60 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "Overall depth of the bracket (base leg length) shall be 50 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the base leg is 50 mm long and lies flat, which sets the part's depth.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "Overall height of the bracket (base plus upright) shall be 40 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the upright leg stands on the base and is 40 mm tall overall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_THICKNESS",
+    "statement": "The plate (both base and upright) shall be 2 mm thick.",
+    "measurement": "parameter:plate_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bracket is made of 2 mm thick plate.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_DIAMETER",
+    "statement": "The two holes through the base shall be 10 mm in diameter.",
+    "measurement": "parameter:base_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    },
+    "rationale": "Brief states two 10 mm holes pass through the base.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_SPACING",
+    "statement": "The two base holes shall be 20 mm apart across the width.",
+    "measurement": "parameter:base_hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the base holes are 20 mm apart across its width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_FRONT_OFFSET",
+    "statement": "The base hole pair shall be centred 25 mm from the front end of the base.",
+    "measurement": "parameter:base_hole_front_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the base holes are centred 25 mm from the front end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_DIAMETER",
+    "statement": "The two holes through the upright shall be 5 mm in diameter.",
+    "measurement": "parameter:upright_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states two 5 mm holes pass through the upright.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_SPACING",
+    "statement": "The two upright holes shall be 20 mm apart across the width.",
+    "measurement": "parameter:upright_hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the upright holes are 20 mm apart across its width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_BOTTOM_OFFSET",
+    "statement": "The upright hole pair shall be centred 25 mm above the bottom of the upright.",
+    "measurement": "parameter:upright_hole_bottom_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the upright holes are centred 25 mm above the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be exactly two mounting holes through the base leg.",
+    "measurement": "feature_count:hole:base_mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief states two 10 mm holes pass through the base.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be exactly two mounting holes through the upright leg.",
+    "measurement": "feature_count:hole:upright_mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief states two 5 mm holes pass through the upright.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_10MM",
+    "measurement": "holes_of_diameter:10",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 10 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_HOLE_CENTERING",
+    "statement": "Each hole pair (base and upright) is centred symmetrically on the 60 mm width, i.e. each hole is 20 mm either side of the width centreline.",
+    "rationale": "The brief gives the spacing between holes (20 mm) but not their lateral position relative to the 60 mm width; symmetric centring is the conventional assumption for a bracket of this kind.",
+    "consequence_if_wrong": "If the holes are meant to be offset rather than centred, the mounting pattern will not align with the mating part.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_CORNER_GEOMETRY",
+    "statement": "The junction between base and upright leg is a sharp 90-degree corner with no fillet or chamfer specified.",
+    "rationale": "The brief describes an L-bracket with a base and upright leg but gives no fillet radius or transition geometry.",
+    "consequence_if_wrong": "A sharp internal corner concentrates stress; if a fillet was intended for strength or print quality, its absence could be an issue, though irrelevant for a no-load part.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_UPRIGHT_NET_HEIGHT",
+    "statement": "The 40 mm overall height includes the 2 mm base thickness, so the upright leg itself spans about 38 mm above the top of the base.",
+    "rationale": "The brief says the upright 'stands on the back end of the base and is 40 mm tall overall,' implying the 40 mm is measured from the bottom of the base, not from the top of the base plate.",
+    "consequence_if_wrong": "If the upright itself (excluding base thickness) is meant to be 40 mm tall, overall height would instead be 42 mm, affecting hole placement near the top.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "Generic PLA (standard FDM-printed PLA) is used with no special grade, filler, or treatment.",
+    "rationale": "The brief only specifies the material as PLA without a grade.",
+    "consequence_if_wrong": "Different PLA grades (e.g., PLA+, carbon-filled) have different stiffness and strength, which would not matter here given the no-load statement, but could affect dimensional stability under temperature.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_HOLE_TOLERANCE",
+    "statement": "Holes are modeled at nominal diameter with standard 3D-printed hole tolerance (no specific fit class, e.g., clearance fit for M10/M5 fasteners).",
+    "rationale": "The brief gives hole diameters but no tolerance or fit class.",
+    "consequence_if_wrong": "If a precise press-fit or reamed tolerance was intended, the as-printed holes may not accept the intended fastener without rework.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_10MM: the brief states 2 open holes of 10 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_5MM: the brief states 2 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ]
+ },
+ "answer": {
+  "name": "PLA_L-Bracket_60x50x40",
+  "description": "An L-shaped PLA mounting bracket: a flat base leg with two 10 mm through-holes, and an upright leg standing on the base's back edge with two 5 mm through-holes.",
+  "components": [
+   {
+    "id": "bracket",
+    "name": "L-Bracket",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "width",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "base_length",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "plate_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "overall_height",
+      "value": {
+       "magnitude": 40.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "upright_height",
+      "expression": "overall_height - plate_thickness",
+      "unit": "mm",
+      "description": "Height of the upright leg itself, measured from the top of the base, so base_thickness + upright_height = overall_height"
+     },
+     {
+      "id": "base_hole_diameter",
+      "value": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "base_hole_spacing",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "base_hole_front_offset",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "upright_hole_diameter",
+      "value": {
+       "magnitude": 5.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "upright_hole_spacing",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "upright_hole_bottom_offset",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      }
+     }
+    ],
+    "features": [
+     {
+      "id": "base",
+      "kind": "box",
+      "lies": "flat",
+      "parameters": {
+       "size": {
+        "vector": [
+         "width",
+         "base_length",
+         "plate_thickness"
+        ],
+        "unit": "mm"
+       },
+       "centered": true
+      }
+     },
+     {
+      "id": "upright",
+      "kind": "box",
+      "lies": "standing",
+      "place": {
+       "on": "base",
+       "at": "back_edge",
+       "from": "floor"
+      },
+      "parameters": {
+       "size": {
+        "vector": [
+         "width",
+         "plate_thickness",
+         "upright_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-width / 2",
+         "base_length / 2 - plate_thickness",
+         0
+        ]
+       }
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "inputs": [
+       "base",
+       "upright"
+      ]
+     },
+     {
+      "id": "base_hole_1",
+      "kind": "hole",
+      "tags": [
+       "base_mounting"
+      ],
+      "inputs": [
+       "body"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "base_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-base_hole_spacing / 2",
+         "-base_length / 2 + base_hole_front_offset",
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "base_hole_2",
+      "kind": "hole",
+      "tags": [
+       "base_mounting"
+      ],
+      "inputs": [
+       "base_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "base_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "base_hole_spacing / 2",
+         "-base_length / 2 + base_hole_front_offset",
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "upright_hole_1",
+      "kind": "hole",
+      "tags": [
+       "upright_mounting"
+      ],
+      "inputs": [
+       "base_hole_2"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "upright_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-upright_hole_spacing / 2",
+         "base_length / 2 - plate_thickness / 2",
+         "upright_hole_bottom_offset"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "upright_hole_2",
+      "kind": "hole",
+      "tags": [
+       "upright_mounting"
+      ],
+      "inputs": [
+       "upright_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "upright_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "upright_hole_spacing / 2",
+         "base_length / 2 - plate_thickness / 2",
+         "upright_hole_bottom_offset"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "base_mounting_pattern",
+      "type": "bolt_pattern",
+      "geometry": "base_hole_2.bore",
+      "nominal_size": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     },
+     {
+      "id": "upright_mounting_pattern",
+      "type": "bolt_pattern",
+      "geometry": "upright_hole_2.bore",
+      "nominal_size": {
+       "magnitude": 5.0,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     }
+    ]
+   }
+  ]
+ },
+ "note": "Claude Sonnet 5, 14 Oct 2026. Forge's layout repair laid the upright along the plate's longer side, where the brief said the base was 60 wide and 50 long; the analyst then made the rest agree and the part passed wrong."
+}

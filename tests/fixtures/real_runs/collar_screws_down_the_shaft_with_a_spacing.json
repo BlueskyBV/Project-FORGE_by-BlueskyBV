@@ -1,0 +1,428 @@
+{
+ "answer": {
+  "document": {
+   "assumptions": [],
+   "components": [
+    {
+     "features": [
+      {
+       "id": "body",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "length",
+         "unit": "mm"
+        },
+        "origin": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          0
+         ]
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "inputs": [
+        "body"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "bore_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "set_screw_hole_1",
+       "inputs": [
+        "bore"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "set_screw_hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "mounting_hole_spacing / 2",
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "set_screw_hole_2",
+       "inputs": [
+        "set_screw_hole_1"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "set_screw_hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "-mounting_hole_spacing / 2",
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      }
+     ],
+     "id": "collar",
+     "material": "aluminium_6061_t6",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 15.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore_diameter",
+       "value": {
+        "magnitude": 12.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "set_screw_hole_diameter",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_spacing",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "angle",
+       "value": {
+        "magnitude": 90.0,
+        "unit": "deg"
+       }
+      }
+     ]
+    }
+   ],
+   "document_id": "2a8d6d34-acca-5912-a725-e9ea5b3957cb",
+   "name": "Shaft collar",
+   "project_id": "4b86be12-ebbd-5029-8d85-98cac6bb83ac",
+   "requirements": [
+    {
+     "comparison": "equals",
+     "id": "REQ_OUTER_DIAMETER",
+     "measurement": "parameter:outer_diameter",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The outer diameter of the collar is 25 mm",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_LENGTH",
+     "measurement": "parameter:length",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The length of the collar is 15 mm",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 15.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_BORE_DIAMETER",
+     "measurement": "parameter:bore_diameter",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The bore diameter is 12 mm",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_SET_SCREW_HOLE_DIAMETER",
+     "measurement": "parameter:set_screw_hole_diameter",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The set screw hole diameter is 4 mm",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_BOUNDING_BOX_X",
+     "measurement": "bounding_box_x",
+     "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The part shall be 25 mm across X.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_BOUNDING_BOX_Y",
+     "measurement": "bounding_box_y",
+     "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The part shall be 25 mm across Y.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_ANGLE",
+     "rationale": "The brief states this angle and no other requirement carried it.",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The stated angle shall be 90 deg.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 90.0,
+      "unit": "deg"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    }
+   ],
+   "revision": 1,
+   "risk_class": "critical",
+   "schema_version": "1.0.0",
+   "units": {
+    "angle": "deg",
+    "force": "N",
+    "length": "mm",
+    "mass": "kg"
+   }
+  },
+  "rationale": "the document this run produced"
+ },
+ "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
+ "intent": {
+  "implied": [
+   "The bore is located on the axis",
+   "The set screw holes are located on the outside of the collar"
+  ],
+  "notes": [],
+  "out_of_scope": [],
+  "part_kind": "shaft collar",
+  "risk_signals": [],
+  "stated": [
+   "The outer diameter is 25 mm",
+   "The length is 15 mm",
+   "A 12 mm bore runs all the way through on the axis",
+   "Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length"
+  ],
+  "suggested_name": "",
+  "summary": "A machined aluminium shaft collar with an outer diameter of 25 mm, a length of 15 mm, and a 12 mm bore running through the axis. Two 4 mm set screw holes are located 90 degrees apart, halfway along the length.",
+  "unstated": [
+   "The collar does not carry any load"
+  ]
+ },
+ "requirements": {
+  "assumptions": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_BOUNDING_BOX_X and REQ_BOUNDING_BOX_Y at 25 mm: the brief calls the part square or round at its largest stated size, and nothing in the requirement set measured the part's size at all. A dimension parameter is declared just as truthfully by a plate 30 by 12 as by a plate 30 by 30, and one was: sixteen claims, every one green, and the plate was 30 by 12.",
+   "added REQ_ANGLE at 90 deg: the brief states it and nothing in the requirement set carried it, so the designer would have seen no angle at all -- only the brief's prose, out of which one run produced a 90 mm spacing on a part 25 mm across and put both set screws outside it. A stated angle now reaches the design as an angle."
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_OUTER_DIAMETER",
+    "measurement": "parameter:outer_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The outer diameter of the collar is 25 mm",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_LENGTH",
+    "measurement": "parameter:length",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The length of the collar is 15 mm",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BORE_DIAMETER",
+    "measurement": "parameter:bore_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The bore diameter is 12 mm",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_SET_SCREW_HOLE_DIAMETER",
+    "measurement": "parameter:set_screw_hole_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The set screw hole diameter is 4 mm",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_X",
+    "measurement": "bounding_box_x",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall be 25 mm across X.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_Y",
+    "measurement": "bounding_box_y",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall be 25 mm across Y.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_ANGLE",
+    "measurement": "parameter:angle",
+    "rationale": "The brief states this angle and no other requirement carried it.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The stated angle shall be 90 deg.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 90.0,
+     "unit": "deg"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "critical",
+  "unknowns": []
+ },
+ "run": "20260922T195853-a-machined-aluminium-shaft-collar-the-ou",
+ "which": "document"
+}

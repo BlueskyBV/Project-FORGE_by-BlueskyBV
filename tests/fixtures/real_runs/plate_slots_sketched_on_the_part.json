@@ -1,0 +1,679 @@
+{
+ "brief": "Create a curved mounting plate, 120 mm long, 75 mm wide and 6 mm thick. Curve the plate uniformly across its 75 mm width with an inside radius of 60 mm, with the curvature center directly below the longitudinal centerline. Round the four corners with a 12 mm radius. Add two 28 \u00d7 5 mm slots running along the plate's length, centered across the width, with their centers 22 mm from each longitudinal end. Add two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 45 mm from one end.",
+ "intent": {
+  "summary": "Create a curved mounting plate with specific dimensions and features.",
+  "part_kind": "plate",
+  "stated": [
+   "Length: 120 mm",
+   "Width: 75 mm",
+   "Thickness: 6 mm",
+   "Curvature: Uniform across 75 mm width with an inside radius of 60 mm",
+   "Curvature center: Directly below the longitudinal centerline",
+   "Rounded corners: 12 mm radius",
+   "Slots: Two 28 \u00d7 5 mm slots along the length, centered across the width, 22 mm from each end",
+   "Mounting holes: Two 8.2 mm holes on the longitudinal centerline, spaced 30 mm center-to-center, first hole 45 mm from one end"
+  ],
+  "implied": [
+   "Plate is designed for mounting purposes"
+  ],
+  "unstated": [
+   "Load on the plate: Not specified"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "The plate is designed to carry a load, but the magnitude and direction of the load are not specified."
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The length of the plate shall be 120 mm.",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The width of the plate shall be 75 mm.",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the plate shall be 6 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CURVATURE_RADIUS",
+    "statement": "The curvature radius of the plate shall be 60 mm.",
+    "measurement": "parameter:curvature_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SLOT_WIDTH",
+    "statement": "The width of the slots shall be 28 mm.",
+    "measurement": "parameter:slot_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 28.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SLOT_HEIGHT",
+    "statement": "The height of the slots shall be 5 mm.",
+    "measurement": "parameter:slot_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The diameter of the mounting holes shall be 8.2 mm.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SLOT_CENTER_DISTANCE",
+    "statement": "The distance between the centers of the slots shall be 22 mm.",
+    "measurement": "parameter:slot_center_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 22.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_CENTER_DISTANCE",
+    "statement": "The distance between the centers of the mounting holes shall be 30 mm.",
+    "measurement": "parameter:mounting_hole_center_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FIRST_MOUNTING_HOLE_CENTER_DISTANCE",
+    "statement": "The distance from the first mounting hole to the nearest end shall be 45 mm.",
+    "measurement": "parameter:first_mounting_hole_center_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 45.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_LONGITUDINAL_MOUNTING_HOLE_COUNT",
+    "statement": "The plate shall have two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 45 mm from one end.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_28X5",
+    "statement": "The part shall have 2 openings 28 by 5 mm right through it.",
+    "measurement": "openings_of_size:28x5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_LO22_MID",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the low end of the part, on its middle across it.",
+    "measurement": "opening_at:28x5:lo22,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_HI22_MID",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the high end of the part, on its middle across it.",
+    "measurement": "opening_at:28x5:hi22,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_8_2_END45_MID",
+    "statement": "The 8.2 mm opening shall be centred 45 mm in from an end of the part, on its middle across it.",
+    "measurement": "opening_at:8.2:end45,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_8_2_END75_MID",
+    "statement": "The 8.2 mm opening shall be centred 75 mm in from an end of the part, on its middle across it.",
+    "measurement": "opening_at:8.2:end75,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_LONG",
+    "statement": "The part shall be 120 mm long.",
+    "measurement": "flat_extent_side:120",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_WIDE",
+    "statement": "The part shall be 75 mm wide.",
+    "measurement": "flat_extent_side:75",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_THICK",
+    "statement": "The part shall be 6 mm thick.",
+    "measurement": "flat_extent_side:6",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_ANGLE",
+    "statement": "The part shall turn through 68.209 degrees, measured on its surface.",
+    "measurement": "bend_angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 68.209,
+     "unit": "deg"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_COUNT",
+    "statement": "The part shall have 1 bend.",
+    "measurement": "bend_count",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_CENTRE",
+    "statement": "The curve shall be centred in the middle of the part (the brief names no other place).",
+    "measurement": "bend_off_centre",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 0.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BENT_ALONG",
+    "statement": "The part shall curve over its 75 mm, as the brief says, the bend's line running the other way.",
+    "measurement": "bent_along",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_WAY",
+    "statement": "The part shall curve as an arch: its face that was up when flat on the outside of the curve, the curve's centre below it.",
+    "measurement": "bend_convex",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_SPREAD",
+    "statement": "The bend shall be a 60 mm inside radius: spread over 75.0 mm of the part's length.",
+    "measurement": "bend_spread",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_PLATE_CURVATURE_CENTER",
+    "statement": "The curvature center of the plate shall be directly below the longitudinal centerline.",
+    "risk": "critical",
+    "consequence_if_wrong": "The plate's curvature will not be as expected, potentially affecting its structural integrity.",
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "REQ_SLOT_WIDTH carried `source: \"user\"` against a threshold the brief does not state. The figure may be sound -- a derived dimension, a manufacturing limit -- but the user did not write it, so it is recorded as `derived` rather than reported back to them as their own requirement.",
+   "dropped REQ_SF_BEARING: the brief states this part carries no load, so there is no load case to take a margin against and nothing could have computed one",
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "`feature_count:mounting_hole:longitudinal` names no feature kind, so it was read as `feature_count:hole:mounting`.",
+   "REQ_LONGITUDINAL_MOUNTING_HOLE_COUNT counted `mounting` 2 as a bound; the brief states the count -- \"add two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 45 mm from one end\" -- so it is exactly that many.",
+   "added REQ_HOLES_8_2MM: the brief states 2 open holes of 8.2 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OPENINGS_28X5: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size.",
+   "added REQ_AT_28X5_LO22_MID, REQ_AT_28X5_HI22_MID, REQ_AT_8_2_END45_MID, REQ_AT_8_2_END75_MID: the brief places these openings, and a count of them says nothing about where they are. Each is checked on the built part, laid flat: its centre within 0.5 mm of where the brief puts it.",
+   "added REQ_PART_LONG: the brief says the part is 120 mm long, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "added REQ_PART_WIDE: the brief says the part is 75 mm wide, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "added REQ_PART_THICK: the brief says the part is 6 mm thick, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "REQ_PART_LONG, REQ_PART_WIDE, REQ_PART_THICK measured on the part laid flat: the brief bends it, and a bent part's sizes are its sizes along the plate -- a sheet keeps its length along its middle when it is bent.",
+   "added REQ_BEND_ANGLE, REQ_BEND_COUNT, REQ_BEND_CENTRE, REQ_BENT_ALONG, REQ_BEND_WAY, REQ_BEND_SPREAD: the brief bends the part 68.209 degrees (curve), and nothing measured the bend on the part itself.",
+   "REQ_LONGITUDINAL_SLOT_COUNT keeps its threshold but loses its measurement (`feature_count:slot` names no feature kind. It counts features of a kind, not features with an id or role. Did you mean `feature_count:loft`?); it will be reported NOT_TESTED rather than silently passed",
+   "not checked against 12 mm: the brief states it and no requirement carries it"
+  ]
+ },
+ "answer": {
+  "rationale": "The brief specifies the dimensions and features of the mounting plate, including its curvature, slots, mounting holes, and bend. The requirements are checked against named parameters and features with specific tags. The part is designed to be a flat plate with a curved surface, slots, mounting holes, and a bend.",
+  "document": {
+   "name": "Curved Mounting Plate",
+   "components": [
+    {
+     "id": "plate",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "curved_face",
+       "kind": "revolve",
+       "parameters": {
+        "angle": {
+         "magnitude": 68.209,
+         "unit": "deg"
+        }
+       },
+       "inputs": [
+        "base"
+       ]
+      },
+      {
+       "id": "slot_1",
+       "kind": "profile_slot",
+       "parameters": {
+        "length": {
+         "magnitude": 40,
+         "unit": "mm"
+        },
+        "width": {
+         "magnitude": 28,
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 37.5,
+         "unit": "mm"
+        },
+        "center_v": {
+         "magnitude": 25,
+         "unit": "mm"
+        }
+       },
+       "inputs": [
+        "curved_face"
+       ]
+      },
+      {
+       "id": "slot_2",
+       "kind": "profile_slot",
+       "parameters": {
+        "length": {
+         "magnitude": 40,
+         "unit": "mm"
+        },
+        "width": {
+         "magnitude": 28,
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 17.5,
+         "unit": "mm"
+        },
+        "center_v": {
+         "magnitude": 25,
+         "unit": "mm"
+        }
+       },
+       "inputs": [
+        "curved_face"
+       ]
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "role": "mounting",
+       "inputs": [
+        "curved_face"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "role": "mounting",
+       "inputs": [
+        "curved_face"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "curvature_radius",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "corner_radius",
+       "value": {
+        "magnitude": 12,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "first_mounting_hole_center_distance",
+       "value": {
+        "magnitude": 45,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 120,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_center_distance",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_diameter",
+       "value": {
+        "magnitude": 8.2,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "slot_center_distance",
+       "value": {
+        "magnitude": 22,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "slot_height",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "slot_width",
+       "value": {
+        "magnitude": 28,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 75,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261007T160309, the corrected curved-plate brief again. The model drew its slots as profile_slot features whose input was the plate itself (the revolve it meant as the bend), read by nothing; refused three times, no part. REQ_LONGITUDINAL_SLOT_COUNT is left out: the stored record kept it with its measurement stripped, which does not parse a second time."
+}

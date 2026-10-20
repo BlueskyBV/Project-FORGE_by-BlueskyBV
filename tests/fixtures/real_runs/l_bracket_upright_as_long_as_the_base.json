@@ -1,0 +1,627 @@
+{
+ "brief": "A PLA L-bracket 40 mm wide, made of 5 mm thick plate. The base leg is 50 mm long and lies flat; the upright leg stands on the back end of the base and is 40 mm tall overall. Two 5 mm holes pass through the base, 20 mm apart across its width, centred 25 mm from the front end. Two 5 mm holes pass through the upright, 20 mm apart across its width, centred 25 mm above the bottom. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA L-bracket made of 5 mm thick plate with dimensions 40 mm wide and 50 mm long. It has two 5 mm holes on the base and two 5 mm holes on the upright, both 20 mm apart and centered 25 mm from the front and bottom respectively. The L-bracket carries no load.",
+  "part_kind": "L-bracket",
+  "stated": [
+   "The L-bracket is made of PLA",
+   "The L-bracket is 40 mm wide",
+   "The L-bracket is 50 mm long",
+   "The L-bracket is 5 mm thick",
+   "The base leg is 50 mm long",
+   "The upright leg is 40 mm tall",
+   "There are two 5 mm holes on the base",
+   "There are two 5 mm holes on the upright",
+   "The holes on the base are 20 mm apart and centered 25 mm from the front end",
+   "The holes on the upright are 20 mm apart and centered 25 mm above the bottom",
+   "The L-bracket carries no load"
+  ],
+  "implied": [
+   "The L-bracket is made of a material that is suitable for PLA",
+   "The L-bracket is designed to be used in a mechanical design",
+   "The L-bracket is designed to be used in a design that does not require any load cases"
+  ],
+  "unstated": [
+   "The magnitude and direction of the load on the L-bracket",
+   "The operating temperature of the L-bracket",
+   "The safety factor of the L-bracket",
+   "The material grade of the L-bracket",
+   "The dimensions of the L-bracket that are load-bearing for its function"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The width of the L-bracket is 40 mm",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The length of the L-bracket is 50 mm",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the L-bracket is 5 mm",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_LEG_LENGTH",
+    "statement": "The base leg of the L-bracket is 50 mm long",
+    "measurement": "parameter:base_leg_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_LEG_HEIGHT",
+    "statement": "The upright leg of the L-bracket is 40 mm tall",
+    "measurement": "parameter:upright_leg_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_DISTANCE",
+    "statement": "The distance between the two holes on the base is 20 mm",
+    "measurement": "parameter:base_hole_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_CENTER_X",
+    "statement": "The holes on the base are centered 25 mm from the front end",
+    "measurement": "parameter:base_hole_center_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_DISTANCE",
+    "statement": "The distance between the two holes on the upright is 20 mm",
+    "measurement": "parameter:upright_hole_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_CENTER_Y",
+    "statement": "The holes on the upright are centered 25 mm above the bottom",
+    "measurement": "parameter:upright_hole_center_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OVERALL_HEIGHT",
+    "statement": "The part shall be 40 mm tall overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_5MM: the brief states 4 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OVERALL_HEIGHT at 40 mm: the brief gives the part's overall height and nothing measured the part's height -- a parameter reads back what the design declares, on a part of any height."
+  ]
+ },
+ "answer": {
+  "rationale": "replay",
+  "document": {
+   "name": "L-Bracket",
+   "components": [
+    {
+     "id": "l_bracket",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "width",
+          "base_leg_length",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "upright",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "thickness",
+          "upright_leg_height"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-length / 2",
+          "base_leg_length / 2 - thickness",
+          "-thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "base",
+        "upright"
+       ]
+      },
+      {
+       "id": "base_hole_1",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-base_hole_distance / 2",
+          "-base_leg_length / 2 + base_hole_center_x",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "base_hole_2",
+       "kind": "hole",
+       "inputs": [
+        "base_hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "base_hole_distance / 2",
+          "-base_leg_length / 2 + base_hole_center_x",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "upright_hole_1",
+       "kind": "hole",
+       "inputs": [
+        "base_hole_2"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-upright_hole_distance / 2",
+          "(base_leg_length / 2 - thickness) + thickness / 2",
+          "-thickness / 2 + upright_hole_center_y"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         1.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "upright_hole_2",
+       "kind": "hole",
+       "inputs": [
+        "upright_hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "upright_hole_distance / 2",
+          "(base_leg_length / 2 - thickness) + thickness / 2",
+          "-thickness / 2 + upright_hole_center_y"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         1.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "base_hole_center_x",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "base_leg_length",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "upright_hole_center_y",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "upright_leg_height",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "base_hole_distance",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "upright_hole_distance",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "material": "pla_fdm"
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "cbf547fc-784c-5593-99c6-d9a42d9c4c14",
+   "project_id": "390b6013-98d8-510a-8ebc-a13f7d72d571",
+   "risk_class": "low",
+   "requirements": [
+    {
+     "id": "REQ_WIDTH",
+     "statement": "The width of the L-bracket is 40 mm",
+     "measurement": "parameter:width",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 40.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_LENGTH",
+     "statement": "The length of the L-bracket is 50 mm",
+     "measurement": "parameter:length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_THICKNESS",
+     "statement": "The thickness of the L-bracket is 5 mm",
+     "measurement": "parameter:thickness",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 5.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BASE_LEG_LENGTH",
+     "statement": "The base leg of the L-bracket is 50 mm long",
+     "measurement": "parameter:base_leg_length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_UPRIGHT_LEG_HEIGHT",
+     "statement": "The upright leg of the L-bracket is 40 mm tall",
+     "measurement": "parameter:upright_leg_height",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 40.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BASE_HOLE_DISTANCE",
+     "statement": "The distance between the two holes on the base is 20 mm",
+     "measurement": "parameter:base_hole_distance",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 20.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BASE_HOLE_CENTER_X",
+     "statement": "The holes on the base are centered 25 mm from the front end",
+     "measurement": "parameter:base_hole_center_x",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_UPRIGHT_HOLE_DISTANCE",
+     "statement": "The distance between the two holes on the upright is 20 mm",
+     "measurement": "parameter:upright_hole_distance",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 20.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_UPRIGHT_HOLE_CENTER_Y",
+     "statement": "The holes on the upright are centered 25 mm above the bottom",
+     "measurement": "parameter:upright_hole_center_y",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_HOLES_5MM",
+     "measurement": "holes_of_diameter:5",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4,
+      "unit": ""
+     },
+     "statement": "The part shall have 4 open holes of 5 mm.",
+     "source": "user",
+     "rationale": "The brief sizes and counts these holes.",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_OVERALL_HEIGHT",
+     "statement": "The part shall be 40 mm tall overall.",
+     "measurement": "bounding_box_z",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 40.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20261002T205824: completed and released with the upright 50 mm wide on a 40 mm base."
+}

@@ -1,0 +1,376 @@
+{
+ "answer": {
+  "document": {
+   "components": [
+    {
+     "features": [
+      {
+       "id": "cylinder",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "length",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "magnitude": 30.0,
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "primary_bolt_hole_1",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "magnitude": 8.0,
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "primary_bolt_hole_2",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "magnitude": 8.0,
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "primary_bolt_hole_3",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "magnitude": 8.0,
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "primary_bolt_hole_4",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "magnitude": 8.0,
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ]
+        }
+       }
+      }
+     ],
+     "id": "flange",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore_diameter",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bolt_circle_diameter",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ],
+   "name": "Steel Pipe Flange"
+  },
+  "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents."
+ },
+ "brief": "A steel pipe flange. It is a disc 80 mm across and 10 mm thick, with a 30 mm bore through the centre. Four 8 mm bolt holes pass all the way through the disc, equally spaced on a 60 mm bolt circle. It carries no load, so there is no load case.",
+ "intent": {
+  "implied": [
+   "The flange is made of steel."
+  ],
+  "notes": [],
+  "out_of_scope": [],
+  "part_kind": "flange",
+  "risk_signals": [
+   "The flange carries no load."
+  ],
+  "stated": [
+   "The flange is a disc 80 mm across and 10 mm thick.",
+   "It has a 30 mm bore through the center.",
+   "There are four 8 mm bolt holes pass all the way through the disc.",
+   "The bolt holes are equally spaced on a 60 mm bolt circle."
+  ],
+  "suggested_name": "",
+  "summary": "A steel pipe flange with a 80 mm diameter, 10 mm thickness, and a 30 mm bore through the center. It has four 8 mm bolt holes equally spaced on a 60 mm bolt circle.",
+  "unstated": [
+   "The flange carries no load."
+  ]
+ },
+ "note": "requirements: the record as the run accepted it, the bolt circle included. The answer is the designer's, returned identically twice: `diameter` and `thickness` declared while the disc reads `outer_diameter` and `length`, and all four bolt holes drawn on the axis inside the bore.",
+ "requirements": {
+  "assumptions": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "`feature_count:bolt_hole:primary` names no feature kind, so it was read as `feature_count:hole:bolt`.",
+   "added REQ_BOLT_CIRCLE_DIAMETER at 60 mm: the brief spaces the 4 holes equally on that circle, and nothing in the record carried it -- the designer had no name for where the holes go.",
+   "added REQ_BOUNDING_BOX_X and REQ_BOUNDING_BOX_Y at 80 mm: the brief calls the part square or round at its largest stated size, and nothing in the requirement set measured the part's size at all. A dimension parameter is declared just as truthfully by a plate 30 by 12 as by a plate 30 by 30, and one was: sixteen claims, every one green, and the plate was 30 by 12.",
+   "added REQ_ROUND: the brief calls this part round, and two equal bounding boxes do not say a part is round -- a 25 mm square block has a 25 by 25 box exactly as a 25 mm cylinder does. One run asked for a shaft collar and got a square block with both extent claims passing. This measures the built surface: 1 is a cylinder, a square is 0.707.",
+   "added REQ_HOLES_30MM_ON_AXIS: the brief states 1 open hole of 30 mm down the part's axis, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_8MM: the brief states 4 open holes of 8 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_DIAMETER",
+    "measurement": "parameter:diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The diameter of the flange is 80 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_THICKNESS",
+    "measurement": "parameter:thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The thickness of the flange is 10 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BORE_DIAMETER",
+    "measurement": "parameter:bore_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The bore diameter of the flange is 30 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_PRIMARY_BOLT_HOLE_COUNT",
+    "measurement": "feature_count:hole:bolt",
+    "source": "user",
+    "state": "accepted",
+    "statement": "There are four primary bolt holes in the flange.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOLT_CIRCLE_DIAMETER",
+    "measurement": "parameter:bolt_circle_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The 4 holes' centres shall lie on a 60 mm circle, equally spaced.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_X",
+    "measurement": "bounding_box_x",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall be 80 mm across X.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_Y",
+    "measurement": "bounding_box_y",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall be 80 mm across Y.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "at_least",
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall be round about its axis.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLES_30MM_ON_AXIS",
+    "measurement": "holes_of_diameter:30:on_axis",
+    "rationale": "The brief sizes and counts these holes.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall have 1 open hole of 30 mm down the part's axis.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLES_8MM",
+    "measurement": "holes_of_diameter:8",
+    "rationale": "The brief sizes and counts these holes.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall have 4 open holes of 8 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "critical",
+  "unknowns": []
+ },
+ "run": "20260928T111414-a-steel-pipe-flange-it-is-a-disc-80-mm-a",
+ "which": "designer_rejected"
+}

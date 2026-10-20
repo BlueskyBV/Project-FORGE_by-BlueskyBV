@@ -1,0 +1,162 @@
+{
+ "brief": "A plate 100 mm long, 40 mm wide and 4 mm thick with a 30 x 6 mm slot in the middle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A plate 100 mm long, 40 mm wide and 4 mm thick with a 30 x 6 mm slot in the middle. It carries no load, so there is no load case.",
+  "part_kind": "slotted_plate",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 100,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "slotted_plate",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 100,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 4,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "slot_length",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "slot_width",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "sp",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XY",
+        "offset": {
+         "magnitude": -5,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "slot",
+       "kind": "profile_slot",
+       "inputs": [
+        "sp"
+       ],
+       "parameters": {
+        "length": {
+         "expression": "slot_length",
+         "unit": "mm"
+        },
+        "width": {
+         "expression": "slot_width",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "slot_cut",
+       "kind": "extrude",
+       "inputs": [
+        "slot"
+       ],
+       "parameters": {
+        "distance": {
+         "magnitude": 10,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cut",
+       "kind": "subtract",
+       "inputs": [
+        "plate",
+        "slot_cut"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

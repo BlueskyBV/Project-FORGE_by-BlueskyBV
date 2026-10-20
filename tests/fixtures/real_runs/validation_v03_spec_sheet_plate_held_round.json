@@ -1,0 +1,430 @@
+{
+ "brief": "Part: mounting plate. Material: aluminium 6061-T6. Dimensions: L = 70 mm, W = 50 mm, T = 4 mm. Features: 4x diameter 4 mm through holes on a 56 x 36 mm pattern, centred. Load: none.",
+ "intent": {
+  "summary": "A flat aluminium plate intended to mount or space a component using four through-holes in a bolt pattern, with no specified applied load.",
+  "part_kind": "mounting plate",
+  "stated": [
+   "Part type: mounting plate",
+   "Material: aluminium 6061-T6",
+   "Length L = 70 mm",
+   "Width W = 50 mm",
+   "Thickness T = 4 mm",
+   "4x through holes, diameter 4 mm",
+   "Hole pattern: 56 x 36 mm, centred on plate",
+   "Load: none"
+  ],
+  "implied": [
+   "4 through holes on a bolt pattern implies it is fastened with bolts/screws to another flat surface, so it needs reasonably flat, coplanar mounting faces",
+   "Plate dimensions (70x50) vs hole pattern (56x36) imply symmetric edge margins (7 mm and 7 mm on length sides, 7 mm on width sides), suggesting a centred, symmetric layout",
+   "Specifying a precise material grade (6061-T6) implies some structural or environmental requirement exists even though load is stated as none"
+  ],
+  "unstated": [
+   "What the plate mounts to and what it mounts (the mating component/assembly)",
+   "Fastener type and size intended for the 4 mm holes (clearance vs tapped, bolt grade)",
+   "Whether 'load: none' means truly static/decorative use or simply that loads were not characterized",
+   "Surface finish requirements (anodizing, as-machined, etc.)",
+   "Flatness/parallelism tolerance on the mounting faces",
+   "General dimensional tolerances for length, width, thickness, and hole positions",
+   "Hole edge treatment (chamfer, deburr) and through-hole tolerance class (clearance fit for what fastener)",
+   "Operating environment (temperature, corrosion exposure, outdoor/indoor)",
+   "Whether the plate requires electrical grounding/continuity or insulation",
+   "Orientation of the plate in use (horizontal, vertical, overhead)",
+   "Any need for countersinking or counterboring for flush fastener heads",
+   "Quantity/production method (machined, waterjet, etc.) which affects achievable tolerances"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "'Load: none' is stated but not substantiated \u2014 if the plate is later used to carry or support a load despite this label, the design would be unverified for that case",
+   "No information on orientation (e.g., overhead mounting) is given, so a safety-relevant use (e.g., mounting over a person or carrying suspended equipment) cannot be ruled out from the brief alone"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The plate shall be 70 mm long in X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states L = 70 mm as the overall plate length.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The plate shall be 50 mm wide in Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states W = 50 mm as the overall plate width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The plate shall be 4 mm thick overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states T = 4 mm; for a flat plate this is the whole part's Z extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The four mounting holes shall each be 4 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 4x diameter 4 mm through holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_HOLE_PATTERN_X",
+    "statement": "The mounting hole pattern shall span 56 mm in X, centred on the plate.",
+    "measurement": "parameter:hole_pattern_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 56.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 56 x 36 mm hole pattern, centred.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_HOLE_PATTERN_Y",
+    "statement": "The mounting hole pattern shall span 36 mm in Y, centred on the plate.",
+    "measurement": "parameter:hole_pattern_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 56 x 36 mm hole pattern, centred.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The plate shall have exactly four mounting through-holes.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief specifies 4x through holes on the bolt pattern.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_NO_LOAD_CASE",
+    "statement": "The plate carries no structural load; it is used purely for mounting/spacing with static, low-energy service.",
+    "rationale": "The brief explicitly states 'Load: none', answering the question rather than leaving it silent.",
+    "consequence_if_wrong": "If a real load is later applied, the plate thickness and hole edge distances have not been checked against any margin and may be inadequate.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_HOLE_CLEARANCE",
+    "statement": "The 4 mm through holes are plain clearance holes (not tapped) sized for an M4 fastener, with no counterbore or countersink.",
+    "rationale": "A 4 mm through hole on a bolt-pattern mounting plate is conventionally a clearance hole for an M4 screw unless stated otherwise.",
+    "consequence_if_wrong": "If the holes were meant to be tapped or sized for a different fastener, hole tolerance and thread callouts would need rework.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "The plate is left as-machined with no specified coating, anodizing, or special surface finish.",
+    "rationale": "No finish is called out in the brief; as-machined aluminium is the conventional default absent a stated requirement.",
+    "consequence_if_wrong": "If corrosion protection or cosmetic finish is actually required, the part would need re-processing.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_GENERAL_TOLERANCE",
+    "statement": "General (non-called-out) dimensions and hole positions follow standard machine-shop tolerancing (approx. \u00b10.1 mm linear).",
+    "rationale": "The brief gives nominal dimensions only, with no tolerance block; standard shop tolerance is the conventional default for a simple plate.",
+    "consequence_if_wrong": "Tighter tolerances, if actually required (e.g. for a precision fixture), would require re-specifying and re-manufacturing.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_FLATNESS_ORIENTATION",
+    "statement": "No special flatness/parallelism callout or mounting orientation constraint applies beyond ordinary machining practice; the plate may be mounted in any orientation.",
+    "rationale": "The brief gives no flatness tolerance or orientation requirement, and the stated absence of load removes any structural reason to constrain orientation.",
+    "consequence_if_wrong": "If the plate must be mounted overhead or bear a flatness-critical interface, additional callouts would be needed.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Mounting plate",
+   "description": "Flat aluminium mounting plate, 70 x 50 x 4 mm, with a 56 x 36 mm bolt pattern of four 4 mm clearance holes centred on the plate.",
+   "components": [
+    {
+     "id": "mounting_plate",
+     "name": "Mounting plate",
+     "material": "aluminium_6061_t6",
+     "parameters": [
+      {
+       "id": "plate_length",
+       "value": {
+        "magnitude": 70.0,
+        "unit": "mm"
+       },
+       "description": "Overall plate length, X"
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       },
+       "description": "Overall plate width, Y"
+      },
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "description": "Overall plate thickness, Z"
+      },
+      {
+       "id": "mounting_hole_diameter",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of each of the four mounting through-holes",
+       "bounds": {
+        "min": {
+         "magnitude": 3.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      },
+      {
+       "id": "hole_pattern_x",
+       "value": {
+        "magnitude": 56.0,
+        "unit": "mm"
+       },
+       "description": "Bolt pattern span in X, centred on the plate"
+      },
+      {
+       "id": "hole_pattern_y",
+       "value": {
+        "magnitude": 36.0,
+        "unit": "mm"
+       },
+       "description": "Bolt pattern span in Y, centred on the plate"
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "lies": "flat",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "hole_fr",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_pattern_x / 2",
+          "hole_pattern_y / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_fl",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "hole_fr"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_pattern_x / 2",
+          "hole_pattern_y / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_bl",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "hole_fl"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_pattern_x / 2",
+          "-hole_pattern_y / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_br",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "hole_bl"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_pattern_x / 2",
+          "-hole_pattern_y / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "mounting_bolt_pattern",
+       "type": "bolt_pattern",
+       "geometry": "hole_br.bore",
+       "nominal_size": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Four-hole 56 x 36 mm bolt pattern, centred on the plate, for clearance fasteners sized to mounting_hole_diameter."
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The plate is a single box primitive sized by plate_length/plate_width/plate_thickness (thickness last, as required for a flat plate), and the four mounting holes are a chain of four separate `hole` features (each tagged \"mounting\" and consuming the previous one) rather than a pattern, since the hole-count requirement counts tagged features individually. Each hole's position is driven directly from hole_pattern_x/2 and hole_pattern_y/2 so the pattern stays centred and parametric if those or the plate size change; holes are cut last, after the solid base, per the cut-holes-last rule. The declared REQ_ROUND requirement does not match this rectangular plate geometry from the brief, so it was left to fail honestly rather than deforming the part's shape to game it."
+ },
+ "run": "validation V03, 18 October 2026",
+ "note": "A correct 70 x 50 x 4 plate held to be round: 'T = 4 mm' and 'diameter 4 mm through holes' -- the holes' 4 was read as the part's size, and it matched the plate's thickness."
+}

@@ -1,0 +1,256 @@
+{
+ "brief": "A PLA dome: exactly half of a 70 mm sphere, sitting flat side to the left side, hollow on the inside. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA dome with a diameter of 70 mm, half of a sphere, sitting flat on its left side, hollow inside, and carrying no load.",
+  "part_kind": "dome",
+  "stated": [
+   "diameter of 70 mm",
+   "half of a sphere",
+   "sitting flat on its left side",
+   "hollow inside"
+  ],
+  "implied": [
+   "diameter of 70 mm",
+   "half of a sphere",
+   "sitting flat on its left side",
+   "hollow inside"
+  ],
+  "unstated": [
+   "load"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_DIAMETER",
+    "statement": "The diameter of the dome is 70 mm.",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_X",
+    "statement": "The dome shall be 35 mm along X, its flat face turned that way: half of a 70 mm sphere.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 35.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_Y",
+    "statement": "The dome shall be 70 mm across, along Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_Z",
+    "statement": "The dome shall be 70 mm across, along Z.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The dome's shell shall be 2 mm thick (assumed: the brief gives no wall).",
+    "measurement": "minimum_wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "performance",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLAT_FACE",
+    "statement": "The dome's flat face shall be turned to the left: a rim 2 mm wide, at least 214 mm^2 of it lying flat there.",
+    "measurement": "flat_face:left",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 213.6,
+     "unit": "mm^2"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPEN_FLAT_SIDE",
+    "statement": "The flat side shall be open, 33 mm deep at the middle: half of a hollow sphere.",
+    "measurement": "opening_depth:left",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 33.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_WALL_THICKNESS",
+    "statement": "The walls are 2 mm thick: the brief says the part is hollow and does not say how thick its walls are.",
+    "value": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "2 mm is a usual wall for a small printed or machined part, and some wall is needed to build it.",
+    "consequence_if_wrong": "The walls are thicker or thinner than wanted; the outside size is unchanged.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "added REQ_PART_SIZE_X: half of a 70 mm sphere is 35 mm tall, and nothing measured its height on the part itself.",
+   "added REQ_PART_SIZE_Y: the brief makes the part a 70 mm dome, 70 mm along every axis, and nothing measured its Y extent on the part itself.",
+   "added REQ_PART_SIZE_Z: the brief makes the part a 70 mm dome, 70 mm along every axis, and nothing measured its Z extent on the part itself.",
+   "added ASM_WALL_THICKNESS at 2 mm: the brief makes the part hollow and gives no wall, and the design cannot be drawn without one. It is a guess and is recorded as one.",
+   "added REQ_WALL_THICKNESS at 2 mm, REQ_FLAT_FACE, REQ_OPEN_FLAT_SIDE at 33 mm deep: the brief makes the part half of a hollow 70 mm sphere -- a shell 2 mm thick (assumed), open on its flat side -- and a solid half sphere has the same size. Its wall is measured as the thinnest wall anywhere: a shell is that thick all the way round."
+  ]
+ },
+ "answer": {
+  "rationale": "This part is a 70 mm diameter dome, half of a sphere, sitting flat on its left side, hollow inside, and carrying no load. The requirements specify the diameter, size, wall thickness, and flat face measurements. The part is square, so it uses one parameter for both sides.",
+  "document": {
+   "name": "70 mm Dome",
+   "components": [
+    {
+     "id": "dome",
+     "features": [
+      {
+       "id": "base",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "diameter / 2",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "shell",
+       "kind": "shell",
+       "parameters": {
+        "thickness": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        },
+        "direction": "both"
+       },
+       "inputs": [
+        "base"
+       ]
+      },
+      {
+       "id": "opening",
+       "kind": "subtract",
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "opening_hole",
+       "kind": "hole",
+       "role": "opening",
+       "inputs": [
+        "opening"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "diameter / 2",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "diameter / 4"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 70.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261005T151214: half of a 70 mm sphere, flat side to the left, hollow. The design was a cylinder, its shell, a subtract `opening` naming no inputs and a hole cutting it; validation refused it twice and the run ended."
+}

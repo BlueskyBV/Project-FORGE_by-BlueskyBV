@@ -1,0 +1,572 @@
+{
+  "schema_version": "1.0.0",
+  "document_id": "b1f0c3a2-0000-4000-8000-000000000001",
+  "project_id": "b1f0c3a2-0000-4000-8000-0000000000ff",
+  "revision": 1,
+  "name": "Bench-test clevis hinge",
+  "description": "Synthetic software-validation artefact. The loads and material scenario are invented for the purpose of exercising the pipeline and must not be treated as an engineering design for any real application.",
+  "risk_class": "low",
+  "units": {
+    "length": "mm",
+    "mass": "kg",
+    "time": "s",
+    "angle": "deg",
+    "force": "N",
+    "stress": "MPa"
+  },
+  "provenance": {
+    "created_by": "forge golden example",
+    "tool_version": "0.1.0",
+    "notes": "Hand-authored reference document; no model provider involved."
+  },
+  "requirements": [
+    {
+      "id": "REQ_BASE_Z",
+      "statement": "The clevis base thickness shall be 6 mm.",
+      "type": "geometric",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 6.0,
+        "unit": "mm"
+      },
+      "comparison": "equals",
+      "measurement": "parameter:base_thickness",
+      "source": "user",
+      "state": "accepted"
+    },
+    {
+      "id": "REQ_BASE_Y",
+      "statement": "The clevis base width shall be 24 mm.",
+      "type": "geometric",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 24.0,
+        "unit": "mm"
+      },
+      "comparison": "equals",
+      "measurement": "parameter:base_width",
+      "source": "user",
+      "state": "accepted"
+    },
+    {
+      "id": "REQ_BASE_X",
+      "statement": "The clevis base length shall be 60 mm.",
+      "type": "geometric",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 60.0,
+        "unit": "mm"
+      },
+      "comparison": "equals",
+      "measurement": "parameter:base_length",
+      "source": "user",
+      "state": "accepted"
+    },
+    {
+      "id": "REQ_ENVELOPE_X",
+      "statement": "The finished part shall occupy no more than 61 mm along x, so it clears the adjacent rail.",
+      "type": "geometric",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 61.0,
+        "unit": "mm"
+      },
+      "comparison": "at_most",
+      "measurement": "bounding_box_x",
+      "source": "user",
+      "state": "accepted"
+    },
+    {
+      "id": "REQ_EAR_SPACING",
+      "statement": "Clear internal spacing between the ears must be 12 mm so the link fits with axial clearance.",
+      "type": "interface",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 12.0,
+        "unit": "mm"
+      },
+      "comparison": "equals",
+      "source": "user",
+      "state": "accepted",
+      "measurement": "parameter:ear_gap"
+    },
+    {
+      "id": "REQ_PIVOT_BORE",
+      "statement": "The pivot bores must be 8.2 mm diameter and coaxial.",
+      "type": "interface",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 8.2,
+        "unit": "mm"
+      },
+      "comparison": "equals",
+      "source": "user",
+      "state": "accepted",
+      "measurement": "interface_size:pivot_port"
+    },
+    {
+      "id": "REQ_MIN_WALL",
+      "statement": "No wall may be thinner than 3 mm, for the CNC aluminium scenario.",
+      "type": "manufacturing",
+      "strength": "hard",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 3.0,
+        "unit": "mm"
+      },
+      "comparison": "at_least",
+      "source": "derived",
+      "state": "not_tested",
+      "measurement": "minimum_wall_thickness"
+    },
+    {
+      "id": "REQ_MASS_BUDGET",
+      "statement": "The clevis body should weigh no more than 40 g in 6061-T6.",
+      "type": "performance",
+      "strength": "soft",
+      "verification": "exact_geometry",
+      "threshold": {
+        "magnitude": 40.0,
+        "unit": "g"
+      },
+      "comparison": "at_most",
+      "source": "user",
+      "state": "not_tested",
+      "measurement": "mass"
+    },
+    {
+      "id": "REQ_BEARING_MARGIN",
+      "statement": "Bearing stress at the pivot bore shall keep a safety factor of at least 2 against yield.",
+      "type": "performance",
+      "strength": "hard",
+      "verification": "analytical",
+      "threshold": {
+        "magnitude": 2.0,
+        "unit": ""
+      },
+      "comparison": "at_least",
+      "measurement": "safety_factor:bearing",
+      "source": "derived",
+      "state": "not_tested"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "ASM_DESIGN_LOAD",
+      "statement": "A synthetic design load of 500 N is applied 35 mm from the pivot axis in the worst-case direction.",
+      "value": {
+        "magnitude": 500.0,
+        "unit": "N"
+      },
+      "rationale": "Supplied by the brief as a test load for the validation pipeline.",
+      "consequence_if_wrong": "Every structural conclusion scales with this load; a larger real load invalidates the margin entirely.",
+      "risk": "high",
+      "reversible": false,
+      "approved": false
+    },
+    {
+      "id": "ASM_MATERIAL",
+      "statement": "Baseline material is 6061-T6 aluminium using sourced minimum property values.",
+      "rationale": "Stated in the brief as the baseline scenario.",
+      "consequence_if_wrong": "Strength and stiffness claims do not transfer to another alloy or temper.",
+      "risk": "high",
+      "reversible": true,
+      "approved": false
+    }
+  ],
+  "components": [
+    {
+      "id": "clevis",
+      "name": "Clevis body",
+      "material": "aluminium_6061_t6",
+      "description": "Base plate with two symmetric ears carrying a coaxial pivot bore.",
+      "parameters": [
+        {
+          "id": "base_length",
+          "value": {
+            "magnitude": 60.0,
+            "unit": "mm"
+          },
+          "description": "Overall length of the base plate"
+        },
+        {
+          "id": "base_width",
+          "value": {
+            "magnitude": 24.0,
+            "unit": "mm"
+          },
+          "description": "Overall width of the base plate"
+        },
+        {
+          "id": "base_thickness",
+          "value": {
+            "magnitude": 6.0,
+            "unit": "mm"
+          },
+          "description": "Base plate thickness"
+        },
+        {
+          "id": "ear_thickness",
+          "value": {
+            "magnitude": 6.0,
+            "unit": "mm"
+          },
+          "bounds": {
+            "min": {
+              "magnitude": 4.0,
+              "unit": "mm"
+            },
+            "max": {
+              "magnitude": 10.0,
+              "unit": "mm"
+            }
+          },
+          "optimizable": true,
+          "description": "Thickness of each ear; the primary structural variable"
+        },
+        {
+          "id": "ear_gap",
+          "value": {
+            "magnitude": 12.0,
+            "unit": "mm"
+          },
+          "description": "Clear internal spacing between the ears"
+        },
+        {
+          "id": "ear_height",
+          "value": {
+            "magnitude": 16.0,
+            "unit": "mm"
+          },
+          "description": "Height of the ears above the base top face"
+        },
+        {
+          "id": "ear_length",
+          "value": {
+            "magnitude": 20.0,
+            "unit": "mm"
+          },
+          "description": "Fore-aft length of each ear"
+        },
+        {
+          "id": "pivot_diameter",
+          "value": {
+            "magnitude": 8.2,
+            "unit": "mm"
+          },
+          "description": "Pivot bore diameter"
+        },
+        {
+          "id": "pivot_height",
+          "value": {
+            "magnitude": 12.0,
+            "unit": "mm"
+          },
+          "description": "Pivot axis height above the base top face"
+        },
+        {
+          "id": "root_blend",
+          "value": {
+            "magnitude": 3.0,
+            "unit": "mm"
+          },
+          "bounds": {
+            "min": {
+              "magnitude": 0.5,
+              "unit": "mm"
+            },
+            "max": {
+              "magnitude": 5.0,
+              "unit": "mm"
+            }
+          },
+          "optimizable": true,
+          "description": "Fillet radius where each ear meets the base"
+        },
+        {
+          "id": "ear_offset",
+          "expression": "(ear_gap + ear_thickness) / 2",
+          "unit": "mm",
+          "description": "Distance from the mid-plane to each ear's centre"
+        },
+        {
+          "id": "outer_width",
+          "expression": "ear_gap + 2 * ear_thickness",
+          "unit": "mm",
+          "description": "Overall width across the outside of both ears"
+        },
+        {
+          "id": "total_height",
+          "expression": "base_thickness + ear_height",
+          "unit": "mm"
+        },
+        {
+          "id": "pivot_z",
+          "expression": "base_thickness + pivot_height",
+          "unit": "mm",
+          "description": "Pivot axis height in component coordinates"
+        },
+        {
+          "id": "envelope_height",
+          "expression": "pivot_z + ear_length / 2",
+          "unit": "mm",
+          "description": "Top of the declared envelope: the crown's highest point"
+        }
+      ],
+      "features": [
+        {
+          "id": "base_plate",
+          "kind": "box",
+          "role": "base",
+          "description": "The mounting plate",
+          "parameters": {
+            "size": {
+              "vector": [
+                "base_length",
+                "base_width",
+                "base_thickness"
+              ],
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                0,
+                0,
+                0
+              ],
+              "unit": "mm"
+            },
+            "centered": false
+          }
+        },
+        {
+          "id": "ear_left",
+          "kind": "box",
+          "role": "ear_left",
+          "parameters": {
+            "size": {
+              "vector": [
+                "ear_length",
+                "ear_thickness",
+                "ear_height"
+              ],
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                "base_length / 2 - ear_length / 2",
+                "base_width / 2 - ear_offset - ear_thickness / 2",
+                "base_thickness"
+              ],
+              "unit": "mm"
+            },
+            "centered": false
+          }
+        },
+        {
+          "id": "ear_right",
+          "kind": "box",
+          "role": "ear_right",
+          "parameters": {
+            "size": {
+              "vector": [
+                "ear_length",
+                "ear_thickness",
+                "ear_height"
+              ],
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                "base_length / 2 - ear_length / 2",
+                "base_width / 2 + ear_offset - ear_thickness / 2",
+                "base_thickness"
+              ],
+              "unit": "mm"
+            },
+            "centered": false
+          }
+        },
+        {
+          "id": "ear_left_crown",
+          "kind": "cylinder",
+          "role": "ear_left_crown",
+          "description": "Rounds the top of the left ear about the pivot axis",
+          "parameters": {
+            "diameter": {
+              "expression": "ear_length",
+              "unit": "mm"
+            },
+            "height": {
+              "expression": "ear_thickness",
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                "base_length / 2",
+                "base_width / 2 - ear_offset - ear_thickness / 2",
+                "pivot_z"
+              ],
+              "unit": "mm"
+            },
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ear_right_crown",
+          "kind": "cylinder",
+          "role": "ear_right_crown",
+          "parameters": {
+            "diameter": {
+              "expression": "ear_length",
+              "unit": "mm"
+            },
+            "height": {
+              "expression": "ear_thickness",
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                "base_length / 2",
+                "base_width / 2 + ear_offset - ear_thickness / 2",
+                "pivot_z"
+              ],
+              "unit": "mm"
+            },
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ear_assembly",
+          "kind": "union",
+          "role": "ear_assembly",
+          "description": "Each ear merged with its crown. No blend here: the crown is coaxial with the ear and shares its side faces, so a blend radius at this step would puff material out across those coplanar faces instead of rounding anything.",
+          "inputs": [
+            "ear_left",
+            "ear_left_crown",
+            "ear_right",
+            "ear_right_crown"
+          ]
+        },
+        {
+          "id": "joined",
+          "kind": "union",
+          "role": "joined",
+          "description": "Ears blended into the base. The blend at this step is this design's root fillet, applied exactly where the ears meet the plate.",
+          "inputs": [
+            "base_plate",
+            "ear_assembly"
+          ],
+          "parameters": {
+            "blend_radius": {
+              "expression": "root_blend",
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "id": "envelope",
+          "kind": "box",
+          "role": "envelope",
+          "description": "The declared outer envelope, used to trim the blended union. A blend between two operands that share a coplanar face has no concave crease to fill and adds a little material across that face; trimming states the intended outer dimensions explicitly so the envelope requirement is checkable rather than approximate.",
+          "parameters": {
+            "size": {
+              "vector": [
+                "base_length",
+                "base_width",
+                "envelope_height"
+              ],
+              "unit": "mm"
+            },
+            "origin": {
+              "vector": [
+                0,
+                0,
+                0
+              ],
+              "unit": "mm"
+            },
+            "centered": false
+          }
+        },
+        {
+          "id": "trimmed",
+          "kind": "intersect",
+          "role": "trimmed",
+          "description": "Trim the blended body to the declared envelope.",
+          "inputs": [
+            "joined",
+            "envelope"
+          ]
+        },
+        {
+          "id": "pivot",
+          "kind": "hole",
+          "role": "pivot",
+          "description": "Coaxial pivot bore through both ears",
+          "inputs": [
+            "trimmed"
+          ],
+          "parameters": {
+            "diameter": {
+              "expression": "pivot_diameter",
+              "unit": "mm"
+            },
+            "position": {
+              "vector": [
+                "base_length / 2",
+                "base_width / 2",
+                "pivot_z"
+              ],
+              "unit": "mm"
+            },
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "fit": "clearance_normal"
+          }
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "pivot_port",
+          "type": "bore",
+          "geometry": "pivot.bore",
+          "nominal_size": {
+            "magnitude": 8.2,
+            "unit": "mm"
+          },
+          "fit": "clearance_normal",
+          "load_transfer": "Bearing load from the pin, reacted into both ears.",
+          "allowable_motion": [
+            "rotation_about_axis"
+          ],
+          "description": "Receives the 8 mm shoulder pin."
+        },
+        {
+          "id": "mounting_face",
+          "type": "planar_mount",
+          "geometry": "base.z_min",
+          "load_transfer": "Reaction into the test fixture.",
+          "description": "Underside of the base plate, bolted to the bench fixture."
+        }
+      ]
+    }
+  ]
+}

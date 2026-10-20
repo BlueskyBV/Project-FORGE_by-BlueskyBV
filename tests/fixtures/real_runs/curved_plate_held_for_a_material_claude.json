@@ -1,0 +1,1017 @@
+{
+ "brief": "Create a curved arm-mount plate, 120 mm long, 75 mm wide and 6 mm thick. Curve the plate uniformly across its 75 mm width with an inside radius of 60 mm, with the curvature center directly below the longitudinal centerline. Round the four corners with a 12 mm radius. Add four 28 \u00d7 5 mm strap slots running along the plate's length, two at each end, with their centers 10 mm in from each long edge and 22 mm from each longitudinal end. Add two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 15 mm from the bottom end.",
+ "intent": {
+  "summary": "A curved plate intended to mount to an arm-shaped member, using strap slots at each end and two bolt holes along its centerline, with a cylindrical curvature across its width.",
+  "part_kind": "bracket/mounting plate (curved arm-mount plate)",
+  "stated": [
+   "Curved arm-mount plate",
+   "Length 120 mm",
+   "Width 75 mm",
+   "Thickness 6 mm",
+   "Curved uniformly across the 75 mm width",
+   "Inside radius of curvature 60 mm",
+   "Curvature center is directly below the longitudinal centerline",
+   "Four corners rounded with 12 mm radius",
+   "Four strap slots, 28 x 5 mm, running along the plate's length",
+   "Two slots at each end",
+   "Slot centers 10 mm in from each long edge",
+   "Slot centers 22 mm from each longitudinal end",
+   "Two mounting holes, 8.2 mm diameter",
+   "Mounting holes on the longitudinal centerline",
+   "Mounting holes spaced 30 mm center-to-center",
+   "First hole center 15 mm from the bottom end"
+  ],
+  "implied": [
+   "Curving across the width with a stated inside radius implies the plate wraps around a cylindrical surface (e.g. an arm or tube) of related radius, so it mates to a convex/concave round member",
+   "Strap slots sized 28 x 5 mm oriented along the length suggest they are meant to pass a strap or band around the curved arm, implying the plate clamps to that arm via straps rather than only bolting flat",
+   "8.2 mm holes suggest clearance for a nominal M8 bolt/fastener, implying the mounting holes are for bolted attachment of a mating part",
+   "'Arm-mount' naming plus curvature and strap slots together imply the part is meant to sit against and secure to a round or part-round structural arm, not a flat surface",
+   "Corner rounding of 12 mm on all four corners implies a consistent edge-break/safety or clearance requirement around the whole perimeter",
+   "Only one hole position given from the 'bottom end' implies the part has a defined top/bottom orientation in use"
+  ],
+  "unstated": [
+   "Outside radius or whether the 6 mm thickness is measured radially (i.e. is wall thickness constant, and what is the resulting outside radius)",
+   "Material and material grade/specification",
+   "Load magnitude and direction the plate and its mounting holes/slots must carry (clamping force, arm weight, bending/torsion on the arm)",
+   "Fastener type, strap material, and strap width/thickness that will pass through the 28 x 5 mm slots",
+   "Surface finish or coating requirements",
+   "Tolerances on the hole positions, slot positions, radius, and overall dimensions",
+   "Which direction is 'bottom end' relative to the curvature (orientation definition for the second hole's position, since only center-to-center spacing and one reference are given)",
+   "Position/centering of the mounting holes along the width (only stated as on the centerline, width-wise position is consistent, but no offset from an end other than the first hole is given beyond derived spacing)",
+   "Operating environment: temperature range, exposure to moisture/chemicals, outdoor/indoor use",
+   "Whether the arm being mounted to is rigid or itself flexible, and its actual outer radius/diameter for fit verification",
+   "Safety factor or applicable design/regulatory standard for this mount",
+   "Expected duty cycle, fatigue/vibration loading, or dynamic forces (e.g., if this is part of a moving mechanism)",
+   "Whether slots need to be through-cut or have specific edge treatment for strap wear",
+   "Any requirement for electrical isolation, grounding, or EMI considerations if used in machinery"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "Described as an 'arm-mount' part, which may be structural and carry mechanical load from an attached arm -- failure mode and consequence of structural failure not described",
+   "Strap slots suggest a clamping/strapping mechanism holding the plate to an arm; if this arm is load-bearing or moving (e.g., part of machinery or a lifting mechanism), slot and material failure could release the mount",
+   "No load, force, or safety factor data given despite the part appearing to be a load-bearing mechanical bracket"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "moderate",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "Overall plate length shall be 120 mm.",
+    "measurement": "flat_extent_side:120",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the plate is 120 mm long, measured as the overall longitudinal extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "Overall plate width shall be 75 mm.",
+    "measurement": "flat_extent_side:75",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the plate is 75 mm wide, measured as the overall transverse extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_THICKNESS",
+    "statement": "Plate material thickness shall be 6 mm.",
+    "measurement": "parameter:plate_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    },
+    "rationale": "Stated plate thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CURVATURE_INSIDE_RADIUS",
+    "statement": "The plate shall be curved across its width with an inside radius of 60 mm.",
+    "measurement": "parameter:curvature_inside_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    },
+    "rationale": "Stated inside radius of curvature, center below the longitudinal centerline.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CORNER_RADIUS",
+    "statement": "The four corners shall be rounded with a 12 mm radius.",
+    "measurement": "parameter:corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12,
+     "unit": "mm"
+    },
+    "rationale": "Stated corner rounding radius.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STRAP_SLOT_LENGTH",
+    "statement": "Each strap slot shall be 28 mm long, running along the plate's length.",
+    "measurement": "parameter:strap_slot_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 28,
+     "unit": "mm"
+    },
+    "rationale": "Stated strap slot length dimension.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STRAP_SLOT_WIDTH",
+    "statement": "Each strap slot shall be 5 mm wide.",
+    "measurement": "parameter:strap_slot_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    },
+    "rationale": "Stated strap slot width dimension.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STRAP_SLOT_EDGE_OFFSET",
+    "statement": "Strap slot centers shall be 10 mm in from each long edge.",
+    "measurement": "parameter:strap_slot_edge_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    },
+    "rationale": "Stated transverse placement of strap slots relative to the long edges.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STRAP_SLOT_END_OFFSET",
+    "statement": "Strap slot centers shall be 22 mm from each longitudinal end of the plate.",
+    "measurement": "parameter:strap_slot_end_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 22,
+     "unit": "mm"
+    },
+    "rationale": "Stated longitudinal placement of strap slots relative to the plate ends.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "Mounting holes shall be 8.2 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "rationale": "Stated mounting hole size, nominal clearance for an M8 fastener.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_SPACING",
+    "statement": "The two mounting holes shall be spaced 30 mm center-to-center along the longitudinal centerline.",
+    "measurement": "parameter:mounting_hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    },
+    "rationale": "Stated hole spacing.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_FIRST_OFFSET",
+    "statement": "The first mounting hole center shall be 15 mm from the bottom end of the plate.",
+    "measurement": "parameter:mounting_hole_first_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    },
+    "rationale": "Stated reference position establishing hole placement and part orientation (top/bottom).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STRAP_PROFILE_SLOT_COUNT",
+    "statement": "The plate shall have exactly four strap slots, two at each end.",
+    "measurement": "feature_count:profile_slot:strap",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief specifies four 28x5 mm strap slots, two per end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The plate shall have exactly two mounting holes on the longitudinal centerline.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief specifies two 8.2 mm mounting holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_28X5",
+    "statement": "The part shall have 4 openings 28 by 5 mm right through it.",
+    "measurement": "openings_of_size:28x5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_LO22_LO10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the low end of the part, 10 mm in from its low side.",
+    "measurement": "opening_at:28x5:lo22,lo10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_LO22_HI10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the low end of the part, 10 mm in from its high side.",
+    "measurement": "opening_at:28x5:lo22,hi10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_HI22_LO10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the high end of the part, 10 mm in from its low side.",
+    "measurement": "opening_at:28x5:hi22,lo10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_HI22_HI10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the high end of the part, 10 mm in from its high side.",
+    "measurement": "opening_at:28x5:hi22,hi10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_8_2_END15_MID",
+    "statement": "The 8.2 mm opening shall be centred 15 mm in from an end of the part, on its middle across it.",
+    "measurement": "opening_at:8.2:end15,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_8_2_END45_MID",
+    "statement": "The 8.2 mm opening shall be centred 45 mm in from an end of the part, on its middle across it.",
+    "measurement": "opening_at:8.2:end45,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_ANGLE",
+    "statement": "The part shall turn through 68.209 degrees, measured on its surface.",
+    "measurement": "bend_angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 68.209,
+     "unit": "deg"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_COUNT",
+    "statement": "The part shall have 1 bend.",
+    "measurement": "bend_count",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_CENTRE",
+    "statement": "The curve shall be centred in the middle of the part (the brief names no other place).",
+    "measurement": "bend_off_centre",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 0.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BENT_ALONG",
+    "statement": "The part shall curve over its 75 mm, as the brief says, the bend's line running the other way.",
+    "measurement": "bent_along",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_WAY",
+    "statement": "The part shall curve as an arch: its face that was up when flat on the outside of the curve, the curve's centre below it.",
+    "measurement": "bend_convex",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_SPREAD",
+    "statement": "The bend shall be a 60 mm inside radius: spread over 75.0 mm of the part's length.",
+    "measurement": "bend_spread",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL",
+    "statement": "Plate is made from a conventional structural metal (e.g. aluminum or mild steel) suitable for a bolted/strapped mounting bracket; exact grade is not specified.",
+    "risk": "high",
+    "reversible": true,
+    "rationale": "No material or grade is given in the brief, but the part functions as a load-bearing mount.",
+    "consequence_if_wrong": "If the actual service material differs significantly in strength or corrosion resistance, the part could fail in service or corrode prematurely.",
+    "approved": false
+   },
+   {
+    "id": "ASM_OUTSIDE_RADIUS",
+    "statement": "The plate's outside radius equals the inside radius (60 mm) plus the 6 mm thickness, i.e. the thickness is constant and measured radially, giving an outside radius of 66 mm.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief gives only the inside radius and thickness; a constant radial thickness is the conventional interpretation for a curved plate.",
+    "consequence_if_wrong": "Would require a different modeling approach for the curved wall, but has no functional consequence if corrected.",
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_WIDTH_POSITION",
+    "statement": "The second mounting hole is positioned 30 mm further from the bottom end than the first (i.e. toward the top end), both on the longitudinal centerline.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief gives spacing and one reference point; the natural reading places the second hole further along the same centerline toward the opposite (top) end.",
+    "consequence_if_wrong": "If the intended direction were reversed, hole position would need to shift, but this does not affect part function materially.",
+    "approved": false
+   },
+   {
+    "id": "ASM_INDOOR_SERVICE",
+    "statement": "The part is assumed to operate in ordinary indoor/ambient conditions with no special temperature, corrosion, or fatigue requirements.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "No environmental or duty information given; ordinary ambient service is the conventional default absent other information.",
+    "consequence_if_wrong": "If used outdoors, at temperature extremes, or under cyclic loading, material and finish choices may be inadequate.",
+    "approved": false
+   },
+   {
+    "id": "ASM_CORNER_ROUNDING_UNIFORM",
+    "statement": "All four corners use the same 12 mm radius regardless of their position on the curved surface.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Brief states corners are rounded with a 12 mm radius without distinguishing them.",
+    "consequence_if_wrong": "Minimal; would only affect appearance/edge safety consistency.",
+    "approved": false
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_MATERIAL_GRADE",
+    "question": "What material and grade should the plate be made from (e.g. 6061-T6 aluminum, mild steel, stainless)?",
+    "why_it_matters": "Material choice affects strength, weight, and corrosion resistance; no material is specified in the brief.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "6061-T6 aluminum"
+   },
+   {
+    "id": "UNK_ARM_FIT",
+    "question": "What is the actual outer radius/diameter of the arm this plate mounts to, to confirm the 60 mm inside radius is a correct fit?",
+    "why_it_matters": "A mismatch between the plate's curvature and the arm's actual profile would prevent proper seating and load transfer.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": ""
+   }
+  ],
+  "notes": [
+   "dropped 3 load question(s): the brief names no load, force or margin -- it describes a shape, so there was nothing to be uncertain about",
+   "added REQ_HOLES_8_2MM: the brief states 2 open holes of 8.2 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OPENINGS_28X5: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size.",
+   "added REQ_AT_28X5_LO22_LO10, REQ_AT_28X5_LO22_HI10, REQ_AT_28X5_HI22_LO10, REQ_AT_28X5_HI22_HI10, REQ_AT_8_2_END15_MID, REQ_AT_8_2_END45_MID: the brief places these openings, and a count of them says nothing about where they are. Each is checked on the built part, laid flat: its centre within 0.5 mm of where the brief puts it.",
+   "REQ_BOUNDING_BOX_X, REQ_BOUNDING_BOX_Y measured on the part laid flat: the brief bends it, and a bent part's sizes are its sizes along the plate -- a sheet keeps its length along its middle when it is bent.",
+   "added REQ_BEND_ANGLE, REQ_BEND_COUNT, REQ_BEND_CENTRE, REQ_BENT_ALONG, REQ_BEND_WAY, REQ_BEND_SPREAD: the brief bends the part 68.209 degrees (curve), and nothing measured the bend on the part itself."
+  ]
+ },
+ "answer": {
+  "name": "Curved arm-mount plate",
+  "description": "A 120x75x6 mm plate, flat-built with rounded corners, four strap slots and two mounting holes, then bent across its width to a 60 mm inside radius.",
+  "components": [
+   {
+    "id": "arm_mount_plate",
+    "name": "Curved arm-mount plate",
+    "material": "aluminium_6061_t6",
+    "parameters": [
+     {
+      "id": "plate_length",
+      "value": {
+       "magnitude": 120.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "plate_width",
+      "value": {
+       "magnitude": 75.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "plate_thickness",
+      "value": {
+       "magnitude": 6.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "curvature_inside_radius",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "corner_radius",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "strap_slot_length",
+      "value": {
+       "magnitude": 28.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "strap_slot_width",
+      "value": {
+       "magnitude": 5.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "strap_slot_edge_offset",
+      "value": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "strap_slot_end_offset",
+      "value": {
+       "magnitude": 22.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_diameter",
+      "value": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_spacing",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_first_offset",
+      "value": {
+       "magnitude": 15.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "bend_angle",
+      "value": {
+       "magnitude": 68.209,
+       "unit": "deg"
+      }
+     }
+    ],
+    "features": [
+     {
+      "id": "flat_plate",
+      "kind": "box",
+      "lies": "flat",
+      "parameters": {
+       "size": {
+        "vector": [
+         "plate_length",
+         "plate_width",
+         "plate_thickness"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "edge_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       },
+       "edges": "vertical"
+      }
+     },
+     {
+      "id": "slot_plane",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "strap_slot_profile_1",
+      "kind": "profile_slot",
+      "inputs": [
+       "slot_plane"
+      ],
+      "parameters": {
+       "length": {
+        "expression": "strap_slot_length",
+        "unit": "mm"
+       },
+       "width": {
+        "expression": "strap_slot_width",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "-(plate_length / 2 - strap_slot_end_offset)",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-(plate_width / 2 - strap_slot_edge_offset)",
+        "unit": "mm"
+       },
+       "rotation": {
+        "magnitude": 0,
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "strap_slot_cutter_1",
+      "kind": "extrude",
+      "inputs": [
+       "strap_slot_profile_1"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness * 2",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "strap_slot_profile_2",
+      "kind": "profile_slot",
+      "inputs": [
+       "slot_plane"
+      ],
+      "parameters": {
+       "length": {
+        "expression": "strap_slot_length",
+        "unit": "mm"
+       },
+       "width": {
+        "expression": "strap_slot_width",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "-(plate_length / 2 - strap_slot_end_offset)",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "plate_width / 2 - strap_slot_edge_offset",
+        "unit": "mm"
+       },
+       "rotation": {
+        "magnitude": 0,
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "strap_slot_cutter_2",
+      "kind": "extrude",
+      "inputs": [
+       "strap_slot_profile_2"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness * 2",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "strap_slot_profile_3",
+      "kind": "profile_slot",
+      "inputs": [
+       "slot_plane"
+      ],
+      "parameters": {
+       "length": {
+        "expression": "strap_slot_length",
+        "unit": "mm"
+       },
+       "width": {
+        "expression": "strap_slot_width",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "plate_length / 2 - strap_slot_end_offset",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-(plate_width / 2 - strap_slot_edge_offset)",
+        "unit": "mm"
+       },
+       "rotation": {
+        "magnitude": 0,
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "strap_slot_cutter_3",
+      "kind": "extrude",
+      "inputs": [
+       "strap_slot_profile_3"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness * 2",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "strap_slot_profile_4",
+      "kind": "profile_slot",
+      "inputs": [
+       "slot_plane"
+      ],
+      "parameters": {
+       "length": {
+        "expression": "strap_slot_length",
+        "unit": "mm"
+       },
+       "width": {
+        "expression": "strap_slot_width",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "plate_length / 2 - strap_slot_end_offset",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "plate_width / 2 - strap_slot_edge_offset",
+        "unit": "mm"
+       },
+       "rotation": {
+        "magnitude": 0,
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "strap_slot_cutter_4",
+      "kind": "extrude",
+      "inputs": [
+       "strap_slot_profile_4"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness * 2",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "strap_cut_1",
+      "kind": "subtract",
+      "tags": [
+       "strap"
+      ],
+      "inputs": [
+       "flat_plate",
+       "strap_slot_cutter_1"
+      ]
+     },
+     {
+      "id": "strap_cut_2",
+      "kind": "subtract",
+      "tags": [
+       "strap"
+      ],
+      "inputs": [
+       "strap_cut_1",
+       "strap_slot_cutter_2"
+      ]
+     },
+     {
+      "id": "strap_cut_3",
+      "kind": "subtract",
+      "tags": [
+       "strap"
+      ],
+      "inputs": [
+       "strap_cut_2",
+       "strap_slot_cutter_3"
+      ]
+     },
+     {
+      "id": "strap_cut_4",
+      "kind": "subtract",
+      "tags": [
+       "strap"
+      ],
+      "inputs": [
+       "strap_cut_3",
+       "strap_slot_cutter_4"
+      ]
+     },
+     {
+      "id": "mounting_hole_1",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "strap_cut_4"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-(plate_length / 2 - mounting_hole_first_offset)",
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_2",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mounting_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-(plate_length / 2 - mounting_hole_first_offset) + mounting_hole_spacing",
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "bend",
+      "kind": "bend",
+      "inputs": [
+       "mounting_hole_2"
+      ],
+      "parameters": {
+       "angle": {
+        "expression": "bend_angle",
+        "unit": "deg"
+       },
+       "position": [
+        0,
+        0,
+        0
+       ],
+       "along": [
+        0,
+        1,
+        0
+       ],
+       "toward": [
+        0,
+        0,
+        -1
+       ],
+       "bend_length": {
+        "expression": "plate_width",
+        "unit": "mm"
+       }
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "note": "Claude Sonnet 5, 14 Oct 2026. Passed every gate and was held for approval of a material assumption, though nothing the record measures depends on the material."
+}

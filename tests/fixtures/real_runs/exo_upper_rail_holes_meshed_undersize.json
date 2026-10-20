@@ -1,0 +1,881 @@
+{
+ "brief": "A PLA upper-arm rail for an elbow brace: a flat bar 36 mm wide and 20 mm thick. One end of the bar is a round end 48 mm in diameter centred on the pivot point. The bar runs along its centreline from the pivot point to a fully rounded far end whose centre is 245 mm from the pivot point. At the pivot point, cut a round pocket 22.1 mm in diameter and 7 mm deep into the top face and an identical pocket 7 mm deep into the bottom face, and cut a 17 mm hole through the 6 mm of material left between the two pockets. Add four 8.2 mm through holes on the bar's centreline at 85, 115, 225 and 245 mm from the pivot point. Give only the two holes at 225 and 245 mm a 15 mm counterbore 5 mm deep from the bottom face. Its strength is checked outside Forge, so there is no load case.",
+ "run": "20261019T153711-a-pla-upper-arm-rail-for-an-elbow-brace",
+ "note": "Every claim passed, measured on the design itself, and the STL written beside the run could not take its own bolts: meshed in the 3 mm cells that find the surface of a 287 mm rail, its 8.2 mm holes came out 7.3 to 7.7 mm across at their narrowest, its 15 mm counterbores 13.5 and its 22.1 mm bearing pockets 21.85.",
+ "document": {
+  "name": "Elbow brace upper-arm link",
+  "description": "PLA flat-bar rail: a round pivot hub at one end, a straight 36 mm bar, and a fully rounded far end, with a pivot bushing bore/pockets and four counterbored mounting holes along the centreline.",
+  "components": [
+   {
+    "id": "upper_arm_link",
+    "name": "Upper-arm link rail",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "bar_width",
+      "value": {
+       "magnitude": 36.0,
+       "unit": "mm"
+      },
+      "description": "Width of the straight bar section"
+     },
+     {
+      "id": "bar_thickness",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      },
+      "description": "Uniform thickness of the bar, sets overall Z height"
+     },
+     {
+      "id": "pivot_end_diameter",
+      "value": {
+       "magnitude": 48.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the round hub at the pivot point"
+     },
+     {
+      "id": "far_end_distance",
+      "value": {
+       "magnitude": 245.0,
+       "unit": "mm"
+      },
+      "description": "Distance from pivot point to the centre of the rounded far end"
+     },
+     {
+      "id": "pivot_pocket_diameter",
+      "value": {
+       "magnitude": 22.1,
+       "unit": "mm"
+      },
+      "description": "Diameter of the bushing seat pockets in top and bottom faces at the pivot"
+     },
+     {
+      "id": "pivot_pocket_depth",
+      "value": {
+       "magnitude": 7.0,
+       "unit": "mm"
+      },
+      "description": "Depth of each bushing seat pocket"
+     },
+     {
+      "id": "pivot_hole_diameter",
+      "value": {
+       "magnitude": 17.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the pin/bushing through hole between the two pockets"
+     },
+     {
+      "id": "pivot_web_thickness",
+      "expression": "bar_thickness - 2 * pivot_pocket_depth",
+      "unit": "mm",
+      "description": "Land of material left between the two pivot pockets; used to position the top pocket cut so it tracks pocket depth and bar thickness"
+     },
+     {
+      "id": "mounting_hole_diameter",
+      "value": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      },
+      "description": "Clearance diameter of the four centreline mounting holes"
+     },
+     {
+      "id": "hole_position_85",
+      "value": {
+       "magnitude": 85.0,
+       "unit": "mm"
+      },
+      "description": "Distance from pivot point to first mounting hole"
+     },
+     {
+      "id": "hole_position_115",
+      "value": {
+       "magnitude": 115.0,
+       "unit": "mm"
+      },
+      "description": "Distance from pivot point to second mounting hole"
+     },
+     {
+      "id": "hole_position_225",
+      "value": {
+       "magnitude": 225.0,
+       "unit": "mm"
+      },
+      "description": "Distance from pivot point to third mounting hole (counterbored)"
+     },
+     {
+      "id": "hole_position_245",
+      "expression": "far_end_distance",
+      "unit": "mm",
+      "description": "Distance from pivot point to fourth mounting hole (counterbored), tied to the far end's centre"
+     },
+     {
+      "id": "counterbore_diameter",
+      "value": {
+       "magnitude": 15.0,
+       "unit": "mm"
+      },
+      "description": "Counterbore diameter on the 225 mm and 245 mm holes"
+     },
+     {
+      "id": "counterbore_depth",
+      "value": {
+       "magnitude": 5.0,
+       "unit": "mm"
+      },
+      "description": "Counterbore depth, cut from the bottom face"
+     },
+     {
+      "id": "pivot_blend_radius",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 15.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Fillet radius blending the wide pivot hub into the narrower bar; not dimensioned in the brief (see ASM_PIVOT_BLEND), chosen for a smooth tangent transition"
+     }
+    ],
+    "features": [
+     {
+      "id": "pivot_hub",
+      "kind": "cylinder",
+      "description": "Round hub at the pivot point, 48 mm diameter",
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_end_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "bar_thickness",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "main_bar",
+      "kind": "box",
+      "description": "Straight bar section from the pivot point to the far end's centre",
+      "parameters": {
+       "size": {
+        "vector": [
+         "bar_width",
+         "far_end_distance",
+         "bar_thickness"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-bar_width / 2",
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "far_cap",
+      "kind": "cylinder",
+      "description": "Fully rounded far end, radius equal to half the bar width",
+      "parameters": {
+       "diameter": {
+        "expression": "bar_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "bar_thickness",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         "far_end_distance",
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "hub_bar_union",
+      "kind": "union",
+      "inputs": [
+       "pivot_hub",
+       "main_bar"
+      ],
+      "description": "Blend the wide pivot hub into the narrower bar",
+      "parameters": {
+       "blend_radius": {
+        "expression": "pivot_blend_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "inputs": [
+       "hub_bar_union",
+       "far_cap"
+      ],
+      "description": "Add the tangent far-end cap to complete the outline",
+      "parameters": {}
+     },
+     {
+      "id": "bottom_pocket_cut",
+      "kind": "cylinder",
+      "description": "Cutting volume for the bushing seat pocket in the bottom face at the pivot point",
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_pocket_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "pivot_pocket_depth",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "top_pocket_cut",
+      "kind": "cylinder",
+      "description": "Cutting volume for the bushing seat pocket in the top face at the pivot point, positioned above the web left between the two pockets",
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_pocket_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "pivot_pocket_depth",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "pivot_pocket_depth + pivot_web_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "pivot_pockets_cut",
+      "kind": "subtract",
+      "inputs": [
+       "body",
+       "top_pocket_cut",
+       "bottom_pocket_cut"
+      ],
+      "description": "Remove both bushing seat pockets from the body, leaving the web between them"
+     },
+     {
+      "id": "pivot_hole",
+      "kind": "hole",
+      "inputs": [
+       "pivot_pockets_cut"
+      ],
+      "tags": [
+       "pivot"
+      ],
+      "description": "Through hole for the pivot pin/bushing, cut through the land between the two pockets",
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "bar_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        1.0
+       ]
+      }
+     },
+     {
+      "id": "hole_85",
+      "kind": "hole",
+      "inputs": [
+       "pivot_hole"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "description": "Centreline mounting hole 85 mm from the pivot point",
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         "hole_position_85",
+         "bar_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        1.0
+       ]
+      }
+     },
+     {
+      "id": "hole_115",
+      "kind": "hole",
+      "inputs": [
+       "hole_85"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "description": "Centreline mounting hole 115 mm from the pivot point",
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         "hole_position_115",
+         "bar_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        1.0
+       ]
+      }
+     },
+     {
+      "id": "hole_225",
+      "kind": "hole",
+      "inputs": [
+       "hole_115"
+      ],
+      "tags": [
+       "mounting",
+       "counterbored"
+      ],
+      "description": "Centreline mounting hole 225 mm from the pivot point, counterbored from the bottom face",
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         "hole_position_225",
+         "bar_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        1.0
+       ],
+       "counterbore_diameter": {
+        "expression": "counterbore_diameter",
+        "unit": "mm"
+       },
+       "counterbore_depth": {
+        "expression": "counterbore_depth",
+        "unit": "mm"
+       },
+       "entry": "start"
+      }
+     },
+     {
+      "id": "hole_245",
+      "kind": "hole",
+      "inputs": [
+       "hole_225"
+      ],
+      "tags": [
+       "mounting",
+       "counterbored"
+      ],
+      "description": "Centreline mounting hole at the far end's centre, 245 mm from the pivot point, counterbored from the bottom face",
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         "hole_position_245",
+         "bar_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        1.0
+       ],
+       "counterbore_diameter": {
+        "expression": "counterbore_diameter",
+        "unit": "mm"
+       },
+       "counterbore_depth": {
+        "expression": "counterbore_depth",
+        "unit": "mm"
+       },
+       "entry": "start"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "pivot_pin_bore",
+      "type": "bore",
+      "geometry": "pivot_hole.bore",
+      "nominal_size": {
+       "magnitude": 17.0,
+       "unit": "mm"
+      },
+      "description": "Bore for the elbow pivot pin/bushing"
+     },
+     {
+      "id": "top_bushing_seat",
+      "type": "bore",
+      "geometry": "top_pocket_cut.lateral",
+      "nominal_size": {
+       "magnitude": 22.1,
+       "unit": "mm"
+      },
+      "description": "Top-face seat for the pivot bushing"
+     },
+     {
+      "id": "bottom_bushing_seat",
+      "type": "bore",
+      "geometry": "bottom_pocket_cut.lateral",
+      "nominal_size": {
+       "magnitude": 22.1,
+       "unit": "mm"
+      },
+      "description": "Bottom-face seat for the pivot bushing"
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "3c0325e4-29fb-5eeb-ab5c-46fed361a19c",
+  "project_id": "7c28af7b-917c-5a17-a15f-db779385de51",
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The finished rail's overall height (thickness) shall equal 20 mm, since the bar is extruded uniformly and no feature increases its thickness.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states the bar is 20 mm thick throughout; pockets and counterbores cut into the faces do not add material, so this is also the whole part's Z extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BAR_WIDTH",
+    "statement": "The flat bar shall be 36 mm wide.",
+    "measurement": "parameter:bar_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_END_DIAMETER",
+    "statement": "The round end at the pivot point shall be 48 mm in diameter.",
+    "measurement": "parameter:pivot_end_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 48.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FAR_END_DISTANCE",
+    "statement": "The centre of the fully rounded far end shall be 245 mm from the pivot point, measured along the bar's centreline.",
+    "measurement": "parameter:far_end_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 245.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_POCKET_DIAMETER",
+    "statement": "The round pocket cut into the top face and the identical pocket cut into the bottom face at the pivot point shall each be 22.1 mm in diameter.",
+    "measurement": "parameter:pivot_pocket_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 22.1,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_POCKET_DEPTH",
+    "statement": "The pivot pocket in the top face and the identical pocket in the bottom face shall each be 7 mm deep.",
+    "measurement": "parameter:pivot_pocket_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 7.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "The through hole cut between the two pivot pockets shall be 17 mm in diameter.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 17.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_WEB_THICKNESS",
+    "statement": "The land of material left between the two pivot pockets, into which the 17 mm hole is cut, shall be 6 mm thick.",
+    "measurement": "parameter:pivot_web_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The four through holes on the bar's centreline shall each be 8.2 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_POSITION_85",
+    "statement": "One of the four centreline through holes shall be located 85 mm from the pivot point.",
+    "measurement": "parameter:hole_position_85",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 85.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_POSITION_115",
+    "statement": "One of the four centreline through holes shall be located 115 mm from the pivot point.",
+    "measurement": "parameter:hole_position_115",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_POSITION_225",
+    "statement": "One of the four centreline through holes shall be located 225 mm from the pivot point.",
+    "measurement": "parameter:hole_position_225",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 225.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_POSITION_245",
+    "statement": "One of the four centreline through holes shall be located 245 mm from the pivot point (at the far end), and this same hole carries the 245 mm counterbore location.",
+    "measurement": "parameter:hole_position_245",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 245.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DIAMETER",
+    "statement": "The counterbores on the holes at 225 mm and 245 mm shall be 15 mm in diameter.",
+    "measurement": "parameter:counterbore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DEPTH",
+    "statement": "The counterbores on the holes at 225 mm and 245 mm shall be 5 mm deep, cut from the bottom face.",
+    "measurement": "parameter:counterbore_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be exactly four mounting through holes on the bar's centreline.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": ""
+    },
+    "rationale": "Four 8.2 mm holes at 85, 115, 225 and 245 mm from the pivot.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORED_HOLE_COUNT",
+    "statement": "Exactly two of the mounting holes (at 225 mm and 245 mm) shall carry a counterbore.",
+    "measurement": "feature_count:hole:counterbored",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Only the two holes nearest the far end are counterbored, per the brief.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "There shall be exactly one through hole at the pivot point, between the two pivot pockets.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_17MM",
+    "measurement": "holes_of_diameter:17",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 17 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_FAR_END_RADIUS",
+    "statement": "The far end is 'fully rounded' with a radius equal to half the bar width (18 mm), forming a tangent semicircular cap on the 36 mm wide bar.",
+    "rationale": "The brief gives only the far end's centre distance, not its radius; a semicircular cap matching the bar width is the standard reading of 'fully rounded end'.",
+    "consequence_if_wrong": "A different far-end radius changes the overall part length and the clearance around the 245 mm hole/counterbore.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PIVOT_BLEND",
+    "statement": "The transition between the 48 mm diameter pivot end and the 36 mm wide bar is a smooth tangent blend with no specific fillet radius called out, left to ordinary design practice.",
+    "rationale": "The brief does not dimension this transition at all.",
+    "consequence_if_wrong": "A sharp or poorly blended transition could create an unintended stress riser near the pivot, though strength is checked outside Forge.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLA_PROCESS",
+    "statement": "The part is produced as a solid (or near-solid) PLA FDM print with no specific infill percentage, layer orientation, or print quality called out beyond the material being PLA.",
+    "rationale": "The brief names the material (PLA) but gives no process parameters, and this is a wearable, load-transferring brace component even though its strength is verified outside Forge.",
+    "consequence_if_wrong": "Low infill or poor print orientation could make the physical part weaker than its geometry suggests, a real-world risk for a part worn on a person's arm.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PIVOT_BUSHING_FIT",
+    "statement": "The 17 mm through hole and the two 22.1 mm x 7 mm pockets are sized to receive an unspecified off-the-shelf pivot pin/bushing assembly with a standard clearance or press fit; no specific fit tolerance beyond the nominal sizes is assumed.",
+    "rationale": "The brief gives exact nominal sizes for the bore and pockets but does not identify the mating hardware or required fit class.",
+    "consequence_if_wrong": "If the actual bushing/pin requires a tighter or looser fit, the pivot joint could bind or be loose, affecting brace function.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_MOUNTING_FASTENER",
+    "statement": "The four 8.2 mm holes are clearance holes for M8 fasteners, and the 15 mm x 5 mm counterbores are sized for a standard M8 socket-head cap screw bearing surface.",
+    "rationale": "8.2 mm is the common clearance size for M8 bolts, and 15 mm/5 mm are typical M8 socket-head counterbore dimensions, but the brief never names the fastener.",
+    "consequence_if_wrong": "A different fastener size would not seat correctly in the counterbore or clearance holes.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_EDGE_TREATMENT",
+    "statement": "No chamfers or fillets are added to the bar's outer edges beyond the specified round ends; edges are left as-printed.",
+    "rationale": "The brief specifies no edge treatment for a part that will be worn against or near skin/clothing.",
+    "consequence_if_wrong": "Sharp printed edges could be uncomfortable or catch on clothing, though this is a comfort issue rather than a functional one.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ]
+ }
+}

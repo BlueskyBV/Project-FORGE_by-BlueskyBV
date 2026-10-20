@@ -1,0 +1,280 @@
+{
+ "brief": "An aluminium mounting plate 70 mm long, 50 mm wide and 4 mm thick. Four 4 mm holes pass through the plate, one near each corner, with their centres on a 56 mm by 36 mm rectangle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An aluminium mounting plate with dimensions 70 mm x 50 mm x 4 mm, four 4 mm holes near each corner, and no load case.",
+  "part_kind": "plate",
+  "stated": [
+   "The plate is made of aluminium.",
+   "The plate is 70 mm long.",
+   "The plate is 50 mm wide.",
+   "The plate is 4 mm thick.",
+   "There are four 4 mm holes near each corner.",
+   "The holes are 56 mm by 36 mm in size."
+  ],
+  "implied": [
+   "The holes are equally spaced.",
+   "The holes are aligned with the corners of the plate."
+  ],
+  "unstated": [
+   "The plate carries no load."
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_PLATE_LENGTH",
+    "statement": "The plate is 70 mm long.",
+    "measurement": "parameter:plate_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_WIDTH",
+    "statement": "The plate is 50 mm wide.",
+    "measurement": "parameter:plate_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_THICKNESS",
+    "statement": "The plate is 4 mm thick.",
+    "measurement": "parameter:plate_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The holes are 4 mm in diameter.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_SPACING",
+    "statement": "The holes are equally spaced.",
+    "measurement": "parameter:hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 56.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DEPTH",
+    "statement": "The holes are 36 mm in depth.",
+    "measurement": "parameter:hole_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_4MM: the brief states 4 open holes of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ]
+ },
+ "answer": {
+  "rationale": "The brief states that this part carries no load, so there was nothing to be uncertain about",
+  "document": {
+   "name": "Aluminium Plate with Holes",
+   "components": [
+    {
+     "id": "plate",
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "hole_1",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 - hole_diameter / 2",
+          "plate_width / 2 - hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_2",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 + hole_diameter / 2",
+          "plate_width / 2 - hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_3",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 - hole_diameter / 2",
+          "plate_width / 2 + hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_4",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 + hole_diameter / 2",
+          "plate_width / 2 + hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20260930T172446: the designer answer refused twice."
+}

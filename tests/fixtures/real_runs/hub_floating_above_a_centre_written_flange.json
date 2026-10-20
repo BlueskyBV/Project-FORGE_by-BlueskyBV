@@ -1,0 +1,399 @@
+{
+ "brief": "An aluminium pulley hub. A flange disc 50 mm across and 6 mm thick, with a round hub 25 mm across and 15 mm tall standing on top of it, centred. A 10 mm bore runs through both the flange and the hub. Three 5 mm holes pass through the flange only, equally spaced on a 38 mm circle. It carries no load, so there is no load case.",
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_FLANGE_DIAMETER",
+    "statement": "The flange disc's diameter is 50 mm.",
+    "measurement": "parameter:flange_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLANGE_THICKNESS",
+    "statement": "The flange disc's thickness is 6 mm.",
+    "measurement": "parameter:flange_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HUB_DIAMETER",
+    "statement": "The round hub's diameter is 25 mm.",
+    "measurement": "parameter:hub_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HUB_HEIGHT",
+    "statement": "The round hub's height is 15 mm.",
+    "measurement": "parameter:hub_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_DIAMETER",
+    "statement": "The bore's diameter is 10 mm.",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The diameter of each hole is 5 mm.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_SPACING",
+    "statement": "The holes are equally spaced on a 38 mm circle.",
+    "measurement": "parameter:hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 38.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "There are three mounting holes.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "statement": "The part shall be 50 mm across X.",
+    "source": "user",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "statement": "The part shall be 50 mm across Y.",
+    "source": "user",
+    "rationale": "The brief describes the part as square or round at its largest stated size, which states both extents.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_10MM",
+    "measurement": "holes_of_diameter:10",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 10 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": ""
+    },
+    "statement": "The part shall have 3 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_BOUNDING_BOX_X and REQ_BOUNDING_BOX_Y at 50 mm: the brief calls the part square or round at its largest stated size, and nothing in the requirement set measured the part's size at all. A dimension parameter is declared just as truthfully by a plate 30 by 12 as by a plate 30 by 30, and one was: sixteen claims, every one green, and the plate was 30 by 12.",
+   "added REQ_ROUND: the brief calls this part round, and two equal bounding boxes do not say a part is round -- a 25 mm square block has a 25 by 25 box exactly as a 25 mm cylinder does. One run asked for a shaft collar and got a square block with both extent claims passing. This measures the built surface: 1 is a cylinder, a square is 0.707.",
+   "added REQ_HOLES_10MM: the brief states 1 open hole of 10 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_5MM: the brief states 3 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ]
+ },
+ "intent": {
+  "summary": "An aluminium pulley hub with a flange disc and a round hub, both centered on a 50 mm diameter flange disc. The hub has a 10 mm bore and three 5 mm holes through the flange only, equally spaced on a 38 mm circle. It carries no load.",
+  "part_kind": "pulley hub",
+  "stated": [
+   "A flange disc 50 mm across and 6 mm thick",
+   "A round hub 25 mm across and 15 mm tall standing on top of it",
+   "A 10 mm bore runs through both the flange and the hub",
+   "Three 5 mm holes pass through the flange only, equally spaced on a 38 mm circle"
+  ],
+  "implied": [
+   "The pulley hub is made of aluminium"
+  ],
+  "unstated": [
+   "The magnitude and direction of the load on the pulley hub"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "answer": {
+  "rationale": "reconstructed from the run's notes",
+  "document": {
+   "name": "Pulley hub",
+   "components": [
+    {
+     "id": "pulley_hub",
+     "material": "aluminium",
+     "features": [
+      {
+       "id": "flange_disc",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "flange_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "flange_thickness",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "round_hub",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "hub_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "hub_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness + hub_height"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "role": "bore",
+       "parameters": {
+        "diameter": {
+         "expression": "bore_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness + hub_height"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "inputs": [
+        "round_hub"
+       ]
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "role": "mounting",
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "role": "mounting",
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_3",
+       "kind": "hole",
+       "role": "mounting",
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "flange_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Reconstructed: run 20260929T214308 kept only the settled document; this is the answer its notes describe."
+}

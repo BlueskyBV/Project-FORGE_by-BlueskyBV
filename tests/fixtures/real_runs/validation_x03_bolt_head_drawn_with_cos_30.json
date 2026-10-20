@@ -1,0 +1,255 @@
+{
+ "brief": "An M8 steel bolt 40 mm long with a standard hex head. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A standard M8x40 steel hex bolt, stated by the user to carry no load.",
+  "part_kind": "fastener (hex head bolt)",
+  "stated": [
+   "M8 thread size",
+   "Steel material",
+   "40 mm length",
+   "Standard hex head",
+   "Carries no load, no load case"
+  ],
+  "implied": [
+   "Being a 'standard hex head' implies conformance to a common standard (e.g. ISO 4014/4017) for head geometry and drive, though the specific standard is not named",
+   "Being an M8 bolt implies standard ISO metric thread pitch, though coarse vs fine pitch is not specified"
+  ],
+  "unstated": [
+   "Steel grade/property class (e.g. 4.8, 8.8, 10.9) -- affects strength even if nominally unloaded",
+   "Thread pitch (coarse vs fine)",
+   "Thread length / whether fully or partially threaded",
+   "Surface finish or plating (e.g. zinc, black oxide, bare)",
+   "Head standard reference (e.g. ISO 4014, ISO 4017, DIN 931/933)",
+   "Tolerance class",
+   "Intended mating thread/application context (even if unloaded, context like vibration, corrosion exposure, temperature is unspecified)",
+   "Point style/chamfer at thread end",
+   "What 'no load' means precisely -- e.g. whether it experiences incidental handling, preload from tightening torque, or truly zero force in service"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "The claim 'carries no load, no load case' is an assumption asserted by the user without justification; if the bolt is later found to carry any structural, shear, or preload force (common for bolts even in 'non-structural' roles), the lack of a load case would leave it unverified",
+   "No context given on the assembly or environment the bolt is used in, so it's unverifiable whether this is truly a zero-risk fastener or part of a larger load-bearing or safety-relevant assembly"
+  ],
+  "suggested_name": "M8x40 Hex Bolt",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The overall length of the finished bolt, measured along its axis including the head, shall be at least 40 mm (the stated shank length, with the head adding further height on top).",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states the bolt is 40 mm long; this is checked against the built solid's overall axial extent, which must be at least that length since the head sits atop the shank.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOLT_LENGTH",
+    "statement": "The bolt's threaded shank length (under the head to the tip) shall be 40 mm.",
+    "measurement": "parameter:bolt_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief explicitly states a 40 mm length for the M8 bolt.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_STEEL_GRADE",
+    "statement": "The bolt is made of a generic structural steel of unspecified property class (treated as a conventional grade such as 8.8) since no grade is stated.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "A material field must be populated; the brief names only 'steel' with no property class.",
+    "consequence_if_wrong": "If the bolt is later subjected to load, an incorrect assumed grade could misrepresent its real strength, though the brief states no load case applies."
+   },
+   {
+    "id": "ASM_THREAD_PITCH",
+    "statement": "The thread is standard ISO metric coarse pitch for M8 (1.25 mm pitch), as no fine-pitch variant is called out.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Coarse pitch is the default and overwhelmingly common choice for M8 fasteners unless otherwise specified.",
+    "consequence_if_wrong": "A fine-pitch mating thread would not accept the bolt, but this has no bearing on the stated geometry since no mating part is described."
+   },
+   {
+    "id": "ASM_HEAD_STANDARD",
+    "statement": "The hex head follows a conventional standard head geometry (e.g. ISO 4014/4017) for an M8 bolt.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief calls for a 'standard hex head' without naming a specific standard.",
+    "consequence_if_wrong": "A non-conforming head would not fit standard tooling or sockets, but this is a low-consequence modelling choice absent further constraint."
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "The bolt is assumed to have a plain, uncoated/unplated finish since none is specified.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "No finish or plating is mentioned in the brief.",
+    "consequence_if_wrong": "Corrosion resistance may be inadequate for the actual service environment, but no environment is described."
+   },
+   {
+    "id": "ASM_THREAD_EXTENT",
+    "statement": "The bolt is assumed to be threaded along its standard thread length per convention for a 40 mm M8 bolt (not necessarily fully threaded).",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief does not state whether the bolt is fully or partially threaded.",
+    "consequence_if_wrong": "A different threaded length would change where the bolt can engage a nut or tapped hole, but this is not functionally constrained by the no-load brief."
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "M8x40 Hex Bolt",
+   "description": "A simplified M8 hex head bolt, 40 mm shank length, modelled as a hex head union with a plain cylindrical shank (external thread geometry not modelled, per ASM_THREAD_EXTENT/ASM_THREAD_PITCH).",
+   "components": [
+    {
+     "id": "bolt",
+     "name": "M8x40 Hex Bolt",
+     "parameters": [
+      {
+       "id": "thread_diameter",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       },
+       "description": "Nominal major diameter of the M8 thread."
+      },
+      {
+       "id": "bolt_length",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Shank length, from under the head to the tip, as stated in the brief."
+      },
+      {
+       "id": "head_across_flats",
+       "value": {
+        "magnitude": 13.0,
+        "unit": "mm"
+       },
+       "description": "Wrench size (across-flats) for a standard M8 hex bolt head, per ASM_HEAD_STANDARD (e.g. ISO 4014/4017)."
+      },
+      {
+       "id": "head_diameter",
+       "expression": "head_across_flats / cos(30)",
+       "unit": "mm",
+       "description": "Circumscribed (corner-to-corner) diameter of the hex head, derived from the across-flats dimension."
+      },
+      {
+       "id": "head_height",
+       "value": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "description": "Head height, standard value for an M8 hex bolt per ASM_HEAD_STANDARD."
+      }
+     ],
+     "features": [
+      {
+       "id": "head_plane",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XY",
+        "offset": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "head_profile",
+       "kind": "profile_polygon",
+       "inputs": [
+        "head_plane"
+       ],
+       "parameters": {
+        "circumscribed_diameter": {
+         "expression": "head_diameter",
+         "unit": "mm"
+        },
+        "sides": 6
+       }
+      },
+      {
+       "id": "head_solid",
+       "kind": "extrude",
+       "inputs": [
+        "head_profile"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "head_height",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       }
+      },
+      {
+       "id": "shank",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "thread_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "bolt_length",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "head_height"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "head_solid",
+        "shank"
+       ]
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "thread_interface",
+       "type": "shaft",
+       "geometry": "shank.lateral",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "The M8 threaded shank, which mates with a nut or tapped hole. Thread geometry itself is not cut; this is a cosmetic/simplified shaft representation per ASM_THREAD_PITCH and ASM_THREAD_EXTENT."
+      }
+     ],
+     "material": "steel_1018_cd"
+    }
+   ]
+  },
+  "rationale": "The bolt is built as two primitives unioned: a hex head (profile_polygon on a datum plane, extruded by head_height) sitting at the base, and a plain cylindrical shank (diameter thread_diameter, length bolt_length) standing on top of it at z = head_height, so the solid's total axial extent is head_height + bolt_length, exceeding the stated 40 mm shank length as required. head_diameter is derived from the standard across-flats dimension so the hex geometry stays consistent if head_across_flats changes; no thread or load-bearing quantity is modelled or invented, consistent with the assumptions already recorded for grade, pitch, standard and finish."
+ },
+ "run": "validation X03, 18 October 2026",
+ "note": "An M8 bolt whose hex head was drawn `head_across_flats / cos(30)`: cos of 30 radians is 0.154, so the head came out 84 mm across its corners instead of 15, and every claim passed -- none was about the head. Released."
+}

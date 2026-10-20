@@ -1,0 +1,172 @@
+{
+ "brief": "A 30 mm cube in PLA, hollow on the inside with an open top. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 30 mm cube in PLA, hollow on the inside with an open top. It carries no load, so there is no load case.",
+  "part_kind": "cube",
+  "stated": [
+   "A 30 mm cube in PLA",
+   "hollow on the inside",
+   "open top",
+   "carries no load",
+   "no load case"
+  ],
+  "implied": [
+   "the cube is a solid shape",
+   "the cube is a 30 mm cube",
+   "the cube is made of PLA",
+   "the cube has a hollow interior",
+   "the cube has an open top",
+   "the cube is not load-bearing"
+  ],
+  "unstated": [
+   "the size of the cube",
+   "the material of the cube",
+   "the shape of the cube",
+   "the weight of the cube",
+   "the dimensions of the cube",
+   "the purpose of the cube",
+   "the intended use of the cube",
+   "the intended function of the cube",
+   "the intended application of the cube",
+   "the intended environment of the cube"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_SIDE_LENGTH",
+    "statement": "The side length of the cube shall be 30 mm.",
+    "measurement": "parameter:side_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "replay",
+  "document": {
+   "name": "30 mm Cube",
+   "components": [
+    {
+     "id": "cube",
+     "features": [
+      {
+       "id": "cube",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "side_length"
+         ],
+         "unit": "mm"
+        }
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "side_length",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "material": "pla_fdm"
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "3ef1697d-bef8-51fc-8554-7fc74c062bed",
+   "project_id": "df6282f6-d805-5c2b-8162-374bcc3bff06",
+   "risk_class": "critical",
+   "requirements": [
+    {
+     "id": "REQ_SIDE_LENGTH",
+     "statement": "The side length of the cube shall be 30 mm.",
+     "measurement": "parameter:side_length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_X",
+     "statement": "The cube shall be 30 mm on a side, along X.",
+     "measurement": "bounding_box_x",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_Y",
+     "statement": "The cube shall be 30 mm on a side, along Y.",
+     "measurement": "bounding_box_y",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_Z",
+     "statement": "The cube shall be 30 mm on a side, along Z.",
+     "measurement": "bounding_box_z",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20261003T112602: completed and released a SOLID 30 mm cube for 'hollow on the inside with an open top' -- no wall was stated, so nothing measured the hollow or the opening."
+}

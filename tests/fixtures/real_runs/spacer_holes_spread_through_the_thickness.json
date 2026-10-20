@@ -1,0 +1,377 @@
+{
+ "answer": {
+  "document": {
+   "components": [
+    {
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "centered": true,
+        "size": {
+         "unit": "mm",
+         "vector": [
+          "plate_width",
+          "plate_height",
+          "plate_thickness"
+         ]
+        }
+       }
+      },
+      {
+       "id": "post",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "post_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "post_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "body",
+       "inputs": [
+        "base",
+        "post"
+       ],
+       "kind": "union",
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 1.5,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "mounting_hole_distance / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          0,
+          0,
+          "-mounting_hole_distance / 2"
+         ]
+        }
+       }
+      }
+     ],
+     "id": "spacer"
+    }
+   ],
+   "name": "Spacer"
+  },
+  "rationale": "The brief states that this part carries no load, so there is no load case to take a margin against and nothing could have computed one"
+ },
+ "brief": "A 3D-printed PLA spacer block. The base is a 40 mm by 25 mm plate 5 mm thick. A 10 mm diameter post 8 mm tall stands in the middle of it, with a 1.5 mm fillet where the post meets the plate. A 4 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 30 mm apart. It must weigh no more than 10 g. It carries no load - it is a printed spacer, so there is no load case.",
+ "intent": {
+  "implied": [
+   "The post has a 1.5 mm fillet where it meets the plate."
+  ],
+  "notes": [],
+  "out_of_scope": [],
+  "part_kind": "Spacer",
+  "risk_signals": [],
+  "stated": [
+   "The base is a 40 mm by 25 mm plate 5 mm thick.",
+   "A 10 mm diameter post 8 mm tall stands in the middle of it.",
+   "A 4 mm hole runs all the way through the post and the plate.",
+   "Two 3 mm mounting holes pass all the way through the plate, 30 mm apart.",
+   "It must weigh no more than 10 g.",
+   "It carries no load - it is a printed spacer, so there is no load case."
+  ],
+  "suggested_name": "",
+  "summary": "A 3D-printed PLA spacer block with a 40 mm by 25 mm plate 5 mm thick, a 10 mm diameter post 8 mm tall, and two 3 mm mounting holes 30 mm apart.",
+  "unstated": [
+   "The weight of the spacer block."
+  ]
+ },
+ "note": "requirements: the record as the run accepted it, Forge's additions included -- re-reading it adds and drops nothing. The answer is the designer's, returned identically on both attempts: the mounting holes drilled along x and spread apart by the spacing along z, the plate's thickness.",
+ "requirements": {
+  "assumptions": [],
+  "notes": [
+   "dropped REQ_SF_BEARING: the brief states this part carries no load, so there is no load case to take a margin against and nothing could have computed one",
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "REQ_MOUNTING_HOLE_COUNT counted `mounting` 2 as a bound; the brief states the count -- \"two 3 mm mounting holes pass all the way through the plate, 30 mm apart\" -- so it is exactly that many.",
+   "added REQ_MASS at_most 10 g: the brief states it as a limit and the whole-part mass slot was left empty, so nothing would have checked the one number a printed part is most often judged on",
+   "dropped `UNKNOWN_WEIGHT`: it asks what the part weighs, which is not something anyone supplies -- it is measured on the built part, against the mass requirement already in the record",
+   "added REQ_HOLES_4MM: the brief states 1 open hole of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_3MM: the brief states 2 open holes of 3 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_WIDTH",
+    "measurement": "parameter:plate_width",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The base is a 40 mm by 25 mm plate 5 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_HEIGHT",
+    "measurement": "parameter:plate_height",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The base is a 40 mm by 25 mm plate 5 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_THICKNESS",
+    "measurement": "parameter:plate_thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The base is a 40 mm by 25 mm plate 5 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_POST_DIAMETER",
+    "measurement": "parameter:post_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "A 10 mm diameter post 8 mm tall stands in the middle of it.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_POST_HEIGHT",
+    "measurement": "parameter:post_height",
+    "source": "user",
+    "state": "accepted",
+    "statement": "A 10 mm diameter post 8 mm tall stands in the middle of it.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_FILLET_THICKNESS",
+    "measurement": "parameter:fillet_thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "A 1.5 mm fillet where the post meets the plate.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 1.5,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLE_DIAMETER",
+    "measurement": "parameter:hole_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "A 4 mm hole runs all the way through the post and the plate.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "measurement": "parameter:mounting_hole_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "Two 3 mm mounting holes pass all the way through the plate, 30 mm apart.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_DISTANCE",
+    "measurement": "parameter:mounting_hole_distance",
+    "source": "user",
+    "state": "accepted",
+    "statement": "Two 3 mm mounting holes pass all the way through the plate, 30 mm apart.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "measurement": "feature_count:hole:mounting",
+    "source": "user",
+    "state": "accepted",
+    "statement": "Two 3 mm mounting holes pass all the way through the plate, 30 mm apart.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "at_most",
+    "id": "REQ_MASS",
+    "measurement": "mass",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The finished part shall weigh no more than 10 g.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "g"
+    },
+    "type": "performance",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "rationale": "The brief sizes and counts these holes.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall have 1 open hole of 4 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLES_3MM",
+    "measurement": "holes_of_diameter:3",
+    "rationale": "The brief sizes and counts these holes.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall have 2 open holes of 3 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "critical",
+  "unknowns": []
+ },
+ "run": "20260924T104502-a-3d-printed-pla-spacer-block-the-base-i",
+ "which": "designer_rejected"
+}

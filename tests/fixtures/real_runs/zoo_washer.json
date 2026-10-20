@@ -1,0 +1,124 @@
+{
+ "brief": "A steel washer, 20 mm outside diameter, with an 8.4 mm hole, 1.6 mm thick. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel washer, 20 mm outside diameter, with an 8.4 mm hole, 1.6 mm thick. It carries no load, so there is no load case.",
+  "part_kind": "washer",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_OD",
+    "statement": "REQ_OD",
+    "measurement": "parameter:outer_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.4,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1.6,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "washer",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 8.4,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 1.6,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "disc",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "disc"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

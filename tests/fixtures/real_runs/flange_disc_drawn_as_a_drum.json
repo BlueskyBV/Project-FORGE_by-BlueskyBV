@@ -1,0 +1,253 @@
+{
+ "brief": "A steel flange disc 60 mm across and 8 mm thick. A 20 mm bore runs all the way through the centre. Two 6 mm bolt holes pass all the way through the disc, 40 mm apart. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel flange disc with a 60 mm diameter and 8 mm thickness. It has a 20 mm bore running through the center and two 6 mm bolt holes, 40 mm apart. The disc carries no load.",
+  "part_kind": "flange disc",
+  "stated": [
+   "A steel flange disc 60 mm across and 8 mm thick.",
+   "A 20 mm bore runs all the way through the center.",
+   "Two 6 mm bolt holes pass all the way through the disc, 40 mm apart."
+  ],
+  "implied": [
+   "The disc has a flat mounting face."
+  ],
+  "unstated": [
+   "The magnitude and direction of the load on the arm."
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "The disc carries no load."
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_DIAMETER",
+    "statement": "The diameter of the flange disc is 60 mm.",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the flange disc is 8 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_DIAMETER",
+    "statement": "The bore diameter of the flange disc is 20 mm.",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The diameter of each bolt hole is 6 mm.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DISTANCE",
+    "statement": "The distance between the two bolt holes is 40 mm.",
+    "measurement": "parameter:hole_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "Steel Flange Disc",
+   "components": [
+    {
+     "id": "flange_disc",
+     "features": [
+      {
+       "id": "disc",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "length",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "role": "bore",
+       "inputs": [
+        "disc"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "bore_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_1",
+       "kind": "hole",
+       "inputs": [
+        "bore"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_distance / 2",
+          0,
+          "length / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_2",
+       "kind": "hole",
+       "inputs": [
+        "hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_distance / 2",
+          0,
+          "length / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore_diameter",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261004T154944, from the regression suite: the flange disc 60 mm across and 8 mm thick. The model drew its one cylinder `length` tall, declared 60, and declared `thickness` 8 reading nothing: a 60 mm drum. Refused twice for `thickness`, released to the repair loop, which removed `thickness` and stopped. Forge's holes repairs are applied to the stored document already; the declared parameters are the model's, with `thickness` restored at index 4 as the analyst's patch shows."
+}

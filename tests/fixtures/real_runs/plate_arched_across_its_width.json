@@ -1,0 +1,415 @@
+{
+ "brief": "Create a curved mounting plate, 120 mm long, 75 mm wide and 6 mm thick. Curve the plate uniformly across its 75 mm width with an inside radius of 60 mm, with the curvature center directly below the longitudinal centerline. Round the four corners with a 12 mm radius. Add two 28 \u00d7 5 mm holes, centered across the width, with their centers 22 mm from each longitudinal end. Add two 8.2 mm mounting holes on the longitudinal centerline near the distal end, spaced 30 mm center-to-center, with the first hole center 18 mm from the distal edge.",
+ "intent": {
+  "summary": "Create a curved mounting plate, 120 mm long, 75 mm wide, and 6 mm thick. Curve the plate uniformly across its 75 mm width with an inside radius of 60 mm, with the curvature center directly below the longitudinal centerline. Round the four corners with a 12 mm radius. Add two 28 \u00d7 5 mm holes, centered across the width, with their centers 22 mm from each longitudinal end. Add two 8.2 mm mounting holes on the longitudinal centerline near the distal end, spaced 30 mm center-to-center, with the first hole center 18 mm from the distal edge.",
+  "part_kind": "plate",
+  "stated": [
+   "length: 120 mm",
+   "width: 75 mm",
+   "thickness: 6 mm",
+   "curvature: uniform across 75 mm width with an inside radius of 60 mm",
+   "curvature center: directly below the longitudinal centerline",
+   "corner rounding: 12 mm radius",
+   "holes: two 28 \u00d7 5 mm holes, centered across the width, with their centers 22 mm from each longitudinal end",
+   "holes: two 8.2 mm mounting holes on the longitudinal centerline near the distal end, spaced 30 mm center-to-center, with the first hole center 18 mm from the distal edge"
+  ],
+  "implied": [
+   "plate material: unspecified",
+   "plate surface finish: unspecified",
+   "plate weight: unspecified",
+   "plate weight distribution: unspecified",
+   "plate center of gravity: unspecified",
+   "plate center of mass: unspecified",
+   "plate stability: unspecified",
+   "plate rigidity: unspecified",
+   "plate fatigue resistance: unspecified",
+   "plate corrosion resistance: unspecified",
+   "plate thermal conductivity: unspecified",
+   "plate thermal expansion: unspecified",
+   "plate thermal shock resistance: unspecified",
+   "plate electrical conductivity: unspecified",
+   "plate magnetic permeability: unspecified",
+   "plate thermal insulation: unspecified"
+  ],
+  "unstated": [
+   "plate load capacity: unspecified",
+   "plate load distribution: unspecified",
+   "plate load orientation: unspecified",
+   "plate load type: unspecified",
+   "plate load magnitude: unspecified",
+   "plate load direction: unspecified",
+   "plate load duration: unspecified",
+   "plate load frequency: unspecified",
+   "plate load impact: unspecified",
+   "plate load impact location: unspecified",
+   "plate load impact severity: unspecified",
+   "plate load impact duration: unspecified",
+   "plate load impact frequency: unspecified",
+   "plate load impact type: unspecified",
+   "plate load impact magnitude: unspecified",
+   "plate load impact direction: unspecified"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "plate load capacity: unspecified",
+   "plate load distribution: unspecified",
+   "plate load orientation: unspecified",
+   "plate load type: unspecified",
+   "plate load magnitude: unspecified",
+   "plate load direction: unspecified",
+   "plate load duration: unspecified",
+   "plate load frequency: unspecified",
+   "plate load impact: unspecified",
+   "plate load impact location: unspecified",
+   "plate load impact severity: unspecified",
+   "plate load impact duration: unspecified",
+   "plate load impact frequency: unspecified",
+   "plate load impact type: unspecified",
+   "plate load impact magnitude: unspecified",
+   "plate load impact direction: unspecified"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": {
+   "dimensions": [
+    {
+     "parameter": "length",
+     "statement": "The length of the plate shall be 120 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 120.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "width",
+     "statement": "The width of the plate shall be 75 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 75.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "thickness",
+     "statement": "The thickness of the plate shall be 6 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 6.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "curvature_radius",
+     "statement": "The inside radius of the curvature shall be 60 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 60.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "corner_radius",
+     "statement": "The corner rounding radius shall be 12 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     }
+    }
+   ],
+   "counts": [
+    {
+     "feature_kind": "hole",
+     "tag": "mounting",
+     "statement": "The plate shall have two mounting holes.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 2,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "hole",
+     "tag": "centered",
+     "statement": "The mounting holes shall be centered across the width of the plate.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "hole",
+     "tag": "centered",
+     "statement": "The mounting holes shall be 22 mm from each longitudinal end.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 22.0,
+      "unit": "mm"
+     }
+    }
+   ],
+   "safety_factors": [
+    {
+     "against": "bending",
+     "statement": "The bending stress at the plate shall keep a safety factor of at least 2 against yield.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": ""
+     }
+    }
+   ]
+  },
+  "assumptions": [
+   {
+    "id": "ASM_PLATE_MATERIAL",
+    "statement": "The plate material shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_SURFACE_FINISH",
+    "statement": "The plate surface finish shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_WEIGHT",
+    "statement": "The plate weight shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_WEIGHT_DISTRIBUTION",
+    "statement": "The plate weight distribution shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_CENTER_OF_GRAVITY",
+    "statement": "The plate center of gravity shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_CENTER_OF_MASS",
+    "statement": "The plate center of mass shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_STABILITY",
+    "statement": "The plate stability shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_RIGIDITY",
+    "statement": "The plate rigidity shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_FATIGUE_RESISTANCE",
+    "statement": "The plate fatigue resistance shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_CORROSION_RESISTANCE",
+    "statement": "The plate corrosion resistance shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_THERMAL_CONDUCTIVITY",
+    "statement": "The plate thermal conductivity shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_THERMAL_EXPANSION",
+    "statement": "The plate thermal expansion shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_THERMAL_SHOCK_RESISTANCE",
+    "statement": "The plate thermal shock resistance shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_ELECTRICAL_CONDUCTIVITY",
+    "statement": "The plate electrical conductivity shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_MAGNETIC_PERMEABILITY",
+    "statement": "The plate magnetic permeability shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLATE_THERMAL_INSULATION",
+    "statement": "The plate thermal insulation shall be unspecified.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "plate",
+   "components": [
+    {
+     "id": "mounting_plate",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 120,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 75,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "corner_radius",
+       "value": {
+        "magnitude": 12,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "curvature_radius",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_offset",
+       "value": {
+        "magnitude": 18,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "tags": [
+        "mounting"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "length / 2 - hole_offset",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "inputs": [
+        "mounting_hole_1"
+       ],
+       "tags": [
+        "mounting"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "length / 2 - hole_offset - 30",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261005T180120's brief. The requirements are the RE's rejected answer, now parsed; the design is a plausible flat answer: a box plate and the two 8.2 mm holes, the second written 'length / 2 - hole_offset - 30'."
+}

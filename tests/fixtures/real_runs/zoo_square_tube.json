@@ -1,0 +1,122 @@
+{
+ "brief": "A square aluminium tube 30 mm across, 100 mm long, open at both ends, with 2 mm walls. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A square aluminium tube 30 mm across, 100 mm long, open at both ends, with 2 mm walls. It carries no load, so there is no load case.",
+  "part_kind": "square_tube",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_A",
+    "statement": "REQ_A",
+    "measurement": "parameter:across",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 100,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:wall",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "square_tube",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "across",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 100,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "wall",
+       "value": {
+        "magnitude": 2,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "across",
+          "across"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "space",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length + 2 * wall",
+          "across - 2 * wall",
+          "across - 2 * wall"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "tube",
+       "kind": "subtract",
+       "inputs": [
+        "body",
+        "space"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

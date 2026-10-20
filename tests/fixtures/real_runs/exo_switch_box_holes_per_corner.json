@@ -1,0 +1,803 @@
+{
+ "brief": "A PLA open-top box, 80 mm long, 50 mm wide and 32 mm tall on the outside, with 2.5 mm walls and a 3 mm thick floor. The top is completely open. In each of the four inside corners, a square post 7 mm by 7 mm stands from the floor up to the top edge, tucked into the corner, with a 2.8 mm hole 12 mm deep down into the middle of its top. One 8 mm hole goes through one of the 50 mm end walls, centred across it and 12 mm above the bottom of the box. Its strength is checked outside Forge, so there is no load case.",
+ "run": "20261019T231709-a-pla-open-top-box-80-mm-long-50-mm-wide",
+ "note": "Blocked on REQ_HOLES_2_8MM, which Forge added: 'In each of the four inside corners, a square post ... with a 2.8 mm hole 12 mm deep down into the middle of its top' was counted as one 2.8 mm hole. The design had the four the brief asks for; the analyst rightly refused to delete three, and a redesign was spent ($1.40 in all). The document is the designer's first answer; the requirements the run's record, with Forge's own count in it. Forge's own hole counts (REQ_HOLES_*) are taken out of the record, as the requirements engineer answered it.",
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The box shall be 80 mm long overall (outside dimension, X).",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states outside length of 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The box shall be 50 mm wide overall (outside dimension, Y); this is also the width of the 50 mm end walls through which the 8 mm hole passes.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states outside width of 50 mm, and the end wall is described by this same figure.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The box shall be 32 mm tall overall (outside dimension, Z).",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 32.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states outside height of 32 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The box side walls shall be 2.5 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 2.5 mm walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The box floor shall be 3 mm thick.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 3 mm thick floor.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_CROSS_SECTION",
+    "statement": "Each of the four corner posts shall have a square 7 mm by 7 mm cross-section.",
+    "measurement": "parameter:post_cross_section",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 7.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the post is 7 mm by 7 mm (same figure given twice for the same square cross-section).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_HOLE_DIAMETER",
+    "statement": "Each corner post shall have a 2.8 mm diameter hole down into its top.",
+    "measurement": "parameter:post_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.8,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 2.8 mm hole in each post.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_HOLE_DEPTH",
+    "statement": "Each post's hole shall be 12 mm deep.",
+    "measurement": "parameter:post_hole_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the post hole is 12 mm deep.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_END_WALL_HOLE_DIAMETER",
+    "statement": "The hole through the end wall shall be 8 mm in diameter.",
+    "measurement": "parameter:end_wall_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states an 8 mm hole through one 50 mm end wall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_END_WALL_HOLE_HEIGHT",
+    "statement": "The end-wall hole's centre shall be 12 mm above the bottom of the box.",
+    "measurement": "parameter:end_wall_hole_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the hole is 12 mm above the bottom of the box.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_POST_BOX_COUNT",
+    "statement": "There shall be exactly four square corner posts, one tucked into each inside corner.",
+    "measurement": "feature_count:box:mounting_post",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief states a post in each of the four inside corners.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_HOLE_HOLE_COUNT",
+    "statement": "There shall be exactly four post holes, one per corner post.",
+    "measurement": "feature_count:hole:post_hole",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief states each post has a hole down into its top.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_END_WALL_HOLE_HOLE_COUNT",
+    "statement": "There shall be exactly one hole through one 50 mm end wall.",
+    "measurement": "feature_count:hole:end_wall_hole",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief states one 8 mm hole goes through one of the end walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPEN_TOP",
+    "statement": "The top shall be open, in to the floor: 29 mm deep at the middle.",
+    "measurement": "opening_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 29.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL",
+    "statement": "The part is modelled in PLA as its declared material, with no additional material requirement beyond that stated.",
+    "rationale": "Brief explicitly names PLA.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_POST_HOLE_BLIND",
+    "statement": "The 2.8 mm post holes are blind holes (not through-holes), drilled 12 mm deep into the post's top face, and are plain pilot holes with no thread form modelled.",
+    "rationale": "Brief describes the hole as going 'down into the middle of its top' to a stated depth, with no mention of exiting the bottom or of thread features.",
+    "consequence_if_wrong": "If the holes are meant to be threaded or to pass through the post, fastening into them would not work as intended.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_END_WALL_HOLE_THROUGH",
+    "statement": "The 8 mm end-wall hole is a simple cylindrical through-hole with no fit tolerance, chamfer, or thread, centred across the wall's 50 mm width and 12 mm up from the box's outer bottom.",
+    "rationale": "Brief gives diameter and position but no indication of mating part, fit class, or finish feature.",
+    "consequence_if_wrong": "If a specific clearance fit, thread, or chamfer were required for whatever passes through, the hole as modelled might not mate correctly.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_POSTS_FLOOR_TO_TOP",
+    "statement": "Each post stands from the top of the floor (interior) up to flush with the top edge of the walls, giving a post height equal to the box's outside height (32 mm) less the floor thickness (3 mm), i.e. 29 mm.",
+    "rationale": "Brief states posts run 'from the floor up to the top edge'.",
+    "consequence_if_wrong": "A different post height would change where the top of each post (and its hole) sits relative to the open top.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_NO_FILLETS_TOLERANCES",
+    "statement": "No fillets, chamfers, draft angles or special tolerances are applied beyond standard FDM practice; all edges are modelled sharp at nominal dimensions.",
+    "rationale": "Brief gives no fillet, chamfer or tolerance callouts.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_POST_HOLE_THREAD",
+    "question": "Are the 2.8 mm post holes intended to be self-tapping pilot holes for a specific screw size (e.g. M3), or plain clearance/blind holes with no fastening function?",
+    "why_it_matters": "Affects whether any thread-forming feature or callout should be added, though it does not change the stated hole geometry.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "Plain pilot hole for a self-tapping M3 screw, no thread feature modelled"
+   },
+   {
+    "id": "UNK_END_WALL_HOLE_PURPOSE",
+    "question": "What is the 8 mm end-wall hole for (cable pass-through, fastener, connector), and does it need a specific fit tolerance or chamfer?",
+    "why_it_matters": "Does not change the stated diameter/position but could require additional features (chamfer, fit class) not currently specified.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "Plain through-hole, nominal 8 mm, no chamfer"
+   }
+  ],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_2_8MM: the brief states 1 open hole of 2.8 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_8MM: the brief states 1 open hole of 8 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OPEN_TOP at 29 mm deep: the brief describes a container -- 2.5 mm walls, a 3 mm floor, open on the top -- and a solid block, a sealed hollow box and the part asked for all have the same bounding box. Each is measured on the built part through its middle, from the side it is open on."
+  ]
+ },
+ "document": {
+  "name": "Open-top PLA enclosure with corner posts",
+  "description": "An open-top rectangular PLA enclosure, 80 x 50 x 32 mm outside, 2.5 mm walls, 3 mm floor, with four 7x7 mm square corner posts running from the floor to the top edge, each pre-drilled 2.8 mm x 12 mm deep in its top, and one 8 mm hole through one 50 mm end wall centered across its width, 12 mm above the bottom.",
+  "components": [
+   {
+    "id": "enclosure",
+    "name": "Enclosure box",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "box_length",
+      "value": {
+       "magnitude": 80.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "box_width",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "box_height",
+      "value": {
+       "magnitude": 32.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "wall_thickness",
+      "value": {
+       "magnitude": 2.5,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.5,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true
+     },
+     {
+      "id": "floor_thickness",
+      "value": {
+       "magnitude": 3.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.5,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true
+     },
+     {
+      "id": "post_cross_section",
+      "value": {
+       "magnitude": 7.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_hole_diameter",
+      "value": {
+       "magnitude": 2.8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_hole_depth",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "end_wall_hole_diameter",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "end_wall_hole_height",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_height",
+      "expression": "box_height - floor_thickness",
+      "unit": "mm",
+      "description": "Posts run from the top of the floor to flush with the open top edge"
+     }
+    ],
+    "features": [
+     {
+      "id": "outer_box",
+      "kind": "box",
+      "description": "Outer shell of the enclosure",
+      "parameters": {
+       "size": {
+        "vector": [
+         "box_length",
+         "box_width",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cavity",
+      "kind": "box",
+      "description": "Interior space, shifted up by the floor thickness and run through the open top",
+      "parameters": {
+       "size": {
+        "vector": [
+         "box_length - 2 * wall_thickness",
+         "box_width - 2 * wall_thickness",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "wall_thickness",
+         "wall_thickness",
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "hollow_box",
+      "kind": "subtract",
+      "description": "Outer shell less the interior cavity, open at the top",
+      "inputs": [
+       "outer_box",
+       "cavity"
+      ],
+      "parameters": {}
+     },
+     {
+      "id": "post_front_left",
+      "kind": "box",
+      "tags": [
+       "mounting_post"
+      ],
+      "description": "Corner post tucked into the front-left inside corner",
+      "parameters": {
+       "size": {
+        "vector": [
+         "post_cross_section",
+         "post_cross_section",
+         "post_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "wall_thickness",
+         "wall_thickness",
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_front_right",
+      "kind": "box",
+      "tags": [
+       "mounting_post"
+      ],
+      "description": "Corner post tucked into the front-right inside corner",
+      "parameters": {
+       "size": {
+        "vector": [
+         "post_cross_section",
+         "post_cross_section",
+         "post_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "box_length - wall_thickness - post_cross_section",
+         "wall_thickness",
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_back_left",
+      "kind": "box",
+      "tags": [
+       "mounting_post"
+      ],
+      "description": "Corner post tucked into the back-left inside corner",
+      "parameters": {
+       "size": {
+        "vector": [
+         "post_cross_section",
+         "post_cross_section",
+         "post_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "wall_thickness",
+         "box_width - wall_thickness - post_cross_section",
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_back_right",
+      "kind": "box",
+      "tags": [
+       "mounting_post"
+      ],
+      "description": "Corner post tucked into the back-right inside corner",
+      "parameters": {
+       "size": {
+        "vector": [
+         "post_cross_section",
+         "post_cross_section",
+         "post_height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "box_length - wall_thickness - post_cross_section",
+         "box_width - wall_thickness - post_cross_section",
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "description": "Hollow box joined with its four corner posts",
+      "inputs": [
+       "hollow_box",
+       "post_front_left",
+       "post_front_right",
+       "post_back_left",
+       "post_back_right"
+      ],
+      "parameters": {}
+     },
+     {
+      "id": "post_hole_front_left",
+      "kind": "hole",
+      "tags": [
+       "post_hole"
+      ],
+      "inputs": [
+       "body"
+      ],
+      "description": "Pilot hole into the top of the front-left post",
+      "parameters": {
+       "diameter": {
+        "expression": "post_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "wall_thickness + post_cross_section / 2",
+         "wall_thickness + post_cross_section / 2",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        -1.0
+       ],
+       "depth": {
+        "expression": "post_hole_depth",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_hole_front_right",
+      "kind": "hole",
+      "tags": [
+       "post_hole"
+      ],
+      "inputs": [
+       "post_hole_front_left"
+      ],
+      "description": "Pilot hole into the top of the front-right post",
+      "parameters": {
+       "diameter": {
+        "expression": "post_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "box_length - wall_thickness - post_cross_section / 2",
+         "wall_thickness + post_cross_section / 2",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        -1.0
+       ],
+       "depth": {
+        "expression": "post_hole_depth",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_hole_back_left",
+      "kind": "hole",
+      "tags": [
+       "post_hole"
+      ],
+      "inputs": [
+       "post_hole_front_right"
+      ],
+      "description": "Pilot hole into the top of the back-left post",
+      "parameters": {
+       "diameter": {
+        "expression": "post_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "wall_thickness + post_cross_section / 2",
+         "box_width - wall_thickness - post_cross_section / 2",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        -1.0
+       ],
+       "depth": {
+        "expression": "post_hole_depth",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "post_hole_back_right",
+      "kind": "hole",
+      "tags": [
+       "post_hole"
+      ],
+      "inputs": [
+       "post_hole_back_left"
+      ],
+      "description": "Pilot hole into the top of the back-right post",
+      "parameters": {
+       "diameter": {
+        "expression": "post_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "box_length - wall_thickness - post_cross_section / 2",
+         "box_width - wall_thickness - post_cross_section / 2",
+         "box_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0.0,
+        0.0,
+        -1.0
+       ],
+       "depth": {
+        "expression": "post_hole_depth",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "end_wall_hole",
+      "kind": "hole",
+      "tags": [
+       "end_wall_hole"
+      ],
+      "inputs": [
+       "post_hole_back_right"
+      ],
+      "description": "Through hole in the front (x_min) 50 mm end wall, centered across its width, for cable/fastener passage",
+      "parameters": {
+       "diameter": {
+        "expression": "end_wall_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "box_length / 2",
+         "box_width / 2",
+         "end_wall_hole_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        -1.0,
+        0.0,
+        0.0
+       ],
+       "through": "first_wall"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "post_hole_front_left_port",
+      "type": "bore",
+      "geometry": "post_hole_front_left.bore",
+      "nominal_size": {
+       "magnitude": 2.8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_hole_front_right_port",
+      "type": "bore",
+      "geometry": "post_hole_front_right.bore",
+      "nominal_size": {
+       "magnitude": 2.8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_hole_back_left_port",
+      "type": "bore",
+      "geometry": "post_hole_back_left.bore",
+      "nominal_size": {
+       "magnitude": 2.8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "post_hole_back_right_port",
+      "type": "bore",
+      "geometry": "post_hole_back_right.bore",
+      "nominal_size": {
+       "magnitude": 2.8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "end_wall_hole_port",
+      "type": "custom",
+      "geometry": "end_wall_hole.bore",
+      "nominal_size": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      },
+      "description": "Unspecified cable, shaft, connector or fastener passage through the end wall"
+     }
+    ]
+   }
+  ]
+ }
+}

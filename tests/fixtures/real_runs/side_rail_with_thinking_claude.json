@@ -1,0 +1,927 @@
+{
+ "brief": "Design a rigid upper-arm exoskeleton side rail, 180 mm long, 30 mm wide, and 8 mm thick, with rounded edges. Include two 8.2 mm diameter mounting holes spaced 60 mm apart for connection to the biceps plate, and one 8.2 mm diameter pivot hole centered 15 mm from the lower end for the elbow hinge. Reinforce the pivot region with a circular boss 30 mm in diameter and 12 mm total thickness. Keep the structure lightweight with rounded triangular cutouts while maintaining continuous material around every hole.",
+ "intent": {
+  "summary": "A rigid structural side rail for an upper-arm exoskeleton that connects a biceps plate to an elbow hinge, transmitting arm/actuation loads across the upper arm segment.",
+  "part_kind": "structural link / rail (exoskeleton arm member)",
+  "stated": [
+   "Rigid upper-arm exoskeleton side rail",
+   "Overall dimensions: 180 mm long, 30 mm wide, 8 mm thick",
+   "Rounded edges",
+   "Two mounting holes, 8.2 mm diameter, spaced 60 mm apart, for connection to the biceps plate",
+   "One pivot hole, 8.2 mm diameter, centered 15 mm from the lower end, for the elbow hinge",
+   "Circular boss reinforcing the pivot region: 30 mm diameter, 12 mm total thickness",
+   "Lightweight structure achieved via rounded triangular cutouts",
+   "Continuous material must be maintained around every hole"
+  ],
+  "implied": [
+   "Because it bolts/pins to a biceps plate and a hinge, the two mounting holes and the pivot hole imply a mechanical fastener or pin interface at each, so hole sizes likely correspond to a standard fastener/pin diameter (close to 8 mm) with clearance \u2014 the 8.2 mm figure suggests this but the fastener type/size is not confirmed",
+   "Because the rail is called \"rigid\" and carries a hinge at one end, it is a load-transmitting link, so its cross-section and material must resist bending/torsion from arm motion \u2014 but no load data is given to size for this",
+   "Because the boss (12 mm) is thicker than the base plate (8 mm), it implies a raised/stepped feature on one or both faces around the pivot hole \u2014 which face(s) it rises from is not stated",
+   "Because this is a wearable device moving with a human elbow, the pivot hole implies a rotating joint requiring a bearing surface, bushing, or low-friction interface \u2014 not specified beyond hole diameter",
+   "Because \"continuous material around every hole\" is specified, it implies a minimum edge distance / web width constraint around each hole that the triangular cutout pattern must respect, but no minimum value is given",
+   "Because rounded edges and rounded triangular cutouts are requested, it implies a concern for stress concentration reduction and/or user safety (contact with skin/clothing), but the governing reason is not stated"
+  ],
+  "unstated": [
+   "Material and its mechanical properties (strength, stiffness, fatigue limit) for the rail and boss",
+   "Magnitude and direction of loads the rail must carry (static arm weight, dynamic/actuation torque at the elbow hinge, impact or fall loads)",
+   "Required safety factor or structural margin",
+   "Expected number of load cycles / fatigue life, since an exoskeleton joint moves repeatedly",
+   "Absolute position of the two mounting holes along the 180 mm length (only their 60 mm spacing from each other is given, not their location relative to the rail ends)",
+   "Orientation/alignment of the mounting holes relative to the pivot hole (collinear, offset, same centerline?)",
+   "Edge rounding radius value and fillet radii at the boss-to-rail transition",
+   "Number, size, placement, and pattern of the triangular cutouts, and the minimum web/wall width to leave around each hole",
+   "Which face(s) of the rail the 12 mm boss protrudes from (symmetric about the 8 mm plate, or offset to one side)",
+   "Fastener or pin type and class intended for the 8.2 mm holes (bolt grade, dowel pin, clevis pin, with/without bushing)",
+   "Bearing/bushing requirement at the elbow pivot (plain hole, bushing, bearing) and its fit tolerance",
+   "Range of motion / mechanical stop requirements at the elbow hinge",
+   "Dimensional tolerances for length, width, thickness, hole diameters, and hole spacing",
+   "Target weight or weight-reduction percentage (\"lightweight\" is not quantified)",
+   "Surface finish, coating, or corrosion protection requirements",
+   "Environmental operating conditions (temperature range, exposure to moisture/sweat, cleaning requirements)",
+   "Applicable standards or certifications for a human-worn assistive/exoskeleton device",
+   "Body/payload weight range or user population the exoskeleton is sized for"
+  ],
+  "out_of_scope": [
+   "Selecting a material or material grade",
+   "Determining dimensions, radii, or cutout geometry not given in the brief",
+   "Performing load, stress, or fatigue analysis",
+   "Specifying fastener, pin, or bushing part numbers",
+   "Defining manufacturing process or tolerancing scheme"
+  ],
+  "risk_signals": [
+   "Part is described as an exoskeleton component worn on a human arm, meaning structural failure could directly injure the wearer",
+   "Part includes a pivot/hinge interface at the elbow, a joint whose failure during motion could cause loss of arm support or a fall",
+   "Brief calls the part \"rigid\" and relies on it for structural load transfer, yet supplies no material or load values to substantiate that rigidity claim",
+   "Lightweighting via cutouts is requested on a load-bearing, human-worn part without any stated minimum strength or stiffness target to verify against"
+  ],
+  "suggested_name": "upper_arm_exo_side_rail",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The finished rail shall be 180 mm long overall.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 180.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the rail is 180 mm long; this is the part's overall extent along its length.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The finished rail shall be 30 mm wide overall.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the rail is 30 mm wide; this is the part's overall extent across its width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The finished rail's overall height shall be 12 mm, set by the pivot-reinforcement boss, the tallest feature on the part.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "The boss is called out as '12 mm total thickness', exceeding the 8 mm plate thickness elsewhere, so it determines the whole part's maximum Z extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_THICKNESS",
+    "statement": "The rail's flat body shall be 8 mm thick.",
+    "measurement": "parameter:plate_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the rail is 8 mm thick; this is a named feature dimension distinct from the boss region's 12 mm total thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The two mounting holes and the pivot hole shall each be 8.2 mm in diameter.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "rationale": "Brief states both the mounting holes and the pivot hole are 8.2 mm diameter; one shared parameter covers all three identical-diameter holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_SPACING",
+    "statement": "The two mounting holes shall be spaced 60 mm apart, centre to centre.",
+    "measurement": "parameter:mounting_hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the mounting holes are spaced 60 mm apart.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_OFFSET",
+    "statement": "The pivot hole shall be centred 15 mm from the rail's lower end.",
+    "measurement": "parameter:pivot_hole_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the pivot hole is centred 15 mm from the lower end of the rail.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOSS_DIAMETER",
+    "statement": "The circular reinforcing boss around the pivot hole shall be 30 mm in diameter.",
+    "measurement": "parameter:boss_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the boss is 30 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The rail shall have exactly two mounting holes for connection to the biceps plate.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief explicitly calls for two mounting holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "The rail shall have exactly one pivot hole for the elbow hinge.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief explicitly calls for one pivot hole.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": ""
+    },
+    "statement": "The part shall have 3 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM_60MM_APART",
+    "statement": "The 2 8.2 mm holes shall be 60 mm apart, centre to centre.",
+    "measurement": "openings_apart:8.2:60",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_EDGE_RADIUS",
+    "statement": "Edges of the rail and transitions into cutouts are rounded with a nominal 2 mm fillet radius, sufficient to remove sharp edges without being a stated structural requirement.",
+    "value": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief asks for 'rounded edges' and 'rounded triangular cutouts' without giving a radius; a small conventional fillet satisfies the qualitative intent.",
+    "consequence_if_wrong": "A different radius would only affect appearance and minor stress concentration, not load path or fit.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BOSS_SYMMETRIC",
+    "statement": "The pivot boss protrudes symmetrically from both faces of the 8 mm plate, adding 2 mm of material on each side to reach the stated 12 mm total thickness.",
+    "value": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives only the boss's total thickness, not which face(s) it rises from; symmetric protrusion is the simplest default for a part that may be installed either way up.",
+    "consequence_if_wrong": "If the boss is meant to be one-sided (e.g. flush on the biceps-plate side), clearance with the mating hinge hardware could be wrong, requiring rework of the boss step.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_LAYOUT",
+    "statement": "All three holes (two mounting, one pivot) lie on the rail's longitudinal centreline, and the two mounting holes are placed in the upper portion of the rail, away from the pivot boss, spaced 60 mm apart.",
+    "rationale": "Brief gives hole diameters, the mounting-hole spacing, and the pivot hole's offset from the lower end, but not the mounting holes' absolute position or whether all holes share one centreline.",
+    "consequence_if_wrong": "A different hole layout would move load paths and could conflict with the triangular cutouts or the boss, requiring re-placement of holes and cutouts.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FASTENER_TYPE",
+    "statement": "The 8.2 mm holes are clearance holes for an 8 mm nominal bolt or clevis pin at each of the mounting and pivot interfaces.",
+    "rationale": "The 8.2 mm figure is consistent with a standard clearance fit over an 8 mm fastener/pin, though the brief does not name a fastener.",
+    "consequence_if_wrong": "A different fastener/pin diameter or fit class would not change the stated hole size but could change bearing stress assumptions used elsewhere.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_MIN_EDGE_DISTANCE",
+    "statement": "The 'continuous material around every hole' requirement is implemented as a minimum solid web of at least one hole-diameter's width (about 8.2 mm) between any hole edge and the nearest cutout or part edge.",
+    "value": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "rationale": "This is a conventional minimum edge-distance rule of thumb for pinned/bolted joints in thin structural members; the brief states the intent but gives no number.",
+    "consequence_if_wrong": "Too little web could crack or let a hole tear out under cyclic elbow-motion loads on a part a person depends on for arm support.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_CUTOUT_PATTERN",
+    "statement": "The lightening cutouts are implemented as a small number (2-3) of rounded triangular pockets in the rail's mid-span, positioned to avoid the pivot boss, the mounting holes, and the minimum edge-distance web around every hole.",
+    "rationale": "Brief asks for 'rounded triangular cutouts' for lightweighting but gives no count, size or placement.",
+    "consequence_if_wrong": "A different cutout count or placement changes the part's stiffness and mass but is correctable without changing any stated dimension.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PIVOT_BEARING",
+    "statement": "The pivot hole is a plain bored hole (no integrated bushing or bearing insert); any bushing is supplied by the hinge hardware, not by this rail.",
+    "rationale": "Brief specifies only a hole diameter and a reinforcing boss, not a bushing or bearing component.",
+    "consequence_if_wrong": "If a press-fit bushing is required, the pivot hole or boss may need a different diameter or counterbore, which is a straightforward rework.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_TOLERANCES",
+    "statement": "Standard machining tolerances apply: approximately \u00b10.1 mm on hole diameters and spacing, and \u00b10.3 mm on overall length, width and thickness.",
+    "rationale": "Brief gives nominal dimensions only, with no tolerance scheme stated, typical of a part at this design stage.",
+    "consequence_if_wrong": "Tighter tolerances would mainly affect manufacturing cost and fit, not the design intent captured here.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_ENVIRONMENT",
+    "statement": "The rail operates in ordinary ambient indoor conditions (ordinary ambient temperature, incidental moisture such as sweat) with a standard as-machined or anodized finish, and no special coating or certification is required at this stage.",
+    "rationale": "Brief gives no environmental, finish or standards requirements; this is the default service condition implied by a wearable assistive device without further qualification.",
+    "consequence_if_wrong": "Harsher service (outdoor, washdown, medical sterilisation) would require a different finish or coating, addressed separately from this geometric design.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_UNRESOLVED_UNK_MATERIAL",
+    "statement": "Unresolved at design time: What material and grade (with its yield strength/stiffness) is the rail and boss to be made from? No value was supplied and none was invented.",
+    "rationale": "This part directly supports a wearer's arm and transmits elbow-hinge loads; every strength and safety-factor check depends on the material's properties, and no conventional default is safe to assume for a human-worn structural part.",
+    "consequence_if_wrong": "Any conclusion depending on this is unfounded. It blocks: the design as a whole.",
+    "risk": "high",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_MATERIAL",
+    "question": "What material and grade (with its yield strength/stiffness) is the rail and boss to be made from?",
+    "why_it_matters": "This part directly supports a wearer's arm and transmits elbow-hinge loads; every strength and safety-factor check depends on the material's properties, and no conventional default is safe to assume for a human-worn structural part.",
+    "blocks": [],
+    "critical": true,
+    "suggested_default": "6061-T6 aluminium"
+   }
+  ],
+  "notes": []
+ },
+ "answer": {
+  "name": "Upper-Arm Exoskeleton Side Rail",
+  "description": "Rigid flat side rail connecting a biceps plate (two mounting holes) to an elbow hinge (pivot hole reinforced by a circular boss), lightened with rounded triangular cutouts in the mid-span web. Built as a plate+boss union, cut by three triangular pockets, then drilled last with the two mounting holes and the pivot hole.",
+  "components": [
+   {
+    "id": "upper_arm_exo_side_rail",
+    "name": "Upper-arm exoskeleton side rail",
+    "parameters": [
+     {
+      "id": "rail_length",
+      "value": {
+       "magnitude": 180.0,
+       "unit": "mm"
+      },
+      "description": "Overall length along the rail's long axis (X)."
+     },
+     {
+      "id": "rail_width",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      },
+      "description": "Overall width (Y)."
+     },
+     {
+      "id": "plate_thickness",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      },
+      "description": "Thickness of the flat rail body away from the pivot boss."
+     },
+     {
+      "id": "boss_diameter",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the circular reinforcing boss around the pivot hole; equals rail_width so the boss is flush with both long edges and the lower end."
+     },
+     {
+      "id": "boss_total_thickness",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      },
+      "description": "Total thickness through the boss region, the part's tallest feature."
+     },
+     {
+      "id": "boss_protrusion",
+      "expression": "(boss_total_thickness - plate_thickness) / 2",
+      "unit": "mm",
+      "description": "Amount the boss rises above each face of the plate, assumed symmetric (ASM_BOSS_SYMMETRIC)."
+     },
+     {
+      "id": "hole_diameter",
+      "value": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      },
+      "description": "Diameter shared by both mounting holes and the pivot hole."
+     },
+     {
+      "id": "mounting_hole_spacing",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      },
+      "description": "Centre-to-centre spacing between the two mounting holes."
+     },
+     {
+      "id": "pivot_hole_offset",
+      "value": {
+       "magnitude": 15.0,
+       "unit": "mm"
+      },
+      "description": "Distance from the rail's lower end to the pivot hole centre."
+     },
+     {
+      "id": "edge_radius",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 0.5,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Fillet radius on the rail's vertical (plan-view) edges and the boss-to-plate union, per ASM_EDGE_RADIUS."
+     },
+     {
+      "id": "min_web",
+      "expression": "hole_diameter",
+      "unit": "mm",
+      "description": "Minimum continuous-material web kept between any hole/boss edge and the nearest cutout or part edge, per ASM_MIN_EDGE_DISTANCE (taken equal to hole_diameter)."
+     },
+     {
+      "id": "pivot_x",
+      "expression": "-rail_length / 2 + pivot_hole_offset",
+      "unit": "mm",
+      "description": "X position of the pivot hole/boss centre, measured from the rail's lower end."
+     },
+     {
+      "id": "mounting_hole_region_offset",
+      "value": {
+       "magnitude": 45.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 70.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "X position of the mounting-hole pair's midpoint, placed in the upper portion of the rail away from the pivot boss (ASM_HOLE_LAYOUT)."
+     },
+     {
+      "id": "mounting_hole_1_x",
+      "expression": "mounting_hole_region_offset - mounting_hole_spacing / 2",
+      "unit": "mm"
+     },
+     {
+      "id": "mounting_hole_2_x",
+      "expression": "mounting_hole_region_offset + mounting_hole_spacing / 2",
+      "unit": "mm"
+     },
+     {
+      "id": "cutout_diameter",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 16.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Circumscribed diameter of each rounded-triangular lightening cutout."
+     },
+     {
+      "id": "cutout_corner_radius",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 0.5,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Corner rounding applied to each triangular cutout."
+     },
+     {
+      "id": "cutout1_x",
+      "expression": "pivot_x + boss_diameter / 2 + min_web + cutout_diameter / 2",
+      "unit": "mm",
+      "description": "Centre of the cutout nearest the pivot boss, held min_web clear of the boss edge."
+     },
+     {
+      "id": "cutout2_x",
+      "expression": "mounting_hole_1_x - hole_diameter / 2 - min_web - cutout_diameter / 2",
+      "unit": "mm",
+      "description": "Centre of the cutout nearest the mounting holes, held min_web clear of the nearer mounting hole."
+     },
+     {
+      "id": "cutout3_x",
+      "expression": "(cutout1_x + cutout2_x) / 2",
+      "unit": "mm",
+      "description": "Centre of the middle cutout, placed evenly between the other two."
+     }
+    ],
+    "features": [
+     {
+      "id": "plate",
+      "kind": "box",
+      "description": "Flat rail body.",
+      "parameters": {
+       "size": {
+        "vector": [
+         "rail_length",
+         "rail_width",
+         "plate_thickness"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "origin": [
+        0,
+        0,
+        0
+       ],
+       "edges": "vertical",
+       "edge_radius": {
+        "expression": "edge_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "boss",
+      "kind": "cylinder",
+      "description": "Circular reinforcing boss around the pivot hole, symmetric about the plate's mid-plane.",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_total_thickness",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "pivot_x",
+         0,
+         "-boss_total_thickness / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "inputs": [
+       "plate",
+       "boss"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "edge_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cutout_plane",
+      "kind": "datum_plane",
+      "description": "Mid-plane sketch plane for the lightening cutouts.",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cutout1_profile",
+      "kind": "profile_polygon",
+      "inputs": [
+       "cutout_plane"
+      ],
+      "parameters": {
+       "circumscribed_diameter": {
+        "expression": "cutout_diameter",
+        "unit": "mm"
+       },
+       "sides": 3,
+       "corner_radius": {
+        "expression": "cutout_corner_radius",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "cutout1_x",
+        "unit": "mm"
+       },
+       "center_v": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cutout1_extrude",
+      "kind": "extrude",
+      "inputs": [
+       "cutout1_profile"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness + 4",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "cutout1_cut",
+      "kind": "subtract",
+      "inputs": [
+       "body",
+       "cutout1_extrude"
+      ]
+     },
+     {
+      "id": "cutout2_profile",
+      "kind": "profile_polygon",
+      "inputs": [
+       "cutout_plane"
+      ],
+      "parameters": {
+       "circumscribed_diameter": {
+        "expression": "cutout_diameter",
+        "unit": "mm"
+       },
+       "sides": 3,
+       "corner_radius": {
+        "expression": "cutout_corner_radius",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "cutout2_x",
+        "unit": "mm"
+       },
+       "center_v": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cutout2_extrude",
+      "kind": "extrude",
+      "inputs": [
+       "cutout2_profile"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness + 4",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "cutout2_cut",
+      "kind": "subtract",
+      "inputs": [
+       "cutout1_cut",
+       "cutout2_extrude"
+      ]
+     },
+     {
+      "id": "cutout3_profile",
+      "kind": "profile_polygon",
+      "inputs": [
+       "cutout_plane"
+      ],
+      "parameters": {
+       "circumscribed_diameter": {
+        "expression": "cutout_diameter",
+        "unit": "mm"
+       },
+       "sides": 3,
+       "corner_radius": {
+        "expression": "cutout_corner_radius",
+        "unit": "mm"
+       },
+       "center_u": {
+        "expression": "cutout3_x",
+        "unit": "mm"
+       },
+       "center_v": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cutout3_extrude",
+      "kind": "extrude",
+      "inputs": [
+       "cutout3_profile"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "plate_thickness + 4",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "cutout3_cut",
+      "kind": "subtract",
+      "inputs": [
+       "cutout2_cut",
+       "cutout3_extrude"
+      ]
+     },
+     {
+      "id": "mounting_hole_1",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "cutout3_cut"
+      ],
+      "description": "First mounting hole to the biceps plate.",
+      "parameters": {
+       "diameter": {
+        "expression": "hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_1_x",
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_2",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mounting_hole_1"
+      ],
+      "description": "Second mounting hole to the biceps plate, mounting_hole_spacing from the first.",
+      "parameters": {
+       "diameter": {
+        "expression": "hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_2_x",
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole",
+      "kind": "hole",
+      "tags": [
+       "pivot"
+      ],
+      "inputs": [
+       "mounting_hole_2"
+      ],
+      "description": "Pivot hole for the elbow hinge, through the reinforcing boss.",
+      "parameters": {
+       "diameter": {
+        "expression": "hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "pivot_x",
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "mounting_port_1",
+      "type": "bore",
+      "geometry": "mounting_hole_1.bore",
+      "nominal_size": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Mounting interface to the biceps plate (hole 1)."
+     },
+     {
+      "id": "mounting_port_2",
+      "type": "bore",
+      "geometry": "mounting_hole_2.bore",
+      "nominal_size": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Mounting interface to the biceps plate (hole 2)."
+     },
+     {
+      "id": "pivot_port",
+      "type": "bore",
+      "geometry": "pivot_hole.bore",
+      "nominal_size": {
+       "magnitude": 8.2,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "allowable_motion": [
+       "rotate_about_axis"
+      ],
+      "description": "Elbow hinge pivot interface; plain bore, no integral bushing (ASM_PIVOT_BEARING)."
+     }
+    ]
+   }
+  ]
+ },
+ "note": "Claude Sonnet 5 thinking, 15 Oct 2026. A correct rail; the run spent 43 700 output tokens on its record and timed out on its last look."
+}

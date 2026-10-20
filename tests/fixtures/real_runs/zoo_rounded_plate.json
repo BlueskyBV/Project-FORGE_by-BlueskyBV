@@ -1,0 +1,143 @@
+{
+ "brief": "A 3 mm acrylic plate 80 by 50 mm with 5 mm radius corners. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 3 mm acrylic plate 80 by 50 mm with 5 mm radius corners. It carries no load, so there is no load case.",
+  "part_kind": "rounded_plate",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_R",
+    "statement": "REQ_R",
+    "measurement": "parameter:corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "rounded_plate",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 80,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 50,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 3,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "corner_radius",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plane",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XY"
+       }
+      },
+      {
+       "id": "outline",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "length",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "width",
+         "unit": "mm"
+        },
+        "corner_radius": {
+         "expression": "corner_radius",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "plate",
+       "kind": "extrude",
+       "inputs": [
+        "outline"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "thickness",
+         "unit": "mm"
+        },
+        "mode": "symmetric"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

@@ -1,0 +1,799 @@
+{
+ "brief": "A PLA tray 100 mm long, 60 mm wide and 25 mm tall on the outside, with 2 mm walls and a 2 mm floor, open at the top, and one 2 mm thick divider wall across the middle splitting it into two equal compartments. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An open-top PLA tray with external dimensions 100x60x25 mm, divided into two equal compartments by a central wall, intended for passive storage/organization rather than load-bearing use.",
+  "part_kind": "tray (two-compartment storage tray)",
+  "stated": [
+   "Material: PLA",
+   "Outside dimensions: 100 mm long x 60 mm wide x 25 mm tall",
+   "Wall thickness: 2 mm",
+   "Floor thickness: 2 mm",
+   "Open at the top",
+   "One divider wall, 2 mm thick, across the middle, splitting the tray into two equal compartments",
+   "User states it carries no load and there is no load case"
+  ],
+  "implied": [
+   "Since walls, floor and divider are all specified at 2 mm with explicit outer dimensions, the internal cavity dimensions are derived by subtracting wall/floor thickness from the outer envelope (e.g. internal height = 25 - 2 = 23 mm, internal length regions divided by the 2 mm divider)",
+   "Open top implies the tray is meant to be accessed/filled from above, suggesting items are placed and removed vertically rather than through a lid",
+   "'Equal compartments' implies the divider is centered along the long axis (splitting the 100 mm length into two ~49 mm interior sections after accounting for divider thickness), though the specific axis of division is not explicitly stated",
+   "PLA material choice implies FDM 3D printing as the likely manufacturing process, which has implications for minimum wall thickness, corner radii, and warping, none of which are addressed"
+  ],
+  "unstated": [
+   "Which axis (length or width) the divider splits across -- 'across the middle' is ambiguous between dividing the 100 mm length or the 60 mm width",
+   "Whether corners (internal and external) are sharp or filleted, and if filleted, what radius",
+   "Whether the floor and walls have any drainage, ventilation, or snap-fit/lid features",
+   "Surface finish requirements",
+   "Tolerances for any mating parts (e.g., if this tray is meant to sit inside another enclosure or have a lid added later)",
+   "Print orientation or specific FDM process parameters (layer height, infill) if manufacturing fidelity matters",
+   "Environmental conditions (temperature, UV exposure, chemical exposure) despite PLA being known to be sensitive to heat and UV -- no operating environment is given",
+   "Any functional requirement for liquid-tightness between compartments or at the floor/wall joints",
+   "Whether the divider wall is full height (flush with top) or a different height than the outer walls",
+   "Any requirement for stacking with other trays or handles for carrying"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "None identified: the brief explicitly states the part carries no load and has no load case, and no indication of overhead lifting, pressure containment, energy storage, vehicle use, or human-carrying application is present"
+  ],
+  "suggested_name": "PLA_divided_tray_100x60x25",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The tray's overall length (outside) shall be 100 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 100,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The tray's overall width (outside) shall be 60 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The tray's overall height (outside) shall be 25 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The tray's side walls shall be 2 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The tray's floor shall be 2 mm thick.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_DIVIDER_THICKNESS",
+    "statement": "The divider wall splitting the tray into two compartments shall be 2 mm thick.",
+    "measurement": "parameter:divider_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 2 mm thick divider wall across the middle, distinct from the outer wall/floor thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_DIVIDER_EXTRUDE_COUNT",
+    "statement": "The tray shall have exactly one divider wall splitting it into two compartments.",
+    "measurement": "feature_count:extrude:divider",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one divider wall across the middle creating two equal compartments.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_OPEN_TOP",
+    "statement": "The top shall be open, in to the floor: 23 mm deep at the middle.",
+    "measurement": "opening_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 23.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_DIVIDER_AXIS",
+    "statement": "The divider wall is oriented perpendicular to the 100 mm length, splitting the tray's length into two equal compartments of approximately 47 mm interior length each (the width stays undivided at ~56 mm interior).",
+    "risk": "moderate",
+    "rationale": "'Across the middle' is ambiguous between splitting the length or the width; dividing the longer (length) axis into two equal halves is the more conventional reading for a two-compartment tray.",
+    "consequence_if_wrong": "If the divider was meant to split the width instead, the compartment proportions and tray usability would differ from what the user intended, though overall envelope and material use are unaffected.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_DIVIDER_HEIGHT",
+    "statement": "The divider wall runs the full internal height of the tray, flush with the top of the outer walls.",
+    "risk": "moderate",
+    "rationale": "No divider height is stated; a full-height divider is the conventional choice for separating compartments completely.",
+    "consequence_if_wrong": "A shorter divider would allow contents to cross between compartments, defeating the separation purpose.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_CORNERS",
+    "statement": "All internal and external corners are sharp (unfilleted), as is typical for a simple FDM-printed tray unless stated otherwise.",
+    "risk": "low",
+    "rationale": "No corner treatment is specified in the brief.",
+    "consequence_if_wrong": "Minor cosmetic/functional difference only; unlikely to affect fit or function of a passive storage tray.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_ENV",
+    "statement": "The tray is used in ordinary indoor ambient conditions (room temperature, no significant UV or chemical exposure).",
+    "risk": "low",
+    "rationale": "PLA is sensitive to heat and UV, but the brief gives no indication of a demanding environment and the part is explicitly non-load-bearing.",
+    "consequence_if_wrong": "PLA could warp or degrade in a hot or UV-exposed environment, but this is outside the stated use case.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_NO_LIQUID_CONTAINMENT",
+    "statement": "The tray is not required to be liquid-tight between compartments or at the floor/wall joints.",
+    "risk": "low",
+    "rationale": "Brief describes a storage/organization tray with no mention of liquids.",
+    "consequence_if_wrong": "If liquid containment were actually needed, seam quality and wall joints would need tighter control, but nothing in the brief suggests this.",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "PLA_divided_tray_100x60x25",
+   "description": "Open-top two-compartment PLA storage tray, 100x60x25 mm outside, 2 mm walls/floor, with a 2 mm central divider splitting the length into two equal compartments.",
+   "components": [
+    {
+     "id": "tray",
+     "name": "Two-compartment tray",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 100.0,
+        "unit": "mm"
+       },
+       "description": "Overall outside length (X)"
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       },
+       "description": "Overall outside width (Y)"
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       },
+       "description": "Overall outside height (Z)"
+      },
+      {
+       "id": "wall_thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 1.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Outer side wall thickness"
+      },
+      {
+       "id": "floor_thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 1.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Floor thickness"
+      },
+      {
+       "id": "divider_thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 1.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Thickness of the central divider wall splitting the tray into two compartments"
+      }
+     ],
+     "features": [
+      {
+       "id": "outer_box",
+       "kind": "box",
+       "description": "Outer envelope of the tray",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "height"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "cavity",
+       "kind": "box",
+       "description": "Interior cavity, inset by the wall thickness on all sides, shifted up by the floor thickness and running through the top",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length - 2 * wall_thickness",
+          "width - 2 * wall_thickness",
+          "height"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "floor_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "hollow_body",
+       "kind": "subtract",
+       "description": "Outer box with the interior cavity removed, leaving the open-topped shell with floor and side walls",
+       "inputs": [
+        "outer_box",
+        "cavity"
+       ]
+      },
+      {
+       "id": "divider_plane",
+       "kind": "datum_plane",
+       "description": "Vertical plane through the tray's midline (y = 0), used to sketch the divider wall",
+       "parameters": {
+        "base": "XZ",
+        "offset": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "divider_profile",
+       "kind": "profile_rectangle",
+       "description": "Divider cross-section: full tray height by divider thickness, centred on the tray's midline",
+       "inputs": [
+        "divider_plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "divider_thickness",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "divider_extrude",
+       "kind": "extrude",
+       "description": "Divider wall, extruded symmetrically across the full interior width (Y) of the cavity so it spans from side wall to side wall",
+       "inputs": [
+        "divider_profile"
+       ],
+       "tags": [
+        "divider"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "width - 2 * wall_thickness",
+         "unit": "mm"
+        },
+        "mode": "symmetric"
+       }
+      },
+      {
+       "id": "tray_body",
+       "kind": "union",
+       "description": "Final tray: shell plus the central divider, splitting the cavity into two equal compartments",
+       "inputs": [
+        "hollow_body",
+        "divider_extrude"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The tray is built as a hollow shell (outer box minus an interior cavity box, the cavity shifted up by floor_thickness and running the full outer height so it cleanly pokes through the top) and then a divider wall is unioned in to split the cavity in two. The divider is deliberately made via profile_rectangle + extrude (tagged \"divider\") rather than a box, since the divider count is checked as an extrude feature; its height equals the full tray height and its extrude distance equals the cavity's Y-extent (width - 2*wall_thickness) run symmetrically about y=0, so it spans flush from floor to rim and wall to wall. All wall, floor and divider thicknesses and the outer envelope are named parameters, and the divider's position/extent are expressions of them so the split stays centered and flush if any dimension changes."
+ },
+ "document_released": {
+  "name": "PLA_divided_tray_100x60x25",
+  "description": "Open-top two-compartment PLA storage tray, 100x60x25 mm outside, 2 mm walls/floor, with a 2 mm central divider splitting the length into two equal compartments.",
+  "components": [
+   {
+    "id": "tray",
+    "name": "Two-compartment tray",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "length",
+      "value": {
+       "magnitude": 100.0,
+       "unit": "mm"
+      },
+      "description": "Overall outside length (X)"
+     },
+     {
+      "id": "width",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      },
+      "description": "Overall outside width (Y)"
+     },
+     {
+      "id": "height",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      },
+      "description": "Overall outside height (Z)"
+     },
+     {
+      "id": "wall_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Outer side wall thickness"
+     },
+     {
+      "id": "floor_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Floor thickness"
+     },
+     {
+      "id": "divider_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Thickness of the central divider wall splitting the tray into two compartments"
+     }
+    ],
+    "features": [
+     {
+      "id": "outer_box",
+      "kind": "box",
+      "description": "Outer envelope of the tray",
+      "parameters": {
+       "size": {
+        "vector": [
+         "length",
+         "width",
+         "height"
+        ],
+        "unit": "mm"
+       },
+       "centered": true
+      }
+     },
+     {
+      "id": "cavity",
+      "kind": "box",
+      "description": "Interior cavity, inset by the wall thickness on all sides, shifted up by the floor thickness and running through the top",
+      "parameters": {
+       "size": {
+        "vector": [
+         "length - 2 * wall_thickness",
+         "width - 2 * wall_thickness",
+         "height"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       },
+       "centered": true
+      }
+     },
+     {
+      "id": "hollow_body",
+      "kind": "subtract",
+      "description": "Outer box with the interior cavity removed, leaving the open-topped shell with floor and side walls",
+      "inputs": [
+       "outer_box",
+       "cavity"
+      ]
+     },
+     {
+      "id": "divider_plane",
+      "kind": "datum_plane",
+      "description": "Vertical plane through the tray's midline (y = 0), used to sketch the divider wall",
+      "parameters": {
+       "base": "XZ",
+       "offset": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "divider_profile",
+      "kind": "profile_rectangle",
+      "description": "Divider cross-section: full tray height by divider thickness, centred on the tray's midline",
+      "inputs": [
+       "divider_plane"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "divider_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "height",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "divider_extrude",
+      "kind": "extrude",
+      "description": "Divider wall, extruded symmetrically across the full interior width (Y) of the cavity so it spans from side wall to side wall",
+      "inputs": [
+       "divider_profile"
+      ],
+      "tags": [
+       "divider"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "width - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "mode": "symmetric"
+      }
+     },
+     {
+      "id": "tray_body",
+      "kind": "union",
+      "description": "Final tray: shell plus the central divider, splitting the cavity into two equal compartments",
+      "inputs": [
+       "hollow_body",
+       "divider_extrude"
+      ]
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "f8f527e3-f0ac-5b60-b000-914561de1284",
+  "project_id": "28cc8dea-1ef7-5a55-bbab-1de019dd4c04",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The tray's overall length (outside) shall be 100 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 100,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The tray's overall width (outside) shall be 60 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The tray's overall height (outside) shall be 25 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The tray's side walls shall be 2 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The tray's floor shall be 2 mm thick.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_DIVIDER_THICKNESS",
+    "statement": "The divider wall splitting the tray into two compartments shall be 2 mm thick.",
+    "measurement": "parameter:divider_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 2 mm thick divider wall across the middle, distinct from the outer wall/floor thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_DIVIDER_EXTRUDE_COUNT",
+    "statement": "The tray shall have exactly one divider wall splitting it into two compartments.",
+    "measurement": "feature_count:extrude:divider",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one divider wall across the middle creating two equal compartments.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPEN_TOP",
+    "statement": "The top shall be open, in to the floor: 23 mm deep at the middle.",
+    "measurement": "opening_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 23.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_DIVIDER_AXIS",
+    "statement": "The divider wall is oriented perpendicular to the 100 mm length, splitting the tray's length into two equal compartments of approximately 47 mm interior length each (the width stays undivided at ~56 mm interior).",
+    "risk": "moderate",
+    "rationale": "'Across the middle' is ambiguous between splitting the length or the width; dividing the longer (length) axis into two equal halves is the more conventional reading for a two-compartment tray.",
+    "consequence_if_wrong": "If the divider was meant to split the width instead, the compartment proportions and tray usability would differ from what the user intended, though overall envelope and material use are unaffected.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_DIVIDER_HEIGHT",
+    "statement": "The divider wall runs the full internal height of the tray, flush with the top of the outer walls.",
+    "risk": "moderate",
+    "rationale": "No divider height is stated; a full-height divider is the conventional choice for separating compartments completely.",
+    "consequence_if_wrong": "A shorter divider would allow contents to cross between compartments, defeating the separation purpose.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_CORNERS",
+    "statement": "All internal and external corners are sharp (unfilleted), as is typical for a simple FDM-printed tray unless stated otherwise.",
+    "risk": "low",
+    "rationale": "No corner treatment is specified in the brief.",
+    "consequence_if_wrong": "Minor cosmetic/functional difference only; unlikely to affect fit or function of a passive storage tray.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_ENV",
+    "statement": "The tray is used in ordinary indoor ambient conditions (room temperature, no significant UV or chemical exposure).",
+    "risk": "low",
+    "rationale": "PLA is sensitive to heat and UV, but the brief gives no indication of a demanding environment and the part is explicitly non-load-bearing.",
+    "consequence_if_wrong": "PLA could warp or degrade in a hot or UV-exposed environment, but this is outside the stated use case.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_NO_LIQUID_CONTAINMENT",
+    "statement": "The tray is not required to be liquid-tight between compartments or at the floor/wall joints.",
+    "risk": "low",
+    "rationale": "Brief describes a storage/organization tray with no mention of liquids.",
+    "consequence_if_wrong": "If liquid containment were actually needed, seam quality and wall joints would need tighter control, but nothing in the brief suggests this.",
+    "reversible": true,
+    "approved": true
+   }
+  ]
+ },
+ "run": "validation C10, 18 October 2026",
+ "note": "The divider runs across the middle, so the wall line along Y ran inside it: walls read [2, 60] mm, inconclusive."
+}

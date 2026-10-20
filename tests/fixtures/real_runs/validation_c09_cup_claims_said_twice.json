@@ -1,0 +1,716 @@
+{
+ "brief": "A PLA cup: 60 mm outside diameter and 80 mm tall, with 2 mm walls and a 3 mm floor, open at the top. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A simple open-top cylindrical cup intended to be 3D printed in PLA, defined by outer diameter, height, wall thickness and floor thickness.",
+  "part_kind": "cup / open container",
+  "stated": [
+   "Material: PLA",
+   "Outside diameter: 60 mm",
+   "Height: 80 mm",
+   "Wall thickness: 2 mm",
+   "Floor thickness: 3 mm",
+   "Open at the top",
+   "User states it carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Being a 'cup' with an open top implies it is meant to hold something (liquid, granular material, or small objects), even though the user explicitly disclaims structural load",
+   "PLA material implies fused deposition modeling (FDM) manufacture is likely intended, since PLA is a common desktop 3D-printing filament",
+   "A floor thickness distinct from wall thickness implies the cup has a flat circular base closing the bottom",
+   "60 mm outside diameter with 2 mm walls implies an inside diameter on the order of 56 mm, though exact inner geometry depends on whether walls taper or are constant"
+  ],
+  "unstated": [
+   "Whether the cup needs to hold liquid (requiring watertightness) or is purely decorative/dry-use",
+   "Any thermal exposure (hot liquids) which matters because PLA has a low heat-deflection temperature",
+   "Surface finish or printing orientation requirements",
+   "Tolerance requirements on diameter/height/wall thickness",
+   "Whether the top rim needs a lip, chamfer, or specific edge treatment",
+   "Whether the base needs feet, a foot ring, or anti-slip feature for stability",
+   "Any requirement for stacking with other cups",
+   "Food-safety requirements if intended to contact food or drink",
+   "Color, print infill percentage, or layer orientation affecting strength even though 'no load case' is claimed",
+   "Whether the cup must be dishwasher- or microwave-safe"
+  ],
+  "out_of_scope": [
+   "Load-bearing analysis, since the brief explicitly excludes a load case",
+   "Material grade/supplier certification details",
+   "Print process parameters (nozzle temp, layer height, infill)"
+  ],
+  "risk_signals": [
+   "None indicating physical danger from structural failure, since the user explicitly states no load case",
+   "Potential unstated risk: if intended for hot beverages, PLA's low heat tolerance could cause deformation and burns or spills, but the brief does not mention hot liquid use so this is only a latent concern",
+   "Potential unstated risk: if used for food/drink, food-safety of the PLA filament and print process is not addressed"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The cup's overall outside diameter shall be 60 mm, measured along X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 60 mm outside diameter; the cup is round so this applies equally to X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The cup's overall outside diameter shall be 60 mm, measured along Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 60 mm outside diameter; the cup is round so this applies equally to X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The cup's overall height shall be 80 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the cup is 80 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The cup's side wall shall be 2 mm thick, measured at half its height.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 2 mm walls; bound as a whole-part container measurement in addition to the declared parameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The cup's floor shall be 3 mm thick, measured under the middle of its interior space.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 3 mm floor; bound as a whole-part container measurement in addition to the declared parameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS_2",
+    "statement": "The cup's side wall shall be 2 mm thick.",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 2 mm walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "measurement": "parameter:wall_thickness"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS_2",
+    "statement": "The cup's floor shall be 3 mm thick.",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 3 mm floor.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "measurement": "parameter:floor_thickness"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard"
+   },
+   {
+    "id": "REQ_OPEN_TOP",
+    "statement": "The top shall be open, in to the floor: 77 mm deep at the middle.",
+    "measurement": "opening_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 77.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ROUND_CUP",
+    "statement": "The cup is a round, single-cavity cylindrical container with constant 2 mm wall thickness from floor to rim.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Brief describes outside diameter and wall thickness without specifying taper or cross-section shape; cylindrical is the conventional reading of 'cup'.",
+    "consequence_if_wrong": "If the cup is meant to taper or be non-circular, the declared diameter and roundness no longer describe the part correctly."
+   },
+   {
+    "id": "ASM_OPEN_TOP_NO_LIP",
+    "statement": "The cup's top is a plain open rim with no lip, chamfer, handle or lid feature.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Brief only specifies 'open at the top' with no additional rim feature described.",
+    "consequence_if_wrong": "A missing lip or handle feature would not match user expectations for handling or pouring, though the core geometry (diameter, height, walls, floor) still holds."
+   },
+   {
+    "id": "ASM_AMBIENT_DRY_USE",
+    "statement": "The cup is used at ambient temperature, not for hot liquids, and no food-contact or watertightness certification is required beyond ordinary FDM print quality.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "Brief gives no load case and no mention of contents; PLA has low heat-deflection temperature and FDM prints are not inherently watertight, so a 'cup' purpose is assumed to be light, ambient, non-critical use (e.g. holding small dry items or cool liquids briefly).",
+    "consequence_if_wrong": "If intended for hot beverages, the PLA walls could soften or deform, risking spills or burns; if intended to hold liquid long-term, untreated FDM layer lines may leak."
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Open-top cylindrical cup",
+   "description": "A round PLA cup: a solid outer cylinder with a cylindrical cavity subtracted from the floor thickness up through the open top.",
+   "components": [
+    {
+     "id": "cup",
+     "name": "Cup",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 20.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 200.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Outside diameter of the cup"
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 10.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 300.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Overall height of the cup"
+      },
+      {
+       "id": "wall_thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 1.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 6.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Thickness of the cylindrical side wall"
+      },
+      {
+       "id": "floor_thickness",
+       "value": {
+        "magnitude": 3.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 1.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 10.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Thickness of the solid base closing the bottom"
+      },
+      {
+       "id": "inner_diameter",
+       "expression": "outer_diameter - 2 * wall_thickness",
+       "unit": "mm",
+       "description": "Diameter of the interior cavity, derived from the outer diameter and wall thickness"
+      },
+      {
+       "id": "cavity_height",
+       "expression": "height - floor_thickness + 1",
+       "unit": "mm",
+       "description": "Height of the cavity cutter, starting above the floor and overshooting the top so the cut runs cleanly out through the open top"
+      }
+     ],
+     "features": [
+      {
+       "id": "outer_body",
+       "kind": "cylinder",
+       "description": "Solid outer cylinder of the cup, floor to rim",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cavity",
+       "kind": "cylinder",
+       "description": "Cavity cutter, starting just above the floor and running past the rim so the top stays open",
+       "parameters": {
+        "diameter": {
+         "expression": "inner_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "cavity_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "floor_thickness"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cup_body",
+       "kind": "subtract",
+       "description": "The outer cylinder less the cavity, leaving a floor and side wall with an open top",
+       "inputs": [
+        "outer_body",
+        "cavity"
+       ],
+       "parameters": {}
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The cup is two concentric cylinders: a solid outer_body of outer_diameter x height, and a cavity cylinder of inner_diameter (= outer_diameter - 2*wall_thickness) sitting on top of the floor_thickness, overshooting the rim by 1 mm so the subtraction cleanly opens the top. A single subtract leaves the terminal solid: a floor of floor_thickness, a wall of wall_thickness, and an open top, all driven parametrically from outer_diameter, height, wall_thickness and floor_thickness so changing any one keeps the others consistent."
+ },
+ "document_released": {
+  "name": "Open-top cylindrical cup",
+  "description": "A round PLA cup: a solid outer cylinder with a cylindrical cavity subtracted from the floor thickness up through the open top.",
+  "components": [
+   {
+    "id": "cup",
+    "name": "Cup",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "outer_diameter",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 200.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Outside diameter of the cup"
+     },
+     {
+      "id": "height",
+      "value": {
+       "magnitude": 80.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 300.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Overall height of the cup"
+     },
+     {
+      "id": "wall_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Thickness of the cylindrical side wall"
+     },
+     {
+      "id": "floor_thickness",
+      "value": {
+       "magnitude": 3.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Thickness of the solid base closing the bottom"
+     },
+     {
+      "id": "inner_diameter",
+      "expression": "outer_diameter - 2 * wall_thickness",
+      "unit": "mm",
+      "description": "Diameter of the interior cavity, derived from the outer diameter and wall thickness"
+     },
+     {
+      "id": "cavity_height",
+      "expression": "height - floor_thickness + 1 * mm",
+      "unit": "mm",
+      "description": "Height of the cavity cutter, starting above the floor and overshooting the top so the cut runs cleanly out through the open top"
+     }
+    ],
+    "features": [
+     {
+      "id": "outer_body",
+      "kind": "cylinder",
+      "description": "Solid outer cylinder of the cup, floor to rim",
+      "parameters": {
+       "diameter": {
+        "expression": "outer_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cavity",
+      "kind": "cylinder",
+      "description": "Cavity cutter, starting just above the floor and running past the rim so the top stays open",
+      "parameters": {
+       "diameter": {
+        "expression": "inner_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cavity_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "floor_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "cup_body",
+      "kind": "subtract",
+      "description": "The outer cylinder less the cavity, leaving a floor and side wall with an open top",
+      "inputs": [
+       "outer_body",
+       "cavity"
+      ],
+      "parameters": {}
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "36d1cc15-157d-5bcf-812b-89debf44bfe1",
+  "project_id": "c8a7754f-8c9e-5ef7-97ce-f82791283fee",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The cup's overall outside diameter shall be 60 mm, measured along X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 60 mm outside diameter; the cup is round so this applies equally to X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The cup's overall outside diameter shall be 60 mm, measured along Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 60 mm outside diameter; the cup is round so this applies equally to X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The cup's overall height shall be 80 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the cup is 80 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The cup's side wall shall be 2 mm thick, measured at half its height.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 2 mm walls; bound as a whole-part container measurement in addition to the declared parameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The cup's floor shall be 3 mm thick, measured under the middle of its interior space.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 3 mm floor; bound as a whole-part container measurement in addition to the declared parameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS_2",
+    "statement": "The cup's side wall shall be 2 mm thick.",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 2 mm walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS_2",
+    "statement": "The cup's floor shall be 3 mm thick.",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 3 mm floor.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPEN_TOP",
+    "statement": "The top shall be open, in to the floor: 77 mm deep at the middle.",
+    "measurement": "opening_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 77.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ROUND_CUP",
+    "statement": "The cup is a round, single-cavity cylindrical container with constant 2 mm wall thickness from floor to rim.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Brief describes outside diameter and wall thickness without specifying taper or cross-section shape; cylindrical is the conventional reading of 'cup'.",
+    "consequence_if_wrong": "If the cup is meant to taper or be non-circular, the declared diameter and roundness no longer describe the part correctly."
+   },
+   {
+    "id": "ASM_OPEN_TOP_NO_LIP",
+    "statement": "The cup's top is a plain open rim with no lip, chamfer, handle or lid feature.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "Brief only specifies 'open at the top' with no additional rim feature described.",
+    "consequence_if_wrong": "A missing lip or handle feature would not match user expectations for handling or pouring, though the core geometry (diameter, height, walls, floor) still holds."
+   },
+   {
+    "id": "ASM_AMBIENT_DRY_USE",
+    "statement": "The cup is used at ambient temperature, not for hot liquids, and no food-contact or watertightness certification is required beyond ordinary FDM print quality.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "Brief gives no load case and no mention of contents; PLA has low heat-deflection temperature and FDM prints are not inherently watertight, so a 'cup' purpose is assumed to be light, ambient, non-critical use (e.g. holding small dry items or cool liquids briefly).",
+    "consequence_if_wrong": "If intended for hot beverages, the PLA walls could soften or deform, risking spills or burns; if intended to hold liquid long-term, untreated FDM layer lines may leak."
+   }
+  ]
+ },
+ "run": "validation C09, 18 October 2026",
+ "note": "The side wall and floor each claimed twice, once as a parameter Forge then measured as the wall; the copies were unbound and reported NOT_TESTED. And 'no load case' made the cup box-like."
+}

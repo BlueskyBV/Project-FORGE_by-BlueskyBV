@@ -1,0 +1,249 @@
+{
+ "brief": "A PLA dome: exactly half of a 70 mm sphere, sitting flat side to the right side, hollow on the inside. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A hollow hemispherical dome, half of a 70 mm sphere, printed in PLA, oriented with its flat face to the right; stated to carry no load.",
+  "part_kind": "dome / shell",
+  "stated": [
+   "Material is PLA",
+   "Shape is exactly half of a 70 mm sphere (a hemisphere)",
+   "Sphere diameter is 70 mm",
+   "Oriented with the flat (cut) side facing right",
+   "Hollow on the inside",
+   "Carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Being a half-sphere with a flat side implies the flat circular face is the open/base face of the dome",
+   "Hollow interior implies the part is a shell with some wall thickness rather than solid, so a wall thickness must exist even if unspecified",
+   "PLA material implies standard FDM 3D-printing process considerations (layer lines, print orientation effects) rather than machining or casting",
+   "'Sitting flat side to the right' implies an intended orientation in use or in a drawing/assembly, suggesting the flat face may rest against or face another surface or viewer"
+  ],
+  "unstated": [
+   "Wall thickness of the hollow shell",
+   "Whether the flat circular face is open (a bowl-like shell) or closed with a floor/base",
+   "Whether there is a rim, lip, or flange around the open edge, and if so its dimensions",
+   "Surface finish requirements",
+   "Tolerances on the 70 mm diameter and on roundness",
+   "Any mounting or fastening features (holes, bosses, snap features) if it needs to attach to anything",
+   "Wall thickness uniformity vs. draft/print-orientation constraints specific to PLA FDM printing",
+   "Any functional purpose of the hollow cavity (e.g., does it enclose another component, need ventilation, drainage, or access holes)",
+   "Operating/storage temperature range (relevant since PLA has a low heat-deflection temperature)",
+   "Color, aesthetic, or cosmetic requirements",
+   "Whether 'no load case' excludes handling loads, shipping loads, or its own weight during printing/assembly",
+   "Quantity to be produced and whether design needs to account for print-bed size or support material",
+   "Any regulatory, safety, or certification requirements"
+  ],
+  "out_of_scope": [
+   "Selecting a specific wall thickness value",
+   "Choosing PLA grade/brand or print settings",
+   "Determining actual structural capacity despite 'no load' claim"
+  ],
+  "risk_signals": [
+   "None stated: the brief explicitly says the part carries no load; no indication of pressure containment, overhead lifting, human-carrying, or energy storage"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The dome's overall height (flat face to apex), oriented with its axis along X since the flat side faces right, shall equal the sphere radius of 35 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 35,
+     "unit": "mm"
+    },
+    "rationale": "With the flat cut face oriented to the right (along X), the part's extent along X is the hemisphere's radius.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The dome's overall width across the circular base shall equal the 70 mm sphere diameter.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70,
+     "unit": "mm"
+    },
+    "rationale": "The circular base face lies in the YZ plane, so Y spans the full diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The dome's overall depth across the circular base shall equal the 70 mm sphere diameter.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70,
+     "unit": "mm"
+    },
+    "rationale": "The circular base face lies in the YZ plane, so Z spans the full diameter, matching Y for a round cross-section.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SPHERE_DIAMETER",
+    "statement": "The dome's geometry shall derive from a sphere of 70 mm diameter, of which it is exactly one half.",
+    "measurement": "parameter:sphere_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_WALL_THICKNESS",
+    "statement": "The hollow shell has a uniform wall thickness of 2 mm, a typical value for a PLA FDM print of this size.",
+    "rationale": "The brief states the dome is hollow but gives no wall thickness; 2 mm is a common default for PLA prints balancing strength and print time at this scale.",
+    "consequence_if_wrong": "A thinner wall may be too weak or print poorly with warping/layer defects; a thicker wall adds unnecessary weight and print time.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BASE_OPEN",
+    "statement": "The flat circular face (the cut face of the hemisphere) is open, making the part a bowl-like shell rather than a closed hollow sphere-half.",
+    "rationale": "A 'hollow' dome with a flat side most naturally reads as an open-bottomed shell, consistent with typical dome/cover parts.",
+    "consequence_if_wrong": "If the flat face should be closed with a floor, the part would need an added base disc, changing its mass and print orientation needs.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "REQ_BOUNDING_BOX_X carried `source: \"user\"` against a threshold the brief does not state. The figure may be sound -- a derived dimension, a manufacturing limit -- but the user did not write it, so it is recorded as `derived` rather than reported back to them as their own requirement.",
+   "dropped 2 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about"
+  ]
+ },
+ "answer": {
+  "name": "Hollow hemispherical dome",
+  "description": "Half of a 70 mm sphere, hollow-shelled, flat face oriented to the right (open along +X).",
+  "components": [
+   {
+    "id": "dome",
+    "name": "Hemisphere dome",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "sphere_diameter",
+      "value": {
+       "magnitude": 70.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "sphere_radius",
+      "expression": "sphere_diameter / 2",
+      "unit": "mm"
+     },
+     {
+      "id": "wall_thickness",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 1.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Assumed uniform shell wall thickness (ASM_WALL_THICKNESS)"
+     }
+    ],
+    "features": [
+     {
+      "id": "full_sphere",
+      "kind": "sphere",
+      "parameters": {
+       "diameter": {
+        "expression": "sphere_diameter",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "half_keep_box",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "sphere_radius",
+         "sphere_diameter",
+         "sphere_diameter"
+        ],
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-sphere_radius",
+         "-sphere_radius",
+         "-sphere_radius"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "hemisphere_solid",
+      "kind": "intersect",
+      "inputs": [
+       "full_sphere",
+       "half_keep_box"
+      ]
+     },
+     {
+      "id": "hollow_dome",
+      "kind": "shell",
+      "role": "dome_shell",
+      "inputs": [
+       "hemisphere_solid"
+      ],
+      "parameters": {
+       "thickness": {
+        "expression": "wall_thickness",
+        "unit": "mm"
+       },
+       "direction": "inward"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "note": "Claude Sonnet 5, 14 Oct 2026. The dome was cut in half and then shelled: a sealed hollow, reported as PASS though the brief asked for it open; the wall assumption carried no value field, so nothing checked the hollow."
+}

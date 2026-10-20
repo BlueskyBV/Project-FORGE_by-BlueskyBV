@@ -1,0 +1,416 @@
+{
+ "answer": {
+  "document": {
+   "assumptions": [],
+   "components": [
+    {
+     "features": [
+      {
+       "id": "box",
+       "kind": "box",
+       "parameters": {
+        "centered": true,
+        "size": {
+         "unit": "mm",
+         "vector": [
+          "length",
+          "width",
+          "height"
+         ]
+        }
+       }
+      },
+      {
+       "id": "floor",
+       "inputs": [
+        "box",
+        "floor_box"
+       ],
+       "kind": "subtract",
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "floor_box",
+       "kind": "box",
+       "parameters": {
+        "centered": true,
+        "size": {
+         "unit": "mm",
+         "vector": [
+          "length",
+          "width",
+          "floor_thickness"
+         ]
+        }
+       }
+      }
+     ],
+     "id": "box",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "floor_thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ],
+   "document_id": "5301762e-9bae-52d0-8d30-65fd5c85b12a",
+   "name": "Box",
+   "project_id": "df3ae3cd-1c99-5d42-bf8c-8e2dc354d4fc",
+   "requirements": [
+    {
+     "comparison": "equals",
+     "id": "REQ_BOUNDING_BOX_X",
+     "measurement": "bounding_box_x",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 60 mm long.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 60.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_BOUNDING_BOX_Y",
+     "measurement": "bounding_box_y",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 40 mm wide.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 40.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_BOUNDING_BOX_Z",
+     "measurement": "bounding_box_z",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 30 mm tall.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_LENGTH",
+     "measurement": "parameter:length",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 60 mm long.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 60.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_WIDTH",
+     "measurement": "parameter:width",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 40 mm wide.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 40.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_HEIGHT",
+     "measurement": "parameter:height",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The box is 30 mm tall.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_WALL_THICKNESS",
+     "measurement": "wall_thickness",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The walls shall be 2 mm thick.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_FLOOR_THICKNESS",
+     "measurement": "floor_thickness",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The floor shall be 2 mm thick.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    },
+    {
+     "comparison": "equals",
+     "id": "REQ_OPEN_TOP",
+     "measurement": "opening_depth",
+     "source": "user",
+     "state": "accepted",
+     "statement": "The top shall be open, down to the floor: 28 mm deep at the middle.",
+     "strength": "hard",
+     "threshold": {
+      "magnitude": 28.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry"
+    }
+   ],
+   "revision": 1,
+   "risk_class": "low",
+   "schema_version": "1.0.0",
+   "units": {
+    "angle": "deg",
+    "force": "N",
+    "length": "mm",
+    "mass": "kg"
+   }
+  },
+  "rationale": "released"
+ },
+ "brief": "A PLA open-top box, 60 mm long, 40 mm wide and 30 mm tall on the outside, with 2 mm walls and a 2 mm thick floor. The top is completely open. It carries no load, so there is no load case.",
+ "intent": {
+  "implied": [],
+  "notes": [
+   "dropped what was inferred against the brief's own words: \"The box is open on the bottom as well.\". An inference is a guess, and every later role reads this list; one guessing a floorless box had the design built open at both ends."
+  ],
+  "out_of_scope": [],
+  "part_kind": "box",
+  "risk_signals": [
+   "The box is open on the top, which could potentially be a hazard if it were to fall."
+  ],
+  "stated": [
+   "The box is made of PLA.",
+   "The box is 60 mm long.",
+   "The box is 40 mm wide.",
+   "The box is 30 mm tall.",
+   "The box has 2 mm walls.",
+   "The box has a 2 mm thick floor.",
+   "The box is open on the top.",
+   "The box carries no load."
+  ],
+  "suggested_name": "",
+  "summary": "A PLA open-top box with dimensions 60 mm x 40 mm x 30 mm, 2 mm walls, and a 2 mm thick floor. It is open on the top and carries no load.",
+  "unstated": [
+   "The magnitude and direction of the load on the box."
+  ]
+ },
+ "note": "requirements: the record as the run accepted it, walls, floor and open top carried. The answer is the document the run released: the outer box cut by `floor_box`, a slab the box's full footprint by the floor's thickness through its middle -- two pieces -- with a 2 mm blend on the cut. The designer's first attempt was the same with `floor_thickness` undeclared.",
+ "requirements": {
+  "assumptions": [],
+  "notes": [
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "dropped ASM_BOX_MATERIAL: \"The box is made of PLA.\" is not an assumption -- the brief says it -- and an unapproved one would have held a correct part for approval of the user's own words.",
+   "added REQ_WALL_THICKNESS at 2 mm, REQ_FLOOR_THICKNESS at 2 mm, REQ_OPEN_TOP at 28 mm deep: the brief describes a container -- 2 mm walls, a 2 mm floor, an open top -- and a solid block, a sealed hollow box and the part asked for all have the same bounding box. Each is measured on the built part through the middle of its footprint."
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_X",
+    "measurement": "bounding_box_x",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 60 mm long.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_Y",
+    "measurement": "bounding_box_y",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 40 mm wide.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOUNDING_BOX_Z",
+    "measurement": "bounding_box_z",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 30 mm tall.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_LENGTH",
+    "measurement": "parameter:length",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 60 mm long.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_WIDTH",
+    "measurement": "parameter:width",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 40 mm wide.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HEIGHT",
+    "measurement": "parameter:height",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The box is 30 mm tall.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_WALL_THICKNESS",
+    "measurement": "wall_thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The walls shall be 2 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_FLOOR_THICKNESS",
+    "measurement": "floor_thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The floor shall be 2 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_OPEN_TOP",
+    "measurement": "opening_depth",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The top shall be open, down to the floor: 28 mm deep at the middle.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 28.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "low",
+  "unknowns": []
+ },
+ "run": "20260929T101739-a-pla-open-top-box-60-mm-long-40-mm-wide",
+ "which": "released_document"
+}

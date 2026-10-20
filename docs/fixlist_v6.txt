@@ -1,0 +1,63 @@
+Forge v6 -- 14 October 2026
+================================
+
+From the six runs (L-bracket, leg shell, stepper plate, curved arm plate, dome, collar)
+and the upper-arm side rail run.
+
+Why Claude struggled
+--------------------
+* Every call was a FORCED tool call. On Claude Sonnet 5 a forced tool call is answered
+  at once with no thinking at all, so each design was a whole CSG program written in a
+  single pass with no room to work it out. Forge now lets a model that can think do so
+  (adaptive thinking on Sonnet 5 and other new models, a token budget on older ones) and
+  offers the tool instead of forcing it.
+  - New flags: --thinking auto|adaptive|enabled|off and --effort low..max (also
+    FORGE_THINKING / FORGE_EFFORT; -Thinking / -Effort in run-design-claude.ps1).
+  - If the API refuses a thinking setting (an unbilled 400), Forge steps it down and
+    remembers. An answer written in words is asked for in the tool, in the same
+    conversation, with its thinking kept. A JSON answer written in the text is used.
+    An answer cut off before it starts is treated as a truncation, so the role asks
+    again with more room instead of resending the identical call.
+  - Thinking calls get at least 600 s before they time out.
+
+Forge's own faults (false PASS / needless rounds)
+-------------------------------------------------
+* L-bracket: the plate-layout repair took the longer side for the leg's length. It now
+  reads the long way from the brief ("60 mm wide ... 50 mm long").
+* Dome: halved, then shelled, so it came out sealed; and no claim checked that it was
+  hollow. A shell that seals an opening the record claims is now moved before the cut.
+  A wall assumption whose figure is only in its statement now yields the
+  wall-thickness and opening claims.
+* Stepper plate: slots the model had drawn were recut, measured from a blend-swollen
+  envelope. Slots drawn as patterned boxes now count. A trim that clips a joined boss
+  is settled. A chamfer drawn as an oversized chamfered box (whose chamfer missed the
+  plate) is now built as the plate's own top-edge chamfer.
+* Curved plate: held BLOCKED for a material assumption although nothing measured
+  depends on a material. It is now kept as a guess in the report and does not hold the
+  part. It still holds the part when mass or a safety margin is claimed.
+* Analyst re-asks:
+  - an abandon whose reason sits in its diagnosis is kept;
+  - patches written inside the text are used;
+  - refused answers are recorded in the run log;
+  - a "placeholder" answer is sent back rather than applied.
+* The analyst is now shown what every derived parameter actually comes to. On the leg
+  shell it believed (z_bottom + z_top) / 2 was -37.5 when it was -12.5.
+
+Upper-arm side rail
+-------------------
+* Two holes spaced 60 mm apart across a 30 mm rail (both designs did this) are turned
+  to run along the rail. They are placed on solid plate with a wall all round, clear of
+  the other holes, the cutouts and the boss.
+* A 15 mm radius on the end edges of an 8 mm plate, which is half the plate's 30 mm
+  width, now rounds the ends in plan (a stadium) instead of being clamped to 4 mm.
+* Polygon profiles take corner_radius (new). "Rounded triangular cutouts" whose radius
+  was put on the extrusion's end_radius now get it on the triangle's corners.
+* A cutout the brief calls a cutout that was cut only part way through the plate (the
+  sketch plane was at the plate's top face) now runs right through. This is not done
+  when the brief speaks of pockets, recesses, depth and similar.
+
+Kept as intended
+----------------
+* The side rail's "compliance standard" question holds the part for one explicit
+  acceptance. It is a body-worn exoskeleton part, and Forge cannot check regulatory
+  compliance. Use: forge accept <run>\document.forgeir.json

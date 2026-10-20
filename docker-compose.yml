@@ -1,0 +1,58 @@
+# Local development profile.
+#
+# The worker services are locked down by default rather than as a hardening
+# pass: they execute geometry derived from model output, so they get no network,
+# a read-only root filesystem, a non-root user and hard resource limits.
+
+services:
+  cad:
+    build:
+      context: .
+      target: core
+    image: forge/cad:0.1.0
+    network_mode: none          # the worker has no reason to reach anything
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 4g
+    cpus: 2.0
+    volumes:
+      - ./examples:/app/examples:ro
+      - ./build:/app/build:rw
+
+  simulation:
+    build:
+      context: .
+      target: solvers
+    image: forge/simulation:0.1.0
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp:size=4g,mode=1777
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 512
+    mem_limit: 12g
+    cpus: 4.0
+    volumes:
+      - ./examples:/app/examples:ro
+      - ./build:/app/build:rw
+
+  # Below are the services the architecture expects and that do not exist yet.
+  # They are listed, commented, so the intended topology is visible rather than
+  # implied. Uncommenting them will not work until the services are written.
+  #
+  # postgres:   durable project, revision and evidence storage
+  # redis:      work queue and cache
+  # minio:      S3-compatible artifact store
+  # api:        FastAPI boundary, SSE progress
+  # web:        the engineering workspace

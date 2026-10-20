@@ -1,0 +1,188 @@
+{
+ "brief": "A 40 x 20 x 10 mm block turned 30 degrees about the vertical axis, with a 5 mm hole straight down through its centre. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 40 x 20 x 10 mm block turned 30 degrees about the vertical axis, with a 5 mm hole straight down through its centre.",
+  "part_kind": "zoo2_rotated_block",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_HOLE",
+    "statement": "REQ_HOLE",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_LENGTH",
+    "statement": "length",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WIDTH",
+    "statement": "width",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HEIGHT",
+    "statement": "height",
+    "measurement": "parameter:height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HOLE_DIAMETER",
+    "statement": "hole_diameter",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_rotated_block",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "block",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "height"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "height / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "turned",
+       "kind": "transform",
+       "inputs": [
+        "block"
+       ],
+       "parameters": {
+        "rotate_axis": [
+         0,
+         0,
+         1
+        ],
+        "rotate_angle": {
+         "magnitude": 30,
+         "unit": "deg"
+        }
+       }
+      },
+      {
+       "id": "hole",
+       "kind": "hole",
+       "inputs": [
+        "turned"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

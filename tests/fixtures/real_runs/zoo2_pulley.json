@@ -1,0 +1,250 @@
+{
+ "brief": "A nylon pulley, revolved from its half-section: 50 mm across its flanges, a 40 mm groove 6 mm wide, 14 mm wide overall, with a 8 mm bore. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A nylon pulley, revolved from its half-section: 50 mm across its flanges, a 40 mm groove 6 mm wide, 14 mm wide overall, with a 8 mm bore.",
+  "part_kind": "zoo2_pulley",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_Z",
+    "statement": "REQ_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 14,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BORE",
+    "statement": "REQ_BORE",
+    "measurement": "holes_of_diameter:8",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_FLANGE_RADIUS",
+    "statement": "flange_radius",
+    "measurement": "parameter:flange_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_GROOVE_RADIUS",
+    "statement": "groove_radius",
+    "measurement": "parameter:groove_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WIDTH",
+    "statement": "width",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 14,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_GROOVE_WIDTH",
+    "statement": "groove_width",
+    "measurement": "parameter:groove_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BORE",
+    "statement": "bore",
+    "measurement": "parameter:bore",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_pulley",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "flange_radius",
+       "value": {
+        "magnitude": 25,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "groove_radius",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 14,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "groove_width",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore",
+       "value": {
+        "magnitude": 8,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "section_plane",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XZ"
+       }
+      },
+      {
+       "id": "section",
+       "kind": "profile_sketch",
+       "inputs": [
+        "section_plane"
+       ],
+       "parameters": {
+        "points": {
+         "points": [
+          [
+           0,
+           0
+          ],
+          [
+           "flange_radius",
+           0
+          ],
+          [
+           "flange_radius",
+           "(width - groove_width) / 2"
+          ],
+          [
+           "groove_radius",
+           "(width - groove_width) / 2"
+          ],
+          [
+           "groove_radius",
+           "(width + groove_width) / 2"
+          ],
+          [
+           "flange_radius",
+           "(width + groove_width) / 2"
+          ],
+          [
+           "flange_radius",
+           "width"
+          ],
+          [
+           0,
+           "width"
+          ]
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "spin",
+       "kind": "datum_axis",
+       "parameters": {
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "direction": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "wheel",
+       "kind": "revolve",
+       "inputs": [
+        "section",
+        "spin"
+       ],
+       "parameters": {
+        "angle": {
+         "magnitude": 360,
+         "unit": "deg"
+        }
+       }
+      },
+      {
+       "id": "bore_hole",
+       "kind": "hole",
+       "inputs": [
+        "wheel"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "bore",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

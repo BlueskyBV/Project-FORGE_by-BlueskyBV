@@ -1,0 +1,130 @@
+{
+ "brief": "A steel L-bracket made from a 3 mm plate 80 mm long and 30 mm wide, bent 90 degrees in the middle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel L-bracket made from a 3 mm plate 80 mm long and 30 mm wide, bent 90 degrees in the middle. It carries no load, so there is no load case.",
+  "part_kind": "l_bracket_bent",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "l_bracket_bent",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 80,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 3,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "bend",
+       "kind": "bend",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "angle": {
+         "magnitude": 90,
+         "unit": "deg"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "along": [
+         1,
+         0,
+         0
+        ],
+        "toward": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

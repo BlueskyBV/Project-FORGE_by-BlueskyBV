@@ -1,0 +1,413 @@
+{
+ "brief": "A PLA upper-arm rail for an elbow brace: a flat bar 36 mm wide and 20 mm thick. One end of the bar is a round end 48 mm in diameter centred on the pivot point. The bar runs along its centreline from the pivot point to a fully rounded far end whose centre is 245 mm from the pivot point. At the pivot point, cut a round pocket 22.1 mm in diameter and 7 mm deep into the top face and an identical pocket 7 mm deep into the bottom face, and cut a 17 mm hole through the 6 mm of material left between the two pockets. Add four 8.2 mm through holes on the bar's centreline at 85, 115, 225 and 245 mm from the pivot point. Give only the two holes at 225 and 245 mm a 15 mm counterbore 5 mm deep from the bottom face. Its strength is checked outside Forge, so there is no load case.",
+ "run": "20261019T164356-a-pla-upper-arm-rail-for-an-elbow-brace",
+ "note": "Held on REQ_ROUND, which Forge added: the RE claimed the rail's 48 mm width at its round end as bounding_box_y, and 'one end of the bar is a round end 48 mm in diameter' was read as the part being 48 mm round -- so Forge claimed X = 48 too and roundness 0.95. The correct 287 mm flat rail measured 0.385, the analyst rightly refused to make the bar round, and the part was blocked. Requirements here are the record without the two claims Forge added.",
+ "requirements": {
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The widest point of the finished rail, at the 48 mm diameter pivot end, shall measure 48 mm across.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 48.0,
+     "unit": "mm"
+    },
+    "rationale": "The pivot end (48 mm diameter) is wider than the 36 mm bar, so it sets the part's overall Y extent.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The rail's overall height (its thickness, stood on edge or measured through the flat bar) shall be 20 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "The bar is a uniform 20 mm thick flat bar throughout its length, including the pivot end; nothing in the brief increases this.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BAR_WIDTH",
+    "statement": "The flat bar shall be 36 mm wide along its straight section.",
+    "measurement": "parameter:bar_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BAR_THICKNESS",
+    "statement": "The flat bar shall be 20 mm thick.",
+    "measurement": "parameter:bar_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_END_DIAMETER",
+    "statement": "The round end at the pivot point shall be 48 mm in diameter, centred on the pivot point.",
+    "measurement": "parameter:pivot_end_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 48.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FAR_END_DISTANCE",
+    "statement": "The centre of the fully rounded far end shall be 245 mm from the pivot point along the bar's centreline.",
+    "measurement": "parameter:far_end_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 245.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_POCKET_DIAMETER",
+    "statement": "The round pockets cut into the top and bottom faces at the pivot point shall each be 22.1 mm in diameter.",
+    "measurement": "parameter:pivot_pocket_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 22.1,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_POCKET_DEPTH",
+    "statement": "Each of the two pivot-point pockets (top and bottom) shall be 7 mm deep.",
+    "measurement": "parameter:pivot_pocket_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 7.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_THROUGH_HOLE_DIAMETER",
+    "statement": "The through hole at the pivot point, cut through the material remaining between the two pockets, shall be 17 mm in diameter.",
+    "measurement": "parameter:pivot_through_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 17.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_WEB_THICKNESS",
+    "statement": "The material left between the top and bottom pivot pockets, through which the 17 mm hole is cut, shall be 6 mm thick.",
+    "measurement": "parameter:pivot_web_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The four through holes on the bar's centreline shall each be 8.2 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.2,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE1_POSITION",
+    "statement": "The first mounting hole shall be centred 85 mm from the pivot point along the centreline.",
+    "measurement": "parameter:hole1_position",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 85.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE2_POSITION",
+    "statement": "The second mounting hole shall be centred 115 mm from the pivot point along the centreline.",
+    "measurement": "parameter:hole2_position",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE3_POSITION",
+    "statement": "The third mounting hole shall be centred 225 mm from the pivot point along the centreline.",
+    "measurement": "parameter:hole3_position",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 225.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE4_POSITION",
+    "statement": "The fourth mounting hole shall be centred 245 mm from the pivot point along the centreline, coincident with the far end's centre.",
+    "measurement": "parameter:hole4_position",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 245.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DIAMETER",
+    "statement": "The counterbores on the holes at 225 mm and 245 mm shall be 15 mm in diameter.",
+    "measurement": "parameter:counterbore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DEPTH",
+    "statement": "The counterbores on the holes at 225 mm and 245 mm shall be 5 mm deep, cut from the bottom face.",
+    "measurement": "parameter:counterbore_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The bar shall have exactly four mounting through holes on its centreline.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": ""
+    },
+    "rationale": "Brief specifies holes at 85, 115, 225 and 245 mm from the pivot.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_COUNTERBORE_HOLE_COUNT",
+    "statement": "Exactly two of the mounting holes (those at 225 and 245 mm) shall carry a counterbore.",
+    "measurement": "feature_count:hole:counterbore",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states only the 225 mm and 245 mm holes get a counterbore.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "The part shall have exactly one through hole at the pivot point.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1.0,
+     "unit": ""
+    },
+    "rationale": "A single 17 mm hole is cut through the web between the two pivot pockets.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_17MM",
+    "measurement": "holes_of_diameter:17",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 17 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_CONSTANT_SECTION",
+    "statement": "The bar's 36 mm x 20 mm cross-section is constant along the full length between the pivot end and the far end, with no taper.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "The brief gives only the width and thickness once and does not describe any profile change along the length.",
+    "consequence_if_wrong": "If the bar actually tapers or steps, the model would need a profile sweep rather than a constant extrusion, changing the whole geometry definition.",
+    "approved": false
+   },
+   {
+    "id": "ASM_TOLERANCES",
+    "statement": "All holes, pockets and the pivot bore are modelled at nominal size with standard FDM/PLA printing tolerances; no special fit class is required.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief gives nominal diameters only, with no fit callouts (e.g. H7, clearance class).",
+    "consequence_if_wrong": "If a precision running or press fit is actually required at the pivot, the nominal 17 mm/22.1 mm bore may not mate correctly with the pin/bushing.",
+    "approved": false
+   },
+   {
+    "id": "ASM_EDGE_TREATMENT",
+    "statement": "No chamfer or edge-break is required on edges that may contact skin or clothing; edges are left as printed.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief specifies no surface finish or deburring requirement despite the part being worn on an arm.",
+    "consequence_if_wrong": "Sharp printed edges against skin may cause discomfort or require a secondary finishing pass not currently modelled.",
+    "approved": false
+   },
+   {
+    "id": "ASM_NO_HANDEDNESS",
+    "statement": "The rail geometry is symmetric about its centreline and requires no left/right-arm mirrored variant.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief describes a single bar with centreline features only, with no asymmetric detail implying handedness.",
+    "consequence_if_wrong": "If handedness is actually required, a mirrored variant would need to be produced separately.",
+    "approved": false
+   },
+   {
+    "id": "ASM_MATERIAL_SUITABILITY",
+    "statement": "Plain PLA, as named in the brief, is an acceptable material for this skin-adjacent wearable part with no additional biocompatibility, sterilization or surface-finish requirement.",
+    "risk": "moderate",
+    "reversible": true,
+    "rationale": "The brief names PLA as the material but gives no biocompatibility or finish requirement for a part worn against or near skin.",
+    "consequence_if_wrong": "If the part requires a biocompatible or more durable material, PLA may be unsuitable for sustained skin contact or repeated flexing.",
+    "approved": false
+   },
+   {
+    "id": "ASM_MATING_HARDWARE",
+    "statement": "The 17 mm pivot hole and 22.1 mm pockets, and the 8.2 mm mounting holes with 15 mm x 5 mm counterbores, are sized to mate with a pivot pin/bushing and fasteners supplied and designed outside this model.",
+    "risk": "low",
+    "reversible": true,
+    "rationale": "The brief gives the hole and counterbore geometry directly but does not describe the mating pin, bushing or fastener hardware.",
+    "consequence_if_wrong": "If the mating hardware has different dimensions than assumed, the stated hole sizes (which are fixed requirements from the brief) would not need to change, but the assembly might not function as intended.",
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "REQ_HOLE1_POSITION, REQ_HOLE2_POSITION, REQ_HOLE3_POSITION carried `source: \"user\"` against a threshold the brief does not state. The figure may be sound -- a derived dimension, a manufacturing limit -- but the user did not write it, so it is recorded as `derived` rather than reported back to them as their own requirement.",
+   "added REQ_BOUNDING_BOX_X: the brief calls this 48 mm square or round, so X and Y are the same number, and only `bounding_box_y` was claimed. A part measured across one axis only can be built to any depth at all and pass -- and one was, at 30 by 12.",
+   "added REQ_ROUND: the brief calls this part round, and two equal bounding boxes do not say a part is round -- a 25 mm square block has a 25 by 25 box exactly as a 25 mm cylinder does. One run asked for a shaft collar and got a square block with both extent claims passing. This measures the built surface: 1 is a cylinder, a square is 0.707.",
+   "added REQ_HOLES_17MM: the brief states 1 open hole of 17 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_8_2MM: the brief states 4 open holes of 8.2 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "`ASM_MATERIAL_SUITABILITY` assumes a material, and nothing the record measures rests on one -- no mass, no margin: kept in the report as the guess it is, and no longer holding the part for approval.",
+   "`ASM_FAR_END_DIAMETER` assumed a fillet, blend or chamfer the brief never asks for: dropped. Forge draws what the brief describes, and an edge it leaves sharp is sharp."
+  ]
+ }
+}

@@ -1,0 +1,1593 @@
+{
+ "brief": "A hollow, 3D-printable lower-leg shell in PLA, one connected solid. Axes: Z is vertical from ankle to knee, X is left-right, Y is front-back with the rear on the negative-Y side, and the origin is at the centre of the bottom face of the shell. The shell is a loft through five rounded-rectangle cross-sections on XY planes, each with 15 mm corner radii, each given as X width by Y depth: at Z=0, 85 x 80 mm; at Z=80, 95 x 90 mm; at Z=190, 115 x 110 mm; at Z=260, 120 x 115 mm; at Z=330, 115 x 105 mm. The sections at Z=0, 80 and 330 are centred on the Z axis; the sections at Z=190 and Z=260 are shifted 8 mm toward negative Y, which gives the calf its rearward bulge. Shell the loft inward to 8 mm walls, with the top at Z=330 and the bottom at Z=0 closed by 8 mm walls. Cut one rectangular access opening through the rear wall only, 60 mm wide along X and 210 mm tall along Z, centred at X=0 and Z=165, so it spans Z=60 to Z=270; the cut must pass completely through the rear wall over its full height and must not touch the front wall. Add six 4.5 mm mounting holes drilled along Y through the rear wall only, not the front wall, at X/Z positions (-36, 50), (36, 50), (-36, 165), (36, 165), (-36, 280) and (36, 280). Add one hinge tab at each end of the shell, centred at X=0 and Y=0, each 12 mm thick along X and 30 mm wide along Y. The lower tab runs from Z=-50 to Z=25 and the upper tab from Z=305 to Z=380, so each extends 50 mm beyond the shell and is embedded 25 mm into it. The outer end of each tab is fully rounded with a 15 mm radius across its 30 mm width. Each tab has one 8.5 mm pivot hole drilled along X through its 12 mm thickness, the lower one centred at X=0, Y=0, Z=-37.5 and the upper one at X=0, Y=0, Z=367.5. Join each tab to the shell with an 8 mm fillet at its root. The shell itself is 330 mm tall; the whole part including both tabs is 430 mm tall, from Z=-50 to Z=380. No separate lid. It carries no load, so there is no load case.",
+ "requirements": {
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The whole part (shell plus both hinge tabs) shall be 430 mm tall overall, from Z=-50 to Z=380.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 430,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CORNER_RADIUS",
+    "statement": "Each rounded-rectangle loft cross-section shall have 15 mm corner radii.",
+    "measurement": "parameter:corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z0_WIDTH_X",
+    "statement": "The cross-section at Z=0 shall be 85 mm wide along X.",
+    "measurement": "parameter:section_z0_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 85,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z0_DEPTH_Y",
+    "statement": "The cross-section at Z=0 shall be 80 mm deep along Y.",
+    "measurement": "parameter:section_z0_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z80_WIDTH_X",
+    "statement": "The cross-section at Z=80 shall be 95 mm wide along X.",
+    "measurement": "parameter:section_z80_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 95,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z80_DEPTH_Y",
+    "statement": "The cross-section at Z=80 shall be 90 mm deep along Y.",
+    "measurement": "parameter:section_z80_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z190_WIDTH_X",
+    "statement": "The cross-section at Z=190 shall be 115 mm wide along X.",
+    "measurement": "parameter:section_z190_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z190_DEPTH_Y",
+    "statement": "The cross-section at Z=190 shall be 110 mm deep along Y.",
+    "measurement": "parameter:section_z190_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 110,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z260_WIDTH_X",
+    "statement": "The cross-section at Z=260 shall be 120 mm wide along X.",
+    "measurement": "parameter:section_z260_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z260_DEPTH_Y",
+    "statement": "The cross-section at Z=260 shall be 115 mm deep along Y.",
+    "measurement": "parameter:section_z260_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z330_WIDTH_X",
+    "statement": "The cross-section at Z=330 shall be 115 mm wide along X.",
+    "measurement": "parameter:section_z330_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_Z330_DEPTH_Y",
+    "statement": "The cross-section at Z=330 shall be 105 mm deep along Y.",
+    "measurement": "parameter:section_z330_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 105,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_SHIFT_Y",
+    "statement": "The Z=190 and Z=260 cross-sections shall be shifted 8 mm toward negative Y relative to the Z-axis-centred sections.",
+    "measurement": "parameter:section_shift_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS_LOFT",
+    "statement": "The loft shall be shelled inward to 8 mm wall thickness.",
+    "measurement": "parameter:wall_thickness_loft",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOTTOM_CLOSURE_THICKNESS",
+    "statement": "The bottom closure at Z=0 shall be an 8 mm wall.",
+    "measurement": "parameter:bottom_closure_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ACCESS_OPENING_WIDTH_X",
+    "statement": "The rear access opening shall be 60 mm wide along X.",
+    "measurement": "parameter:access_opening_width_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ACCESS_OPENING_HEIGHT_Z",
+    "statement": "The rear access opening shall be 210 mm tall along Z, spanning Z=60 to Z=270.",
+    "measurement": "parameter:access_opening_height_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 210,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The six mounting holes through the rear wall shall be 4.5 mm diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_THICKNESS_X",
+    "statement": "Each hinge tab shall be 12 mm thick along X.",
+    "measurement": "parameter:tab_thickness_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_WIDTH_Y",
+    "statement": "Each hinge tab shall be 30 mm wide along Y.",
+    "measurement": "parameter:tab_width_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_OVERHANG_LENGTH",
+    "statement": "Each hinge tab shall extend 50 mm beyond the shell.",
+    "measurement": "parameter:tab_overhang_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_EMBED_LENGTH",
+    "statement": "Each hinge tab shall be embedded 25 mm into the shell.",
+    "measurement": "parameter:tab_embed_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_END_RADIUS",
+    "statement": "The outer end of each tab shall be fully rounded with a 15 mm radius across its 30 mm width.",
+    "measurement": "parameter:tab_end_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "Each tab's pivot hole shall be 8.5 mm diameter, drilled along X through the 12 mm thickness.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.5,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TAB_ROOT_FILLET",
+    "statement": "Each tab shall join the shell with an 8 mm fillet at its root.",
+    "measurement": "parameter:tab_root_fillet",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SHELL_HEIGHT",
+    "statement": "The shell itself (excluding tabs) shall be 330 mm tall.",
+    "measurement": "parameter:shell_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ACCESS_OPENING_HOLE_COUNT",
+    "statement": "Exactly one rectangular access opening shall be cut through the rear wall only.",
+    "measurement": "feature_count:hole:access_opening",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "Exactly six 4.5 mm mounting holes shall be drilled through the rear wall only.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "Exactly two 8.5 mm pivot holes shall exist, one per hinge tab.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM",
+    "measurement": "holes_of_diameter:4.5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "statement": "The part shall have 6 open holes of 4.5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_M36_50",
+    "statement": "One 4.5 mm hole shall have its axis through X=-36, Z=50.",
+    "measurement": "hole_at:4.5:-36,*,50",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_36_50",
+    "statement": "One 4.5 mm hole shall have its axis through X=36, Z=50.",
+    "measurement": "hole_at:4.5:36,*,50",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_M36_165",
+    "statement": "One 4.5 mm hole shall have its axis through X=-36, Z=165.",
+    "measurement": "hole_at:4.5:-36,*,165",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_36_165",
+    "statement": "One 4.5 mm hole shall have its axis through X=36, Z=165.",
+    "measurement": "hole_at:4.5:36,*,165",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_M36_280",
+    "statement": "One 4.5 mm hole shall have its axis through X=-36, Z=280.",
+    "measurement": "hole_at:4.5:-36,*,280",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_4_5MM_AT_36_280",
+    "statement": "One 4.5 mm hole shall have its axis through X=36, Z=280.",
+    "measurement": "hole_at:4.5:36,*,280",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_8_5MM_AT_0_0_M37_5",
+    "statement": "One 8.5 mm hole shall have its axis through X=0, Y=0, Z=-37.5.",
+    "measurement": "hole_at:8.5:0,0,-37.5",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_8_5MM_AT_0_0_367_5",
+    "statement": "One 8.5 mm hole shall have its axis through X=0, Y=0, Z=367.5.",
+    "measurement": "hole_at:8.5:0,0,367.5",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_210X60",
+    "statement": "The part shall have 1 opening 210 by 60 mm through its wall.",
+    "measurement": "windows_of_size:210x60:-y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The walls shall be 8 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_LOFT_METHOD",
+    "statement": "The loft between the five stated cross-sections is a smooth continuous loft (not a sequence of abrupt steps), consistent with normal loft modelling practice.",
+    "rationale": "The brief calls it 'a loft through five rounded-rectangle cross-sections' which implies continuous surface, but does not state linear vs spline blending.",
+    "consequence_if_wrong": "A different interpolation method would change the exact intermediate silhouette, though all stated stations would still measure correctly.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PLA_PRINT_SETTINGS",
+    "statement": "Standard FDM PLA print practice (ordinary infill, no specified minimum overhang angle or support strategy) is assumed adequate for this geometry; no specific print orientation is mandated.",
+    "rationale": "Brief states 'PLA, 3D-printable' without further print-process detail.",
+    "consequence_if_wrong": "Overhangs at the shifted cross-sections or the access opening edges may require supports or reorientation not currently planned.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_TOLERANCE",
+    "statement": "The 4.5 mm and 8.5 mm holes are nominal through-hole diameters with no specific fit tolerance class (not reamed or press-fit); any mating pins/bolts are selected to suit.",
+    "rationale": "Brief gives only nominal diameters, no fit callout.",
+    "consequence_if_wrong": "If a precision press-fit or clearance fit was intended, the printed hole may not mate correctly with hardware.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FRONT_WALL_CLEARANCE",
+    "statement": "The 8 mm wall thickness is maintained uniformly around the loft, including at the front wall opposite the rear access opening and mounting holes, at every Z station including the Y-shifted stations.",
+    "rationale": "Brief requires the rear cut and holes not touch the front wall but does not give an explicit front-wall minimum; derived from the stated uniform 8 mm shell thickness.",
+    "consequence_if_wrong": "If the front wall thins locally below 8 mm at the shifted stations, the access opening or a mounting hole could breach it, violating the 'must not touch the front wall' requirement.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_NO_INTERNAL_RIBS",
+    "statement": "No internal stiffening ribs or gussets are added; the shell is a plain 8 mm hollow loft as described, with no additional internal structure.",
+    "rationale": "Brief does not mention ribs or internal supports.",
+    "consequence_if_wrong": "A large hollow PLA shell of this size may be more flexible or prone to warping than intended, but this is not stated as a requirement.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_OPENING_EDGE_TREATMENT",
+    "question": "Should the edges of the rear access opening and the top/bottom closure edges have any chamfer or fillet, or are they left sharp as-cut?",
+    "why_it_matters": "Sharp printed edges can be a handling/print-quality concern, but no treatment is specified beyond the tab-root fillet.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "Leave edges sharp (no additional chamfer/fillet) except the stated 8 mm tab-root fillet."
+   },
+   {
+    "id": "UNK_HINGE_MATING_HARDWARE",
+    "question": "What hardware (pin diameter/material, mating bracket) engages the 8.5 mm pivot holes, and what is the intended range of motion at each hinge?",
+    "why_it_matters": "Determines whether 8.5 mm is a clearance or press fit and whether the tab/fillet geometry is adequate for its actual intended mechanical duty, even though no load case is specified now.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "Assume a simple clearance-fit steel or nylon pivot pin, no specified range of motion."
+   }
+  ],
+  "notes": [
+   "dropped 2 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_4_5MM: the brief states 6 open holes of 4.5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLE_4_5MM_AT_M36_50, REQ_HOLE_4_5MM_AT_36_50, REQ_HOLE_4_5MM_AT_M36_165, REQ_HOLE_4_5MM_AT_36_165, REQ_HOLE_4_5MM_AT_M36_280, REQ_HOLE_4_5MM_AT_36_280, REQ_HOLE_8_5MM_AT_0_0_M37_5, REQ_HOLE_8_5MM_AT_0_0_367_5: the brief puts these holes at points in its own coordinates, and a count of holes passes wherever they are. Each is measured on the part: an open hole of that size with its axis through the point.",
+   "added REQ_OPENINGS_210X60: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size.",
+   "added REQ_WALL_THICKNESS at 8 mm: the brief describes a container -- 8 mm walls -- and a solid block, a sealed hollow box and the part asked for all have the same bounding box. Each is measured on the built part through its middle, from the side it is open on."
+  ]
+ },
+ "document": {
+  "name": "Lower-leg shroud shell",
+  "description": "Hollow PLA lower-leg shroud lofted through five rounded-rectangle cross-sections, with a rear access opening, six rear mounting holes, and upper/lower hinge tabs with pivot holes.",
+  "components": [
+   {
+    "id": "leg_shroud",
+    "name": "Lower-leg shroud",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "corner_radius",
+      "value": {
+       "magnitude": 15,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z0_width_x",
+      "value": {
+       "magnitude": 85,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z0_depth_y",
+      "value": {
+       "magnitude": 80,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z80_width_x",
+      "value": {
+       "magnitude": 95,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z80_depth_y",
+      "value": {
+       "magnitude": 90,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z190_width_x",
+      "value": {
+       "magnitude": 115,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z190_depth_y",
+      "value": {
+       "magnitude": 110,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z260_width_x",
+      "value": {
+       "magnitude": 120,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z260_depth_y",
+      "value": {
+       "magnitude": 115,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z330_width_x",
+      "value": {
+       "magnitude": 115,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z330_depth_y",
+      "value": {
+       "magnitude": 105,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_shift_y",
+      "value": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "wall_thickness_loft",
+      "value": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "bottom_closure_thickness",
+      "value": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "access_opening_width_x",
+      "value": {
+       "magnitude": 60,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "access_opening_height_z",
+      "value": {
+       "magnitude": 210,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "access_opening_center_z",
+      "value": {
+       "magnitude": 165,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_diameter",
+      "value": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_thickness_x",
+      "value": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_width_y",
+      "value": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_overhang_length",
+      "value": {
+       "magnitude": 50,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_embed_length",
+      "value": {
+       "magnitude": 25,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_end_radius",
+      "value": {
+       "magnitude": 15,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "pivot_hole_diameter",
+      "value": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_root_fillet",
+      "value": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "shell_height",
+      "value": {
+       "magnitude": 330,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "z_station_80",
+      "value": {
+       "magnitude": 80,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "z_station_190",
+      "value": {
+       "magnitude": 190,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "z_station_260",
+      "value": {
+       "magnitude": 260,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tab_total_length",
+      "expression": "tab_overhang_length + tab_embed_length",
+      "unit": "mm"
+     },
+     {
+      "id": "mount_hole_x_offset",
+      "value": {
+       "magnitude": 36,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mount_hole_z_lower",
+      "value": {
+       "magnitude": 50,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mount_hole_z_mid",
+      "value": {
+       "magnitude": 165,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mount_hole_z_upper",
+      "value": {
+       "magnitude": 280,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "front_back_reach",
+      "value": {
+       "magnitude": 200,
+       "unit": "mm"
+      }
+     }
+    ],
+    "features": [
+     {
+      "id": "plane_z0",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z80",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "z_station_80",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z190",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "z_station_190",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z260",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "z_station_260",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z330",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "shell_height",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_z0",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z0"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z0_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z0_depth_y",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_z80",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z80"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z80_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z80_depth_y",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_z190",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z190"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z190_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z190_depth_y",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-section_shift_y",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_z260",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z260"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z260_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z260_depth_y",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-section_shift_y",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_z330",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z330"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z330_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z330_depth_y",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "loft_01",
+      "kind": "loft",
+      "inputs": [
+       "prof_z0",
+       "prof_z80"
+      ]
+     },
+     {
+      "id": "loft_12",
+      "kind": "loft",
+      "inputs": [
+       "prof_z80",
+       "prof_z190"
+      ]
+     },
+     {
+      "id": "loft_23",
+      "kind": "loft",
+      "inputs": [
+       "prof_z190",
+       "prof_z260"
+      ]
+     },
+     {
+      "id": "loft_34",
+      "kind": "loft",
+      "inputs": [
+       "prof_z260",
+       "prof_z330"
+      ]
+     },
+     {
+      "id": "outer_solid",
+      "kind": "union",
+      "inputs": [
+       "loft_01",
+       "loft_12",
+       "loft_23",
+       "loft_34"
+      ]
+     },
+     {
+      "id": "shell_hollow",
+      "kind": "shell",
+      "inputs": [
+       "outer_solid"
+      ],
+      "parameters": {
+       "thickness": {
+        "expression": "wall_thickness_loft",
+        "unit": "mm"
+       },
+       "direction": "inward"
+      }
+     },
+     {
+      "id": "access_cut_plane",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XZ",
+       "offset": {
+        "magnitude": 0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "access_cut_profile",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "access_cut_plane"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "access_opening_width_x",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "access_opening_height_z",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "access_opening_center_z",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "access_cut_extrude",
+      "kind": "extrude",
+      "inputs": [
+       "access_cut_profile"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "front_back_reach",
+        "unit": "mm"
+       },
+       "mode": "reverse"
+      }
+     },
+     {
+      "id": "shell_with_opening",
+      "kind": "subtract",
+      "tags": [
+       "access_opening"
+      ],
+      "inputs": [
+       "shell_hollow",
+       "access_cut_extrude"
+      ]
+     },
+     {
+      "id": "lower_tab_raw",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "tab_thickness_x",
+         "tab_width_y",
+         "tab_total_length"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "edges": "bottom_along_y",
+       "edge_radius": {
+        "expression": "tab_end_radius",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "tab_embed_length - tab_total_length / 2"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "upper_tab_raw",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "tab_thickness_x",
+         "tab_width_y",
+         "tab_total_length"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "edges": "top_along_y",
+       "edge_radius": {
+        "expression": "tab_end_radius",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "shell_height - tab_embed_length + tab_total_length / 2"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body_with_lower_tab",
+      "kind": "union",
+      "inputs": [
+       "shell_with_opening",
+       "lower_tab_raw"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "tab_root_fillet",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body_with_both_tabs",
+      "kind": "union",
+      "inputs": [
+       "body_with_lower_tab",
+       "upper_tab_raw"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "tab_root_fillet",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "mount_hole_1",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "body_with_both_tabs"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         -36,
+         0,
+         "mount_hole_z_lower"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_2",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         36,
+         0,
+         "mount_hole_z_lower"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_3",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_2"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         -36,
+         0,
+         "mount_hole_z_mid"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_4",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_3"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         36,
+         0,
+         "mount_hole_z_mid"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_5",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_4"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         -36,
+         0,
+         "mount_hole_z_upper"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_6",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_5"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         36,
+         0,
+         "mount_hole_z_upper"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "through": "first_wall",
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole_lower",
+      "kind": "hole",
+      "role": "lower_pivot",
+      "tags": [
+       "pivot"
+      ],
+      "inputs": [
+       "mount_hole_6"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         -37.5
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole_upper",
+      "kind": "hole",
+      "role": "upper_pivot",
+      "tags": [
+       "pivot"
+      ],
+      "inputs": [
+       "pivot_hole_lower"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         367.5
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "lower_pivot_port",
+      "type": "shaft",
+      "geometry": "lower_pivot.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Lower hinge pivot pin bore"
+     },
+     {
+      "id": "upper_pivot_port",
+      "type": "shaft",
+      "geometry": "upper_pivot.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Upper hinge pivot pin bore"
+     },
+     {
+      "id": "rear_access_opening",
+      "type": "custom",
+      "geometry": "access_cut_extrude.side",
+      "description": "Rear access cutout through rear wall only, 60x210 mm"
+     },
+     {
+      "id": "rear_mount_pattern",
+      "type": "bolt_pattern",
+      "geometry": "mount_hole_6.bore",
+      "nominal_size": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Six rear-wall mounting holes for attachment hardware"
+     }
+    ]
+   }
+  ]
+ }
+}

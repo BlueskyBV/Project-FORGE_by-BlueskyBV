@@ -1,0 +1,740 @@
+{
+ "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
+ "intent": {
+  "summary": "A machined aluminium locating collar that clamps onto a 12 mm shaft via two radial set screws to fix axial position, carrying no functional load.",
+  "part_kind": "shaft collar",
+  "stated": [
+   "Material: aluminium, machined",
+   "Outer diameter: 25 mm",
+   "Length: 15 mm",
+   "Through bore: 12 mm diameter, on axis, full length",
+   "Two 4 mm set screw holes through the wall into the bore",
+   "Set screw holes are 90 degrees apart",
+   "Both set screw holes located halfway along the length",
+   "User states it carries no load - it is a locating collar"
+  ],
+  "implied": [
+   "Set screw holes pass radially from outside surface into the bore, so they must be positioned to intersect the bore reliably given the 6.5 mm wall thickness (OD 25 minus bore 12, over 2)",
+   "Since it clamps onto a shaft via set screws, the bore likely needs a reasonably toleranced fit to the mating shaft diameter",
+   "Set screw holes are likely threaded to accept set screws, implying a thread form/size compatible with 4 mm screws",
+   "Being a locating collar, it must resist slipping along the shaft under some axial force even though the user calls this 'no load' - the set screw clamping force is itself a load path"
+  ],
+  "unstated": [
+   "Aluminium alloy/grade (e.g. 6061-T6) is not specified",
+   "Set screw thread type and class (e.g. M4x0.7, cup point vs flat point) is not specified",
+   "Tolerance/fit class for the 12 mm bore relative to the mating shaft is not given",
+   "Surface finish requirements are not given",
+   "Whether the two set screw holes are meant to clamp against a single flat/keyway on the shaft or directly onto round shaft surface is not stated",
+   "Required holding/torque capacity of the set screws if any incidental load (vibration, side load, accidental bump) is expected",
+   "Corrosion/environmental exposure conditions",
+   "Whether any chamfers/deburring or edge breaks are required on bore and OD",
+   "Operating temperature range",
+   "Whether the collar needs to be split (clamp-style) vs solid bored (set-screw-only) - brief implies solid with set screws but does not explicitly rule out needing a slit",
+   "Position tolerance on the 90-degree spacing and axial location of the holes",
+   "Whether 'no load' truly means zero axial/radial force is ever applied, or just that it is not a structural load-bearing member in the system"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "None explicitly stated involving personal safety, pressure, overhead lifting, or vehicle/regulated equipment use",
+   "User explicitly disclaims any load case ('it carries no load'), which should be treated as an assumption to verify rather than a guarantee, since the part does interface with a rotating/moving shaft via set screws whose clamping failure could allow unintended shaft movement"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The collar's outer diameter shall be 25 mm, measured as the X extent of the finished part.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states outer diameter is 25 mm; a round part carries this value in both X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The collar's outer diameter shall be 25 mm, measured as the Y extent of the finished part.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Same outer diameter figure as X, since the part is round about its axis.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The collar's overall length shall be 15 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the collar is 15 mm long, measured along its bore axis (Z).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUNDNESS_ABOUT_Z",
+    "statement": "The collar shall be round about its axis, with equal extent in every direction across its diameter.",
+    "measurement": "roundness_about_z",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "rationale": "A collar with a stated single outer diameter is implied to be a cylinder, not a polygon with the same bounding box.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_DIAMETER",
+    "statement": "A through bore of 12 mm diameter shall run the full length of the collar on its axis.",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 12 mm bore runs all the way through on the axis.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_HOLE_DIAMETER",
+    "statement": "Each set screw hole shall be 4 mm in diameter.",
+    "measurement": "parameter:set_screw_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states two 4 mm set screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_ANGULAR_SPACING",
+    "statement": "The two set screw holes shall be spaced 90 degrees apart around the collar's circumference.",
+    "measurement": "angle_between:hole:spaced",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90.0,
+     "unit": "deg"
+    },
+    "rationale": "Brief states the set screw holes are 90 degrees apart; closest available check is angle_between the two tagged set_screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_HOLE_COUNT",
+    "statement": "The collar shall have exactly two set screw holes passing through the wall into the bore.",
+    "measurement": "feature_count:hole:set_screw",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states two 4 mm set screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_HOLE_COUNT",
+    "statement": "The collar shall have exactly one through bore.",
+    "measurement": "feature_count:hole:bore",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1.0,
+     "unit": ""
+    },
+    "rationale": "Brief describes a single central through bore.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_12MM_ON_AXIS",
+    "measurement": "holes_of_diameter:12:on_axis",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 12 mm down the part's axis.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The aluminium alloy is taken to be 6061-T6, a conventional machining grade, since no specific alloy/temper is given.",
+    "rationale": "6061-T6 is the standard choice for machined aluminium collars absent other guidance.",
+    "consequence_if_wrong": "A softer or harder alloy would change thread strength in the tapped set screw holes and finish quality, but since the part carries no structural load this is a minor consequence.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SET_SCREW_THREAD",
+    "statement": "The two 4 mm set screw holes are tapped to accept standard M4 set screws (e.g. cup-point), threading radially from the OD into the bore.",
+    "rationale": "A 4 mm 'set screw hole' through the wall into a bore conventionally implies a tapped M4 hole for a set screw, not a plain clearance hole.",
+    "consequence_if_wrong": "If the holes are meant to be plain clearance holes for a separate fastener, the design intent and manufacturing method (drill vs drill+tap) changes.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BORE_FIT",
+    "statement": "The 12 mm bore is assumed to need only a nominal (not precision) running/sliding fit to the mating shaft, as no fit class or tolerance is specified.",
+    "rationale": "The brief gives only a nominal bore diameter with no tolerance callout.",
+    "consequence_if_wrong": "If a precision fit (e.g. H7/g6) is actually required for proper locating function, the asbuilt bore may be too loose or tight to perform as a locating collar.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "A standard machined surface finish (approx. Ra 3.2 micrometres) is assumed on all surfaces, as none is specified.",
+    "rationale": "No finish requirement given; this is the ordinary default for a machined aluminium part in indoor/static service.",
+    "consequence_if_wrong": "A cosmetic or corrosion-critical application might require a finer finish or coating, but nothing in the brief suggests this.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SOLID_COLLAR",
+    "statement": "The collar is a solid (non-split) cylinder; the set screws clamp directly onto the round outer surface of the mating shaft through the two radial holes, with no slit or clamping flange.",
+    "rationale": "The brief describes a bore and two set screw holes, with no mention of a split/clamp feature.",
+    "consequence_if_wrong": "If a split clamp-style collar was actually intended, the whole design topology (and its clamping mechanics) would need to change.",
+    "risk": "moderate",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_SHAFT_SURFACE",
+    "statement": "The mating shaft is assumed to be plain round stock with no flat or keyway; the set screws bear directly on the round shaft surface.",
+    "rationale": "No flat, keyway or other shaft feature is mentioned in the brief.",
+    "consequence_if_wrong": "If the shaft has a flat or keyway, set screw hole placement or depth might need to change to engage it, though this does not affect the collar's own measurable geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "rebound REQ_SET_SCREW_ANGULAR_SPACING from `parameter:set_screw_angular_spacing` to `angle_between:hole:spaced`: the brief states 90 deg as the angle between two features, and a parameter binding reads back a number the design declares about itself. It cannot tell two holes 90 degrees apart from two drilled parallel, and a hole's direction is a vector, so a correct design has nowhere to use that parameter at all. The claim, its threshold and its id are the model's and are unchanged; it is now measured on the part.",
+   "REQ_ROUNDNESS_ABOUT_Z: held to 0.95, as every round part is: 1 is a perfect circle, which a measured surface never quite is.",
+   "added REQ_HOLES_12MM_ON_AXIS: the brief states 1 open hole of 12 mm down the part's axis, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_4MM: the brief states 2 open holes of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ]
+ },
+ "note": "Validation suite R12 on Claude Sonnet 5, 17 Oct 2026: every check passed, held BLOCKED for ASM_SOLID_COLLAR -- 'solid (non-split) ... no slit or clamping flange', moderate and irreversible.",
+ "document": {
+  "name": "Shaft Locating Collar",
+  "description": "Machined aluminium locating collar: a solid cylinder with a full-length through bore for a 12 mm shaft and two radial M4 set-screw holes, 90 degrees apart, halfway along its length, used to fix axial position with no structural load.",
+  "components": [
+   {
+    "id": "collar",
+    "name": "Shaft Locating Collar",
+    "material": "aluminium_6061_t6",
+    "parameters": [
+     {
+      "id": "outer_diameter",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      },
+      "description": "Collar outer diameter"
+     },
+     {
+      "id": "length",
+      "value": {
+       "magnitude": 15.0,
+       "unit": "mm"
+      },
+      "description": "Collar overall length along its bore axis"
+     },
+     {
+      "id": "bore_diameter",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      },
+      "description": "Through bore diameter, sized to the mating shaft"
+     },
+     {
+      "id": "set_screw_hole_diameter",
+      "value": {
+       "magnitude": 4.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of each radial set-screw hole"
+     }
+    ],
+    "features": [
+     {
+      "id": "body",
+      "kind": "cylinder",
+      "description": "Outer cylindrical body of the collar",
+      "parameters": {
+       "diameter": {
+        "expression": "outer_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "length",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "bore_hole",
+      "kind": "hole",
+      "description": "Full-length through bore on the collar's axis for the 12 mm shaft",
+      "tags": [
+       "bore"
+      ],
+      "inputs": [
+       "body"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "bore_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "length / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "screw_hole_1",
+      "kind": "hole",
+      "description": "First radial set-screw hole, halfway along the length, threading from the OD into the bore",
+      "tags": [
+       "set_screw",
+       "spaced"
+      ],
+      "inputs": [
+       "bore_hole"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "set_screw_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "length / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "depth": {
+        "expression": "outer_diameter",
+        "unit": "mm"
+       },
+       "thread": "M4"
+      }
+     },
+     {
+      "id": "screw_hole_2",
+      "kind": "hole",
+      "description": "Second radial set-screw hole, 90 degrees from the first, halfway along the length",
+      "tags": [
+       "set_screw",
+       "spaced"
+      ],
+      "inputs": [
+       "screw_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "set_screw_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "length / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "depth": {
+        "expression": "outer_diameter",
+        "unit": "mm"
+       },
+       "thread": "M4"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "shaft_bore_port",
+      "type": "bore",
+      "geometry": "bore_hole.bore",
+      "nominal_size": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Bore that fits over the mating 12 mm shaft"
+     },
+     {
+      "id": "set_screw_port_1",
+      "type": "custom",
+      "geometry": "screw_hole_1.bore",
+      "nominal_size": {
+       "magnitude": 4.0,
+       "unit": "mm"
+      },
+      "description": "Tapped M4 radial set-screw hole, position 1"
+     },
+     {
+      "id": "set_screw_port_2",
+      "type": "custom",
+      "geometry": "screw_hole_2.bore",
+      "nominal_size": {
+       "magnitude": 4.0,
+       "unit": "mm"
+      },
+      "description": "Tapped M4 radial set-screw hole, position 2, 90 degrees from position 1"
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "0f27d1d5-6a83-5e39-8aff-9081ea2c57ee",
+  "project_id": "f8bc360b-24d0-565c-aa4c-faa2050d8762",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The collar's outer diameter shall be 25 mm, measured as the X extent of the finished part.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states outer diameter is 25 mm; a round part carries this value in both X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The collar's outer diameter shall be 25 mm, measured as the Y extent of the finished part.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Same outer diameter figure as X, since the part is round about its axis.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The collar's overall length shall be 15 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the collar is 15 mm long, measured along its bore axis (Z).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUNDNESS_ABOUT_Z",
+    "statement": "The collar shall be round about its axis, with equal extent in every direction across its diameter.",
+    "measurement": "roundness_about_z",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "rationale": "A collar with a stated single outer diameter is implied to be a cylinder, not a polygon with the same bounding box.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_DIAMETER",
+    "statement": "A through bore of 12 mm diameter shall run the full length of the collar on its axis.",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 12 mm bore runs all the way through on the axis.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_HOLE_DIAMETER",
+    "statement": "Each set screw hole shall be 4 mm in diameter.",
+    "measurement": "parameter:set_screw_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states two 4 mm set screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_ANGULAR_SPACING",
+    "statement": "The two set screw holes shall be spaced 90 degrees apart around the collar's circumference.",
+    "measurement": "angle_between:hole:spaced",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90.0,
+     "unit": "deg"
+    },
+    "rationale": "Brief states the set screw holes are 90 degrees apart; closest available check is angle_between the two tagged set_screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SET_SCREW_HOLE_COUNT",
+    "statement": "The collar shall have exactly two set screw holes passing through the wall into the bore.",
+    "measurement": "feature_count:hole:set_screw",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states two 4 mm set screw holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BORE_HOLE_COUNT",
+    "statement": "The collar shall have exactly one through bore.",
+    "measurement": "feature_count:hole:bore",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1.0,
+     "unit": ""
+    },
+    "rationale": "Brief describes a single central through bore.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_12MM_ON_AXIS",
+    "measurement": "holes_of_diameter:12:on_axis",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 12 mm down the part's axis.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The aluminium alloy is taken to be 6061-T6, a conventional machining grade, since no specific alloy/temper is given.",
+    "rationale": "6061-T6 is the standard choice for machined aluminium collars absent other guidance.",
+    "consequence_if_wrong": "A softer or harder alloy would change thread strength in the tapped set screw holes and finish quality, but since the part carries no structural load this is a minor consequence.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SET_SCREW_THREAD",
+    "statement": "The two 4 mm set screw holes are tapped to accept standard M4 set screws (e.g. cup-point), threading radially from the OD into the bore.",
+    "rationale": "A 4 mm 'set screw hole' through the wall into a bore conventionally implies a tapped M4 hole for a set screw, not a plain clearance hole.",
+    "consequence_if_wrong": "If the holes are meant to be plain clearance holes for a separate fastener, the design intent and manufacturing method (drill vs drill+tap) changes.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BORE_FIT",
+    "statement": "The 12 mm bore is assumed to need only a nominal (not precision) running/sliding fit to the mating shaft, as no fit class or tolerance is specified.",
+    "rationale": "The brief gives only a nominal bore diameter with no tolerance callout.",
+    "consequence_if_wrong": "If a precision fit (e.g. H7/g6) is actually required for proper locating function, the asbuilt bore may be too loose or tight to perform as a locating collar.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "A standard machined surface finish (approx. Ra 3.2 micrometres) is assumed on all surfaces, as none is specified.",
+    "rationale": "No finish requirement given; this is the ordinary default for a machined aluminium part in indoor/static service.",
+    "consequence_if_wrong": "A cosmetic or corrosion-critical application might require a finer finish or coating, but nothing in the brief suggests this.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SOLID_COLLAR",
+    "statement": "The collar is a solid (non-split) cylinder; the set screws clamp directly onto the round outer surface of the mating shaft through the two radial holes, with no slit or clamping flange.",
+    "rationale": "The brief describes a bore and two set screw holes, with no mention of a split/clamp feature.",
+    "consequence_if_wrong": "If a split clamp-style collar was actually intended, the whole design topology (and its clamping mechanics) would need to change.",
+    "risk": "moderate",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_SHAFT_SURFACE",
+    "statement": "The mating shaft is assumed to be plain round stock with no flat or keyway; the set screws bear directly on the round shaft surface.",
+    "rationale": "No flat, keyway or other shaft feature is mentioned in the brief.",
+    "consequence_if_wrong": "If the shaft has a flat or keyway, set screw hole placement or depth might need to change to engage it, though this does not affect the collar's own measurable geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ]
+ }
+}

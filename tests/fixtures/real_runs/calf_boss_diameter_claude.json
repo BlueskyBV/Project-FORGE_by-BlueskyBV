@@ -1,0 +1,1829 @@
+{
+ "brief": "Create one watertight, 3D-printable hollow lower-leg structural shell using parametric CAD operations. All dimensions are in millimeters. Use Z as vertical (ankle to knee), X as left-right, and +Y as forward. The origin is at the center of the bottom face of the main body. Construct a 330 mm tall anatomical body using lofted, rounded-rectangle cross-sections on horizontal XY planes: at Z=0, width X=85 and depth Y=80; at Z=80, 95\u00d790; at Z=190, 115\u00d7110; at Z=260, 120\u00d7115; at Z=330, 115\u00d7105. Use 12 mm corner radii and smooth loft transitions. Shift the Z=190 and Z=260 section centers 8 mm toward negative Y to create a rear calf bulge. Keep the front surface gently convex and the lower section narrower, resembling a muscular human lower leg rather than a straight tapered box. Shell the loft inward with 8 mm walls, keeping the top and bottom structurally closed. Create one 60 mm wide \u00d7 210 mm tall rectangular access opening through the rear wall, centered at X=0, Z=165, on the negative-Y side. Use a subtractive cutting solid that passes completely through the rear wall without cutting the front wall. Add reinforced material around the opening and retain a large unobstructed internal cavity for removable sandbags. Create six 4.5 mm diameter mounting holes around the rear opening at X/Z coordinates (-36,50), (36,50), (-36,165), (36,165), (-36,280), and (36,280). Orient all holes along Y, perpendicular to the rear access surface, and add connected reinforcement bosses around them without obstructing the opening. Add one integral reinforced hinge tongue at each end, centered at X=0 and Y=0, each 12 mm thick along X and 30 mm deep along Y, extending vertically along Z. Position the upper pivot-hole center at (0,0,367.5) and lower pivot-hole center at (0,0,-37.5). Both pivot holes are 8.5 mm diameter along X. Extend each tongue at least 12 mm beyond its pivot center, with rounded ends, and embed its opposite end at least 25 mm into the main body, fused to reinforced internal ribs. Maintain exactly 405 mm between pivot centers and use 8 mm fillets at tongue roots. Build using sequential parametric CAD features: datum planes, cross-section profiles, smooth loft, inward shell, Boolean subtraction, mounting bosses, hinge extrusions, Boolean unions, drilled holes and fillets. Generate exactly one connected solid without a separate lid. Avoid floating geometry, self-intersections, zero-thickness connections and disconnected bodies. Ensure all expressions use dimensionally consistent units, never adding dimensionless literals to dimensional quantities. Verify the rear opening is on negative Y, all six mounting holes intersect solid material, both hinge tabs extend along Z, and both pivot holes pass through their tabs along X. The 330 mm dimension applies only to the main shell; the complete part is taller due to the hinge extensions. Validate the final solid before export.",
+ "requirements": {
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The main lofted shell body (excluding hinge tongue extensions) is 330 mm tall along Z.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the main shell is 330 mm tall; overall part is taller due to hinge extensions, so this is bound to the main-body height parameter rather than the whole part's bounding box.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MAIN_BODY_HEIGHT",
+    "statement": "The anatomical lofted body spans 330 mm in Z from the bottom face.",
+    "measurement": "parameter:main_body_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Explicit stated height of the lofted cross-section stack.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_CORNER_RADIUS",
+    "statement": "All rounded-rectangle loft cross-sections use a 12 mm corner radius.",
+    "measurement": "parameter:section_corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated corner radius for cross-section profiles.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CALF_BULGE_Y_OFFSET",
+    "statement": "The Z=190 and Z=260 section centers are shifted 8 mm toward negative Y to form the rear calf bulge.",
+    "measurement": "parameter:calf_bulge_y_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated offset creating the anatomical bulge.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS_SHELL",
+    "statement": "The loft is shelled inward with 8 mm walls.",
+    "measurement": "parameter:wall_thickness_shell",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated wall thickness for the hollow shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_WIDTH",
+    "statement": "The rear access opening is 60 mm wide (along X).",
+    "measurement": "parameter:rear_opening_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated opening width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_HEIGHT",
+    "statement": "The rear access opening is 210 mm tall (along Z).",
+    "measurement": "parameter:rear_opening_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 210.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated opening height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "Each of the six mounting holes is 4.5 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "rationale": "Stated mounting hole size.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_THICKNESS_X",
+    "statement": "Each hinge tongue is 12 mm thick along X.",
+    "measurement": "parameter:hinge_tongue_thickness_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated hinge tongue thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_DEPTH_Y",
+    "statement": "Each hinge tongue is 30 mm deep along Y.",
+    "measurement": "parameter:hinge_tongue_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated hinge tongue depth.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "Both pivot holes are 8.5 mm in diameter, oriented along X.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.5,
+     "unit": "mm"
+    },
+    "rationale": "Stated pivot hole diameter, shared by upper and lower pivots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_EXTENSION_BEYOND_PIVOT",
+    "statement": "Each tongue extends at least 12 mm beyond its pivot hole center, with rounded ends.",
+    "measurement": "parameter:tongue_extension_beyond_pivot",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated minimum extension beyond pivot center.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_EMBED_DEPTH",
+    "statement": "Each tongue's opposite end embeds at least 25 mm into the main body, fused to internal ribs.",
+    "measurement": "parameter:tongue_embed_depth",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated minimum embedment depth for structural fusion.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_CENTER_SPACING",
+    "statement": "The distance between the upper and lower pivot hole centers is exactly 405 mm.",
+    "measurement": "parameter:pivot_center_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 405.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated exact pivot-to-pivot spacing (367.5 - (-37.5) = 405).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_ROOT_FILLET_RADIUS",
+    "statement": "Tongue roots use 8 mm fillets where they meet the main body.",
+    "measurement": "parameter:tongue_root_fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated fillet radius at tongue roots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "Exactly six 4.5 mm mounting holes surround the rear opening.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "rationale": "Brief lists six explicit mounting hole coordinate pairs.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "Exactly two pivot holes exist, one per hinge tongue.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "One upper and one lower pivot hole specified.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_EXTRUDE_COUNT",
+    "statement": "Exactly two hinge tongues exist, one at each end of the body.",
+    "measurement": "feature_count:extrude:hinge_tongue",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one tongue at each end (top and bottom).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_SUBTRACT_COUNT",
+    "statement": "Exactly one rectangular access opening is cut through the rear wall.",
+    "measurement": "feature_count:subtract:rear_opening",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one opening only, no separate lid.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM",
+    "measurement": "holes_of_diameter:4.5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "statement": "The part shall have 6 open holes of 4.5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The walls shall be 8 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_HOLE_THROUGH_WALL",
+    "statement": "The six mounting holes and bosses pass through the 8 mm rear wall thickness only (not full cavity depth), oriented along Y.",
+    "risk": "low",
+    "rationale": "Brief says holes are oriented along Y perpendicular to rear surface with reinforcement bosses, consistent with through-wall fastener holes.",
+    "consequence_if_wrong": "Would change boss design but not the stated checkable numbers.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_SHELL_TOP_BOTTOM_CLOSED",
+    "statement": "Top and bottom faces of the main lofted body are fully closed (solid caps), with the hinge tongues as the only protrusions beyond the 330 mm main body height.",
+    "risk": "low",
+    "rationale": "Brief explicitly states top and bottom are structurally closed and 330 mm applies only to the main shell.",
+    "consequence_if_wrong": "Would allow unintended open cavity top/bottom, risking non-watertight part.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_LOFT_SECTION_COUNT",
+    "statement": "The loft uses exactly the five stated cross-sections at Z=0,80,190,260,330 with no additional intermediate sections required.",
+    "risk": "low",
+    "rationale": "Brief lists exactly five Z-stations with explicit width/depth values.",
+    "consequence_if_wrong": "Additional sections would be a modeling refinement, not a functional change.",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "dropped 6 load question(s): the brief names no load, force or margin -- it describes a shape, so there was nothing to be uncertain about",
+   "added REQ_HOLES_4_5MM: the brief states 6 open holes of 4.5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_WALL_THICKNESS at 8 mm: the brief describes a container -- 8 mm walls -- and a solid block, a sealed hollow box and the part asked for all have the same bounding box. Each is measured on the built part through its middle, from the side it is open on."
+  ]
+ },
+ "document": {
+  "name": "lower_leg_shell",
+  "description": "A hollow, watertight, 3D-printable anatomical lower-leg shell lofted from five rounded-rectangle cross-sections, shelled to an 8 mm wall, with a rear access opening for removable sandbags, six mounting holes with bosses around that opening, and two integral hinge tongues (top and bottom) each with a pivot hole, fused to the main body with root fillets.",
+  "components": [
+   {
+    "id": "lower_leg_shell",
+    "name": "Lower leg shell",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "main_body_height",
+      "value": {
+       "magnitude": 330.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_corner_radius",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "calf_bulge_y_offset",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "wall_thickness_shell",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "rear_opening_width",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "rear_opening_height",
+      "value": {
+       "magnitude": 210.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_diameter",
+      "value": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tongue_thickness_x",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tongue_depth_y",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "pivot_hole_diameter",
+      "value": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tongue_extension_beyond_pivot",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tongue_embed_depth",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "pivot_center_spacing",
+      "value": {
+       "magnitude": 405.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tongue_root_fillet_radius",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_bottom_width",
+      "value": {
+       "magnitude": 90.0,
+       "unit": "mm"
+      },
+      "description": "Z=0 section width (X)"
+     },
+     {
+      "id": "section_bottom_depth",
+      "value": {
+       "magnitude": 70.0,
+       "unit": "mm"
+      },
+      "description": "Z=0 section depth (Y)"
+     },
+     {
+      "id": "section_z80_width",
+      "value": {
+       "magnitude": 95.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z80_depth",
+      "value": {
+       "magnitude": 75.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z190_width",
+      "value": {
+       "magnitude": 110.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z190_depth",
+      "value": {
+       "magnitude": 95.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z260_width",
+      "value": {
+       "magnitude": 100.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_z260_depth",
+      "value": {
+       "magnitude": 85.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_top_width",
+      "value": {
+       "magnitude": 85.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "section_top_depth",
+      "value": {
+       "magnitude": 65.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "tongue_total_length",
+      "expression": "tongue_embed_depth + tongue_extension_beyond_pivot",
+      "unit": "mm",
+      "description": "Minimum tongue length from body surface to its free end, embed portion plus extension beyond the pivot hole centre"
+     },
+     {
+      "id": "boss_diameter",
+      "expression": "mounting_hole_diameter + 8",
+      "unit": "mm",
+      "description": "Reinforcement boss diameter around each mounting hole"
+     },
+     {
+      "id": "boss_height",
+      "value": {
+       "magnitude": 6.0,
+       "unit": "mm"
+      },
+      "description": "Boss protrusion above rear wall outer surface, chosen for printability"
+     },
+     {
+      "id": "mounting_hole_ring_offset_x",
+      "expression": "rear_opening_width / 2 + 14",
+      "unit": "mm",
+      "description": "X offset of the two side columns of mounting holes from the opening centerline"
+     },
+     {
+      "id": "mounting_hole_row_spacing",
+      "expression": "rear_opening_height / 2 - 10",
+      "unit": "mm",
+      "description": "Z offset (from opening vertical middle) for the top and bottom rows of mounting holes"
+     }
+    ],
+    "features": [
+     {
+      "id": "plane_z0",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z80",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z190",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 190.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z260",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 260.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_z330",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "main_body_height",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "sect_z0",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z0"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_bottom_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_bottom_depth",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "section_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "sect_z80",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z80"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z80_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z80_depth",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "section_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "sect_z190",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z190"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z190_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z190_depth",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "section_corner_radius",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-calf_bulge_y_offset",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "sect_z260",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z260"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_z260_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_z260_depth",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "section_corner_radius",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-calf_bulge_y_offset",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "sect_z330",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_z330"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "section_top_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section_top_depth",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "section_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "loft_01",
+      "kind": "loft",
+      "inputs": [
+       "sect_z0",
+       "sect_z80"
+      ]
+     },
+     {
+      "id": "loft_12",
+      "kind": "loft",
+      "inputs": [
+       "sect_z80",
+       "sect_z190"
+      ]
+     },
+     {
+      "id": "loft_23",
+      "kind": "loft",
+      "inputs": [
+       "sect_z190",
+       "sect_z260"
+      ]
+     },
+     {
+      "id": "loft_34",
+      "kind": "loft",
+      "inputs": [
+       "sect_z260",
+       "sect_z330"
+      ]
+     },
+     {
+      "id": "outer_solid_1",
+      "kind": "union",
+      "inputs": [
+       "loft_01",
+       "loft_12"
+      ]
+     },
+     {
+      "id": "outer_solid_2",
+      "kind": "union",
+      "inputs": [
+       "outer_solid_1",
+       "loft_23"
+      ]
+     },
+     {
+      "id": "outer_solid",
+      "kind": "union",
+      "inputs": [
+       "outer_solid_2",
+       "loft_34"
+      ],
+      "description": "Full outer anatomical loft, solid, 330 mm tall"
+     },
+     {
+      "id": "shelled_body",
+      "kind": "shell",
+      "inputs": [
+       "outer_solid"
+      ],
+      "parameters": {
+       "thickness": {
+        "expression": "wall_thickness_shell",
+        "unit": "mm"
+       },
+       "direction": "inward"
+      },
+      "description": "Sealed hollow shell; top and bottom caps remain closed per assumption ASM_SHELL_TOP_BOTTOM_CLOSED"
+     },
+     {
+      "id": "lower_tongue",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "hinge_tongue_thickness_x",
+         "hinge_tongue_depth_y",
+         "tongue_total_length"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "origin": {
+        "vector": [
+         0,
+         "-calf_bulge_y_offset",
+         "-(tongue_total_length / 2 - tongue_embed_depth)"
+        ],
+        "unit": "mm"
+       },
+       "edge_radius": {
+        "expression": "hinge_tongue_thickness_x / 2",
+        "unit": "mm"
+       },
+       "edges": "bottom"
+      },
+      "description": "Lower hinge tongue: embeds tongue_embed_depth upward into the body from z=0, and extends tongue_extension_beyond_pivot below the body"
+     },
+     {
+      "id": "upper_tongue",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "hinge_tongue_thickness_x",
+         "hinge_tongue_depth_y",
+         "tongue_total_length"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "main_body_height - tongue_embed_depth + tongue_total_length / 2"
+        ],
+        "unit": "mm"
+       },
+       "edge_radius": {
+        "expression": "hinge_tongue_thickness_x / 2",
+        "unit": "mm"
+       },
+       "edges": "top"
+      },
+      "description": "Upper hinge tongue: embeds tongue_embed_depth downward into the body from z=main_body_height, and extends tongue_extension_beyond_pivot above the body"
+     },
+     {
+      "id": "tongues_unioned",
+      "kind": "union",
+      "inputs": [
+       "lower_tongue",
+       "upper_tongue"
+      ]
+     },
+     {
+      "id": "body_with_tongues",
+      "kind": "union",
+      "inputs": [
+       "shelled_body",
+       "tongues_unioned"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "tongue_root_fillet_radius",
+        "unit": "mm"
+       }
+      },
+      "tags": [
+       "hinge_tongue"
+      ],
+      "description": "Fuses both hinge tongues to the main shell body with root fillets"
+     },
+     {
+      "id": "rear_opening_cutter",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "rear_opening_width",
+         "wall_thickness_shell * 3",
+         "rear_opening_height"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "origin": {
+        "vector": [
+         0,
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2"
+        ],
+        "unit": "mm"
+       },
+       "edge_radius": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "edges": "vertical"
+      },
+      "description": "Cutter spanning through the rear wall at the calf bulge, oversized in Y to guarantee a clean through-cut"
+     },
+     {
+      "id": "rear_opening_cut",
+      "kind": "subtract",
+      "inputs": [
+       "body_with_tongues",
+       "rear_opening_cutter"
+      ],
+      "tags": [
+       "rear_opening"
+      ],
+      "description": "Cuts the single rectangular rear access opening through the rear (negative-Y) wall"
+     },
+     {
+      "id": "boss_1",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2 - mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "boss_2",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2 - mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "boss_3",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "boss_4",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "boss_5",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2 + mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "boss_6",
+      "kind": "cylinder",
+      "parameters": {
+       "diameter": {
+        "expression": "boss_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "boss_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset - wall_thickness_shell",
+         "main_body_height / 2 + mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ]
+      }
+     },
+     {
+      "id": "bosses_union_1",
+      "kind": "union",
+      "inputs": [
+       "boss_1",
+       "boss_2"
+      ]
+     },
+     {
+      "id": "bosses_union_2",
+      "kind": "union",
+      "inputs": [
+       "bosses_union_1",
+       "boss_3"
+      ]
+     },
+     {
+      "id": "bosses_union_3",
+      "kind": "union",
+      "inputs": [
+       "bosses_union_2",
+       "boss_4"
+      ]
+     },
+     {
+      "id": "bosses_union_4",
+      "kind": "union",
+      "inputs": [
+       "bosses_union_3",
+       "boss_5"
+      ]
+     },
+     {
+      "id": "bosses_union_5",
+      "kind": "union",
+      "inputs": [
+       "bosses_union_4",
+       "boss_6"
+      ]
+     },
+     {
+      "id": "body_with_bosses",
+      "kind": "union",
+      "inputs": [
+       "rear_opening_cut",
+       "bosses_union_5"
+      ],
+      "description": "Adds the six reinforcement bosses around the rear opening before drilling mounting holes"
+     },
+     {
+      "id": "mounting_hole_1",
+      "kind": "hole",
+      "inputs": [
+       "body_with_bosses"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2 - mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_2",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_1"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2 - mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_3",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_2"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_4",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_3"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_5",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_4"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2 + mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mounting_hole_6",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_5"
+      ],
+      "tags": [
+       "mounting"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_ring_offset_x",
+         "-section_z190_depth / 2 - calf_bulge_y_offset",
+         "main_body_height / 2 + mounting_hole_row_spacing"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        -1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole_lower",
+      "kind": "hole",
+      "inputs": [
+       "mounting_hole_6"
+      ],
+      "tags": [
+       "pivot"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         "-calf_bulge_y_offset",
+         "main_body_height / 2 - pivot_center_spacing / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      },
+      "description": "Lower pivot hole, placed pivot_center_spacing/2 below the body's vertical midpoint so the stated spacing drives its position directly"
+     },
+     {
+      "id": "pivot_hole_upper",
+      "kind": "hole",
+      "inputs": [
+       "pivot_hole_lower"
+      ],
+      "tags": [
+       "pivot"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "main_body_height / 2 + pivot_center_spacing / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      },
+      "description": "Upper pivot hole, placed pivot_center_spacing/2 above the body's vertical midpoint; the Z distance between the two pivot holes equals pivot_center_spacing exactly"
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "lower_pivot_port",
+      "type": "bore",
+      "geometry": "pivot_hole_lower.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     },
+     {
+      "id": "upper_pivot_port",
+      "type": "bore",
+      "geometry": "pivot_hole_upper.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     },
+     {
+      "id": "rear_access_opening",
+      "type": "custom",
+      "geometry": "rear_opening_cut.body",
+      "description": "Rear cavity access for inserting/removing sandbags"
+     },
+     {
+      "id": "mounting_bolt_pattern",
+      "type": "bolt_pattern",
+      "geometry": "mounting_hole_6.bore",
+      "nominal_size": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal",
+      "description": "Six-hole mounting pattern around the rear opening"
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "b9f88d0d-0aa2-5b33-80c6-3c6ce7b6f0b6",
+  "project_id": "3a69622c-8863-5ce4-989e-e8ee32ceee86",
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The main lofted shell body (excluding hinge tongue extensions) is 330 mm tall along Z.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the main shell is 330 mm tall; overall part is taller due to hinge extensions, so this is bound to the main-body height parameter rather than the whole part's bounding box.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MAIN_BODY_HEIGHT",
+    "statement": "The anatomical lofted body spans 330 mm in Z from the bottom face.",
+    "measurement": "parameter:main_body_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Explicit stated height of the lofted cross-section stack.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION_CORNER_RADIUS",
+    "statement": "All rounded-rectangle loft cross-sections use a 12 mm corner radius.",
+    "measurement": "parameter:section_corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated corner radius for cross-section profiles.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CALF_BULGE_Y_OFFSET",
+    "statement": "The Z=190 and Z=260 section centers are shifted 8 mm toward negative Y to form the rear calf bulge.",
+    "measurement": "parameter:calf_bulge_y_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated offset creating the anatomical bulge.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS_SHELL",
+    "statement": "The loft is shelled inward with 8 mm walls.",
+    "measurement": "parameter:wall_thickness_shell",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated wall thickness for the hollow shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_WIDTH",
+    "statement": "The rear access opening is 60 mm wide (along X).",
+    "measurement": "parameter:rear_opening_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated opening width.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_HEIGHT",
+    "statement": "The rear access opening is 210 mm tall (along Z).",
+    "measurement": "parameter:rear_opening_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 210.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated opening height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "Each of the six mounting holes is 4.5 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "rationale": "Stated mounting hole size.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_THICKNESS_X",
+    "statement": "Each hinge tongue is 12 mm thick along X.",
+    "measurement": "parameter:hinge_tongue_thickness_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated hinge tongue thickness.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_DEPTH_Y",
+    "statement": "Each hinge tongue is 30 mm deep along Y.",
+    "measurement": "parameter:hinge_tongue_depth_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated hinge tongue depth.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "Both pivot holes are 8.5 mm in diameter, oriented along X.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.5,
+     "unit": "mm"
+    },
+    "rationale": "Stated pivot hole diameter, shared by upper and lower pivots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_EXTENSION_BEYOND_PIVOT",
+    "statement": "Each tongue extends at least 12 mm beyond its pivot hole center, with rounded ends.",
+    "measurement": "parameter:tongue_extension_beyond_pivot",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated minimum extension beyond pivot center.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_EMBED_DEPTH",
+    "statement": "Each tongue's opposite end embeds at least 25 mm into the main body, fused to internal ribs.",
+    "measurement": "parameter:tongue_embed_depth",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated minimum embedment depth for structural fusion.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_CENTER_SPACING",
+    "statement": "The distance between the upper and lower pivot hole centers is exactly 405 mm.",
+    "measurement": "parameter:pivot_center_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 405.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated exact pivot-to-pivot spacing (367.5 - (-37.5) = 405).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_TONGUE_ROOT_FILLET_RADIUS",
+    "statement": "Tongue roots use 8 mm fillets where they meet the main body.",
+    "measurement": "parameter:tongue_root_fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Stated fillet radius at tongue roots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "Exactly six 4.5 mm mounting holes surround the rear opening.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "rationale": "Brief lists six explicit mounting hole coordinate pairs.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "Exactly two pivot holes exist, one per hinge tongue.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "One upper and one lower pivot hole specified.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TONGUE_EXTRUDE_COUNT",
+    "statement": "Exactly two hinge tongues exist, one at each end of the body.",
+    "measurement": "feature_count:extrude:hinge_tongue",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one tongue at each end (top and bottom).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_SUBTRACT_COUNT",
+    "statement": "Exactly one rectangular access opening is cut through the rear wall.",
+    "measurement": "feature_count:subtract:rear_opening",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief specifies one opening only, no separate lid.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM",
+    "measurement": "holes_of_diameter:4.5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "statement": "The part shall have 6 open holes of 4.5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The walls shall be 8 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_HOLE_THROUGH_WALL",
+    "statement": "The six mounting holes and bosses pass through the 8 mm rear wall thickness only (not full cavity depth), oriented along Y.",
+    "risk": "low",
+    "rationale": "Brief says holes are oriented along Y perpendicular to rear surface with reinforcement bosses, consistent with through-wall fastener holes.",
+    "consequence_if_wrong": "Would change boss design but not the stated checkable numbers.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_SHELL_TOP_BOTTOM_CLOSED",
+    "statement": "Top and bottom faces of the main lofted body are fully closed (solid caps), with the hinge tongues as the only protrusions beyond the 330 mm main body height.",
+    "risk": "low",
+    "rationale": "Brief explicitly states top and bottom are structurally closed and 330 mm applies only to the main shell.",
+    "consequence_if_wrong": "Would allow unintended open cavity top/bottom, risking non-watertight part.",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_LOFT_SECTION_COUNT",
+    "statement": "The loft uses exactly the five stated cross-sections at Z=0,80,190,260,330 with no additional intermediate sections required.",
+    "risk": "low",
+    "rationale": "Brief lists exactly five Z-stations with explicit width/depth values.",
+    "consequence_if_wrong": "Additional sections would be a modeling refinement, not a functional change.",
+    "reversible": true,
+    "approved": true
+   }
+  ]
+ }
+}

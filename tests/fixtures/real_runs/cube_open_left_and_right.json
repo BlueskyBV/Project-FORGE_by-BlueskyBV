@@ -1,0 +1,337 @@
+{
+ "brief": "A 50 mm cube in PLA, hollow on the inside, with the right face of the square missing. 3mm Thickness Open on the left side. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 50 mm cube in PLA, hollow on the inside, with the right face of the square missing. 3mm thickness open on the left side. It carries no load, so there is no load case.",
+  "part_kind": "cube",
+  "stated": [
+   "A 50 mm cube in PLA",
+   "hollow on the inside",
+   "right face of the square missing",
+   "3mm thickness",
+   "open on the left side",
+   "carries no load"
+  ],
+  "implied": [
+   "the cube is a solid shape with a hollow interior",
+   "the missing face is on the right side",
+   "the cube has a 3mm thickness",
+   "the cube has a 3mm thickness on the left side",
+   "the cube has a 3mm thickness on the right side",
+   "the cube has a 3mm thickness on the front side",
+   "the cube has a 3mm thickness on the back side",
+   "the cube has a 3mm thickness on the top side",
+   "the cube has a 3mm thickness on the bottom side"
+  ],
+  "unstated": [],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": [
+   "`unstated` came back empty. Almost every brief omits something a design needs, so the gaps below may be under-reported; the clarifier had nothing to work from here."
+  ]
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_SIDE_LENGTH",
+    "statement": "The side length of the cube is 50 mm",
+    "measurement": "parameter:side_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the cube is 3 mm",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_X",
+    "statement": "The cube shall be 50 mm on a side, along X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_Y",
+    "statement": "The cube shall be 50 mm on a side, along Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_SIZE_Z",
+    "statement": "The cube shall be 50 mm on a side, along Z.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The walls shall be 3 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FLOOR_THICKNESS",
+    "statement": "The floor shall be 3 mm thick.",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "added REQ_PART_SIZE_X: the brief makes the part a 50 mm cube, 50 mm along every axis, and nothing measured its X extent on the part itself.",
+   "added REQ_PART_SIZE_Y: the brief makes the part a 50 mm cube, 50 mm along every axis, and nothing measured its Y extent on the part itself.",
+   "added REQ_PART_SIZE_Z: the brief makes the part a 50 mm cube, 50 mm along every axis, and nothing measured its Z extent on the part itself.",
+   "added REQ_WALL_THICKNESS at 3 mm, REQ_FLOOR_THICKNESS at 3 mm: the brief describes a container -- 3 mm walls, a 3 mm floor -- and a solid block, a sealed hollow box and the part asked for all have the same bounding box. Each is measured on the built part through its middle, from the side it is open on.",
+   "dropped REQ_MISSING_RIGHT_FACE_COUNT: it counts `face`, which is not a kind of feature (`feature_count:face` names no feature kind. It counts features of a kind, not features with an id or role.); a part's faces and edges are its size and its open side, measured on the part itself."
+  ]
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "Cube",
+   "components": [
+    {
+     "id": "cube",
+     "features": [
+      {
+       "id": "body",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "floor",
+       "kind": "subtract",
+       "inputs": [
+        "body",
+        "space"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "space",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      }
+     ],
+     "parameters": []
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "90e60efd-d55b-53c8-a414-d7c8273c5fee",
+   "project_id": "fa79e19c-d954-5c07-875c-78da412e7fd9",
+   "risk_class": "low",
+   "requirements": [
+    {
+     "id": "REQ_SIDE_LENGTH",
+     "statement": "The side length of the cube is 50 mm",
+     "measurement": "parameter:side_length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_THICKNESS",
+     "statement": "The thickness of the cube is 3 mm",
+     "measurement": "parameter:thickness",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 3.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_X",
+     "statement": "The cube shall be 50 mm on a side, along X.",
+     "measurement": "bounding_box_x",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_Y",
+     "statement": "The cube shall be 50 mm on a side, along Y.",
+     "measurement": "bounding_box_y",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_SIZE_Z",
+     "statement": "The cube shall be 50 mm on a side, along Z.",
+     "measurement": "bounding_box_z",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_WALL_THICKNESS",
+     "statement": "The walls shall be 3 mm thick.",
+     "measurement": "wall_thickness",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 3.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_FLOOR_THICKNESS",
+     "statement": "The floor shall be 3 mm thick.",
+     "measurement": "floor_thickness",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 3.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20261005T171148: a 50 mm cube, hollow, right face missing and open on the left, 3 mm thick. The record measured it as open at the top; the design was a cube less a 1.5 mm slab; the analyst's patch wrote a blend radius as the text '3' and the run crashed in the compiler."
+}

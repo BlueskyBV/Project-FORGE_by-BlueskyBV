@@ -1,0 +1,81 @@
+{
+ "answer": {
+  "assumptions": [
+   {
+    "approved": false,
+    "consequence_if_wrong": "A load would invalidate every margin.",
+    "id": "ASM_NO_LOAD",
+    "risk": "critical",
+    "statement": "The collar does not carry any load"
+   }
+  ],
+  "requirements": {
+   "dimensions": [
+    {
+     "comparison": "equals",
+     "parameter": "outer_diameter",
+     "statement": "The outer diameter of the collar is 25 mm",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "comparison": "equals",
+     "parameter": "length",
+     "statement": "The length of the collar is 15 mm",
+     "threshold": {
+      "magnitude": 15.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "comparison": "equals",
+     "parameter": "bore_diameter",
+     "statement": "The bore diameter is 12 mm",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     }
+    }
+   ],
+   "whole_part": {
+    "mass": {
+     "comparison": "equals",
+     "statement": "The collar's mass is 100 g",
+     "threshold": {
+      "magnitude": 100.0,
+      "unit": "g"
+     }
+    }
+   }
+  },
+  "risk_class": "critical",
+  "unknowns": []
+ },
+ "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
+ "intent": {
+  "implied": [
+   "The bore is located on the axis",
+   "The set screw holes are located on the outside of the collar"
+  ],
+  "notes": [],
+  "out_of_scope": [],
+  "part_kind": "shaft collar",
+  "risk_signals": [],
+  "stated": [
+   "The outer diameter is 25 mm",
+   "The length is 15 mm",
+   "A 12 mm bore runs all the way through on the axis",
+   "Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length"
+  ],
+  "suggested_name": "",
+  "summary": "A machined aluminium shaft collar with an outer diameter of 25 mm, a length of 15 mm, and a 12 mm bore running through the axis. Two 4 mm set screw holes are located 90 degrees apart, halfway along the length.",
+  "unstated": [
+   "The collar does not carry any load"
+  ]
+ },
+ "requirements": null,
+ "run": "20260919T212437-a-machined-aluminium-shaft-collar-the-ou",
+ "which": "requirements_rejected"
+}

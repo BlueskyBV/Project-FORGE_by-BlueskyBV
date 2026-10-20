@@ -1,0 +1,264 @@
+{
+ "brief": "Make a washer.",
+ "intent": {
+  "summary": "A simple annular disc intended to be placed under a fastener (bolt/nut) to distribute load, prevent surface damage, or provide spacing.",
+  "part_kind": "washer",
+  "stated": [
+   "The part is a washer."
+  ],
+  "implied": [
+   "Being a washer implies an annular (ring) shape with a central through-hole.",
+   "Being a washer implies it is used with a fastener (bolt/screw/nut) to spread clamping load or protect a surface."
+  ],
+  "unstated": [
+   "Inner diameter / bolt size the washer must fit",
+   "Outer diameter",
+   "Thickness",
+   "Material (steel, stainless, brass, nylon, etc.) and its mechanical properties",
+   "Load or clamping force / torque the washer must withstand",
+   "Flat washer vs. lock washer vs. spring/belleville washer type",
+   "Tolerance class or fit requirements",
+   "Surface finish or plating/corrosion requirements",
+   "Operating environment (temperature, chemical exposure, outdoor/indoor)",
+   "Applicable standard (e.g., ISO 7089, DIN 125, ANSI B18.22.1) if standardization is required",
+   "Quantity needed",
+   "Any hardness or surface flatness requirement"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "No indication of application context (e.g., structural, pressure-bearing, vehicle, lifting) is given, so risk level cannot be assessed from the brief alone."
+  ],
+  "suggested_name": "Generic_Washer",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_ROUNDNESS_ABOUT_Z",
+    "statement": "The washer shall be round about its axis (equally wide in every direction in the XY plane).",
+    "measurement": "roundness_about_z",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "rationale": "A washer is a disc; its outer profile must be circular, not merely have equal bounding-box extents.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_INNER_DIAMETER",
+    "statement": "The washer shall have a central through-hole (bore) of 10.5 mm diameter, sized to clear an M10 fastener.",
+    "measurement": "parameter:inner_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.5,
+     "unit": "mm"
+    },
+    "rationale": "No bolt size was given; M10 is a common generic fastener size and ISO 7089 gives 10.5 mm as the standard clearance bore for M10.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived"
+   },
+   {
+    "id": "REQ_OUTER_DIAMETER",
+    "statement": "The washer shall have an outer diameter of 20 mm.",
+    "measurement": "parameter:outer_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "20 mm is the standard ISO 7089 outer diameter for an M10 flat washer, consistent with the assumed bore.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The washer shall have a uniform thickness of 2 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "2 mm is the standard ISO 7089 thickness for an M10 flat washer.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived"
+   },
+   {
+    "id": "REQ_BORE_HOLE_COUNT",
+    "statement": "The washer shall have exactly one central through-hole (the bore).",
+    "measurement": "feature_count:hole:bore",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "A washer is defined by a single central clearance hole for the fastener shank.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_FASTENER_SIZE",
+    "statement": "The washer is sized to fit an M10 fastener, giving a 10.5 mm clearance bore.",
+    "rationale": "The brief gives no bolt size or application; M10 is a commonly used generic fastener size for a demonstration washer.",
+    "consequence_if_wrong": "If a different fastener size is intended, the bore, outer diameter and thickness all need to be re-derived and the part remade.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_WASHER_DIMENSIONS",
+    "statement": "The washer follows ISO 7089 standard proportions for M10: 20 mm outer diameter, 2 mm thickness.",
+    "rationale": "In the absence of stated outer diameter or thickness, the matching ISO flat-washer standard gives a defensible, commonly manufactured size.",
+    "consequence_if_wrong": "A washer of the wrong outer diameter or thickness may not fit the intended joint or provide the intended bearing area.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_WASHER_TYPE",
+    "statement": "The washer is a plain flat washer, not a lock washer, spring washer or Belleville washer.",
+    "rationale": "The brief says only \"washer\" with no mention of locking or spring function; flat is the most generic and common type.",
+    "consequence_if_wrong": "A locking or spring function would require a fundamentally different geometry (split ring, dished profile, serrations) that this flat disc does not provide.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_MATERIAL",
+    "statement": "The washer is made of plain carbon steel, a typical material for a generic hardware washer.",
+    "rationale": "No material, load, or environment was specified; plain steel is the conventional default for an unspecified generic washer.",
+    "consequence_if_wrong": "If a corrosive environment or higher load were intended, a different material (stainless steel, nylon, hardened steel) and possibly different dimensions would be required.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Generic_Washer",
+   "description": "A flat annular washer with a central clearance bore, sized per the accepted assumptions for an M10 fastener (ISO 7089 proportions).",
+   "components": [
+    {
+     "id": "washer",
+     "name": "Flat washer",
+     "material": "",
+     "parameters": [
+      {
+       "id": "inner_diameter",
+       "value": {
+        "magnitude": 10.5,
+        "unit": "mm"
+       },
+       "description": "Clearance bore diameter for the fastener shank"
+      },
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "description": "Outer diameter of the washer disc"
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "description": "Uniform washer thickness"
+      }
+     ],
+     "features": [
+      {
+       "id": "disc",
+       "kind": "cylinder",
+       "description": "The outer disc of the washer",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "thickness",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "description": "Central through-hole for the fastener",
+       "tags": [
+        "bore"
+       ],
+       "inputs": [
+        "disc"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "inner_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "bolt_bore",
+       "type": "bore",
+       "geometry": "bore.bore",
+       "nominal_size": {
+        "magnitude": 10.5,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "r"
+ },
+ "run": "validation X01, 18 October 2026",
+ "note": "'Make a washer.' -- sized to an M10 washer by assumption, every assumption moderate and reversible, and released with every claim passing against figures nobody gave."
+}

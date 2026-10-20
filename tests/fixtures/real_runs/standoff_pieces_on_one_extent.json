@@ -1,0 +1,146 @@
+{
+ "brief": "A cylindrical standoff 30 mm tall and 25 mm across, sitting on a 50 mm square base plate 5 mm thick, with an 8 mm hole down the middle of the standoff, in 6061-T6 aluminium.",
+ "intent": {
+  "implied": [
+   "cylindrical shape",
+   "flat mounting face",
+   "6061-T6 aluminium"
+  ],
+  "out_of_scope": [],
+  "part_kind": "standoff",
+  "risk_signals": [],
+  "stated": [
+   "30 mm tall",
+   "25 mm across",
+   "50 mm square base plate",
+   "5 mm thick",
+   "8 mm hole"
+  ],
+  "suggested_name": "Cylindrical Standoff",
+  "summary": "A cylindrical standoff with a 30 mm height, 25 mm diameter, and an 8 mm hole in the middle, sitting on a 50 mm square base plate with a 5 mm thickness, made of 6061-T6 aluminium.",
+  "unstated": [
+   "magnitude and direction of the load on the arm",
+   "risk_signals"
+  ]
+ },
+ "requirements": {
+  "assumptions": [
+   {
+    "approved": false,
+    "consequence_if_wrong": "Any conclusion depending on this is unfounded. It blocks: the design as a whole.",
+    "id": "ASM_UNRESOLVED_UNKNOWN_LOAD",
+    "rationale": "The load is necessary to determine the bearing stress and safety factor.",
+    "reversible": false,
+    "risk": "high",
+    "statement": "Unresolved at design time: What is the magnitude and direction of the load on the standoff? No value was supplied and none was invented."
+   },
+   {
+    "approved": false,
+    "consequence_if_wrong": "Any conclusion depending on this is unfounded. It blocks: the design as a whole.",
+    "id": "ASM_UNRESOLVED_UNKNOWN_MATERIAL",
+    "rationale": "The material grade affects the bearing stress and safety factor.",
+    "reversible": false,
+    "risk": "high",
+    "statement": "Unresolved at design time: What is the material grade of the standoff? No value was supplied and none was invented."
+   }
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_STANDOFF_HEIGHT",
+    "measurement": "bounding_box_z",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The standoff shall be 30 mm tall.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_STANDOFF_DIAMETER",
+    "measurement": "bounding_box_x",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The standoff shall be 25 mm across.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_STANDOFF_HOLE_SIZE",
+    "measurement": "entity:standoff.hole:diameter",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The standoff shall have an 8 mm hole in the middle.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BASE_PLATE_SIZE",
+    "measurement": "bounding_box_x",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The base plate shall be 50 mm square.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BASE_PLATE_THICKNESS",
+    "measurement": "bounding_box_z",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The base plate shall be 5 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "low",
+  "unknowns": [
+   {
+    "blocks": [],
+    "critical": true,
+    "id": "UNKNOWN_LOAD",
+    "question": "What is the magnitude and direction of the load on the standoff?",
+    "suggested_default": "",
+    "why_it_matters": "The load is necessary to determine the bearing stress and safety factor."
+   },
+   {
+    "blocks": [],
+    "critical": true,
+    "id": "UNKNOWN_MATERIAL",
+    "question": "What is the material grade of the standoff?",
+    "suggested_default": "",
+    "why_it_matters": "The material grade affects the bearing stress and safety factor."
+   }
+  ]
+ },
+ "run": "20260914T132555-a-cylindrical-standoff-30-mm-tall-and-25",
+ "which": "requirements_only"
+}

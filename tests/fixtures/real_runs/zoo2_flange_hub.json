@@ -1,0 +1,345 @@
+{
+ "brief": "A steel flange: an 80 mm disc 6 mm thick with a 30 mm hub standing 25 mm proud of it in the centre, a 12 mm bore right through the hub and disc, and six 6 mm bolt holes equally spaced on a 60 mm circle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel flange: an 80 mm disc 6 mm thick with a 30 mm hub standing 25 mm proud of it in the centre, a 12 mm bore right through the hub and disc, and six 6 mm bolt holes equally spaced on a 60 mm circle.",
+  "part_kind": "zoo2_flange_hub",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 31,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BOLTS",
+    "statement": "REQ_BOLTS",
+    "measurement": "holes_of_diameter:6",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_CIRCLE",
+    "statement": "REQ_CIRCLE",
+    "measurement": "openings_on_circle:6:60",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_BORE",
+    "statement": "REQ_BORE",
+    "measurement": "holes_of_diameter:12:on_axis",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_DISC_DIAMETER",
+    "statement": "disc_diameter",
+    "measurement": "parameter:disc_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_DISC_THICKNESS",
+    "statement": "disc_thickness",
+    "measurement": "parameter:disc_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HUB_DIAMETER",
+    "statement": "hub_diameter",
+    "measurement": "parameter:hub_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HUB_HEIGHT",
+    "statement": "hub_height",
+    "measurement": "parameter:hub_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BORE_DIAMETER",
+    "statement": "bore_diameter",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BOLT_DIAMETER",
+    "statement": "bolt_diameter",
+    "measurement": "parameter:bolt_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BOLT_CIRCLE",
+    "statement": "bolt_circle",
+    "measurement": "parameter:bolt_circle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_flange_hub",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "disc_diameter",
+       "value": {
+        "magnitude": 80,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "disc_thickness",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hub_diameter",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hub_height",
+       "value": {
+        "magnitude": 25,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore_diameter",
+       "value": {
+        "magnitude": 12,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bolt_diameter",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bolt_circle",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bolts",
+       "value": {
+        "magnitude": 6,
+        "unit": ""
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "disc",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "disc_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "disc_thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "hub",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "hub_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "hub_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "disc_thickness"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "disc",
+        "hub"
+       ]
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "bore_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "bolt",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "bolt_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "disc_thickness + 2",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "bolt_circle / 2",
+          0,
+          -1
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bolt_ring",
+       "kind": "pattern_circular",
+       "inputs": [
+        "bolt"
+       ],
+       "parameters": {
+        "count": {
+         "expression": "bolts",
+         "unit": ""
+        },
+        "axis_origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis_direction": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "flange",
+       "kind": "subtract",
+       "inputs": [
+        "bore",
+        "bolt_ring"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

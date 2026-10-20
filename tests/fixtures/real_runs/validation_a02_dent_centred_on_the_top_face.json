@@ -1,0 +1,218 @@
+{
+ "brief": "A 40 mm PLA cube with a 30 mm sphere cut out of it, the sphere centred on the middle of the top face. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A decorative or test geometry part: a 40 mm PLA cube with a 30 mm diameter spherical cavity cut into it, centered on the top face, with no functional load path.",
+  "part_kind": "block/fixture (non-structural geometric test piece)",
+  "stated": [
+   "Cube with 40 mm sides",
+   "Material is PLA",
+   "A 30 mm sphere is cut out of the cube",
+   "The sphere is centred on the middle of the top face",
+   "The part carries no load / no load case"
+  ],
+  "implied": [
+   "Sphere centred on the top face horizontally likely means the sphere's vertical axis passes through the cube's center vertically as well, but this is inferred from 'centred on the middle of the top face' not explicitly stated for depth/penetration",
+   "Since the sphere (30 mm) is cut from a 40 mm cube, the cavity likely breaks through or nearly reaches other faces, implied by the relative sizes but exact penetration depth not given",
+   "PLA material implies FDM 3D printing as the likely manufacturing method, inferred from material choice"
+  ],
+  "unstated": [
+   "Exact vertical position/depth of the sphere's center relative to the top face (flush with top, fully embedded, or how far below the surface)",
+   "Whether the sphere cutout is a through-cavity (open to top face) or a fully enclosed internal void",
+   "Tolerances on the 40 mm cube dimensions and the 30 mm sphere diameter",
+   "Surface finish requirements",
+   "Whether the cube has any other features (holes, fillets, chamfers, markings)",
+   "PLA grade/supplier or specific printing parameters (infill, layer height) if relevant to as-built geometry",
+   "Intended use/application of the part (decorative, test fixture, educational model, etc.)",
+   "Orientation requirements for printing or assembly",
+   "Any symmetry or alignment requirements with other parts (if it mates with anything)"
+  ],
+  "out_of_scope": [
+   "Dimensions beyond the two given (40 mm cube, 30 mm sphere)",
+   "Material grade or print settings",
+   "Any load, strength, or safety-factor analysis since none was requested or implied"
+  ],
+  "risk_signals": [
+   "None identified: the brief explicitly states the part carries no load, and there is no mention of pressure, lifting, human-carrying, vehicles, or stored energy."
+  ],
+  "suggested_name": "cube_sphere_cutout",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The finished cube shall measure 40 mm across in X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 40 mm cube; a cube's extent is the same in all three axes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The finished cube shall measure 40 mm across in Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 40 mm cube; a cube's extent is the same in all three axes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The finished cube shall measure 40 mm tall in Z.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 40 mm cube; a cube's extent is the same in all three axes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_SPHERE_DIAMETER",
+    "statement": "The spherical cavity cut from the cube shall be 30 mm in diameter.",
+    "measurement": "parameter:sphere_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief explicitly states a 30 mm sphere is cut out of the cube.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_SPHERE_XY_CENTRE",
+    "statement": "The sphere's cavity is centred on the cube's top face in the X and Y directions (i.e. aligned with the cube's central vertical axis).",
+    "rationale": "Brief states the sphere is 'centred on the middle of the top face', which fixes X and Y but not the vertical (Z) position of the sphere's centre.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true,
+    "consequence_if_wrong": "An off-centre cavity would look different but is unlikely given explicit wording."
+   },
+   {
+    "id": "ASM_MATERIAL_PLA_FDM",
+    "statement": "The part is manufactured as a PLA material (FDM 3D-printed), with the geometry defined as a solid cube minus a spherical cavity, with no additional print-specific features (supports, infill patterns) represented in the model.",
+    "rationale": "PLA is a common FDM print material; no other manufacturing process is implied.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true,
+    "consequence_if_wrong": "Different manufacturing method would not change the geometric requirements stated here."
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_SPHERE_Z_POSITION",
+    "question": "What is the vertical (Z) position of the sphere's centre relative to the top face -- is the cavity a fully enclosed internal void, an open cavity breaking through the top face, or something else (e.g. a hemispherical dimple with the sphere's centre flush with the top face)?",
+    "why_it_matters": "With a 30 mm sphere cut into a 40 mm cube, the vertical placement of the sphere's centre determines whether the cavity is sealed inside the solid, opens through the top face, or even breaks through the bottom -- these are fundamentally different geometries and the brief gives no basis to choose among them.",
+    "blocks": [
+     "sphere_diameter"
+    ],
+    "critical": true,
+    "suggested_default": "Sphere centre placed on the top face plane (z = 40 mm), so the cavity opens through the top face as a hemispherical-topped void, fully enclosed below."
+   }
+  ],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "cube_sphere_cutout",
+   "description": "A 40 mm PLA cube with a 30 mm diameter spherical cavity cut into it, the sphere's centre placed at the centre of the cube's top face so the cavity forms a hemispherical dish open through the top (the vertical placement of the sphere was not specified in the brief and this is the chosen, literal reading of 'centred on the middle of the top face' -- see the unresolved assumption carried with this document).",
+   "components": [
+    {
+     "id": "cube_sphere_cutout_part",
+     "name": "Cube with spherical cutout",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "cube_size",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Edge length of the cube, used for X, Y and Z so it stays a true cube"
+      },
+      {
+       "id": "sphere_diameter",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the spherical cavity cut into the cube"
+      }
+     ],
+     "features": [
+      {
+       "id": "cube",
+       "kind": "box",
+       "description": "The 40 mm cube stock, centred at the origin",
+       "parameters": {
+        "size": {
+         "vector": [
+          "cube_size",
+          "cube_size",
+          "cube_size"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "cavity_sphere",
+       "kind": "sphere",
+       "description": "Cutting sphere whose centre sits at the middle of the cube's top face",
+       "parameters": {
+        "diameter": {
+         "expression": "sphere_diameter",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "cube_size / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "subtract",
+       "description": "Cube less the spherical cavity",
+       "inputs": [
+        "cube",
+        "cavity_sphere"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The part is a single boolean of two primitives: a centred cube box sized by one shared parameter (cube_size) repeated across X, Y and Z so it cannot become non-square, and a cutting sphere sized by sphere_diameter (the required parameter id). The sphere's origin is placed at (0,0,cube_size/2) -- the centre of the cube's top face -- since the brief ties the cavity's centre to the top face's middle and gives no separate depth; this is recorded as the chosen reading of the unresolved Z-position assumption. The subtract is the sole terminal solid."
+ },
+ "run": "validation A02, 18 October 2026",
+ "note": "Held for UNK_SPHERE_Z_POSITION: the record asked whether the sphere's centre was on the top face; the brief says it is."
+}

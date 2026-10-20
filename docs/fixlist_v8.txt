@@ -1,0 +1,777 @@
+Forge v8 -- 15 October 2026
+=============================
+
+Audit of v7 (the "deep dive" pass)
+----------------------------------
+Every change in v7 was read line by line against v6 and re-tested here. They are
+all real fixes and none of them is a regression:
+* decode faults are now reported as SchemaErrors;
+* `risk` is validated, which closes a release-gate bypass through spelling;
+* the patch `add` at index 0;
+* the interval zero bound and atan2's branch cut;
+* the partial-revolve wedge, the chamfer and draft Lipschitz constants, and the
+  sweep envelope;
+* the compiler cache handing one feature another's geometry;
+* watertight INCONCLUSIVE for slanted cylinders;
+* measurement faults becoming BLOCKED evidence instead of a crash;
+* budget, transport and Ollama fixes.
+v7 is the base of v8.
+
+What went wrong in the first runs with thinking (v6)
+----------------------------------------------------
+Thinking made the designs right more often. The L-bracket, the dome and the stepper
+plate were all correct first time, with no repair rounds needed. It also made the
+calls long, and Forge's transport could not cope:
+* Every reply was read whole, with a 600 s timeout. The leg shell's designer was
+  cut off at 600 s and sent again from the start. Its analyst was cut off twice,
+  and so was its redesign. The run took 65 minutes and ended BLOCKED.
+* Every role thought at the model's full effort. The side rail's requirements cost
+  43 700 output tokens and 12 minutes, more than its design did.
+
+Fixed
+-----
+* Streaming (forge_models/anthropic.py).
+  - Replies are streamed. The timeout is now the longest silence allowed (5 min),
+    not the longest answer, so a stall is caught in minutes.
+  - An overload or a dropped connection mid-answer is retried.
+  - A cut-off answer is read as a truncation, so the role asks again with more
+    room.
+  - The heartbeat line now says "thinking, about N tokens" or "writing, about N
+    tokens".
+  - A network that is briefly unreachable (the "getaddrinfo failed" run) is
+    waited out over about 30 s instead of 7.
+* Effort per role.
+  - brief interpreter: low;
+  - requirements engineer: medium;
+  - designer and gate repairs: the model's full effort;
+  - last look: medium;
+  - clarifier: low.
+  - --effort / -Effort overrides all of them. If the model refuses an effort
+    level, Forge drops it for the rest of the run.
+* Angles (forge_units, forge_expr, forge_ir).
+  - A plain number in a slot declared in degrees is now that many degrees. The
+    stepper plate's `360 / count` bolt-circle step had come out as 60 radians
+    (3437.7 deg); the holes landed unevenly and an analyst round was spent on it.
+  - A plain number added to an angle in degrees is also in degrees:
+    `alpha + 10` with alpha = 30 deg is 40 deg, where it used to be 603.
+  - Anything worked out with pi (or an inverse trigonometric function) stays in
+    radians.
+* Wall thickness (forge_geom/measure.py).
+  - A ray counts as a wall only if it leaves through the face opposite the one it
+    entered by (within 37 degrees).
+  - The leg shell's top rim read 0.006 mm where a ray grazed out of a convex
+    edge. A flared cup's rim read 0.03 mm. Both now read their real walls.
+* The thinnest-wall claim (forge_roles/library.py).
+  - "Minimum wall thickness = 8 mm" on a shell whose brief cuts holes and an
+    opening through the wall was failing a correct part. The web between the
+    opening and the holes the brief puts beside it is 3.75 mm.
+  - The wall claim measures the walls, so the duplicate claim is now dropped, but
+    only where the brief cuts through the walls.
+* Material questions.
+  - A record that ASKS what material the part is made of (the side rail's
+    UNK_MATERIAL) no longer holds the part when nothing measured rests on the
+    material (no mass, no margin). It stays in the report as an open question,
+    as an assumed material already did.
+  - "Continuous material around every hole" is no longer mistaken for a
+    material.
+* Analyst schema: `patches` now comes straight after `strategy`. Placed last,
+  behind three optional fields, it was being left out, which cost a second call.
+* run-design-claude.ps1: -MaxCost now defaults to 3.00. A run with a redesign can
+  pass 2.00 with thinking on, and the ceiling is a hard stop.
+
+Tests
+-----
+tests/test_the_thinking_runs.py. The fixtures are the stepper, leg shell and side
+rail runs of 14 and 15 October.
+
+Addendum, after the flight-controller plate and lower-leg shell runs (15 Oct)
+-----------------------------------------------------------------------------
+Both parts passed first time with no repair rounds, and both were checked by eye
+against the brief: correct. The shell still took 20 minutes and cost $2.37.
+* Thinking room by effort: 32 000 tokens at full effort, 16 000 at medium,
+  8 000 at low. The shell's designer thought past 16 000 tokens, was cut off at
+  32 768 after six minutes, and was asked again from the start.
+* Last look at low effort. At medium it still took 16 500 tokens and 3.5
+  minutes to say "nothing to change".
+* A hole that gives its own `position` beside a `place` naming nothing it can
+  go through now keeps its position. Before, it was refused, and a second
+  47 000-token design was spent deleting the word.
+* The heartbeat says "thinking" while the model thinks without streaming its
+  thoughts. It used to say "reading the prompt" for minutes.
+* An empty credit balance is now reported as "the Anthropic API account is out
+  of credit", with what to do about it. It used to say "refused the request
+  mid-answer". It is not retried.
+
+Audit of v8 (16 October 2026)
+-----------------------------
+Every v8 change was diffed against v6 with the v7 edits subtracted, read, and
+probed by running code. Found sound: the streamed transport (event
+reassembly, the silence timeout, mid-answer errors, the out-of-credit case),
+effort per role, the enum validation, the wall-thickness exit-face filter,
+the material question eased only where nothing measured rests on it, the
+hole that keeps its own position, and the analyst schema order. All 133
+recorded real designer answers replay as before (132 parse, one refused for
+a reason the model can act on); the fast modules pass (thinking runs 27,
+regressions 38, units 58, expr 45, models 154, spec 231, patch 32).
+
+The degree rule, probed on edge cases: `360 / count`, `alpha + 10`,
+`180 - 2 * alpha`, `pi / 3`, `deg(atan2(y, x))`, `step * 2` and the radian
+slots all come out right. Two forms do not, and both are the model's
+spelling rather than the rule's: pi written as `3.14159` is now read as
+degrees (1.05 deg for `2 * 3.14159 / 6`), and `atan2(y, x) * 180 / pi`
+has always been 2578 deg, because the radian label survives the product.
+The authoring guide said nothing about either; it now tells the designer
+to write `pi` by name and `deg(...)` for an inverse trigonometric result.
+(forge_ir/spec.py)
+
+Noted and left: a dropped thinnest-wall claim is no longer reported as a
+finding, but the measured thinnest wall is still written to the run's
+measurements (`minimum_wall`), so the figure is not lost; and a material
+question opened rather than asked means a run without --assume no longer
+pauses on it, which is the intended trade when nothing measured reads the
+material.
+
+Addendum, after the validation suite's tier R on Claude Sonnet 5 (17 Oct)
+--------------------------------------------------------------------------
+Twelve of fourteen came out as expected. The two that did not were both
+Forge's faults, and both were small; neither part was drawn wrong.
+* R10, the loaded aluminium cantilever, stopped before any design was asked
+  for.
+  - The record assumed "6061-T6" under `ASM_MATERIAL_GRADE`. Forge's own grade
+    step did not recognise the grade written that way, and appended a second
+    assumption under the same id. v7's decoder (rightly) refuses two of one id.
+  - Fixed: the grade is recognised however it is spelt ("6061 T6",
+    "6061-T6", `aluminium_6061_t6`). The record's own assumption is raised to
+    high risk, since the margin rests on it.
+  - Anything Forge appends gets an id of its own. A last pass renames a
+    second requirement or assumption under a taken id to `<id>_2`, with a
+    note, instead of failing the run.
+  - Unknowns absorbed as `ASM_UNRESOLVED_*` also get unique ids.
+* R12, the two-set-screw shaft collar, passed every check and was then held
+  for `ASM_SOLID_COLLAR`. That assumption reads "a solid (non-split) cylinder
+  ... with no slit or clamping flange", and the record marked it
+  irreversible.
+  - Fixed: an assumption that the part has no feature the brief never
+    mentions (a split, a thread, a fillet, a flange, a bushing...) is kept in
+    the report but no longer holds the part.
+  - This applies only where the assumption is low or moderate risk, gives no
+    number the brief does not, and says nothing about the body, the
+    surroundings, a load, a material or a standard. A choice such as "walls
+    2 mm thick", "a 2 mm fillet on every edge" or "the 50 mm is the outside,
+    not the cavity" is not an absence and still goes to a person.
+  - Across every stored run, this changes R12's collar and nothing else.
+
+Tests: tests/test_the_validation_suite.py. The fixtures are the R10 and R12
+records.
+
+Addendum, after tier P (17 Oct)
+-------------------------------
+Thirteen of fourteen came out as expected. P11, the torus, was released wrong
+with every claim passing, and the suite's own grading caught it. The cause was
+Forge's, not the model's.
+* The brief: "an 8 mm round section bent into a full ring 40 mm across at the
+  centre line of the section". That is a ring 48 mm across.
+  - Forge's size reading took the 40 as the outside and claimed 40 mm on X and
+    on Y.
+  - The first design was right (48 across) and failed both claims. The repairs
+    saw that the claims contradicted the brief and gave up.
+  - The redesign then satisfied every claim by building the ring on a 32 mm
+    middle, under a parameter still called 40. It was released as PASS.
+* Fixed (forge_roles/library.py):
+  - A diameter measured to the middle is not taken as the part's outside:
+    "at the centre line", "centreline diameter", "mean" or "pitch diameter",
+    "inner diameter", "a 60 mm diameter bolt circle".
+  - The ring reader takes such a figure as the ring's middle, so this torus is
+    40 to the middle and 48 across.
+  - Where the brief gives a ring's middle (or its inside), Forge claims the
+    built ring's width on X and Y (here 48 mm) and its roundness. An extent
+    claim set at the middle's figure is corrected to the outside. The released
+    ring now fails those claims, and the first design passes.
+  - The ring's volume bound uses the stated middle when there is one.
+  - Across all 164 briefs Forge has on record, including the whole suite, the
+    size reading changes for P11 and nothing else.
+
+Tests: TheRingIsMeasuredToTheMiddleOfItsSection in
+tests/test_the_validation_suite.py. The fixture is the P11 run: the first
+design and the released redesign.
+
+Addendum, after tier H (17 Oct)
+-------------------------------
+The grader marked nine of ten OK, but one of those nine was wrong. Both faults
+are Forge's.
+* H03, the plate with two counterbored holes, was released with one
+  counterbore.
+  - The brief: "two counterbored holes for M5 screws, 40 mm apart: each a 5.5
+    mm through hole with a 10 mm counterbore 5 mm deep". Forge's counterbore
+    reader took "each a 5.5 mm hole" as one hole and claimed one counterbore.
+  - The first design (both counterbored) failed that claim, and the repair
+    took the second counterbore off to obey.
+  - The last look saw this and put the counterbore back. Its change failed
+    the wrong claim, so Forge reverted it and released the part as passing.
+  - The grader's 4% volume band let it through: the missing counterbore is
+    1.2% of the plate.
+  - Fixed (forge_roles/library.py): "each a ... hole" counts back to the holes
+    the sentence counted before it ("two counterbored holes"). Both the
+    counterbore claim and the hole count now say 2. Across all 506 briefs on
+    record, this changes H03 and nothing else.
+  - Fixed (forge_orchestrator/orchestrator.py): if the last look's correction
+    fails only checks this run had to repair the design to pass, the brief and
+    a check are being read two ways. The part is no longer released as
+    passing. It is held as it passed, with an unaccepted assumption,
+    ASM_LAST_LOOK_DISAGREES, saying what the look saw and which checks its
+    correction fails. A person looks at the part and accepts it or not.
+  - Grader (validation/check-suite.py, on the laptop): the volume band is now
+    1% for any part that is not a rod. The mesh measures within 0.3% on every
+    such part graded so far, 0.65% on the 12 x 100 rod, and 3% on the 3 x 60
+    pin, which keeps its 4%.
+* H07, the cube with three crossing holes, passed every check and was held
+  for ASM_HOLE_ALIGNMENT.
+  - The assumption, "the three holes are mutually orthogonal, each passing
+    fully through the cube's geometric centre along the X, Y and Z axes",
+    was moderate and irreversible. It is the brief's own "three holes through
+    its centre, one along each axis" in other words.
+  - Fixed: the reader that drops an assumption restating the brief now reads
+    through spelling (centred/centre, axes/axis, a possessive "'s") and words
+    that only say how surely ("mutually", "fully", "respectively"). Where the
+    brief says "one along each axis", X, Y, Z and orthogonal count as said.
+    Across all 427 records on file, this changes H07 and nothing else.
+
+Tests: ThePlateHasBothItsCounterbores and
+TheCrossingHolesAreNotHeldForTheBriefsOwnWords in
+tests/test_the_validation_suite.py, and
+TheLastLook.test_a_look_that_undoes_a_repair_holds_the_part in
+tests/test_eyes.py.
+
+Addendum, after tier C (18 Oct)
+-------------------------------
+Eleven of sixteen passed. All five failures were Forge's faults, and so was
+one part that was released only after a wasteful repair (C06).
+* C04 (stepped shaft) and C15 (dumbbell): blends the briefs never asked for,
+  and parts held over assumptions that settled nothing.
+  - Both designs blended their unions ("a small transition fillet", "a
+    cosmetic blend"). The dumbbell came out 113 mm^3 over.
+  - Fixed: where the brief has no word for rounding (fillet, radius, rounded,
+    blend, chamfer, smooth...), every blend, chamfer and rounded edge is taken
+    off the design. A requirement that measures one is never touched. "Round"
+    alone does not count: a round post is a cylinder.
+  - Fixed: an assumption that adds such a rounding is dropped from the record.
+  - Fixed: an assumption that the record says is the brief's own ("as
+    described by the brief's ... language"), or that the part is one piece
+    and not an assembly (which Forge always builds, and checks), no longer
+    holds the part. This applies only at low or moderate risk, with no new
+    figure, and nothing about the body, the surroundings, a load or a
+    material.
+  - The dumbbell's bar was written `lies: standing`, with its balls placed
+    along X. Forge turned the bar upright and a repair round turned it back.
+    Fixed: a box is no longer turned when other features are placed along its
+    side on the axis the box already has it.
+* C09 (cup): the side wall and floor were each claimed twice, once as a
+  parameter that Forge then measured as the wall itself. The copies were
+  unbound and reported NOT_TESTED, which held a cup that passed everything.
+  - Fixed: two claims on one binding with the same comparison and figure are
+    one claim, and the copy is dropped.
+  - Also fixed: "no load case" made every brief look like a box ("case"), and
+    Forge rebuilt the round cup as a square box. The rebuild failed its
+    roundness check and was taken back, but it cost a check. "Load case" is no
+    longer a case, and the container rebuild no longer fires on a round part.
+* C10 (tray with a divider): the wall line along Y ran inside the divider, so
+  the walls read [2, 60] mm, inconclusive. Fixed (forge_pipeline/measure.py):
+  a wall line that meets no space is moved beside the middle until it crosses
+  the space.
+* C13 (clevis): the run took twelve minutes, cost $1.20, and produced no part.
+  - The design was right: one pin hole per ear, drilled along X through the
+    ears' 6 mm. Forge took the two holes for one hole drawn twice (they share
+    a line) and re-aimed both down Z. It did this three times, including after
+    the analyst put them back.
+  - Fixed (forge_roles): holes down one line, each inside a wall of its own
+    with empty space between, are found on the part built without them. Each
+    now cuts the wall it sits in (`through: first_wall`). Two holes down one
+    line through one solid are still re-aimed as before.
+  - Fixed (forge_kernel): `through: first_wall` from a position inside a wall
+    goes through the whole of that wall. It used to cut only from the
+    position out, which is half the wall.
+  - The record read "two ears ... 25 mm tall rising from its two ends" as the
+    part being 25 mm tall. Fixed: a piece rising from, or standing on, the
+    piece named just before it adds its height to that piece's thickness. A
+    claim on the part's height set at the standing piece's own height is
+    corrected to the sum, 35 mm. Across 684 briefs on record, this changes
+    the clevis and nothing else.
+* C06 (hydra): passed, but only after a repair round patterned the ring of
+  six rods five more times. A tagged pattern counts its copies, but a count
+  written as `{"expression": "rod_count"}` was read as its literal, None, and
+  so as one. Fixed (forge_pipeline/measure.py): the count is resolved like
+  any other parameter.
+
+Tests: the tier C classes in tests/test_the_validation_suite.py, on the
+C04, C06, C09, C10, C13 and C15 runs.
+
+Addendum, after tier A (18 Oct)
+-------------------------------
+Five of eight passed. Of the three failures, two were Forge's faults and one
+was the suite's.
+* A02 (cube with a spherical dent): "a 30 mm sphere cut out of it, the sphere
+  centred on the middle of the top face". The record raised a critical
+  unknown asking where the sphere's centre is, though the brief says, and the
+  correct part was held for it.
+  - Fixed: a ball the brief centres on a face has its centre on that face.
+    Questions about its position are dropped.
+  - Where the ball is cut away from a block, the dent is claimed on the part:
+    open from that face, one radius (15 mm) deep at its middle. A sphere left
+    as a void inside the cube now fails that claim.
+* A03 (three overlapping balls): "Three 20 mm PLA balls in a row" was read as
+  the part being a ball and held to "as wide in every direction" (0.4). The
+  repair round then tried laying the row along a diagonal. Fixed: balls in the
+  plural, or counted more than one, are not a ball.
+* A06 (bead): the part was right. A 10 mm hole through a 40 mm ball takes off
+  its poles, so the bead is 2 x sqrt(20^2 - 5^2) = 38.73 mm along the hole.
+  The suite expected 40, though its own volume (a napkin ring) already said
+  38.73. Corrected in validation/suite.json, with the reason in the test's
+  notes.
+Across 695 briefs on record, these change A02 and A03 and nothing else.
+Also corrected in validation/suite.json: X02 (spur gear), X04 (cone) and X05
+(coil spring) were marked "honest". Their notes said Forge could not cut gear
+teeth and had no cone or coil, but Forge now draws all three (profile_gear
+with involute teeth, cone, coil). A correct part would have been graded FAIL.
+They now expect "pass", with independently worked envelopes and volumes:
+* gear 8 x 44 x 44, volume 9300 to 10000 mm^3, from an involute outline of
+  1226 mm^2 less the bore;
+* cone 40 x 40 x 60, pi r^2 h / 3;
+* spring 20 x 20 x 50, volume 1700 to 1900 mm^3 of wire, with open ends.
+The suite as it was before these corrections is kept beside it, as
+validation/suite.original.json.
+
+Addendum, after tier V (18 Oct)
+-------------------------------
+Nine of eleven passed. V03 was Forge's fault; V10 never ran.
+* V03 (spec-sheet plate): "T = 4 mm ... 4x diameter 4 mm through holes" was
+  read as the part being 4 mm round, because the hole's diameter matched the
+  plate's thickness. The record claimed roundness and failed a correct
+  70 x 50 x 4 plate at 0.58.
+  - Fixed: a number followed by up to two words and then a hole word ("4 mm
+    through holes") is a hole's size, not the part's.
+  - And a round size that the part only measures up Z (its thickness) is not
+    the part being round. A part is round at a size it measures across its
+    footprint, or across two of its extents.
+  Across the briefs on record, this changes V03 and nothing else.
+* V10 (Romanian): the run stopped before it began. Printing the brief back to
+  a Windows console, which writes in its code page, failed on a letter the
+  page does not have. The same would happen to an English brief with a
+  "≥" or an arrow in it. Fixed (forge_cli/cli.py): what the console cannot
+  show prints as "?"; the run and its files, written in UTF-8, are
+  untouched.
+  Forge V1 takes briefs in English only. Nothing was added for other
+  languages, and V10 is removed from validation/suite.json (it stays in
+  validation/suite.original.json).
+
+Tests: TheSpecSheetPlateIsNotRound and
+AConsoleThatCannotShowTheBriefDoesNotStopTheRun in
+tests/test_the_validation_suite.py.
+
+Addendum, after tier L (18 Oct)
+-------------------------------
+Five of seven passed. L05 and L07 were Forge's faults.
+* L07 (height limit): "The whole part must be no taller than 50 mm" was read
+  as the part's height. The record's own "at most 50 mm" was turned into
+  "exactly 50 mm", and a correct part (a 40 mm post on a 5 mm base, 45 mm
+  tall) failed it. The repair then put in a 5 mm riser nobody asked for.
+  - Fixed: a comparison is a limit however it is worded: "no taller than",
+    "wider than", "fewer than", "must not exceed", "a height limit", "<=" or
+    a "less than or equal" sign. "Other than" and "rather than" compare
+    nothing. Across 703 briefs on record, this changes L07 and nothing else.
+* L05 (mass limit that fails): a 20 mm cube of 1018 steel weighs 63 g
+  solid, so a 50 g limit cannot be met. The suite expects Forge to say so.
+  Instead, a repair kept the cube 20 mm on every side and shelled it inside
+  to a 3 mm skin. The weight came in at 41 g and every claim passed. The
+  last look saw the outside of a cube and released it. The part cannot be
+  machined and looks solid in every view.
+  - Fixed: a new measurement, sealed_voids, counts the pockets of air the
+    part closes in on every side, on the surface it is already measured on.
+    Where the record limits the part's weight or volume, and the brief has
+    no word for air inside it (hollow, shell, sealed, walls, a cavity, a
+    tank), the record also claims nothing is sealed inside. The shelled
+    cube now fails that claim, so the repair is taken back and the weight
+    fails honestly.
+  - The failure analyst, the second design and the last look are told the
+    same rule: change how the part the brief describes is built, never
+    which part it is. Nothing the brief does not describe goes in or comes
+    out to pass a check: no hollow, shell, pocket, riser or spacer. When the
+    brief's own sizes and material cannot pass a limit, that is the answer:
+    say which figures conflict, and by how much.
+* The console: a Windows console reading a pipe showed every "+/-" in the
+  evidence as a block. A console that is not UTF-8 is now written in plain
+  ASCII: "+/-", ">=", "->", and "?" for anything with no plain spelling.
+L02 (PLA cantilever) is right: it fails its safety factor honestly, at 0.73
+against 2. It took 10 minutes, mostly one long analysis and a second design
+that could not help.
+
+Tests: AHeightLimitIsALimit and NothingSealedInsideAPartTheBriefDoesNotHollow
+in tests/test_the_validation_suite.py, on the L07 and L05 runs.
+
+Addendum, after tier X (18 Oct)
+-------------------------------
+Seven of twelve were OK (X03 and X10 are for inspection). X01, X05, X07 and
+X09 were graded FAIL, and X03 needed a fix though it was not graded.
+* X03 (M8 bolt): the head was drawn as `head_across_flats / cos(30)`. A
+  plain number is an angle in radians, so cos(30) was 0.154 and the head
+  came out 84 mm across its corners instead of 15. Every claim passed,
+  because none was about the head, and the last look let it through.
+  - Fixed (forge_expr): in sin, cos and tan, a figure written out with no
+    name in it is read as degrees when it is a full turn or more. No one
+    writes cos(30) meaning thirty radians. A figure under a full turn could
+    be either (cos(0.5236) is pi/6 worked out), so it is refused with a
+    message to write the unit. An argument with a name in it is left as
+    radians: `cos(i * step)` with `step = 2 * pi / n` is radians.
+  - The last look is told to check proportions as well: each size it can
+    see against the size the brief gives, or the standard it names.
+* X09 ("Write me a poem about bridges."): the interpreter said it was no
+  part, but requirements were written anyway. The designer drew a 1 mm
+  placeholder cube and every check passed it.
+  - Fixed: the interpreter now says whether the brief asks for a part at
+    all (`is_a_part`). If it does not, the run ends there, before anything
+    is designed (OR1008_NOT_A_PART).
+* X01 ("Make a washer."): sized as an M10 washer by assumption. Every
+  assumption was moderate and reversible, so none held the release, and
+  the washer was released with every claim passing against figures nobody
+  gave.
+  - Fixed: a brief with no number in it at all (no figure, no number in
+    words) gets a critical question asking for the part's size. Without
+    --assume the run stops and asks it. With --assume the part is built and
+    held until someone accepts the sizes. One number anywhere in the brief
+    and this does not apply.
+* X05 (coil spring): "10 coils" was claimed as
+  `feature_count:coil:total = 10`. A correct spring, one coil of ten
+  turns, counted as 1. The repair split it into ten one-turn coils joined
+  end to end. The joins left the surface not cleanly closed, so the spring
+  was held, after 20 minutes.
+  - Fixed (measure.py): a coil counts as many coils as it has turns.
+* X07 (sphere that must fit a 20 mm box): Forge asked which of the two
+  conflicting figures governs, as a critical question. Without --assume
+  that stops the run before anything is designed. That is an honest
+  answer to a brief that contradicts itself. The suite insisted on a
+  failed size claim, so X07 now expects "honest" (validation/suite.json,
+  with the reason in its notes).
+* X10 (heart keychain) is acceptable: a heart with the hole near the top.
+  Its 40 mm went to its height, so it is 37.6 mm wide.
+
+Tests: TheBoltsHeadIsDrawnInDegrees, APartTheBriefGivesNoSizeIsAskedFor,
+NothingIsDesignedForABriefThatAsksForNoPart and ACoilCountsItsTurns in
+tests/test_the_validation_suite.py.
+
+Addendum, after the tier X reruns (18 Oct)
+-----------------------------------------
+X01, X03, X07 and X09 now come out right. X01 is held, because its own
+record asks what fastener the washer fits. X03 is a correct M8 bolt, 13 mm
+across the flats of its head and 45.3 mm long overall. X07 fails its 20 mm
+box and asks which figure governs. X09 stops in 4 seconds.
+* X05 (coil spring) was held again, this time on the right design: one
+  coil of ten turns, counted 10. Its surface drew 13 edges shared by four
+  faces on every grid tried, which is the mesher's guess where a wire meets
+  the grid at a slant. GEOM_WATERTIGHT could not tell that from a solid
+  that really touches itself, so it reported a range, INCONCLUSIVE, and the
+  release was held.
+  - Fixed (forge_geom/mesh.py `meets_itself_at`, used by verify.py): each
+    such edge (up to 64) is sampled again eight times finer, in a cube one
+    cell across each way, and any it flags is sampled again at sixteen
+    times finer. The material there is split into its face-joined
+    pieces. The solid meets itself only where two different pieces touch
+    along an edge or at a corner of the fine grid. A sheet met at a slant
+    is one piece however it is cut. The spring now passes, with the reason
+    stated. Two blocks touching along a line are found at every edge, and
+    the gate FAILS them where it used to say INCONCLUSIVE. With more than
+    64 such edges, the old range still holds.
+
+Tests: ASolidMetAtASlantIsToldFromOneMeetingItself in
+tests/test_the_validation_suite.py.
+
+Addendum, the instrument bracket (18 Oct)
+----------------------------------------
+A brief written to stress Forge with as many shapes and processes in one
+part as it has: two bends, a loft, a bead, a spring, a sealed ball, a tilted
+hole, counterbores, countersinks, slots, a bolt circle, ribs and a dimple.
+The run died before anything was designed. The record claimed the spring's
+"6 coils" as `parameter:spring_coil_count = 6`, unit "". Forge refused the
+empty unit ("give it one, or bind it to something dimensionless"). The
+model then wrote "turns", which Forge refused as not a unit, saying a count
+takes "". It wrote "" again, and the three attempts were spent on Forge
+contradicting itself.
+* Fixed: a `parameter:` or `entity:` claim may have no unit when the brief
+  states its figure as a count: the number followed by a word that is not a
+  unit ("6 coils", "four holes"). A length the brief gives with its unit,
+  claimed with none, is still refused. Replayed, two of the three rejected
+  answers are taken: 80 claims and 11 assumptions.
+Nothing was built, so nothing wrong was released.
+
+Tests: ACountTheBriefStatesNeedsNoUnit in tests/test_the_validation_suite.py.
+
+Addendum, the instrument bracket, second run (18 Oct)
+----------------------------------------------------
+The record was taken this time (77 claims). The run then spent its $3
+budget on the designer: three documents of 40,000 to 65,000 tokens each,
+the first two refused. It stopped with nothing on file saying why they
+were refused. Two faults in the record would also have failed a correct
+part:
+* The hollow ball's "2 mm wall" was read as the bracket's. The whole part
+  was claimed a container with 2 mm walls and a 2 mm floor, measured
+  through the middle of its footprint, and its slots were looked for as
+  windows through a wall instead of laid flat.
+  - Fixed: words about a hollow or a wall belong to the thing they are said
+    of. That is the nearest thing named before them in their sentence, or,
+    for "hollow", the thing named just after it. Only when that thing is
+    the part itself (what the brief names before it says anything else
+    about it) do they make the part hollow, a container, or give it walls.
+    Across 716 briefs on record, this changes the bracket and nothing else.
+* "A hexagonal boss 19 mm across flats ... at x = 22, y = -18, with an M8
+  hole ... in the middle of its top" was read as a 19 mm round boss in the
+  centre of the part.
+  - Fixed: "in the middle of its top" is the boss's own middle. A boss the
+    brief places by coordinates is where they say. "Across flats" is not
+    round.
+* Observability: when the budget runs out, or the run is cancelled, between
+  a role's answers, the answers already refused and the problems they were
+  refused for are now kept in run.json (failure.detail.refused_answers),
+  shown under the failure, with a hint to raise --max-cost. A refused
+  answer is kept up to 400,000 characters, a whole design, where it was
+  20,000.
+
+Checked by hand: a plate bent 90 and 45 degrees with a boss joined on after
+the bends measures 135 degrees in 2 bends, and its slot is found laid flat.
+
+Tests: APieceOnThePartIsNotThePart and
+WhatARoleWroteBeforeTheBudgetRanOutIsKept in
+tests/test_the_validation_suite.py.
+
+Addendum, the instrument bracket, third run (19 Oct)
+---------------------------------------------------
+A part was built and measured: 81 claims, about 66 passing. The bends were
+built wrong: the left 90 degree fold came out as a long curve across half
+the plate, and the right as a zigzag. Seven holes were left as notches.
+Forge failed every one of these (bend count 5 against 2, 381 degrees
+against 135, seven holes with no material all round). One repair brought
+eight failures down to five, and then the run reached its 600,000-token
+ceiling. Nothing wrong was released. Most of the other features measured
+right.
+The run took two hours and $4.86: 40 minutes of model calls, and about 80
+minutes measuring a part this size twice. A part this complex is beyond
+what V1 designs in one document. That is for V2: building it in stages,
+and measuring it faster.
+* The budget hint named --max-cost when the limit reached was the token
+  ceiling. It now names the limit that was reached (--max-tokens,
+  --max-calls or --max-cost).
+
+Addendum, the hollow dome (19 Oct)
+----------------------------------
+"A PLA dome: exactly half of a 70 mm sphere, ... hollow on the inside" was
+released with every check passing, and the slicer showed the dome closed
+across its open side: a filled disc with a dark zigzag over it.
+The part was right: a 2 mm shell, 14,549 mm^3, open on its flat side.
+The STL was not. It drew a skin of no thickness across the opening, twice,
+back to back: a solid half ball round a sealed half-ball void. The zigzag
+was the slicer drawing two faces in one place. Forge's own measurements
+said so (one piece of 89,778 mm^3 with a sealed void of 75,229 mm^3), and no
+check read them.
+Cause: the cavity was cut by the same plane that cuts the dome. Across the
+opening the field is exactly nought and above it on either side. The mesh
+grid's samples lay exactly on that plane, and a sample on the surface was
+counted as material. That holds for any cut flush with a face whose plane
+lands on the grid: a 50 x 50 x 25 tray with a flush pocket was drawn as a
+closed box too. A part half as tall as it is wide puts its top there.
+* Fixed: a sample within rounding of the surface is material only if there
+  is material right beside it. It is read again a thousandth of a cell
+  away, in 26 directions. A face, edge or corner of the part keeps it.
+  A skin, line or point of no thickness does not. Two blocks touching face
+  to face are still one solid. This is applied wherever the mesh code
+  classifies a sample: the surface, the fine band, the floating-piece check
+  and the meets-itself check.
+* Guard: a mesh in which two sheets lie on each other (edges between
+  different vertices at the same place) is not watertight. The extractor
+  tries another grid, and GEOM_WATERTIGHT fails such a surface, saying it
+  is a skin of no thickness. The check costs one sort when no two
+  vertices coincide.
+The dome now meshes as one piece of 14,523 mm^3 with no void. The tray is
+open.
+
+Tests: AnOpenSideIsNotDrawnShut in tests/test_the_validation_suite.py
+(fixture validation_dome_open_side_drawn_shut).
+
+Addendum, the exo arm's upper rail (19 Oct)
+-------------------------------------------
+Part 2 of the exo-arm build: a 287 mm rail with four 8.2 mm bolt holes, two
+22.1 mm bearing pockets and two 15 mm counterbores. All 32 claims passed,
+measured on the design itself, and the design was right. The STL beside
+the run was not: its 8.2 mm holes were 7.3 to 7.7 mm across at their
+narrowest, its counterbores 13.5 mm and its bearing pockets 21.85 mm. The
+part could not take its own bolts or bearings.
+Cause: the STL was the surface the checks read, meshed 96 cells along the
+part's longest side. That is 0.7 mm cells on a 70 mm part and 3 mm cells on
+a 287 mm one. A hole is as round as its facets, and the flat facets cut
+inside it. That is fine for counting holes and pieces, and wrong for a file
+someone prints.
+* Fixed: the STL is meshed again for printing, in 0.5 mm cells. Only the
+  band of cells round the surface is sampled finely, so a large part costs
+  its surface, not its volume. A part whose band will not fit the budget is
+  meshed as finely as it fits, up to about 800,000 faces (some 40 MB). It
+  must come out closed. A few edges shared by four faces are allowed only
+  when each one is the grid's guess on a slanted surface, checked the way
+  the watertight gate checks them. Otherwise the checks' surface is written,
+  as before.
+  On the rail: the holes are 8.13 to 8.17 mm, the pockets 22.03 mm and the
+  counterbores 14.94 mm at their narrowest. 99% of the surface is within
+  0.03 mm of the design; sharp edges are rounded by up to about 0.2 mm.
+  This takes 6 s. The coil spring takes 27 s and the calf shell 37 s (its
+  facets are 0.97 mm, 99% within 0.06 mm; the checks' surface was within
+  1 mm).
+  The listing says what was written, e.g. "0.44 mm facets for printing, 99%
+  of the surface within 0.03 mm of the design". `forge export` meshes for
+  printing too (--cell sets the facet size; --resolution gives the old
+  grid). The STL is now written all at once, not one facet at a time: on
+  the laptop's Linux VM, 364,000 facets one at a time took longer than
+  three minutes. The bytes written are the same.
+* The same rail had an 8 mm blend, which nobody asked for, where its round
+  end meets the bar. Forge takes off roundings a brief doesn't ask for, but
+  it read "round end", "fully rounded far end" and "inside radius" as words
+  asking for rounding. Those words name a shape (a semicircular end, a
+  bend), not a rounded edge, and no longer count. Across the 138 briefs on
+  record (the suite, every run on the laptop, the exo-arm plan), this
+  changes four, all of which name shapes: the two exo rails, the wrist link
+  strip and P10's obround plate.
+
+Tests: TheSTLTakesItsOwnBolts and ARoundEndIsAShapeNotAFillet in
+tests/test_the_validation_suite.py (fixture
+exo_upper_rail_holes_meshed_undersize).
+
+Addendum, the upper rail run again (19 Oct)
+-------------------------------------------
+The same brief, run again, was held after 27 minutes and $3.09. Every
+claim on the rail passed except REQ_ROUND, which Forge added itself. This
+time the record claimed the rail's 48 mm width at its round end as
+bounding_box_y. Forge read "one end of the bar is a round end 48 mm in
+diameter" as the part being 48 mm round, so it claimed X = 48 as well and
+roundness 0.95. A correct 287 mm flat rail measured 0.385. The analyst
+rightly refused to turn the bar into a rod, and the run was blocked. The
+part was right: no fillet this time, the counterbores on the bottom face,
+the pockets on both faces, and an STL fit to print.
+It was not caused by the STL fix. The rule that read the size has been
+there since tier V; the first run's record just did not claim the 48.
+* Fixed: a size said of a piece of the part is that piece's, not the
+  part's. The nearest thing named before the figure in its clause decides:
+  an end, a tab, a lug, a hole or a pocket always; a boss, post or hub only
+  when it is said to stand on something and the brief doesn't call the part
+  that. "It is a disc 80 mm across" and "a flange disc 50 mm across" are
+  still the part.
+  Across the 138 briefs on record this changes ten, all of them figures
+  that belong to a piece: the two rails' round ends, pockets and boss,
+  bosses and posts standing on plates (R13, C01, C11, the stepper plate),
+  a 30.5 mm square of hole centres, a countersink, tabs' pivot holes on the
+  calf shells, and the bracket's handle bar.
+* The same run dropped an assumption that described the rail's far end as
+  a fillet nobody asked for. That came from the morning's fix: the brief no
+  longer "asked for rounding", so the assumption filter started working on
+  it. That filter counted any bare "rounded" or "radius" as a fillet. It now
+  counts fillets, blends, chamfers and bevels, and "rounded"/"radius" only
+  on an edge, corner or transition ("edges are not rounded" still counts as
+  no rounding). Shape words are ignored there too.
+
+Tests: ASizeOfAPieceIsNotThePartsSize in tests/test_the_validation_suite.py
+(fixture exo_upper_rail_held_round).
+
+Addendum, the forearm rail's lug (19 Oct)
+-----------------------------------------
+Part 06 of the exo arm passed 34 of 34 and the lug was wrong. The brief:
+"a lug 24 mm wide ... ends in a semicircle of radius 12 mm whose centre is
+28 mm from the bar's centreline". The designer drew a 24 by 22 box, 16
+thick, rounded `top_along_y` at 12. Those edges run along the lug and
+round its section, which 16 mm of thickness limits to 8, so Forge clamped
+it to 8 on the same edges. The lug came out square-ended seen from above,
+its two top edges rounded, and the 20 mm boss on it overhung the rounding.
+REQ_LUG_SEMICIRCLE_RADIUS read the parameter table (12) and passed. The
+last look saw the fault, wrote its fix in words and no patch, and was
+recorded "nothing to change".
+* Fixed (kernel): a box can round only the two upright edges of one face:
+  `edges: vertical_x_min / vertical_x_max / vertical_y_min /
+  vertical_y_max`. A radius of half that face's width is a full round in
+  plan; the rest of the box stays square, so a lug's root meets the bar
+  along its whole width. The radius may reach the box's full length behind
+  the face (12 on a 22 mm reach), which no four-cornered rounding can.
+  The designer's description of `edges` now says top/bottom are z, and how
+  a flat tab's end is rounded.
+* Fixed (designer): a radius too big for the edges it was written on,
+  that is a full round across one side of the plan, now goes on the
+  upright edges of the free end. The free end is the one with a hole, boss
+  or pin standing at the rounding's centre, or the one whose opposite face
+  sits on another solid. With no such sign the old clamp stands.
+  The rule that rounded both ends in plan ("both short ends fully
+  rounded") still does, except where one end sits on another solid: that
+  end is kept square, as rounding it full round would join it at a line.
+* Fixed (designer): a `min(...)` that takes a requirement's parameter
+  below its own figure by more than 0.05 mm sends the design back. The
+  claim would pass on the parameter table against a part that does not
+  have that figure.
+* Fixed (last look): an answer with no patches is taken as "matches the
+  brief" only when its strategy says nothing should change. A strategy
+  that describes a fix is asked for its patches, like any repair. If it
+  still writes none, the run says "the last look saw a fault and wrote no
+  edit for it", with what it saw, not "nothing to change".
+
+Tests: AnEndRoundedInPlan, ALugEndsWhereItIsFree, AClaimedFigureCutShort
+and ALastLookThatSawAFault in tests/test_the_validation_suite.py (fixture
+exo_forearm_rail_lug_clamped).
+
+Addendum, the wrist link strip (19 Oct)
+---------------------------------------
+Part 11 passed 25 of 25 and printed square-ended. The brief: "a flat PLA
+strip 110 mm long, 16 mm wide and 2 mm thick with both ends fully
+rounded". The designer drew it correctly: a box rounded `width / 2` on its
+upright edges. Forge took that rounding off as "a fillet nobody asked
+for". Since the morning's fix, "fully rounded ends" counts as a shape and
+not as a rounding, so the brief seemed to ask for no rounding at all.
+That fix listed this strip among the four briefs it changed; what it did
+to the strip's design was not checked. Nothing measured the ends, and the
+last look, shown a picture with square ends, said they were round.
+* Fixed: when a brief rounds its ends ("both ends fully rounded", "a
+  fully rounded far end", "semicircular ends", "ends in a semicircle of
+  radius 12 mm"), the roundings that draw an end are kept: a box's upright
+  edges or the edges along it, and an outline's corners. Blends in
+  junctions, fillets round a face and rounded extrusion ends are still
+  taken off when nothing asks for them, so the upper rail's 8 mm blend
+  stays off.
+* Added: a new measurement, `ends_round:<r>`. It reads both ends of the
+  part along its longer side, seen from above and through the middle of
+  its thickness, and gives how far, in mm, they are from semicircles of
+  radius r: the tip on the middle line, then the half-width at five places
+  back from it, each side. A brief that rounds both ends fully, sizes the
+  part by its width, isn't bent and has nothing sticking out gets
+  REQ_ENDS_ROUND: at most 0.25 mm from semicircles of half the width. The
+  strip as designed reads 0 mm; square-ended it reads 4.5 mm.
+* Fixed: an interface on a flat sketch that one extrude is built from is
+  read as that extrude's side. The strip's slot port named
+  `slot_profile.region`, which measures nothing, and cost two repair
+  rounds to be repointed. On record, the calf shell of 13 October had the
+  same fault on its access opening's port; it now passes.
+
+Tests: AStripsRoundEndsAreItsShape in tests/test_the_validation_suite.py
+(fixture exo_wrist_strip_ends_taken_off).
+
+Addendum, the switch box (20 Oct)
+---------------------------------
+Part 12 was blocked after 12 minutes and $1.40, and the part was right.
+The brief: "In each of the four inside corners, a square post ... with a
+2.8 mm hole 12 mm deep down into the middle of its top." Forge counts the
+holes a brief sizes and claims that count on the built part. It read "a
+2.8 mm hole" as one hole: the "each of the four corners" is in another
+clause of the sentence, and it only looked in the hole's own clause. The
+design had the four the brief asks for. The analyst rightly refused to
+delete three of them to pass the count, and the redesign Forge then asked
+for came out worse, so the first design stood, blocked.
+* Fixed: a sentence that begins "in/at/on each [of the N] corner/end/...",
+  where the hole is a feature of what it places there ("a post ... with a
+  2.8 mm hole", "a lug carrying a 6 mm hole"), counts the hole once per
+  place: four here. A count said per something the brief doesn't number
+  ("on each tab, a boss with a 4 mm hole") claims no total, as before.
+* Fixed while there: two holes in one clause each keep their own words.
+  "A 5 mm hole in each corner and a 10 mm hole in the centre" was four 5 mm
+  holes and FOUR 10 mm holes; it is now four and one.
+Across the 545 briefs on record (fixtures, tests, laptop runs), this
+changes one count: this switch box's.
+
+Tests: AHoleOnEachThingPlacedPerCorner in tests/test_the_validation_suite.py
+(fixture exo_switch_box_holes_per_corner).

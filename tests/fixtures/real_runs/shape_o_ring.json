@@ -1,0 +1,72 @@
+{
+ "brief": "A rubber O-ring 50 mm across with a 4 mm thick round section. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A rubber O-ring 50 mm across with a 4 mm thick round section. It carries no load, so there is no load case.",
+  "part_kind": "part",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_S",
+    "statement": "REQ_S",
+    "measurement": "parameter:section",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "p",
+   "components": [
+    {
+     "id": "part",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "ring_diameter",
+       "value": {
+        "magnitude": 46,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "section",
+       "value": {
+        "magnitude": 4,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "ring",
+       "kind": "torus",
+       "parameters": {
+        "diameter": {
+         "expression": "ring_diameter",
+         "unit": "mm"
+        },
+        "tube_diameter": {
+         "expression": "section",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a shape the kernel gained (cone, torus, wedge), as a model answers it."
+}

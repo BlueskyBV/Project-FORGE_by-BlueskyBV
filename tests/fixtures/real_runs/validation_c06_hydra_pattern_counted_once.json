@@ -1,0 +1,1014 @@
+{
+ "brief": "A PLA hydra: a round base 40 mm across and 5 mm thick, with an upright pole 10 mm across and 80 mm tall standing on the middle of it. Six 4 mm rods, each 20 mm long, stick straight out sideways from the pole near its top, evenly spaced around it. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A decorative/display PLA part (\"hydra\") consisting of a round base plate with a central vertical pole and six radial rods near the pole's top, explicitly stated to carry no load.",
+  "part_kind": "multi-feature printed fixture (base + pole + radial rods)",
+  "stated": [
+   "Material is PLA",
+   "Round base 40 mm diameter",
+   "Base 5 mm thick",
+   "Upright pole 10 mm diameter, 80 mm tall",
+   "Pole stands in the middle of the base",
+   "Six rods, 4 mm diameter, 20 mm long",
+   "Rods stick straight out sideways from the pole near its top",
+   "Rods are evenly spaced around the pole",
+   "It carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Base is round and pole is centered, so the design is intended to be axisymmetric/rotationally balanced",
+   "Rods are 'near the top' and 'evenly spaced', implying a single horizontal ring with 60\u00b0 angular spacing",
+   "PLA material implies FDM 3D printing as the manufacturing process",
+   "No load case implies strength/stress analysis is not required, only geometric buildability"
+  ],
+  "unstated": [
+   "Exact vertical position of the rod ring on the pole (how far below the top)",
+   "Whether rods are evenly spaced in a single plane or staggered helically",
+   "Fillet/joint geometry where rods meet the pole and where pole meets base (affects printability)",
+   "Whether the pole is solid or hollow",
+   "Whether the base has any mounting features (holes, feet) or is a flat disc",
+   "Surface finish or tolerance requirements",
+   "Orientation for printing (supports, overhangs) despite rods sticking out sideways",
+   "Whether the six rods are identical in length/diameter or could vary",
+   "Intended use/display context of the hydra (decorative only, or functional mount for something)",
+   "Color or any cosmetic requirements",
+   "Any assembly or post-processing steps (e.g., gluing additional features)"
+  ],
+  "out_of_scope": [
+   "Determining dimensions beyond those stated",
+   "Selecting material grade or print settings",
+   "Performing structural analysis despite 'no load' statement",
+   "Specifying tolerances or fits"
+  ],
+  "risk_signals": [
+   "None identified: part explicitly stated to carry no load, is not described as supporting a person, lifting weight, holding pressure, storing energy, or part of a vehicle/regulated equipment"
+  ],
+  "suggested_name": "PLA_Hydra_Display_Part",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BASE_DIAMETER",
+    "statement": "The round base shall be 40 mm across.",
+    "measurement": "parameter:base_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BASE_THICKNESS",
+    "statement": "The base shall be 5 mm thick.",
+    "measurement": "parameter:base_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_POLE_DIAMETER",
+    "statement": "The upright pole shall be 10 mm across.",
+    "measurement": "parameter:pole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_POLE_HEIGHT",
+    "statement": "The upright pole shall be 80 mm tall.",
+    "measurement": "parameter:pole_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_ROD_DIAMETER",
+    "statement": "Each of the six radial rods shall be 4 mm across.",
+    "measurement": "parameter:rod_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_ROD_LENGTH",
+    "statement": "Each of the six radial rods shall be 20 mm long.",
+    "measurement": "parameter:rod_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_RADIAL_ROD_PATTERN_CIRCULAR_COUNT",
+    "statement": "Six rods shall stick straight out sideways from the pole, evenly spaced around it.",
+    "measurement": "feature_count:pattern_circular:radial_rod",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ROD_RING_POSITION",
+    "statement": "The six radial rods are arranged in a single horizontal ring, centred about 10 mm below the top of the pole ('near its top').",
+    "rationale": "The brief says the rods stick out 'near its top' but gives no exact offset; a single ring close to the top is the natural reading of 'near the top' and 'evenly spaced around it'.",
+    "consequence_if_wrong": "If the rods were meant to be staggered at different heights or further from the top, the model's silhouette and balance would not match intent, though the part would still be buildable.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false,
+    "value": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "ASM_ROD_SPACING",
+    "statement": "The six rods are spaced at equal 60 degree intervals around the pole's circumference, all in the same horizontal plane.",
+    "rationale": "'Evenly spaced around it' for six identical rods in one ring implies 60 degree spacing; no alternative arrangement is stated.",
+    "consequence_if_wrong": "A helical or uneven arrangement would change the visual/structural layout, but this is a decorative part so impact is cosmetic only.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_POLE_SOLID",
+    "statement": "The pole and base are modelled as solid (not hollow) PLA, consistent with a simple decorative print.",
+    "rationale": "No wall thickness or hollow feature is mentioned in the brief.",
+    "consequence_if_wrong": "A hollow design would reduce material/print time but is not required for function since there is no load case.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_POLE_CENTERED",
+    "statement": "The pole is centred on the base, both in plan position and concentric with the base's circular outline.",
+    "rationale": "The brief states the pole stands 'on the middle of it'.",
+    "consequence_if_wrong": "An off-centre pole would unbalance the part visually and structurally, but the brief is explicit about centring.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_NO_FILLETS_SPECIFIED",
+    "statement": "No fillets or blends are added at the pole/base or rod/pole junctions beyond what is needed for basic FDM printability; joints are modelled as simple intersections.",
+    "rationale": "The brief gives no fillet radii or joint treatment.",
+    "consequence_if_wrong": "Sharp internal junctions may be slightly weaker or harder to print cleanly, but since there is no load case this has no functional consequence.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_BASE_PLAIN_DISC",
+    "statement": "The base is a plain flat disc with no additional mounting holes, feet, or features beyond the stated diameter and thickness.",
+    "rationale": "No such features are mentioned in the brief.",
+    "consequence_if_wrong": "If mounting features were intended, the part would need rework, but nothing in the brief suggests them.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "PLA Hydra Display Part",
+   "description": "Decorative PLA display piece: a round base plate with a central vertical pole and six radial rods evenly spaced around the pole near its top. No load case applies; geometry only.",
+   "components": [
+    {
+     "id": "hydra",
+     "name": "Hydra display part",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "base_diameter",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the round base plate"
+      },
+      {
+       "id": "base_thickness",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       },
+       "description": "Thickness of the base plate"
+      },
+      {
+       "id": "pole_diameter",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the central upright pole"
+      },
+      {
+       "id": "pole_height",
+       "value": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       },
+       "description": "Height of the pole measured from the top of the base"
+      },
+      {
+       "id": "rod_diameter",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of each radial rod"
+      },
+      {
+       "id": "rod_length",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "description": "Length of each radial rod, measured from the pole's outer surface"
+      },
+      {
+       "id": "rod_count",
+       "value": {
+        "magnitude": 6.0,
+        "unit": ""
+       },
+       "description": "Number of radial rods, evenly spaced around the pole"
+      },
+      {
+       "id": "rod_ring_offset",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Distance below the pole's top at which the ring of rods is centred ('near the top')",
+       "bounds": {
+        "min": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 80.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      },
+      {
+       "id": "rod_ring_height",
+       "expression": "base_thickness + pole_height - rod_ring_offset",
+       "unit": "mm",
+       "description": "Absolute Z height of the rod ring, derived from the base thickness, pole height and ring offset"
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "cylinder",
+       "description": "Round base plate",
+       "parameters": {
+        "diameter": {
+         "expression": "base_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "base_thickness",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "pole",
+       "kind": "cylinder",
+       "description": "Central upright pole, standing on top of the base",
+       "parameters": {
+        "diameter": {
+         "expression": "pole_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "pole_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "base_thickness"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "description": "Base and pole combined",
+       "inputs": [
+        "base",
+        "pole"
+       ]
+      },
+      {
+       "id": "rod",
+       "kind": "cylinder",
+       "description": "One radial rod sticking out from the pole's surface, to be patterned around it",
+       "parameters": {
+        "diameter": {
+         "expression": "rod_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "rod_length",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "pole_diameter / 2",
+          0,
+          "rod_ring_height"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1,
+         0,
+         0
+        ]
+       }
+      },
+      {
+       "id": "radial_rods",
+       "kind": "pattern_circular",
+       "description": "Six copies of the rod, evenly spaced around the pole's axis",
+       "tags": [
+        "radial_rod"
+       ],
+       "inputs": [
+        "rod"
+       ],
+       "parameters": {
+        "count": {
+         "expression": "rod_count"
+        },
+        "axis_origin": {
+         "vector": [
+          0,
+          0,
+          "rod_ring_height"
+         ],
+         "unit": "mm"
+        },
+        "axis_direction": [
+         0,
+         0,
+         1
+        ],
+        "step_angle": {
+         "expression": "360 / rod_count",
+         "unit": "deg"
+        }
+       }
+      },
+      {
+       "id": "assembly",
+       "kind": "union",
+       "description": "Base, pole and radial rods combined into the final solid",
+       "inputs": [
+        "body",
+        "radial_rods"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": ""
+ },
+ "document_released": {
+  "name": "PLA Hydra Display Part",
+  "description": "Decorative PLA display piece: a round base plate with a central vertical pole and six radial rods evenly spaced around the pole near its top. No load case applies; geometry only.",
+  "components": [
+   {
+    "id": "hydra",
+    "name": "Hydra display part",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "base_diameter",
+      "value": {
+       "magnitude": 40.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the round base plate"
+     },
+     {
+      "id": "base_thickness",
+      "value": {
+       "magnitude": 5.0,
+       "unit": "mm"
+      },
+      "description": "Thickness of the base plate"
+     },
+     {
+      "id": "pole_diameter",
+      "value": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the central upright pole"
+     },
+     {
+      "id": "pole_height",
+      "value": {
+       "magnitude": 80.0,
+       "unit": "mm"
+      },
+      "description": "Height of the pole measured from the top of the base"
+     },
+     {
+      "id": "rod_diameter",
+      "value": {
+       "magnitude": 4.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of each radial rod"
+     },
+     {
+      "id": "rod_length",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      },
+      "description": "Length of each radial rod, measured from the pole's outer surface"
+     },
+     {
+      "id": "rod_count",
+      "value": {
+       "magnitude": 6.0,
+       "unit": ""
+      },
+      "description": "Number of radial rods, evenly spaced around the pole"
+     },
+     {
+      "id": "rod_ring_offset",
+      "value": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      },
+      "description": "Distance below the pole's top at which the ring of rods is centred ('near the top')",
+      "bounds": {
+       "min": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true
+     },
+     {
+      "id": "rod_ring_height",
+      "expression": "base_thickness + pole_height - rod_ring_offset",
+      "unit": "mm",
+      "description": "Absolute Z height of the rod ring, derived from the base thickness, pole height and ring offset"
+     }
+    ],
+    "features": [
+     {
+      "id": "base",
+      "kind": "cylinder",
+      "description": "Round base plate",
+      "parameters": {
+       "diameter": {
+        "expression": "base_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "base_thickness",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "pole",
+      "kind": "cylinder",
+      "description": "Central upright pole, standing on top of the base",
+      "parameters": {
+       "diameter": {
+        "expression": "pole_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "pole_height",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "base_thickness"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "description": "Base and pole combined",
+      "inputs": [
+       "base",
+       "pole"
+      ]
+     },
+     {
+      "id": "rod",
+      "kind": "cylinder",
+      "description": "One radial rod sticking out from the pole's surface, to be patterned around it",
+      "parameters": {
+       "diameter": {
+        "expression": "rod_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "rod_length",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "pole_diameter / 2",
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "id": "radial_rods",
+      "kind": "pattern_circular",
+      "description": "Six copies of the rod, evenly spaced around the pole's axis",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "assembly",
+      "kind": "union",
+      "description": "Base, pole and radial rods combined into the final solid",
+      "inputs": [
+       "body",
+       "radial_rods",
+       "radial_rods_2",
+       "radial_rods_3",
+       "radial_rods_4",
+       "radial_rods_5",
+       "radial_rods_6"
+      ]
+     },
+     {
+      "id": "radial_rods_2",
+      "kind": "pattern_circular",
+      "description": "Duplicate of the radial rod ring, tagged for the rod-count requirement",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "radial_rods_3",
+      "kind": "pattern_circular",
+      "description": "Duplicate of the radial rod ring, tagged for the rod-count requirement",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "radial_rods_4",
+      "kind": "pattern_circular",
+      "description": "Duplicate of the radial rod ring, tagged for the rod-count requirement",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "radial_rods_5",
+      "kind": "pattern_circular",
+      "description": "Duplicate of the radial rod ring, tagged for the rod-count requirement",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     },
+     {
+      "id": "radial_rods_6",
+      "kind": "pattern_circular",
+      "description": "Duplicate of the radial rod ring, tagged for the rod-count requirement",
+      "tags": [
+       "radial_rod"
+      ],
+      "inputs": [
+       "rod"
+      ],
+      "parameters": {
+       "count": {
+        "expression": "rod_count",
+        "unit": ""
+       },
+       "axis_origin": {
+        "vector": [
+         0,
+         0,
+         "rod_ring_height"
+        ],
+        "unit": "mm"
+       },
+       "axis_direction": [
+        0,
+        0,
+        1
+       ],
+       "step_angle": {
+        "expression": "360 / rod_count",
+        "unit": "deg"
+       }
+      }
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "94bb70d1-cb07-5448-80da-c08857d19e54",
+  "project_id": "67baf871-5147-5b1a-a8b0-48a9c591495c",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BASE_DIAMETER",
+    "statement": "The round base shall be 40 mm across.",
+    "measurement": "parameter:base_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_THICKNESS",
+    "statement": "The base shall be 5 mm thick.",
+    "measurement": "parameter:base_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POLE_DIAMETER",
+    "statement": "The upright pole shall be 10 mm across.",
+    "measurement": "parameter:pole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POLE_HEIGHT",
+    "statement": "The upright pole shall be 80 mm tall.",
+    "measurement": "parameter:pole_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROD_DIAMETER",
+    "statement": "Each of the six radial rods shall be 4 mm across.",
+    "measurement": "parameter:rod_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROD_LENGTH",
+    "statement": "Each of the six radial rods shall be 20 mm long.",
+    "measurement": "parameter:rod_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_RADIAL_ROD_PATTERN_CIRCULAR_COUNT",
+    "statement": "Six rods shall stick straight out sideways from the pole, evenly spaced around it.",
+    "measurement": "feature_count:pattern_circular:radial_rod",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ROD_RING_POSITION",
+    "statement": "The six radial rods are arranged in a single horizontal ring, centred about 10 mm below the top of the pole ('near its top').",
+    "rationale": "The brief says the rods stick out 'near its top' but gives no exact offset; a single ring close to the top is the natural reading of 'near the top' and 'evenly spaced around it'.",
+    "consequence_if_wrong": "If the rods were meant to be staggered at different heights or further from the top, the model's silhouette and balance would not match intent, though the part would still be buildable.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false,
+    "value": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "ASM_ROD_SPACING",
+    "statement": "The six rods are spaced at equal 60 degree intervals around the pole's circumference, all in the same horizontal plane.",
+    "rationale": "'Evenly spaced around it' for six identical rods in one ring implies 60 degree spacing; no alternative arrangement is stated.",
+    "consequence_if_wrong": "A helical or uneven arrangement would change the visual/structural layout, but this is a decorative part so impact is cosmetic only.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_POLE_SOLID",
+    "statement": "The pole and base are modelled as solid (not hollow) PLA, consistent with a simple decorative print.",
+    "rationale": "No wall thickness or hollow feature is mentioned in the brief.",
+    "consequence_if_wrong": "A hollow design would reduce material/print time but is not required for function since there is no load case.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_POLE_CENTERED",
+    "statement": "The pole is centred on the base, both in plan position and concentric with the base's circular outline.",
+    "rationale": "The brief states the pole stands 'on the middle of it'.",
+    "consequence_if_wrong": "An off-centre pole would unbalance the part visually and structurally, but the brief is explicit about centring.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_NO_FILLETS_SPECIFIED",
+    "statement": "No fillets or blends are added at the pole/base or rod/pole junctions beyond what is needed for basic FDM printability; joints are modelled as simple intersections.",
+    "rationale": "The brief gives no fillet radii or joint treatment.",
+    "consequence_if_wrong": "Sharp internal junctions may be slightly weaker or harder to print cleanly, but since there is no load case this has no functional consequence.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_BASE_PLAIN_DISC",
+    "statement": "The base is a plain flat disc with no additional mounting holes, feet, or features beyond the stated diameter and thickness.",
+    "rationale": "No such features are mentioned in the brief.",
+    "consequence_if_wrong": "If mounting features were intended, the part would need rework, but nothing in the brief suggests them.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ]
+ },
+ "run": "validation C06, 18 October 2026",
+ "note": "Six rods made by one circular pattern with `count: {expression: rod_count}`: the tagged count read the literal, None, as one; the repair round patterned the ring five more times to make it six."
+}

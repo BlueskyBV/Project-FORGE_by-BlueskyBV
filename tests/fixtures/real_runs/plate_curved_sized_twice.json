@@ -1,0 +1,596 @@
+{
+ "brief": "A slightly curved aluminium mounting plate 70 mm long, 50 mm wide, 4 mm thick and curved at about 10 degrees. Four 4 mm holes pass through the plate, one near each corner, with their centres on a 56 mm by 36 mm rectangle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A slightly curved aluminium mounting plate with dimensions 70 mm x 50 mm x 4 mm, curved at about 10 degrees. It has four 4 mm holes near each corner, forming a 56 mm by 36 mm rectangle. The plate carries no load.",
+  "part_kind": "mounting plate",
+  "stated": [
+   "aluminium",
+   "70 mm",
+   "50 mm",
+   "4 mm",
+   "curved at about 10 degrees",
+   "4 mm holes",
+   "56 mm by 36 mm rectangle"
+  ],
+  "implied": [
+   "plate has a flat mounting face",
+   "plate has a flat mounting face",
+   "plate has a flat mounting face",
+   "plate has a flat mounting face"
+  ],
+  "unstated": [
+   "loads",
+   "loads",
+   "loads",
+   "loads"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The length of the mounting plate shall be 70 mm.",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The width of the mounting plate shall be 50 mm.",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the mounting plate shall be 4 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CURVATURE",
+    "statement": "The mounting plate shall be curved at about 10 degrees.",
+    "measurement": "bend_angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "deg"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CORNER_HOLE_COUNT",
+    "statement": "There shall be four holes near each corner of the mounting plate.",
+    "measurement": "feature_count:hole:corner",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_CENTRES_LENGTH",
+    "statement": "The hole centres shall be 56 mm apart along the length of the rectangle they lie on.",
+    "measurement": "parameter:hole_centres_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 56.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_CENTRES_WIDTH",
+    "statement": "The hole centres shall be 36 mm apart along the width of the rectangle they lie on.",
+    "measurement": "parameter:hole_centres_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_LONG",
+    "statement": "The part shall be 70 mm long.",
+    "measurement": "flat_extent_side:70",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_WIDE",
+    "statement": "The part shall be 50 mm wide.",
+    "measurement": "flat_extent_side:50",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PART_THICK",
+    "statement": "The part shall be 4 mm thick.",
+    "measurement": "flat_extent_side:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_COUNT",
+    "statement": "The part shall have 1 bend.",
+    "measurement": "bend_count",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_CENTRE",
+    "statement": "The curve shall be centred in the middle of the part (the brief names no other place).",
+    "measurement": "bend_off_centre",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 0.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BENT_ALONG",
+    "statement": "The part shall bend along its 70 mm length -- the bend running across it.",
+    "measurement": "bent_along",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_SPREAD",
+    "statement": "The bend shall be a smooth curve along the whole part: spread over at least 63.0 mm of the part's length.",
+    "measurement": "bend_spread",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 63.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "dropped REQ_SF_BEARING: the brief states this part carries no load, so there is no load case to take a margin against and nothing could have computed one",
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLE_CENTRES_LENGTH: the brief puts the holes' centres on a rectangle 56 mm along that side, and nothing in the record carried it.",
+   "added REQ_HOLE_CENTRES_WIDTH: the brief puts the holes' centres on a rectangle 36 mm along that side, and nothing in the record carried it.",
+   "added REQ_HOLES_4MM: the brief states 4 open holes of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_PART_LONG: the brief says the part is 70 mm long, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "added REQ_PART_WIDE: the brief says the part is 50 mm wide, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "added REQ_PART_THICK: the brief says the part is 4 mm thick, and nothing measured that on the part itself -- a parameter reads back what the design declares, on a part of any size.",
+   "REQ_PART_LONG, REQ_PART_WIDE, REQ_PART_THICK measured on the part laid flat: the brief bends it, and a bent part's sizes are its sizes along the plate -- a sheet keeps its length along its middle when it is bent.",
+   "REQ_CURVATURE measured on the part's surface as how far it turns, rather than read back as a number the design writes.",
+   "added REQ_BEND_COUNT, REQ_BEND_CENTRE, REQ_BENT_ALONG, REQ_BEND_SPREAD: the brief bends the part 10 degrees (curve), and nothing measured the bend on the part itself."
+  ]
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "Curved Aluminium Mounting Plate",
+   "components": [
+    {
+     "id": "mounting_plate",
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "bend",
+       "kind": "bend",
+       "parameters": {
+        "angle": {
+         "magnitude": 10.0,
+         "unit": "deg"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "along": [
+         1,
+         0,
+         0
+        ],
+        "toward": [
+         0,
+         0,
+         1
+        ],
+        "bend_length": {
+         "magnitude": 70,
+         "unit": "mm"
+        },
+        "radius": {
+         "magnitude": 40,
+         "unit": "mm"
+        }
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "mounting_face",
+       "type": "planar_mount",
+       "geometry": "plate.x_min",
+       "nominal_size": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      }
+     ],
+     "parameters": []
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "c17af1f3-a081-595c-8cd7-fd7a02276ce5",
+   "project_id": "cb6315ee-7461-5e3e-9eca-0737f39f2f8a",
+   "risk_class": "critical",
+   "requirements": [
+    {
+     "id": "REQ_LENGTH",
+     "statement": "The length of the mounting plate shall be 70 mm.",
+     "measurement": "parameter:length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 70.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_WIDTH",
+     "statement": "The width of the mounting plate shall be 50 mm.",
+     "measurement": "parameter:width",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_THICKNESS",
+     "statement": "The thickness of the mounting plate shall be 4 mm.",
+     "measurement": "parameter:thickness",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_CURVATURE",
+     "statement": "The mounting plate shall be curved at about 10 degrees.",
+     "measurement": "bend_angle",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 10.0,
+      "unit": "deg"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_CORNER_HOLE_COUNT",
+     "statement": "There shall be four holes near each corner of the mounting plate.",
+     "measurement": "feature_count:hole:corner",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4,
+      "unit": ""
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_HOLE_CENTRES_LENGTH",
+     "statement": "The hole centres shall be 56 mm apart along the length of the rectangle they lie on.",
+     "measurement": "parameter:hole_centres_length",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 56.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_HOLE_CENTRES_WIDTH",
+     "statement": "The hole centres shall be 36 mm apart along the width of the rectangle they lie on.",
+     "measurement": "parameter:hole_centres_width",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 36.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_HOLES_4MM",
+     "measurement": "holes_of_diameter:4",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4,
+      "unit": ""
+     },
+     "statement": "The part shall have 4 open holes of 4 mm.",
+     "source": "user",
+     "rationale": "The brief sizes and counts these holes.",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_LONG",
+     "statement": "The part shall be 70 mm long.",
+     "measurement": "flat_extent_side:70",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 70.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_WIDE",
+     "statement": "The part shall be 50 mm wide.",
+     "measurement": "flat_extent_side:50",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_PART_THICK",
+     "statement": "The part shall be 4 mm thick.",
+     "measurement": "flat_extent_side:4",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BEND_COUNT",
+     "statement": "The part shall have 1 bend.",
+     "measurement": "bend_count",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     },
+     "source": "user",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BEND_CENTRE",
+     "statement": "The curve shall be centred in the middle of the part (the brief names no other place).",
+     "measurement": "bend_off_centre",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 0.0,
+      "unit": "mm"
+     },
+     "source": "derived",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BENT_ALONG",
+     "statement": "The part shall bend along its 70 mm length -- the bend running across it.",
+     "measurement": "bent_along",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 70.0,
+      "unit": "mm"
+     },
+     "source": "derived",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BEND_SPREAD",
+     "statement": "The bend shall be a smooth curve along the whole part: spread over at least 63.0 mm of the part's length.",
+     "measurement": "bend_spread",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 63.0,
+      "unit": "mm"
+     },
+     "source": "derived",
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "state": "accepted"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20261005T145317 as the model answered it, reconstructed: a flat plate and a bend sized by both radius (value unknown, 40 here) and bend_length 70, naming no input; Forge's corner holes were then drilled into the bent plate."
+}

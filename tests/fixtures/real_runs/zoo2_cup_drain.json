@@ -1,0 +1,238 @@
+{
+ "brief": "A PLA cup 60 mm across and 40 mm tall, open at the top, with 2 mm walls, a 3 mm floor and a 6 mm drain hole in the centre of the floor. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA cup 60 mm across and 40 mm tall, open at the top, with 2 mm walls, a 3 mm floor and a 6 mm drain hole in the centre of the floor.",
+  "part_kind": "zoo2_cup_drain",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_WALL",
+    "statement": "REQ_WALL",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_FLOOR",
+    "statement": "REQ_FLOOR",
+    "measurement": "floor_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_DIAMETER",
+    "statement": "diameter",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HEIGHT",
+    "statement": "height",
+    "measurement": "parameter:height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WALL",
+    "statement": "wall",
+    "measurement": "parameter:wall",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_FLOOR",
+    "statement": "floor",
+    "measurement": "parameter:floor",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_DRAIN",
+    "statement": "drain",
+    "measurement": "parameter:drain",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_cup_drain",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "wall",
+       "value": {
+        "magnitude": 2,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "floor",
+       "value": {
+        "magnitude": 3,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "drain",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "outer",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "inner",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter - 2 * wall",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "floor"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cup",
+       "kind": "subtract",
+       "inputs": [
+        "outer",
+        "inner"
+       ]
+      },
+      {
+       "id": "drain_hole",
+       "kind": "hole",
+       "inputs": [
+        "cup"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "drain",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

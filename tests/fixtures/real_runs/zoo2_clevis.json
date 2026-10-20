@@ -1,0 +1,313 @@
+{
+ "brief": "A steel clevis: a base 50 x 40 x 10 mm with two ears 10 mm thick, 40 mm wide and 40 mm tall standing on it at its ends, 30 mm apart, and one 10 mm pin hole through both ears 25 mm above the base. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel clevis: a base 50 x 40 x 10 mm with two ears 10 mm thick, 40 mm wide and 40 mm tall standing on it at its ends, 30 mm apart, and one 10 mm pin hole through both ears 25 mm above the base.",
+  "part_kind": "zoo2_clevis",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_PIN",
+    "statement": "REQ_PIN",
+    "measurement": "holes_of_diameter:10",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_PIN_D",
+    "statement": "REQ_PIN_D",
+    "measurement": "parameter:pin_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BASE_WIDTH",
+    "statement": "base_width",
+    "measurement": "parameter:base_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BASE_THICKNESS",
+    "statement": "base_thickness",
+    "measurement": "parameter:base_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_EAR_THICKNESS",
+    "statement": "ear_thickness",
+    "measurement": "parameter:ear_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_EAR_HEIGHT",
+    "statement": "ear_height",
+    "measurement": "parameter:ear_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_PIN_HEIGHT",
+    "statement": "pin_height",
+    "measurement": "parameter:pin_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_EAR_GAP",
+    "statement": "ear_gap",
+    "measurement": "parameter:ear_gap",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_clevis",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "base_length",
+       "expression": "ear_gap + 2 * ear_thickness",
+       "unit": "mm"
+      },
+      {
+       "id": "base_width",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "base_thickness",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_thickness",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_height",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "pin_diameter",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "pin_height",
+       "value": {
+        "magnitude": 25,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_gap",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "base_length",
+          "base_width",
+          "base_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "base_thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ear_left",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "ear_thickness",
+          "base_width",
+          "ear_height"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          "-(base_length - ear_thickness) / 2",
+          0,
+          "base_thickness + ear_height / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ear_right",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "ear_thickness",
+          "base_width",
+          "ear_height"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          "(base_length - ear_thickness) / 2",
+          0,
+          "base_thickness + ear_height / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "base",
+        "ear_left",
+        "ear_right"
+       ]
+      },
+      {
+       "id": "pin",
+       "kind": "hole",
+       "role": "pin",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "pin_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "base_thickness + pin_height"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1,
+         0,
+         0
+        ]
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "pin_port",
+       "type": "shaft",
+       "geometry": "pin.bore",
+       "nominal_size": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

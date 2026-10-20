@@ -1,0 +1,1205 @@
+{
+ "brief": "A steel clevis: a block 40 mm long, 20 mm wide and 10 mm thick, with two ears 6 mm thick, 20 mm wide and 25 mm tall rising from its two ends, each with an 8 mm hole straight through it, centred 8 mm below its top. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel clevis block with two ears, each bored for a pin, intended to form an articulated connection point.",
+  "part_kind": "clevis",
+  "stated": [
+   "Material is steel",
+   "Base block: 40 mm long, 20 mm wide, 10 mm thick",
+   "Two ears, one at each end of the block",
+   "Ears are 6 mm thick, 20 mm wide, 25 mm tall",
+   "Each ear has an 8 mm diameter hole straight through it",
+   "Hole centred 8 mm below the ear's top",
+   "User states it carries no load and there is no load case"
+  ],
+  "implied": [
+   "Clevises connect via a pin through the holes, so the holes in both ears are presumably meant to be coaxial/aligned",
+   "A pin passing through 8 mm holes implies some mating pin diameter close to but less than 8 mm",
+   "Ears rising from the ends of a 20 mm wide block and themselves 20 mm wide suggests the ears sit flush with the block's width, implying symmetric placement",
+   "Being called a clevis implies a gap/slot between the two ears to accept a mating tongue or fork end",
+   "A through-hole in a load path typically needs a specified fit/tolerance, implied by the pin-and-hole configuration"
+  ],
+  "unstated": [
+   "The gap distance between the two ears (clear span for the mating part)",
+   "Whether the block has its own mounting feature (holes, threads, weld prep) to attach it to anything",
+   "The steel grade/alloy",
+   "Surface finish or coating requirements",
+   "Hole tolerance/fit class for the pin",
+   "Pin material and diameter (only the hole size is given)",
+   "Fillet radii or stress-relief at the base of the ears where they meet the block",
+   "Edge/corner treatment (chamfers, deburring)",
+   "Whether the ears are symmetric/identical in hole position (only one dimension set given, assumed applied to both)",
+   "Overall orientation/mounting context of the clevis in its assembly",
+   "If truly carrying no load, what function the part serves (e.g., purely positional, alignment, or placeholder) and whether 'no load' includes no dynamic/vibration loading either",
+   "Environmental conditions (temperature, corrosion exposure) despite steel material choice",
+   "Manufacturing process intended (machined, cast, welded assembly of block and ears)"
+  ],
+  "out_of_scope": [
+   "Selecting a safety factor or load rating, since brief explicitly states no load case",
+   "Specifying pin design or mating part geometry",
+   "Choosing a specific steel alloy or heat treatment"
+  ],
+  "risk_signals": [
+   "Part is explicitly called a 'clevis', a part type typically used in load-bearing pinned joints (lifting, rigging, linkages), despite the brief asserting no load case",
+   "The claim of 'no load' is asserted without justification for a geometry whose standard purpose is to transmit load through a pin, which is an inconsistency worth flagging rather than accepting at face value"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The overall length of the clevis (block plus ears, measured end to end) shall be 40 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief gives the block as 40 mm long and the ears rise from its two ends without extending the length further.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The overall width of the clevis shall be 20 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Block width and ear width are both stated as 20 mm, so the part's width is constant along its length.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The overall height of the clevis, from the base's underside to the top of the ears, shall be 25 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 35.0,
+     "unit": "mm"
+    },
+    "rationale": "Ears are 25 mm tall and rise from the base's ends; since this exceeds the 10 mm block thickness, the ear height sets the part's overall height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BLOCK_THICKNESS",
+    "statement": "The base block shall be 10 mm thick.",
+    "measurement": "parameter:block_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_EAR_THICKNESS",
+    "statement": "Each ear shall be 6 mm thick.",
+    "measurement": "parameter:ear_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_EAR_WIDTH",
+    "statement": "Each ear shall be 20 mm wide, matching the block's width.",
+    "measurement": "parameter:ear_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The hole through each ear shall be 8 mm in diameter.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_HOLE_OFFSET_FROM_TOP",
+    "statement": "The centre of each ear's hole shall be 8 mm below the ear's top edge.",
+    "measurement": "parameter:hole_offset_from_top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_PIN_HOLE_COUNT",
+    "statement": "The part shall have exactly two through holes, one in each ear, for the clevis pin.",
+    "measurement": "feature_count:hole:pin",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Each of the two ears has one 8 mm hole through it.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_EAR_EXTRUDE_COUNT",
+    "statement": "The part shall have exactly two ears rising from the base block.",
+    "measurement": "feature_count:extrude:ear",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "The brief describes two ears, one at each end of the block.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The part is made from a generic structural/mild steel grade, since no specific alloy or temper is given.",
+    "rationale": "The brief says only 'steel'. Since the part explicitly carries no load, an exact grade is not functionally critical.",
+    "consequence_if_wrong": "If a specific grade with particular corrosion resistance, weldability, or hardness was intended, substituting a generic grade could be unsuitable for the actual service environment.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLES_COAXIAL",
+    "statement": "The two 8 mm holes, one per ear, are coaxial (share a common axis) so a straight pin can pass through both.",
+    "rationale": "A clevis's function depends on both ears' holes being aligned, even though the brief does not say this explicitly.",
+    "consequence_if_wrong": "If the holes are not aligned, no pin could be inserted through both ears, defeating the part's evident purpose.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_CENTRED_WIDTHWISE",
+    "statement": "Each ear's hole is centred across the ear's 20 mm width, with its axis perpendicular to the ear's thickness faces.",
+    "rationale": "The brief gives the hole's vertical position (8 mm below the top) but not its lateral position; centring is the conventional default.",
+    "consequence_if_wrong": "An off-centre hole would be a minor geometric change with no functional impact on a part under no load.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_EARS_FLUSH_WITH_BLOCK",
+    "statement": "Each ear is flush with the block's sides (sharing the same 20 mm width and side faces) and sits at the very end of the block's length, rising from the block's top.",
+    "rationale": "The ears share the block's 20 mm width figure, implying flush alignment; the brief states they rise 'from its two ends'.",
+    "consequence_if_wrong": "A different ear placement would change the clear gap between ears and could affect pin/mating-part fit, though this does not affect the stated dimensions themselves.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_NO_FILLETS_SPECIFIED",
+    "statement": "No fillet radius is applied where each ear meets the base block; sharp machined corners are assumed.",
+    "rationale": "The brief gives no fillet or stress-relief dimension at the ear-to-base junction.",
+    "consequence_if_wrong": "Since the part carries no load, a missing fillet has no functional consequence, only a minor cosmetic/manufacturing difference.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_AS_MACHINED_FINISH",
+    "statement": "The part is left in an as-machined (or as-cast) condition with no specified surface finish or coating.",
+    "rationale": "No surface finish or coating requirement is stated in the brief.",
+    "consequence_if_wrong": "If corrosion protection or a specific finish was actually required, the part as built would need secondary processing.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SINGLE_PIECE_CONSTRUCTION",
+    "statement": "The block and both ears are a single monolithic piece (e.g. machined from solid or cast), not a welded assembly.",
+    "rationale": "The brief describes the clevis as one part with no mention of joining process.",
+    "consequence_if_wrong": "A welded or fastened assembly would introduce joint-strength considerations, but since there is no load case this does not affect the stated geometric requirements.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_PIN_FIT",
+    "question": "Is there a target fit (clearance or tolerance class) between the 8 mm holes and the mating pin?",
+    "why_it_matters": "A fit class affects the hole's manufacturing tolerance, though it does not change the nominal 8 mm diameter already specified.",
+    "blocks": [],
+    "critical": false,
+    "suggested_default": "Standard clearance fit, e.g. H9/h9, for a free-moving pin joint."
+   }
+  ],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Steel Clevis Block",
+   "description": "A base block with a tall ear rising at each end, each ear bored on a common axis for a clevis pin passing through both ears across the open gap between them.",
+   "components": [
+    {
+     "id": "clevis_block",
+     "name": "Clevis Block",
+     "parameters": [
+      {
+       "id": "block_length",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "block_width",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "block_thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_thickness",
+       "value": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_width",
+       "expression": "block_width",
+       "unit": "mm",
+       "description": "Ears are flush with the block's width"
+      },
+      {
+       "id": "ear_height",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       },
+       "description": "Ear height measured from the floor; since it exceeds block_thickness it sets the part's overall height"
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_offset_from_top",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "block",
+       "kind": "box",
+       "description": "Base block spanning the full length, connecting the two ears near the floor",
+       "parameters": {
+        "size": {
+         "vector": [
+          "block_length",
+          "block_width",
+          "block_thickness"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-block_length / 2",
+          "-block_width / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "centered": false
+       }
+      },
+      {
+       "id": "left_ear_plane",
+       "kind": "datum_plane",
+       "description": "Plane at the block's left end, normal pointing in +X",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "-block_length / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "left_ear_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "left_ear_plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "left_ear",
+       "kind": "extrude",
+       "description": "Left ear, standing full height from the floor, 6 mm thick along the block's length",
+       "inputs": [
+        "left_ear_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       }
+      },
+      {
+       "id": "right_ear_plane",
+       "kind": "datum_plane",
+       "description": "Plane set back from the block's right end by one ear thickness, normal pointing in +X",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "block_length / 2 - ear_thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "right_ear_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "right_ear_plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "right_ear",
+       "kind": "extrude",
+       "description": "Right ear, standing full height from the floor, 6 mm thick along the block's length",
+       "inputs": [
+        "right_ear_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "block",
+        "left_ear",
+        "right_ear"
+       ]
+      },
+      {
+       "id": "pin_hole_left",
+       "kind": "hole",
+       "description": "Through hole in the left ear, 8 mm below the ear's top, on the pin axis shared with the right ear's hole",
+       "inputs": [
+        "body"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-block_length / 2 + ear_thickness / 2",
+          0,
+          "ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      {
+       "id": "pin_hole_right",
+       "kind": "hole",
+       "description": "Through hole in the right ear, coaxial with the left ear's hole so a straight pin passes through both across the open gap",
+       "inputs": [
+        "pin_hole_left"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "block_length / 2 - ear_thickness / 2",
+          0,
+          "ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "left_pin_port",
+       "type": "bore",
+       "geometry": "pin_hole_left.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "right_pin_port",
+       "type": "bore",
+       "geometry": "pin_hole_right.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The two ears are built as profile_rectangle + extrude pairs (each tagged \"ear\") on YZ datum planes at the block's two ends, so block_length, ear_thickness and ear_width/ear_height drive their position and size parametrically; the block is a simple box spanning the full length at the floor, and since ear_height (25mm) exceeds block_thickness (10mm) it alone sets the overall height, with both parts sharing z=0 as the floor. Two separate hole features (tagged \"pin\"), positioned on a shared axis 8mm below the ear top and centred in width, cut cleanly through only their own ear since the gap between the ears is open air; they are chained (body -> pin_hole_left -> pin_hole_right) so the last hole is the terminal solid. Material is left unset since the brief names only the family \"steel\", not a specific grade."
+ },
+ "answer_redesigned": {
+  "document": {
+   "name": "Steel clevis block",
+   "description": "A block with an ear rising from each end, each ear bored on a common axis for a clevis pin; the mating tongue is intended to sit in the gap between the ears.",
+   "components": [
+    {
+     "id": "clevis",
+     "name": "Clevis block",
+     "parameters": [
+      {
+       "id": "block_length",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Overall block length; the ears sit within its two ends so this also sets the part's overall length.",
+       "bounds": {
+        "min": {
+         "magnitude": 20.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 100.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      },
+      {
+       "id": "block_width",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "description": "Block width; the ears share this same width."
+      },
+      {
+       "id": "block_thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_thickness",
+       "value": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 3.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 15.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      },
+      {
+       "id": "ear_width",
+       "expression": "block_width",
+       "unit": "mm",
+       "description": "Ear width is tied to the block width so the ears stay flush with the block's sides."
+      },
+      {
+       "id": "ear_height",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 15.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 60.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_offset_from_top",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plane_left",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "-(block_length / 2)",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "plane_right",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "block_length / 2 - ear_thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "block",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "block_length",
+          "block_width",
+          "block_thickness"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-(block_length / 2)",
+          "-(block_width / 2)",
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ear_left_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "plane_left"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ear_left",
+       "kind": "extrude",
+       "inputs": [
+        "ear_left_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       },
+       "description": "Left ear, standing from the floor at the block's left end, extruded through its 6 mm thickness along X."
+      },
+      {
+       "id": "ear_right_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "plane_right"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ear_right",
+       "kind": "extrude",
+       "inputs": [
+        "ear_right_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       },
+       "description": "Right ear, standing from the floor at the block's right end, extruded through its 6 mm thickness along X."
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "block",
+        "ear_left",
+        "ear_right"
+       ]
+      },
+      {
+       "id": "hole_left",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-(block_length - ear_thickness) / 2",
+          0,
+          "ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "description": "Pin hole through the left ear's 6 mm thickness, centred 8 mm below the ear's top, on the common pin axis."
+      },
+      {
+       "id": "hole_right",
+       "kind": "hole",
+       "inputs": [
+        "hole_left"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "(block_length - ear_thickness) / 2",
+          0,
+          "ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "description": "Pin hole through the right ear's 6 mm thickness, coaxial with the left ear's hole so a single straight pin passes through both."
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "pin_bore_left",
+       "type": "bore",
+       "geometry": "hole_left.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "pin_bore_right",
+       "type": "bore",
+       "geometry": "hole_right.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "base_mount",
+       "type": "planar_mount",
+       "geometry": "block.z_min",
+       "description": "Underside of the base block, available as a mounting face."
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": ""
+ },
+ "run": "validation C13, 18 October 2026",
+ "note": "Two pin holes, one in each ear, drilled along X through the ears' 6 mm thickness -- right. Forge took them for one hole drawn twice and re-aimed both down Z, twice, and again after the analyst put them back: twelve minutes, no part. The record also read the ears' 25 mm as the part's overall height.",
+ "answer_right": {
+  "document": {
+   "name": "Steel Clevis Block",
+   "description": "A base block with a tall ear rising at each end, each ear bored on a common axis for a clevis pin passing through both ears across the open gap between them.",
+   "components": [
+    {
+     "id": "clevis_block",
+     "name": "Clevis Block",
+     "parameters": [
+      {
+       "id": "block_length",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "block_width",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "block_thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_thickness",
+       "value": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ear_width",
+       "expression": "block_width",
+       "unit": "mm",
+       "description": "Ears are flush with the block's width"
+      },
+      {
+       "id": "ear_height",
+       "value": {
+        "magnitude": 25.0,
+        "unit": "mm"
+       },
+       "description": "Ear height measured from the floor; since it exceeds block_thickness it sets the part's overall height"
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_offset_from_top",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "block",
+       "kind": "box",
+       "description": "Base block spanning the full length, connecting the two ears near the floor",
+       "parameters": {
+        "size": {
+         "vector": [
+          "block_length",
+          "block_width",
+          "block_thickness"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-block_length / 2",
+          "-block_width / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "centered": false
+       }
+      },
+      {
+       "id": "left_ear_plane",
+       "kind": "datum_plane",
+       "description": "Plane at the block's left end, normal pointing in +X",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "-block_length / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "left_ear_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "left_ear_plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "block_thickness + ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "left_ear",
+       "kind": "extrude",
+       "description": "Left ear, standing full height from the floor, 6 mm thick along the block's length",
+       "inputs": [
+        "left_ear_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       }
+      },
+      {
+       "id": "right_ear_plane",
+       "kind": "datum_plane",
+       "description": "Plane set back from the block's right end by one ear thickness, normal pointing in +X",
+       "parameters": {
+        "base": "YZ",
+        "offset": {
+         "expression": "block_length / 2 - ear_thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "right_ear_profile",
+       "kind": "profile_rectangle",
+       "inputs": [
+        "right_ear_plane"
+       ],
+       "parameters": {
+        "width": {
+         "expression": "ear_width",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "ear_height",
+         "unit": "mm"
+        },
+        "center_u": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "center_v": {
+         "expression": "block_thickness + ear_height / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "right_ear",
+       "kind": "extrude",
+       "description": "Right ear, standing full height from the floor, 6 mm thick along the block's length",
+       "inputs": [
+        "right_ear_profile"
+       ],
+       "tags": [
+        "ear"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "ear_thickness",
+         "unit": "mm"
+        },
+        "mode": "normal"
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "block",
+        "left_ear",
+        "right_ear"
+       ]
+      },
+      {
+       "id": "pin_hole_left",
+       "kind": "hole",
+       "description": "Through hole in the left ear, 8 mm below the ear's top, on the pin axis shared with the right ear's hole",
+       "inputs": [
+        "body"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-block_length / 2 + ear_thickness / 2",
+          0,
+          "block_thickness + ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      {
+       "id": "pin_hole_right",
+       "kind": "hole",
+       "description": "Through hole in the right ear, coaxial with the left ear's hole so a straight pin passes through both across the open gap",
+       "inputs": [
+        "pin_hole_left"
+       ],
+       "tags": [
+        "pin"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "block_length / 2 - ear_thickness / 2",
+          0,
+          "block_thickness + ear_height - hole_offset_from_top"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "left_pin_port",
+       "type": "bore",
+       "geometry": "pin_hole_left.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "right_pin_port",
+       "type": "bore",
+       "geometry": "pin_hole_right.bore",
+       "nominal_size": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The two ears are built as profile_rectangle + extrude pairs (each tagged \"ear\") on YZ datum planes at the block's two ends, so block_length, ear_thickness and ear_width/ear_height drive their position and size parametrically; the block is a simple box spanning the full length at the floor, and since ear_height (25mm) exceeds block_thickness (10mm) it alone sets the overall height, with both parts sharing z=0 as the floor. Two separate hole features (tagged \"pin\"), positioned on a shared axis 8mm below the ear top and centred in width, cut cleanly through only their own ear since the gap between the ears is open air; they are chained (body -> pin_hole_left -> pin_hole_right) so the last hole is the terminal solid. Material is left unset since the brief names only the family \"steel\", not a specific grade."
+ }
+}

@@ -1,0 +1,170 @@
+{
+ "brief": "A grab handle bent from 10 mm steel rod: 100 mm between its legs, the legs 40 mm long, with 15 mm bends. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A grab handle bent from 10 mm steel rod: 100 mm between its legs, the legs 40 mm long, with 15 mm bends.",
+  "part_kind": "zoo2_handle",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_ROD",
+    "statement": "REQ_ROD",
+    "measurement": "parameter:rod",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 110,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 45,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_SPAN",
+    "statement": "span",
+    "measurement": "parameter:span",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 100,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_LEG",
+    "statement": "leg",
+    "measurement": "parameter:leg",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BEND",
+    "statement": "bend",
+    "measurement": "parameter:bend",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_handle",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "rod",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "span",
+       "value": {
+        "magnitude": 100,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "leg",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bend",
+       "value": {
+        "magnitude": 15,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "handle",
+       "kind": "pipe",
+       "parameters": {
+        "diameter": {
+         "expression": "rod",
+         "unit": "mm"
+        },
+        "bend_radius": {
+         "expression": "bend",
+         "unit": "mm"
+        },
+        "path": {
+         "points": [
+          [
+           0,
+           0,
+           0
+          ],
+          [
+           0,
+           0,
+           "leg"
+          ],
+          [
+           "span",
+           0,
+           "leg"
+          ],
+          [
+           "span",
+           0,
+           0
+          ]
+         ],
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

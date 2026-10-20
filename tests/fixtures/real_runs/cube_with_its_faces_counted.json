@@ -1,0 +1,159 @@
+{
+ "brief": "A 30 mm cube in PLA. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 30 mm cube in PLA with no load case.",
+  "part_kind": "cube",
+  "stated": [
+   "A 30 mm cube in PLA."
+  ],
+  "implied": [
+   "The cube is made of PLA."
+  ],
+  "unstated": [
+   "The cube has no load case."
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": {
+   "dimensions": [
+    {
+     "parameter": "side_length",
+     "statement": "The side length of the cube shall be 30 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     }
+    }
+   ],
+   "counts": [
+    {
+     "feature_kind": "face",
+     "tag": "top",
+     "statement": "The cube shall have a top face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "face",
+     "tag": "bottom",
+     "statement": "The cube shall have a bottom face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "face",
+     "tag": "front",
+     "statement": "The cube shall have a front face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "face",
+     "tag": "back",
+     "statement": "The cube shall have a back face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "face",
+     "tag": "left",
+     "statement": "The cube shall have a left face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    },
+    {
+     "feature_kind": "face",
+     "tag": "right",
+     "statement": "The cube shall have a right face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    }
+   ],
+   "safety_factors": [
+    {
+     "against": "bearing",
+     "statement": "Bearing stress at the cube's faces shall keep a safety factor of at least 2 against yield.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": ""
+     }
+    }
+   ]
+  },
+  "assumptions": [
+   {
+    "id": "ASM_DESIGN_LOAD",
+    "statement": "The cube carries no structural load.",
+    "risk": "critical",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "A 30 mm cube, centred.",
+  "document": {
+   "name": "cube",
+   "components": [
+    {
+     "id": "cube",
+     "name": "cube",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "side_length",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "cube",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "side_length"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261003T090441: the requirements engineer's answer, refused twice -- six invented face counts, Forge's own unbinding of them reported back as 'empty unit', and nothing measuring the cube. The design is a plain cube written for the test."
+}

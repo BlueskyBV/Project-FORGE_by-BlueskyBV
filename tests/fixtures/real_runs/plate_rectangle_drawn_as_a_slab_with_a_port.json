@@ -1,0 +1,356 @@
+{
+ "brief": "An aluminium mounting plate 70 mm long, 50 mm wide and 4 mm thick. Four 4 mm holes pass through the plate, one near each corner, with their centres on a 56 mm by 36 mm rectangle. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An aluminium mounting plate with dimensions 70 mm x 50 mm x 4 mm, four 4 mm holes near each corner, and a 56 mm by 36 mm rectangle centered on the holes. It carries no load.",
+  "part_kind": "plate",
+  "stated": [
+   "aluminium",
+   "70 mm",
+   "50 mm",
+   "4 mm",
+   "4 mm holes",
+   "56 mm by 36 mm rectangle"
+  ],
+  "implied": [
+   "plate has a flat mounting face",
+   "plate is made of aluminium",
+   "plate is a structural component"
+  ],
+  "unstated": [
+   "loads",
+   "materials",
+   "geometry"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_PLATE_LENGTH",
+    "statement": "The plate's length shall be 70 mm.",
+    "measurement": "parameter:plate_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_WIDTH",
+    "statement": "The plate's width shall be 50 mm.",
+    "measurement": "parameter:plate_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PLATE_THICKNESS",
+    "statement": "The plate's thickness shall be 4 mm.",
+    "measurement": "parameter:plate_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The diameter of each hole shall be 4 mm.",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_RECTANGLE_LENGTH",
+    "statement": "The hole centres shall be 56 mm apart along the length of the rectangle they lie on.",
+    "measurement": "parameter:hole_centres_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 56.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_RECTANGLE_WIDTH",
+    "statement": "The hole centres shall be 36 mm apart along the width of the rectangle they lie on.",
+    "measurement": "parameter:hole_centres_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "REQ_RECTANGLE_LENGTH measured `rectangle_length`, the rectangle the brief puts the holes' centres on; it is the spacing of those centres along one side -- not a solid, not a depth -- and is now `hole_centres_length`. The figure, 56 mm, is unchanged.",
+   "REQ_RECTANGLE_WIDTH measured `rectangle_width`, the rectangle the brief puts the holes' centres on; it is the spacing of those centres along one side -- not a solid, not a depth -- and is now `hole_centres_width`. The figure, 36 mm, is unchanged.",
+   "added REQ_HOLES_4MM: the brief states 4 open holes of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ]
+ },
+ "answer": {
+  "rationale": "The brief sizes and counts these holes.",
+  "document": {
+   "name": "Aluminium Plate with Holes",
+   "components": [
+    {
+     "id": "plate",
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "hole_1",
+       "kind": "hole",
+       "role": "hole_1",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 - hole_diameter / 2",
+          "plate_width / 2 - hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_2",
+       "kind": "hole",
+       "role": "hole_2",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 + hole_diameter / 2",
+          "plate_width / 2 - hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_3",
+       "kind": "hole",
+       "role": "hole_3",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 - hole_diameter / 2",
+          "plate_width / 2 + hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "hole_4",
+       "kind": "hole",
+       "role": "hole_4",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "plate_length / 2 + hole_diameter / 2",
+          "plate_width / 2 + hole_diameter / 2",
+          "plate_thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "rectangle",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "rectangle_length",
+          "rectangle_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "hole_1_port",
+       "type": "bore",
+       "geometry": "hole_1.bore",
+       "nominal_size": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "hole_2_port",
+       "type": "bore",
+       "geometry": "hole_2.bore",
+       "nominal_size": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "hole_3_port",
+       "type": "bore",
+       "geometry": "hole_3.bore",
+       "nominal_size": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "hole_4_port",
+       "type": "bore",
+       "geometry": "hole_4.bore",
+       "nominal_size": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "rectangle_port",
+       "type": "bore",
+       "geometry": "rectangle.bore",
+       "nominal_size": {
+        "magnitude": 56.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      }
+     ]
+    }
+   ],
+   "description": "An aluminium mounting plate with dimensions 70 mm x 50 mm x 4 mm, four 4 mm holes near each corner, and a 56 mm by 36 mm rectangle centered on the holes. It carries no load."
+  }
+ },
+ "note": "Run 20260930T201916: the designer answer refused twice."
+}

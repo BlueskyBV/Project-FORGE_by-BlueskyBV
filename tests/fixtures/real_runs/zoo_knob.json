@@ -1,0 +1,145 @@
+{
+ "brief": "A PLA knob: a 30 mm diameter cylinder 15 mm tall with a 6 mm hole 10 mm deep in its base. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA knob: a 30 mm diameter cylinder 15 mm tall with a 6 mm hole 10 mm deep in its base. It carries no load, so there is no load case.",
+  "part_kind": "knob",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_S",
+    "statement": "REQ_S",
+    "measurement": "parameter:hole",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_DP",
+    "statement": "REQ_DP",
+    "measurement": "parameter:depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "knob",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 15,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "depth",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "socket",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "depth": {
+         "expression": "depth",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

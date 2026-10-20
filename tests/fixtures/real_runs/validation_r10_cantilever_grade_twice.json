@@ -1,0 +1,267 @@
+{
+ "brief": "An aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end. A load of 150 N pushes straight down on the free end. It must have a safety factor of at least 2.",
+ "intent": {
+  "summary": "A cantilevered aluminium bar bolted at one end to support a downward load applied at the free end.",
+  "part_kind": "bracket (cantilever)",
+  "stated": [
+   "Material is aluminium",
+   "Bar is 60 mm long, 20 mm wide, 6 mm thick",
+   "Fixed at one end by two 5 mm bolt holes",
+   "Bolt holes are 15 mm apart",
+   "Holes are near the fixed end",
+   "Load of 150 N pushes straight down on the free end",
+   "Required safety factor of at least 2"
+  ],
+  "implied": [
+   "Bolted fixing implies a flat mounting face at the fixed end to seat against a mating surface",
+   "Two holes 15 mm apart implies the holes are arranged side-by-side across the 20 mm width, constraining rotation as well as translation",
+   "Cantilever geometry with a tip load implies the critical stress location is at the fixed end (root), near the bolt holes",
+   "A 150 N static load description implies this is treated as a static/quasi-static load case unless stated otherwise"
+  ],
+  "unstated": [
+   "Which specific aluminium alloy/temper (e.g. 6061-T6 vs 1100) is used -- strength varies greatly and is needed to compute safety factor",
+   "Exact positions of the two bolt holes relative to the bar's edges and to the fixed end (only spacing between them, 15 mm, is given)",
+   "Bolt grade/size tolerance and clamping/preload force, which affects stress concentration and friction at the joint",
+   "Whether the load is static, cyclic/fatigue, or impact -- affects required analysis method",
+   "Direction tolerance of the 150 N load (brief says straight down, but any misalignment or additional components, e.g. side loads, are unspecified)",
+   "Point of application of the load along the free end (centered, edge, distributed?)",
+   "Surface finish, corner radii / fillets at the fixed end, which affect stress concentration factors",
+   "Operating environment (temperature, corrosion exposure, humidity) that could affect material properties over time",
+   "Whether holes are through-holes or threaded, and whether a washer or spacer is used",
+   "Required overall part thickness tolerance and surface flatness for mating against the fixed support",
+   "Whether the free end has any feature (hole, lug) for applying the load or if it is a bare edge"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "Part is load-bearing (150 N applied load) with an explicit safety factor requirement, indicating failure could cause harm or equipment damage if the bracket fails",
+   "No material grade specified despite safety-factor requirement, meaning the stated safety factor cannot actually be verified without an assumed/invented strength value",
+   "Bolted joint as sole fixation point -- failure of bolts or hole tear-out could release the load suddenly"
+  ],
+  "suggested_name": "Aluminium Cantilever Bracket",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The bracket shall be 60 mm long overall (cantilever length from fixed end to free end).",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 60 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The bracket shall be 20 mm wide overall.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 20 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The bracket shall be 6 mm thick overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 6 mm thick.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOLT_HOLE_DIAMETER",
+    "statement": "Each of the two bolt holes at the fixed end shall be 5 mm diameter.",
+    "measurement": "parameter:bolt_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief specifies two 5 mm bolt holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOLT_HOLE_SPACING",
+    "statement": "The two bolt holes shall be spaced 15 mm apart, centre to centre.",
+    "measurement": "parameter:bolt_hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the holes are 15 mm apart.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The bracket shall have exactly two mounting bolt holes near the fixed end.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states two 5 mm bolt holes fix the bracket at one end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SF_BENDING",
+    "statement": "The bracket shall maintain a safety factor of at least 2 against yield in bending under the stated 150 N tip load.",
+    "measurement": "safety_factor:bending",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief explicitly requires a safety factor of at least 2 for this cantilevered, bolted, load-bearing part.",
+    "type": "safety",
+    "verification": "analytical",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM_15MM_APART",
+    "statement": "The 2 5 mm holes shall be 15 mm apart, centre to centre.",
+    "measurement": "openings_apart:5:15",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_DESIGN_LOAD",
+    "statement": "The 150 N load acts straight down (vertically), statically (no impact or cyclic component), applied at the extreme free end of the bar, centred across its 20 mm width.",
+    "value": {
+     "magnitude": 150.0,
+     "unit": "N"
+    },
+    "rationale": "Brief gives magnitude, direction (down) and location (free end) but not the exact lateral point of application or whether it is static.",
+    "consequence_if_wrong": "A load applied off-centre, dynamically, or with a shock/impact component would invalidate the computed bending stress and the safety factor margin.",
+    "risk": "high",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The bracket is made from 6061-T6 aluminium alloy, the conventional choice for a structural aluminium bracket of this kind, with a nominal yield strength of approximately 240 MPa.",
+    "rationale": "Brief states 'aluminium' but gives no alloy/temper; 6061-T6 is the standard default for load-bearing aluminium brackets and is needed to evaluate the stated safety factor.",
+    "consequence_if_wrong": "A softer alloy (e.g. 1100 or 3003) has roughly a third to a fifth the yield strength, which would mean the bracket fails the required safety factor of 2 even though the geometry is unchanged.",
+    "risk": "high",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_PLACEMENT",
+    "statement": "The two bolt holes are placed symmetrically about the bar's centreline (10 mm either side, matching the 20 mm width and 15 mm spacing) and set back from the fixed end by a conventional edge distance of about 2x the hole diameter (~10 mm).",
+    "rationale": "Brief gives the spacing between holes (15 mm) and says they are 'near' the fixed end but not their exact offset from the end or from the side edges.",
+    "consequence_if_wrong": "A different placement changes local stress concentration and effective root section but is a minor, correctable change not affecting overall function.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_STATIC_SERVICE",
+    "statement": "The bracket is in ordinary static/quasi-static indoor service with no significant fatigue cycling, corrosion exposure, or elevated temperature.",
+    "rationale": "Brief gives no duty cycle or environment; this is the conventional assumption for a simple bolted bracket of this scale.",
+    "consequence_if_wrong": "A fatigue or corrosive/high-temperature environment would require a fatigue-based or de-rated strength analysis instead of a static yield check.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLES_THROUGH",
+    "statement": "The two bolt holes are plain through-holes for clearance bolts (not threaded), with the bolts providing clamping load not otherwise analysed.",
+    "rationale": "Brief describes them only as '5 mm bolt holes'; plain clearance holes are the standard interpretation.",
+    "consequence_if_wrong": "Threaded holes would change the hole diameter/tolerance and remove the need for a nut, but would not change the overall geometry claims.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_FINISH_FILLETS",
+    "statement": "Standard mill finish and ordinary machining fillets/corner radii are used at the fixed end; no special stress-relief fillet is called out.",
+    "rationale": "Brief gives no surface finish or fillet requirement.",
+    "consequence_if_wrong": "Sharper corners increase local stress concentration, which could reduce the effective safety factor at the root, but this is a minor refinement.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The aluminium is 6061 T6 (`aluminium_6061_t6`), the only grade of it Forge knows.",
+    "rationale": "The brief names the family, not the grade, and the safety factor depends on which grade it is.",
+    "consequence_if_wrong": "Grades of aluminium differ in yield strength several times over; every margin computed here would be wrong.",
+    "risk": "high",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "added REQ_HOLES_5MM: the brief states 2 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_5MM_15MM_APART: the brief spaces 2 5 mm holes 15 mm apart, and a spacing the design declares passes wherever the holes are. Measured on the part: the pairs of them that far apart, centre to centre.",
+   "added ASM_MATERIAL_GRADE: the brief says `aluminium`, the safety factor depends on the grade, and `aluminium_6061_t6` is the only one Forge knows. The margin is computed for it, and the part is not released until that is approved."
+  ]
+ },
+ "note": "Validation suite R10 on Claude Sonnet 5, 17 Oct 2026: the record's own ASM_MATERIAL_GRADE (6061-T6) and Forge's added one under the same id; the document refused the duplicate and the run failed before design."
+}

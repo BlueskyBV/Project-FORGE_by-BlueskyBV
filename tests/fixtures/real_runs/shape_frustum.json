@@ -1,0 +1,103 @@
+{
+ "brief": "A PLA funnel frustum 50 mm across at the bottom, 20 mm at the top, 30 mm tall. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA funnel frustum 50 mm across at the bottom, 20 mm at the top, 30 mm tall. It carries no load, so there is no load case.",
+  "part_kind": "part",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:bottom_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:top_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "p",
+   "components": [
+    {
+     "id": "part",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "bottom_diameter",
+       "value": {
+        "magnitude": 50,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "top_diameter",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "cone",
+       "parameters": {
+        "bottom_diameter": {
+         "expression": "bottom_diameter",
+         "unit": "mm"
+        },
+        "top_diameter": {
+         "expression": "top_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a shape the kernel gained (cone, torus, wedge), as a model answers it."
+}

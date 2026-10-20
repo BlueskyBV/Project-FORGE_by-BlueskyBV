@@ -1,0 +1,97 @@
+{
+ "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
+ "intent": {
+  "summary": "A machined aluminium shaft collar with an outer diameter of 25 mm, a length of 15 mm, and a 12 mm bore running through the axis. Two 4 mm set screw holes are located 90 degrees apart, halfway along the length.",
+  "part_kind": "locating collar",
+  "stated": [
+   "The outer diameter is 25 mm.",
+   "The length is 15 mm.",
+   "The bore is 12 mm.",
+   "There are two 4 mm set screw holes.",
+   "The set screw holes are 90 degrees apart.",
+   "The set screw holes are halfway along the length."
+  ],
+  "implied": [
+   "The set screw holes are located on the outer surface of the collar."
+  ],
+  "unstated": [
+   "The collar does not carry any load."
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements_answer": {
+  "risk_class": "critical",
+  "requirements": {
+   "dimensions": [
+    {
+     "parameter": "outer_diameter",
+     "statement": "The outer diameter of the collar is 25 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "length",
+     "statement": "The length of the collar is 15 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 15.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "bore_diameter",
+     "statement": "The bore diameter is 12 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "set_screw_hole_diameter",
+     "statement": "The set screw hole diameter is 4 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "set_screw_hole_angle",
+     "statement": "The set screw holes are 90 degrees apart.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 90.0,
+      "unit": "deg"
+     }
+    },
+    {
+     "parameter": "set_screw_hole_position",
+     "statement": "The set screw holes are halfway along the length.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 0.5,
+      "unit": ""
+     }
+    }
+   ]
+  },
+  "assumptions": [
+   {
+    "id": "ASM_DESIGN_LOAD",
+    "statement": "The collar does not carry any load.",
+    "risk": "critical",
+    "consequence_if_wrong": "A load would invalidate every margin.",
+    "approved": false
+   }
+  ],
+  "unknowns": []
+ },
+ "note": "Run 20260929T224332: the requirements engineer answer rejected twice."
+}

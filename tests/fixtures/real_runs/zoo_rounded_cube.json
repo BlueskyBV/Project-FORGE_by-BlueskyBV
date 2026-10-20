@@ -1,0 +1,108 @@
+{
+ "brief": "A 40 mm PLA cube with 3 mm rounded edges and a 10 mm hole through it. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 40 mm PLA cube with 3 mm rounded edges and a 10 mm hole through it. It carries no load, so there is no load case.",
+  "part_kind": "rounded_cube",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_S",
+    "statement": "REQ_S",
+    "measurement": "parameter:side",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "rounded_cube",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "side",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "cube",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side",
+          "side",
+          "side"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "cube"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

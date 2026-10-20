@@ -1,0 +1,1159 @@
+{
+ "brief": "A 3D-printed PLA flight-controller mounting plate for a drone, 80 mm long, 60 mm wide and 4 mm thick, with all four corners rounded to an 8 mm radius. Four 3.2 mm holes on a 30.5 mm square of centres, centred on the plate, for the flight-controller stack. Four 3.4 mm frame holes on a 64 x 44 mm rectangle of centres, centred on the plate. A 16 mm cable hole in the centre of the plate. Two 16 x 4 mm zip-tie slots running along the plate's length, centred across the width, with their centres 14 mm from each end. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A flat plate that mounts a flight-controller stack and attaches to a drone frame, with a central cable pass-through and zip-tie slots for wire management.",
+  "part_kind": "plate (flight-controller mounting plate for a drone)",
+  "stated": [
+   "Material/process: 3D-printed PLA",
+   "Overall plate size: 80 mm long x 60 mm wide x 4 mm thick",
+   "All four corners rounded to an 8 mm radius",
+   "Four 3.2 mm holes on a 30.5 mm square pattern of centres, centred on the plate, for the flight-controller stack",
+   "Four 3.4 mm frame holes on a 64 x 44 mm rectangle of centres, centred on the plate",
+   "One 16 mm cable hole in the centre of the plate",
+   "Two 16 x 4 mm zip-tie slots running along the plate's length, centred across the width",
+   "Zip-tie slot centres are 14 mm from each end",
+   "'It carries no load, so there is no load case'"
+  ],
+  "implied": [
+   "Because it mounts a flight-controller stack via a bolt pattern, the 3.2 mm holes are likely clearance holes for a standard FC mounting standard (e.g. M3-ish), implying fasteners of a size not explicitly stated",
+   "Because it bolts to the drone frame via the 3.4 mm hole pattern, the plate needs a reasonably flat, rigid mounting interface so the frame holes line up with the airframe's standoffs",
+   "Because it is 3D-printed in PLA, the part's strength and dimensional tolerances will be governed by print orientation and layer adhesion, not treated as isotropic stock",
+   "Because zip-tie slots are specified for cable retention, the plate is expected to have wiring routed across or along it that needs to be secured",
+   "Because the cable hole is centred, it is implied to pass wiring (e.g. from an ESC or battery) through the plate between two sides/layers of the drone stack"
+  ],
+  "unstated": [
+   "The fastener/thread size intended for the 3.2 mm and 3.4 mm holes (e.g. M3 clearance), and whether they are clearance or tapped holes",
+   "Whether standoffs, spacers, or countersinks are used at the mounting holes, and their dimensions",
+   "The depth/thickness tolerance and print layer orientation, which affects whether 4 mm PLA is adequate even for a 'no load' part subjected to handling, vibration, or stack-screw clamping forces",
+   "Any vibration, shock, or thermal exposure the plate will see in flight (motors/props nearby), despite the stated absence of a structural load case",
+   "The orientation of the zip-tie slots relative to the plate's two faces (through-slot vs. one open side) and their exact placement along the length beyond the 14 mm end offset",
+   "Which face of the plate the FC stack mounts on vs. which face faces the frame, i.e. stack-up/orientation",
+   "Surface finish, infill percentage, or print settings needed if the part must survive any secondary handling loads",
+   "Any requirement for electrical isolation or standoffs between the plate and conductive frame components",
+   "Whether the plate needs to clear other components (e.g. battery, camera, antennas) that could constrain hole or slot placement beyond what's given",
+   "Tolerance/fit requirements for the 16 mm cable hole and the hole/slot patterns (e.g. positional tolerance for the bolt patterns to mate with a specific aftermarket FC or frame)"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "Part is for a drone (an unmanned flying vehicle); failure of a mounting plate in flight could contribute to loss of control or a crash, and the brief explicitly disclaims any load case despite the part sitting in a system with vibration, motor torque reaction, and possible impact loads",
+   "The brief explicitly states 'it carries no load, so there is no load case,' which is an assertion about the part's duty rather than a given design input, and if untrue (e.g. plate flexes under vibration or stack clamping, or absorbs crash impact) the no-load assumption would be invalidated"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "moderate",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The plate shall be 80 mm long overall.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states overall length of 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The plate shall be 60 mm wide overall.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states overall width of 60 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The plate shall be 4 mm thick overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states overall thickness of 4 mm; this is the whole part's extent along Z since it is a flat plate.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CORNER_FILLET_RADIUS",
+    "statement": "All four corners of the plate shall be rounded to an 8 mm radius.",
+    "measurement": "parameter:corner_fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states corner radius of 8 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FC_MOUNT_HOLE_DIAMETER",
+    "statement": "The four flight-controller stack mounting holes shall be 3.2 mm in diameter.",
+    "measurement": "parameter:fc_mount_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.2,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 3.2 mm holes for the FC stack.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FC_MOUNT_HOLE_PATTERN_SIZE",
+    "statement": "The four FC mounting holes shall lie on a 30.5 mm square pattern of centres, centred on the plate.",
+    "measurement": "parameter:fc_mount_hole_pattern_size",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 30.5 mm square hole pattern.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FRAME_HOLE_DIAMETER",
+    "statement": "The four frame mounting holes shall be 3.4 mm in diameter.",
+    "measurement": "parameter:frame_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.4,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 3.4 mm frame holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FRAME_HOLE_PATTERN_WIDTH",
+    "statement": "The frame hole pattern shall span 64 mm between hole centres along its longer axis.",
+    "measurement": "parameter:frame_hole_pattern_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 64.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 64 x 44 mm rectangle of centres for the frame holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FRAME_HOLE_PATTERN_DEPTH",
+    "statement": "The frame hole pattern shall span 44 mm between hole centres along its shorter axis.",
+    "measurement": "parameter:frame_hole_pattern_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 44.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 64 x 44 mm rectangle of centres for the frame holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CABLE_HOLE_DIAMETER",
+    "statement": "The central cable hole shall be 16 mm in diameter.",
+    "measurement": "parameter:cable_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 16.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 16 mm cable hole in the centre of the plate.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ZIPTIE_SLOT_LENGTH",
+    "statement": "Each zip-tie slot shall be 16 mm long, running along the plate's length.",
+    "measurement": "parameter:ziptie_slot_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 16.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 16 x 4 mm zip-tie slots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ZIPTIE_SLOT_WIDTH",
+    "statement": "Each zip-tie slot shall be 4 mm wide.",
+    "measurement": "parameter:ziptie_slot_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 16 x 4 mm zip-tie slots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ZIPTIE_SLOT_END_OFFSET",
+    "statement": "Each zip-tie slot's centre shall be 14 mm from the nearer end of the plate.",
+    "measurement": "parameter:ziptie_slot_end_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 14.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states slot centres are 14 mm from each end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FC_MOUNT_HOLE_COUNT",
+    "statement": "There shall be exactly four FC stack mounting holes.",
+    "measurement": "feature_count:hole:fc_mount",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief states four 3.2 mm holes for the flight-controller stack.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FRAME_MOUNT_HOLE_COUNT",
+    "statement": "There shall be exactly four frame mounting holes.",
+    "measurement": "feature_count:hole:frame_mount",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "rationale": "Brief states four 3.4 mm frame holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CABLE_HOLE_COUNT",
+    "statement": "There shall be exactly one central cable hole.",
+    "measurement": "feature_count:hole:cable",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "rationale": "Brief states a single 16 mm cable hole in the centre of the plate.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ZIP_TIE_PROFILE_SLOT_COUNT",
+    "statement": "There shall be exactly two zip-tie slots.",
+    "measurement": "feature_count:profile_slot:zip_tie",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief states two 16 x 4 mm zip-tie slots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_3_2MM",
+    "measurement": "holes_of_diameter:3.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 3.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_3_4MM",
+    "measurement": "holes_of_diameter:3.4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 3.4 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_16MM",
+    "measurement": "holes_of_diameter:16",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "statement": "The part shall have 1 open hole of 16 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_16X4",
+    "statement": "The part shall have 2 openings 16 by 4 mm right through it.",
+    "measurement": "openings_of_size:16x4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_16X4_LO14_MID",
+    "statement": "The 16 x 4 mm opening shall be centred 14 mm in from the low end of the part, on its middle across it.",
+    "measurement": "opening_at:16x4:lo14,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_16X4_HI14_MID",
+    "statement": "The 16 x 4 mm opening shall be centred 14 mm in from the high end of the part, on its middle across it.",
+    "measurement": "opening_at:16x4:hi14,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_16_MID_MID",
+    "statement": "The 16 mm opening shall be centred on the part, both ways.",
+    "measurement": "opening_at:16:mid,mid",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_2_MIDP15_25_MIDP15_25",
+    "statement": "The 3.2 mm opening shall be on a corner of the 30.5 by 30.5 mm square of centres, centred on the part.",
+    "measurement": "opening_at:3.2:mid+15.25,mid+15.25",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_2_MIDP15_25_MIDM15_25",
+    "statement": "The 3.2 mm opening shall be on a corner of the 30.5 by 30.5 mm square of centres, centred on the part.",
+    "measurement": "opening_at:3.2:mid+15.25,mid-15.25",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_2_MIDM15_25_MIDP15_25",
+    "statement": "The 3.2 mm opening shall be on a corner of the 30.5 by 30.5 mm square of centres, centred on the part.",
+    "measurement": "opening_at:3.2:mid-15.25,mid+15.25",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_2_MIDM15_25_MIDM15_25",
+    "statement": "The 3.2 mm opening shall be on a corner of the 30.5 by 30.5 mm square of centres, centred on the part.",
+    "measurement": "opening_at:3.2:mid-15.25,mid-15.25",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_4_MIDP32_MIDP22",
+    "statement": "The 3.4 mm opening shall be on a corner of the 64 by 44 mm rectangle of centres, centred on the part.",
+    "measurement": "opening_at:3.4:mid+32,mid+22",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_4_MIDP32_MIDM22",
+    "statement": "The 3.4 mm opening shall be on a corner of the 64 by 44 mm rectangle of centres, centred on the part.",
+    "measurement": "opening_at:3.4:mid+32,mid-22",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_4_MIDM32_MIDP22",
+    "statement": "The 3.4 mm opening shall be on a corner of the 64 by 44 mm rectangle of centres, centred on the part.",
+    "measurement": "opening_at:3.4:mid-32,mid+22",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_3_4_MIDM32_MIDM22",
+    "statement": "The 3.4 mm opening shall be on a corner of the 64 by 44 mm rectangle of centres, centred on the part.",
+    "measurement": "opening_at:3.4:mid-32,mid-22",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_HOLE_TYPE",
+    "statement": "All specified holes (3.2 mm, 3.4 mm, 16 mm) and slots are plain through-holes/through-slots perpendicular to the plate faces, not tapped, countersunk, or counterbored.",
+    "rationale": "Brief gives only diameters and patterns, with no thread callouts or countersink/counterbore dimensions.",
+    "consequence_if_wrong": "If fasteners require countersinks, counterbores, or threaded holes, the mounting interface may not seat flush or may strip under clamp load.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SLOT_THROUGH",
+    "statement": "The zip-tie slots pass fully through the plate thickness (open on both faces), not just a recessed channel on one face.",
+    "rationale": "Brief describes them only by length and width, consistent with a conventional through-slot for threading a zip tie.",
+    "consequence_if_wrong": "If slots are meant to be blind/recessed on one face, zip ties could not be routed through as intended.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PRINT_ORIENTATION",
+    "statement": "The plate is printed flat (XY plane) with standard PLA settings (e.g. ~20% infill, 2-3 perimeters), typical for a non-structural FDM bracket.",
+    "rationale": "Brief specifies PLA and 3D printing but gives no print orientation, infill, or wall count.",
+    "consequence_if_wrong": "A different orientation or lower infill could change layer-adhesion strength and flatness, affecting fit of the hole patterns.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_INDOOR_SERVICE",
+    "statement": "The part operates in typical small-drone ambient conditions (room temperature, no prolonged UV or chemical exposure) consistent with ordinary PLA service limits.",
+    "rationale": "No environmental or thermal exposure stated in the brief; PLA has known limited heat tolerance (~50-60 degC softening).",
+    "consequence_if_wrong": "If mounted near motors/ESCs generating significant heat, PLA could soften or warp, distorting the hole patterns.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FASTENER_SIZE",
+    "statement": "The 3.2 mm holes are sized as clearance holes for M3 fasteners (the FC stack's near-universal mounting standard), and the 3.4 mm holes are clearance holes for M3 frame standoffs.",
+    "rationale": "3.2 mm and 3.4 mm are both common M3 clearance sizes in the drone hobby industry; the brief does not state a thread size explicitly.",
+    "consequence_if_wrong": "If a different fastener size is intended, the holes may be too tight or too loose for the actual screws used.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "REQ_FRAME_HOLE_PATTERN_WIDTH carried `source: \"user\"` against a threshold the brief does not state. The figure may be sound -- a derived dimension, a manufacturing limit -- but the user did not write it, so it is recorded as `derived` rather than reported back to them as their own requirement.",
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_3_2MM: the brief states 4 open holes of 3.2 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_3_4MM: the brief states 4 open holes of 3.4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_16MM: the brief states 1 open hole of 16 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OPENINGS_16X4: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size.",
+   "added REQ_AT_16X4_LO14_MID, REQ_AT_16X4_HI14_MID, REQ_AT_16_MID_MID, REQ_AT_3_2_MIDP15_25_MIDP15_25, REQ_AT_3_2_MIDP15_25_MIDM15_25, REQ_AT_3_2_MIDM15_25_MIDP15_25, REQ_AT_3_2_MIDM15_25_MIDM15_25, REQ_AT_3_4_MIDP32_MIDP22, REQ_AT_3_4_MIDP32_MIDM22, REQ_AT_3_4_MIDM32_MIDP22, REQ_AT_3_4_MIDM32_MIDM22: the brief places these openings, and a count of them says nothing about where they are. Each is checked on the built part, laid flat: its centre within 0.5 mm of where the brief puts it."
+  ]
+ },
+ "answer": {
+  "rationale": "The plate is a single box, rounded on its own vertical edges (corner_fillet_radius applied via edge_radius/edges:vertical). Zip-tie slots are cut as two profile_slot+extrude cuts chained via subtract directly from the base_plate (each subtract taking the previous result and the new slot extrusion), rather than unioning the slot-cut bodies together, which would restore the material already removed. All hole patterns and the cable hole are then chained as individual tagged hole features cut in sequence from the slotted plate, ending in the terminal cable_hole feature. Hole positions are expressions off the pattern-size parameters so everything stays tied to fc_mount_hole_pattern_size / frame_hole_pattern_width / depth, and slot centers are expressions off ziptie_slot_end_offset and plate_length.",
+  "document": {
+   "name": "FC Stack Mounting Plate",
+   "description": "Flat PLA plate mounting a flight-controller stack and attaching to a drone frame, with a central cable pass-through and two zip-tie slots for wire management. No load case per brief.",
+   "components": [
+    {
+     "id": "fc_mount_plate",
+     "name": "FC Stack Mounting Plate",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "plate_length",
+       "value": {
+        "magnitude": 80.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "corner_fillet_radius",
+       "value": {
+        "magnitude": 8.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "fc_mount_hole_diameter",
+       "value": {
+        "magnitude": 3.2,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "fc_mount_hole_pattern_size",
+       "value": {
+        "magnitude": 30.5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "frame_hole_diameter",
+       "value": {
+        "magnitude": 3.4,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "frame_hole_pattern_width",
+       "value": {
+        "magnitude": 64.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "frame_hole_pattern_depth",
+       "value": {
+        "magnitude": 44.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "cable_hole_diameter",
+       "value": {
+        "magnitude": 16.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ziptie_slot_length",
+       "value": {
+        "magnitude": 16.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ziptie_slot_width",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "ziptie_slot_end_offset",
+       "value": {
+        "magnitude": 14.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "base_plate",
+       "kind": "box",
+       "lies": "flat",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "edge_radius": {
+         "expression": "corner_fillet_radius",
+         "unit": "mm"
+        },
+        "edges": "vertical"
+       }
+      },
+      {
+       "id": "ziptie_slot_plane",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XY",
+        "offset": {
+         "expression": "plate_thickness / 2",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ziptie_slot_1_profile",
+       "kind": "profile_slot",
+       "tags": [
+        "zip_tie"
+       ],
+       "inputs": [
+        "ziptie_slot_plane"
+       ],
+       "parameters": {
+        "length": {
+         "expression": "ziptie_slot_length",
+         "unit": "mm"
+        },
+        "width": {
+         "expression": "ziptie_slot_width",
+         "unit": "mm"
+        },
+        "center_u": {
+         "expression": "-(plate_length / 2 - ziptie_slot_end_offset)",
+         "unit": "mm"
+        },
+        "center_v": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "rotation": {
+         "magnitude": 0.0,
+         "unit": "deg"
+        }
+       }
+      },
+      {
+       "id": "ziptie_slot_1_cut",
+       "kind": "extrude",
+       "inputs": [
+        "ziptie_slot_1_profile"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "plate_thickness",
+         "unit": "mm"
+        },
+        "mode": "reverse"
+       }
+      },
+      {
+       "id": "plate_minus_slot_1",
+       "kind": "subtract",
+       "inputs": [
+        "base_plate",
+        "ziptie_slot_1_cut"
+       ]
+      },
+      {
+       "id": "ziptie_slot_2_profile",
+       "kind": "profile_slot",
+       "tags": [
+        "zip_tie"
+       ],
+       "inputs": [
+        "ziptie_slot_plane"
+       ],
+       "parameters": {
+        "length": {
+         "expression": "ziptie_slot_length",
+         "unit": "mm"
+        },
+        "width": {
+         "expression": "ziptie_slot_width",
+         "unit": "mm"
+        },
+        "center_u": {
+         "expression": "plate_length / 2 - ziptie_slot_end_offset",
+         "unit": "mm"
+        },
+        "center_v": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "rotation": {
+         "magnitude": 0.0,
+         "unit": "deg"
+        }
+       }
+      },
+      {
+       "id": "ziptie_slot_2_cut",
+       "kind": "extrude",
+       "inputs": [
+        "ziptie_slot_2_profile"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "plate_thickness",
+         "unit": "mm"
+        },
+        "mode": "reverse"
+       }
+      },
+      {
+       "id": "plate_with_slots",
+       "kind": "subtract",
+       "inputs": [
+        "plate_minus_slot_1",
+        "ziptie_slot_2_cut"
+       ]
+      },
+      {
+       "id": "fc_hole_1",
+       "kind": "hole",
+       "tags": [
+        "fc_mount"
+       ],
+       "inputs": [
+        "plate_with_slots"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "fc_mount_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "fc_mount_hole_pattern_size / 2",
+          "fc_mount_hole_pattern_size / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "fc_hole_2",
+       "kind": "hole",
+       "tags": [
+        "fc_mount"
+       ],
+       "inputs": [
+        "fc_hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "fc_mount_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "fc_mount_hole_pattern_size / 2",
+          "-(fc_mount_hole_pattern_size / 2)",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "fc_hole_3",
+       "kind": "hole",
+       "tags": [
+        "fc_mount"
+       ],
+       "inputs": [
+        "fc_hole_2"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "fc_mount_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-(fc_mount_hole_pattern_size / 2)",
+          "fc_mount_hole_pattern_size / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "fc_hole_4",
+       "kind": "hole",
+       "tags": [
+        "fc_mount"
+       ],
+       "inputs": [
+        "fc_hole_3"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "fc_mount_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-(fc_mount_hole_pattern_size / 2)",
+          "-(fc_mount_hole_pattern_size / 2)",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "frame_hole_1",
+       "kind": "hole",
+       "tags": [
+        "frame_mount"
+       ],
+       "inputs": [
+        "fc_hole_4"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "frame_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "frame_hole_pattern_width / 2",
+          "frame_hole_pattern_depth / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "frame_hole_2",
+       "kind": "hole",
+       "tags": [
+        "frame_mount"
+       ],
+       "inputs": [
+        "frame_hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "frame_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "frame_hole_pattern_width / 2",
+          "-(frame_hole_pattern_depth / 2)",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "frame_hole_3",
+       "kind": "hole",
+       "tags": [
+        "frame_mount"
+       ],
+       "inputs": [
+        "frame_hole_2"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "frame_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-(frame_hole_pattern_width / 2)",
+          "frame_hole_pattern_depth / 2",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "frame_hole_4",
+       "kind": "hole",
+       "tags": [
+        "frame_mount"
+       ],
+       "inputs": [
+        "frame_hole_3"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "frame_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-(frame_hole_pattern_width / 2)",
+          "-(frame_hole_pattern_depth / 2)",
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "cable_hole",
+       "kind": "hole",
+       "tags": [
+        "cable"
+       ],
+       "inputs": [
+        "frame_hole_4"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "cable_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "fc_mount_pattern",
+       "type": "bolt_pattern",
+       "geometry": "fc_hole_1.bore",
+       "nominal_size": {
+        "magnitude": 3.2,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Four-hole 30.5 mm square clearance pattern for the flight-controller stack."
+      },
+      {
+       "id": "frame_mount_pattern",
+       "type": "bolt_pattern",
+       "geometry": "frame_hole_1.bore",
+       "nominal_size": {
+        "magnitude": 3.4,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Four-hole 64 x 44 mm rectangular clearance pattern for the drone frame standoffs."
+      },
+      {
+       "id": "cable_passthrough",
+       "type": "bore",
+       "geometry": "cable_hole.bore",
+       "nominal_size": {
+        "magnitude": 16.0,
+        "unit": "mm"
+       },
+       "description": "Central cable pass-through."
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

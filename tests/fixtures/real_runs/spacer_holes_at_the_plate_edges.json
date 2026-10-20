@@ -1,0 +1,491 @@
+{
+ "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
+ "intent": {
+  "summary": "A 3D-printed PLA spacer block with a 30 mm square plate, a 12 mm diameter post, and mounting holes.",
+  "part_kind": "spacer",
+  "stated": [
+   "The base is a 30 mm square plate 4 mm thick.",
+   "A 12 mm diameter post 10 mm tall stands in the middle of it.",
+   "A 5 mm hole runs all the way through the post and the plate.",
+   "Two 3 mm mounting holes pass all the way through the plate, 20 mm apart.",
+   "It must weigh no more than 8 g."
+  ],
+  "implied": [
+   "The post has a flat mounting face.",
+   "The plate has a flat mounting face."
+  ],
+  "unstated": [
+   "The magnitude and direction of the load on the arm."
+  ],
+  "out_of_scope": [
+   "Carrying a person, lifting a load overhead, containing pressure, storing energy, part of a vehicle or of regulated equipment."
+  ],
+  "risk_signals": [],
+  "suggested_name": "3D-Printed PLA Spacer Block"
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BASE_THICKNESS",
+    "statement": "The base thickness shall be 4 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:plate_thickness",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_POST_HEIGHT",
+    "statement": "The post height shall be 10 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:post_height",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_POST_DIAMETER",
+    "statement": "The post diameter shall be 12 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:post_diameter",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_PLATE_WIDTH",
+    "statement": "The plate width shall be 30 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:plate_width",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The hole diameter shall be 5 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:hole_diameter",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The mounting hole diameter shall be 3 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:mounting_hole_diameter",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_SPACING",
+    "statement": "The mounting hole spacing shall be 20 mm.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "comparison": "equals",
+    "measurement": "parameter:mounting_hole_spacing",
+    "source": "derived",
+    "state": "not_tested"
+   },
+   {
+    "id": "REQ_PART_MASS",
+    "statement": "The part mass shall not exceed 8 g.",
+    "type": "performance",
+    "strength": "hard",
+    "verification": "exact_geometry",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "g"
+    },
+    "comparison": "at_most",
+    "measurement": "mass",
+    "source": "derived",
+    "state": "not_tested"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "not checked against 2 mm: the brief states it and no requirement carries it"
+  ]
+ },
+ "answer": {
+  "rationale": "replay",
+  "document": {
+   "name": "Spacer Block",
+   "description": "A 3D-printed PLA spacer block with a 30 mm square plate, a 12 mm diameter post, and mounting holes.",
+   "components": [
+    {
+     "id": "spacer_block",
+     "name": "Spacer Block",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "post_height",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "post_diameter",
+       "value": {
+        "magnitude": 12.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_diameter",
+       "value": {
+        "magnitude": 3.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_spacing",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_width",
+          "plate_thickness",
+          "plate_width"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "post",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "post_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "post_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "base",
+        "post"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "hole",
+       "kind": "hole",
+       "role": "shaft",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "post_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "inputs": [
+        "hole"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          15.0,
+          0,
+          "post_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "inputs": [
+        "mounting_hole_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          -15.0,
+          0,
+          "post_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ]
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "5be9a714-5501-56ad-aaf4-34eca67c07e4",
+   "project_id": "eb79ab37-0e15-5b6e-96fe-02aafa669036",
+   "risk_class": "low",
+   "requirements": [
+    {
+     "id": "REQ_BASE_THICKNESS",
+     "statement": "The base thickness shall be 4 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:plate_thickness",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_POST_HEIGHT",
+     "statement": "The post height shall be 10 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 10.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:post_height",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_POST_DIAMETER",
+     "statement": "The post diameter shall be 12 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:post_diameter",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_PLATE_WIDTH",
+     "statement": "The plate width shall be 30 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:plate_width",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_HOLE_DIAMETER",
+     "statement": "The hole diameter shall be 5 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 5.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:hole_diameter",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_MOUNTING_HOLE_DIAMETER",
+     "statement": "The mounting hole diameter shall be 3 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 3.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:mounting_hole_diameter",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_MOUNTING_HOLE_SPACING",
+     "statement": "The mounting hole spacing shall be 20 mm.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 20.0,
+      "unit": "mm"
+     },
+     "comparison": "equals",
+     "measurement": "parameter:mounting_hole_spacing",
+     "source": "derived",
+     "state": "not_tested"
+    },
+    {
+     "id": "REQ_PART_MASS",
+     "statement": "The part mass shall not exceed 8 g.",
+     "type": "performance",
+     "strength": "hard",
+     "verification": "exact_geometry",
+     "threshold": {
+      "magnitude": 8.0,
+      "unit": "g"
+     },
+     "comparison": "at_most",
+     "measurement": "mass",
+     "source": "derived",
+     "state": "not_tested"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20260915T172355: failed -- the base on its edge, and the mounting holes drawn 30 mm apart at the plate's edges, the 20 mm spacing declared and read by nothing."
+}

@@ -1,0 +1,452 @@
+{
+ "brief": "Create a curved arm-mount plate, 120 mm long, 75 mm wide and 6 mm thick. Curve the plate uniformly across its 75 mm width with an inside radius of 60 mm, with the curvature center directly below the longitudinal centerline. Round the four corners with a 12 mm radius. Add four 28 \u00d7 5 mm strap slots running along the plate's length, two at each end, with their centers 10 mm in from each long edge and 22 mm from each longitudinal end. Add two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 15 mm from the bottom end.",
+ "intent": {
+  "summary": "Create a curved arm-mount plate with specific dimensions and features.",
+  "part_kind": "plate",
+  "stated": [
+   "Length: 120 mm",
+   "Width: 75 mm",
+   "Thickness: 6 mm",
+   "Curvature: Uniform across 75 mm width with an inside radius of 60 mm",
+   "Curvature center: Directly below the longitudinal centerline",
+   "Corner rounding: 12 mm radius",
+   "Strap slots: Four 28 \u00d7 5 mm slots along the length, two at each end, 10 mm from each long edge and 22 mm from each longitudinal end",
+   "Mounting holes: Two 8.2 mm holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 15 mm from the bottom end"
+  ],
+  "implied": [
+   "Plate is designed for mounting an arm",
+   "Plate is designed to withstand loads along its length",
+   "Plate is designed to withstand loads along its width",
+   "Plate is designed to withstand loads along its thickness",
+   "Plate is designed to withstand bending loads",
+   "Plate is designed to withstand torsional loads",
+   "Plate is designed to withstand shear loads",
+   "Plate is designed to withstand impact loads",
+   "Plate is designed to withstand fatigue loads",
+   "Plate is designed to withstand thermal loads",
+   "Plate is designed to withstand mechanical loads",
+   "Plate is designed to withstand electrical loads",
+   "Plate is designed to withstand magnetic loads",
+   "Plate is designed to withstand chemical loads",
+   "Plate is designed to withstand biological loads"
+  ],
+  "unstated": [
+   "Magnitude and direction of the load on the arm",
+   "Material grade",
+   "Safety factor",
+   "Operating temperature",
+   "Dimension that is load-bearing for the design's function"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "Carrying a person",
+   "Lifting a load overhead",
+   "Containing pressure",
+   "Storing energy",
+   "Part of a vehicle or of regulated equipment"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The length of the plate shall be 120 mm.",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The width of the plate shall be 75 mm.",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the plate shall be 6 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CENTERLINE_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be two mounting holes on the longitudinal centerline.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_8_2MM",
+    "measurement": "holes_of_diameter:8.2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 8.2 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_OFFSET",
+    "statement": "The holes shall be centred 15 mm in from the face the brief measures them from.",
+    "measurement": "parameter:hole_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_28X5",
+    "statement": "The part shall have 4 openings 28 by 5 mm right through it.",
+    "measurement": "openings_of_size:28x5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_LO22_LO10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the low end of the part, 10 mm in from its low side.",
+    "measurement": "opening_at:28x5:lo22,lo10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_LO22_HI10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the low end of the part, 10 mm in from its high side.",
+    "measurement": "opening_at:28x5:lo22,hi10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_HI22_LO10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the high end of the part, 10 mm in from its low side.",
+    "measurement": "opening_at:28x5:hi22,lo10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_AT_28X5_HI22_HI10",
+    "statement": "The 28 x 5 mm opening shall be centred 22 mm in from the high end of the part, 10 mm in from its high side.",
+    "measurement": "opening_at:28x5:hi22,hi10",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 0.5,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_ANGLE",
+    "statement": "The part shall turn through 68.209 degrees, measured on its surface.",
+    "measurement": "bend_angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 68.209,
+     "unit": "deg"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_COUNT",
+    "statement": "The part shall have 1 bend.",
+    "measurement": "bend_count",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_CENTRE",
+    "statement": "The curve shall be centred in the middle of the part (the brief names no other place).",
+    "measurement": "bend_off_centre",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 0.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BENT_ALONG",
+    "statement": "The part shall curve over its 75 mm, as the brief says, the bend's line running the other way.",
+    "measurement": "bent_along",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_WAY",
+    "statement": "The part shall curve as an arch: its face that was up when flat on the outside of the curve, the curve's centre below it.",
+    "measurement": "bend_convex",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BEND_SPREAD",
+    "statement": "The bend shall be a 60 mm inside radius: spread over 75.0 mm of the part's length.",
+    "measurement": "bend_spread",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 75.0,
+     "unit": "mm"
+    },
+    "source": "derived",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_CORNER_ROUNDING",
+    "statement": "The corners of the plate shall be rounded with a 12 mm radius.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "dropped REQ_SF_BENDING: the brief states this part carries no load, so there is no load case to take a margin against and nothing could have computed one",
+   "`feature_count:mounting_hole:centerline` names no feature kind, so it was read as `feature_count:hole:mounting`.",
+   "dropped ASM_CURVATURE_CENTER: \"The curvature center of the plate shall be directly below the longitudinal centerline.\" is not an assumption -- the brief says it -- and an unapproved one would have held a correct part for approval of the user's own words.",
+   "added REQ_HOLES_8_2MM: the brief states 2 open holes of 8.2 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLE_OFFSET at 15 mm: the brief places the holes with it -- \"add two 8.2 mm mounting holes on the longitudinal centerline, spaced 30 mm center-to-center, with the first hole center 15 mm from the bottom end\" -- and no requirement carried it.",
+   "added REQ_OPENINGS_28X5: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size.",
+   "added REQ_AT_28X5_LO22_LO10, REQ_AT_28X5_LO22_HI10, REQ_AT_28X5_HI22_LO10, REQ_AT_28X5_HI22_HI10: the brief places these openings, and a count of them says nothing about where they are. Each is checked on the built part, laid flat: its centre within 0.5 mm of where the brief puts it.",
+   "added REQ_BEND_ANGLE, REQ_BEND_COUNT, REQ_BEND_CENTRE, REQ_BENT_ALONG, REQ_BEND_WAY, REQ_BEND_SPREAD: the brief bends the part 68.209 degrees (curve), and nothing measured the bend on the part itself.",
+   "dropped REQ_END_STRAP_SLOT_COUNT: it counts `strap_slot`, which is not a kind of feature (`feature_count:strap_slot` names no feature kind. It counts features of a kind, not features with an id or role.) and which the brief never mentions.",
+   "not checked against 30 mm: the brief states it and no requirement carries it"
+  ]
+ },
+ "answer": {
+  "rationale": "x",
+  "document": {
+   "name": "Curved Arm-Mount Plate",
+   "components": [
+    {
+     "id": "plate",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "bend",
+       "kind": "bend",
+       "parameters": {
+        "angle": {
+         "magnitude": 68.209,
+         "unit": "deg"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "length / 2"
+         ],
+         "unit": "mm"
+        },
+        "along": [
+         1,
+         0,
+         0
+        ],
+        "toward": [
+         0,
+         0,
+         1
+        ],
+        "radius": {
+         "magnitude": 60,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "role": "mounting",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "length / 2 - thickness"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "role": "mounting",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 8.2,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "length / 2 + thickness"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ]
+    }
+   ],
+   "description": "A curved arm-mount plate designed to withstand loads along its length, width, and thickness, with specific corners rounded and mounting holes. The part is bent through a specific angle, and specific openings are provided for mounting the arm. The dimensions and features are checked against the declared parameters and features, and the part is designed to withstand loads along its length, width, and thickness, and to be bent through a specific angle. The corners are rounded with a specific radius, and there are specific openings and mounting holes."
+  }
+ },
+ "note": "Run 20261009T121201, the arm-mount plate with its mounting holes 'from the bottom end'. 'bottom' named no end Forge knew, so the holes were not placed or checked, the model's holes stayed after the bend, and the bend was never set. The record also held the brief's own 12 mm corner sentence as an unapproved assumption."
+}

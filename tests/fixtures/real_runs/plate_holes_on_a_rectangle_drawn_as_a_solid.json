@@ -1,0 +1,616 @@
+{
+ "analyst_patches": [
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/0"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/1"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/2"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/3"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/4"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/5"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/6"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/7"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/8"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/9"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/10"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/11"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/12"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/13"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/14"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/15"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/16"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/17"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/18"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/19"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/20"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/21"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/22"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/23"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/24"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/25"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/26"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/27"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/28"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/29"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/30"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/31"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/32"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/33"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/34"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/35"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/36"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/37"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/38"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/39"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/40"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/41"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/42"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/43"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/44"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/45"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/46"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/47"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/48"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/49"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/50"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/51"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/52"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/53"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/54"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/55"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/56"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/57"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/58"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/59"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/60"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/61"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/62"
+  },
+  {
+   "op": "remove",
+   "pointer": "/components/0/features/63"
+  }
+ ],
+ "answer": {
+  "document": {
+   "components": [
+    {
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "centered": true,
+        "size": {
+         "unit": "mm",
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ]
+        }
+       }
+      },
+      {
+       "id": "hole_1",
+       "inputs": [
+        "base"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "plate_length / 2",
+          "plate_width / 2",
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "hole_2",
+       "inputs": [
+        "hole_1"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "plate_length / 2",
+          "-plate_width / 2",
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "hole_3",
+       "inputs": [
+        "hole_2"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "-plate_length / 2",
+          "plate_width / 2",
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "hole_4",
+       "inputs": [
+        "hole_3"
+       ],
+       "kind": "hole",
+       "parameters": {
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "fit": "clearance_normal",
+        "position": {
+         "unit": "mm",
+         "vector": [
+          "-plate_length / 2",
+          "-plate_width / 2",
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "rectangle",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "rectangle_length",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "rectangle_width",
+         "unit": "mm"
+        },
+        "origin": {
+         "unit": "mm",
+         "vector": [
+          "plate_length / 2",
+          "plate_width / 2",
+          "plate_thickness / 2"
+         ]
+        }
+       }
+      },
+      {
+       "id": "plate_body",
+       "inputs": [
+        "hole_4",
+        "rectangle"
+       ],
+       "kind": "union"
+      }
+     ],
+     "id": "plate",
+     "parameters": [
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_length",
+       "value": {
+        "magnitude": 70.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "rectangle_length",
+       "value": {
+        "magnitude": 56.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "rectangle_width",
+       "value": {
+        "magnitude": 36.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ],
+   "name": "Aluminium Plate with Holes"
+  },
+  "rationale": "replay"
+ },
+ "brief": "An aluminium mounting plate 70 mm long, 50 mm wide and 4 mm thick. Four 4 mm holes pass through the plate, one near each corner, with their centres on a 56 mm by 36 mm rectangle. It carries no load, so there is no load case.",
+ "intent": {
+  "implied": [
+   "plate has a flat mounting face",
+   "plate is made of aluminium",
+   "plate is a structural component"
+  ],
+  "notes": [],
+  "out_of_scope": [],
+  "part_kind": "plate",
+  "risk_signals": [],
+  "stated": [
+   "aluminium",
+   "70 mm",
+   "50 mm",
+   "4 mm",
+   "4 mm holes",
+   "56 mm by 36 mm rectangle"
+  ],
+  "suggested_name": "",
+  "summary": "An aluminium mounting plate with dimensions 70 mm x 50 mm x 4 mm, four 4 mm holes near each corner, and a 56 mm by 36 mm rectangle centered on the holes. It carries no load.",
+  "unstated": [
+   "loads",
+   "materials",
+   "geometry"
+  ]
+ },
+ "note": "requirements: the record as the run accepted it, Forge's additions included. The answer is the design the run built: the four holes at the plate's own corners, and a 56 mm cylinder 36 mm tall named `rectangle`, welded on by Forge.",
+ "requirements": {
+  "assumptions": [],
+  "notes": [
+   "added REQ_HOLES_4MM: the brief states 4 open holes of 4 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed."
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_LENGTH",
+    "measurement": "parameter:plate_length",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The length of the plate shall be 70 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_WIDTH",
+    "measurement": "parameter:plate_width",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The width of the plate shall be 50 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_PLATE_THICKNESS",
+    "measurement": "parameter:plate_thickness",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The thickness of the plate shall be 4 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLE_DIAMETER",
+    "measurement": "parameter:hole_diameter",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The diameter of each hole shall be 4 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_RECTANGLE_LENGTH",
+    "measurement": "parameter:rectangle_length",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The length of the rectangle shall be 56 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 56.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_RECTANGLE_WIDTH",
+    "measurement": "parameter:rectangle_width",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The width of the rectangle shall be 36 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 36.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_HOLES_4MM",
+    "measurement": "holes_of_diameter:4",
+    "rationale": "The brief sizes and counts these holes.",
+    "source": "user",
+    "state": "accepted",
+    "statement": "The part shall have 4 open holes of 4 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "critical",
+  "unknowns": []
+ },
+ "run": "20260924T221721-an-aluminium-mounting-plate-70-mm-long-5",
+ "which": "document"
+}

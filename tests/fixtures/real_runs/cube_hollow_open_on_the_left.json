@@ -1,0 +1,103 @@
+{
+ "brief": "A 30 mm cube in PLA, hollow on the inside, with the left face of the square missing. Open on the left side. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 30 mm cube in PLA, hollow on the inside, with the left face missing. Open on the left side. It carries no load, so there is no load case.",
+  "part_kind": "cube",
+  "stated": [
+   "30 mm cube",
+   "PLA",
+   "hollow on the inside",
+   "left face missing",
+   "open on the left side"
+  ],
+  "implied": [
+   "no load case"
+  ],
+  "unstated": [
+   "no load"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_SIDE_LENGTH",
+    "statement": "The side length of the cube shall be 30 mm.",
+    "measurement": "parameter:side_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_LEFT_FACE_COUNT",
+    "statement": "The cube shall have a left face.",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted",
+    "measurement": "feature_count:face:left"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "The intent is to design a 30 mm cube in PLA, hollow on the inside, with the left face missing. The part carries no load, so there is no load case.",
+  "document": {
+   "name": "30 mm Cube",
+   "components": [
+    {
+     "id": "cube",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "side_length",
+          "side_length",
+          "0"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "left_face",
+       "kind": "subtract",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261003T102400: a hollow 30 mm cube open on the left, no wall stated. The designer drew a 30 x 30 x 0 box and a subtract with nothing to cut, three times."
+}

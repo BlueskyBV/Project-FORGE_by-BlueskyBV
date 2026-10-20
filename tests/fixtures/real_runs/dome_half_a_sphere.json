@@ -1,0 +1,140 @@
+{
+ "brief": "A PLA dome: exactly half of a 50 mm sphere, sitting flat side down. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA dome, half of a 50 mm sphere, flat side down.",
+  "part_kind": "dome",
+  "stated": [
+   "half of a 50 mm sphere",
+   "flat side down"
+  ],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": {
+   "dimensions": [
+    {
+     "parameter": "diameter",
+     "statement": "The diameter of the dome is 50 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 50.0,
+      "unit": "mm"
+     }
+    },
+    {
+     "parameter": "height",
+     "statement": "The height of the dome is 25 mm.",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 25.0,
+      "unit": "mm"
+     }
+    }
+   ],
+   "counts": [
+    {
+     "feature_kind": "mounting",
+     "tag": "flat",
+     "statement": "The dome has a flat mounting face.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 1,
+      "unit": ""
+     }
+    }
+   ],
+   "safety_factors": [
+    {
+     "against": "bearing",
+     "statement": "Bearing stress at the dome shall keep a safety factor of at least 2 against yield.",
+     "comparison": "at_least",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": ""
+     }
+    }
+   ]
+  },
+  "assumptions": [
+   {
+    "id": "ASM_DOME_LOAD",
+    "statement": "The dome carries no load.",
+    "risk": "critical",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "A sphere cut in half by a box, flat side on the bed.",
+  "document": {
+   "name": "dome",
+   "components": [
+    {
+     "id": "dome",
+     "name": "dome",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "expression": "diameter / 2",
+       "unit": "mm"
+      }
+     ],
+     "features": [
+      {
+       "id": "ball",
+       "kind": "sphere",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "upper",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "diameter",
+          "diameter",
+          "height"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-diameter / 2",
+          "-diameter / 2",
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "dome_body",
+       "kind": "intersect",
+       "inputs": [
+        "ball",
+        "upper"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261003T152857: the requirements engineer's answer, refused twice -- diameter and height as parameters only, nothing measuring the dome. The design is a hand-written half sphere for the test."
+}

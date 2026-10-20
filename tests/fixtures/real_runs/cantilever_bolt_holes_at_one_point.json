@@ -1,0 +1,255 @@
+{
+ "brief": "An aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end. A load of 150 N pushes straight down on the free end. It must have a safety factor of at least 2.",
+ "intent": {
+  "summary": "An aluminium cantilever bracket with a 60 mm long, 20 mm wide, and 6 mm thick bar. It is fixed at one end by two 5 mm bolt holes 15 mm apart near that end. A load of 150 N is applied straight down on the free end, and it must have a safety factor of at least 2.",
+  "part_kind": "cantilever bracket",
+  "stated": [
+   "60 mm long",
+   "20 mm wide",
+   "6 mm thick",
+   "150 N load",
+   "safety factor of at least 2"
+  ],
+  "implied": [
+   "the free end of the bracket",
+   "the bolt holes are near the end",
+   "the load is applied straight down"
+  ],
+  "unstated": [
+   "the magnitude and direction of the load on the arm",
+   "the material grade of the bracket",
+   "the operating temperature of the bracket",
+   "the dimensions that are load-bearing for the design's function"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "carrying a person",
+   "lifting a load overhead",
+   "containing pressure",
+   "storing energy",
+   "part of a vehicle or of regulated equipment"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "moderate",
+  "requirements": [
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The length of the cantilever bracket shall be 60 mm.",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The width of the cantilever bracket shall be 20 mm.",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The thickness of the cantilever bracket shall be 6 mm.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_NEAR_END_BOLT_HOLE_COUNT",
+    "statement": "There shall be two bolt holes near the end of the cantilever bracket.",
+    "measurement": "feature_count:hole:bolt",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SF_BEARING",
+    "statement": "The bearing stress at the bolt holes shall keep a safety factor of at least 2 against yield.",
+    "measurement": "safety_factor:bearing",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "type": "safety",
+    "verification": "analytical",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_DESIGN_LOAD",
+    "statement": "The 150 N load acts straight down on the free end of the cantilever bracket.",
+    "risk": "high",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "`feature_count:bolt_hole:near_end` names no feature kind, so it was read as `feature_count:hole:bolt`.",
+   "REQ_NEAR_END_BOLT_HOLE_COUNT counted `bolt` 2.0 as a bound; the brief states the count -- \"an aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end\" -- so it is exactly that many.",
+   "added REQ_HOLES_5MM: the brief states 2 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "assumptions[0] (`ASM_DESIGN_LOAD`): risk is `high` and `consequence_if_wrong` is empty, so the report cannot say what breaks if this assumption is untrue. Read it as unexplained, not as harmless.",
+   "not checked against 15 mm, 150 N: the brief states it and no requirement carries it"
+  ]
+ },
+ "answer": {
+  "rationale": "The brief states the dimensions and counts these holes.",
+  "document": {
+   "name": "Cantilever Bracket",
+   "components": [
+    {
+     "id": "cantilever_bracket",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "bolt_hole_1",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "length / 2",
+          "width / 2",
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "bolt_hole_2",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "length / 2",
+          "width / 2",
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "bolt_hole_1_port",
+       "type": "bore",
+       "geometry": "bolt_hole_1.bore",
+       "nominal_size": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      },
+      {
+       "id": "bolt_hole_2_port",
+       "type": "bore",
+       "geometry": "bolt_hole_2.bore",
+       "nominal_size": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261002T124224: the designer answer refused twice."
+}

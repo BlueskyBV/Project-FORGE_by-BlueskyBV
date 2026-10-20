@@ -1,0 +1,137 @@
+{
+ "brief": "A steel M8 hex nut, 13 mm across flats and 6.5 mm thick, with an 8 mm hole through it. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel M8 hex nut, 13 mm across flats and 6.5 mm thick, with an 8 mm hole through it. It carries no load, so there is no load case.",
+  "part_kind": "hex_nut",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.5,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "hex_nut",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "across_corners",
+       "value": {
+        "magnitude": 15.011,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 6.5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 8,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plane",
+       "kind": "datum_plane",
+       "parameters": {
+        "base": "XY"
+       }
+      },
+      {
+       "id": "hex",
+       "kind": "profile_polygon",
+       "inputs": [
+        "plane"
+       ],
+       "parameters": {
+        "circumscribed_diameter": {
+         "expression": "across_corners",
+         "unit": "mm"
+        },
+        "sides": {
+         "magnitude": 6,
+         "unit": ""
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "extrude",
+       "inputs": [
+        "hex"
+       ],
+       "parameters": {
+        "distance": {
+         "expression": "thickness",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

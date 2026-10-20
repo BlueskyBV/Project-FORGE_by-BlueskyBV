@@ -1,0 +1,82 @@
+{
+ "brief": "A PLA cone 40 mm across at the base and 60 mm tall. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA cone 40 mm across at the base and 60 mm tall. It carries no load, so there is no load case.",
+  "part_kind": "part",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_H",
+    "statement": "REQ_H",
+    "measurement": "parameter:height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "p",
+   "components": [
+    {
+     "id": "part",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "height",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "height",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a shape the kernel gained (cone, torus, wedge), as a model answers it."
+}

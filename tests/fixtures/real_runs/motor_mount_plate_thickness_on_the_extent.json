@@ -1,0 +1,234 @@
+{
+ "brief": "A 3D-printed motor mount plate in PLA. The base plate is 60 mm long, 40 mm wide and 6 mm thick. A cylindrical boss 18 mm in diameter and 25 mm tall stands in the middle of the plate, with a 2 mm fillet where the boss meets the plate. An 8 mm shaft bore runs all the way through the boss and the plate, on the boss axis. Four 4.5 mm mounting holes pass all the way through the plate on a 44 mm by 24 mm rectangular pattern centred on the plate. The finished part must stand no taller than 32 mm and weigh no more than 30 g. It carries no structural load - it is a printed fixture, so there is no load case.",
+ "intent": {
+  "implied": [
+   "The base plate has a flat mounting face.",
+   "The boss has a flat mounting face.",
+   "The shaft bore has a flat mounting face.",
+   "The mounting holes have flat mounting faces."
+  ],
+  "out_of_scope": [],
+  "part_kind": "plate",
+  "risk_signals": [],
+  "stated": [
+   "The base plate is 60 mm long, 40 mm wide and 6 mm thick.",
+   "A cylindrical boss 18 mm in diameter and 25 mm tall stands in the middle of the plate.",
+   "An 8 mm shaft bore runs all the way through the plate on the boss axis.",
+   "Four 4.5 mm mounting holes pass all the way through the plate on a 44 mm by 24 mm rectangular pattern centred on the plate.",
+   "The finished part must stand no taller than 32 mm and weigh no more than 30 g."
+  ],
+  "suggested_name": "Motor Mount Plate",
+  "summary": "A 3D-printed motor mount plate in PLA.",
+  "unstated": [
+   "The magnitude and direction of the load on the arm."
+  ]
+ },
+ "requirements": {
+  "assumptions": [
+   {
+    "approved": false,
+    "consequence_if_wrong": "Any conclusion depending on this is unfounded. It blocks: the design as a whole.",
+    "id": "ASM_UNRESOLVED_UNKNOWN_LOAD",
+    "rationale": "The load is not stated in the brief, and it is necessary to determine the bearing stress and safety factor.",
+    "reversible": false,
+    "risk": "high",
+    "statement": "Unresolved at design time: What is the magnitude and direction of the load on the arm? No value was supplied and none was invented."
+   }
+  ],
+  "requirements": [
+   {
+    "comparison": "equals",
+    "id": "REQ_BASE_PLATE_LENGTH",
+    "measurement": "bounding_box_x",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The base plate shall be 60 mm long.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BASE_PLATE_WIDTH",
+    "measurement": "bounding_box_y",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The base plate shall be 40 mm wide.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BASE_PLATE_THICKNESS",
+    "measurement": "bounding_box_z",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The base plate shall be 6 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOSS_DIAMETER",
+    "measurement": "parameter:boss_diameter",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The boss shall have a diameter of 18 mm.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 18.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_BOSS_HEIGHT",
+    "measurement": "parameter:boss_height",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The boss shall be 25 mm tall.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_FILLET_THICKNESS",
+    "measurement": "parameter:fillet_thickness",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The fillet shall be 2 mm thick.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_SHAFT_BORE_DIAMETER",
+    "measurement": "parameter:shaft_bore_diameter",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The shaft bore shall be 8 mm in diameter.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "measurement": "parameter:mounting_hole_diameter",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The mounting holes shall be 4.5 mm in diameter.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_PATTERN_WIDTH",
+    "measurement": "parameter:mounting_hole_pattern_width",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The mounting holes shall be arranged in a 44 mm by 24 mm rectangular pattern.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 44.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "equals",
+    "id": "REQ_MOUNTING_HOLE_PATTERN_HEIGHT",
+    "measurement": "parameter:mounting_hole_pattern_height",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The mounting holes shall be arranged in a 44 mm by 24 mm rectangular pattern.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 24.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "at_most",
+    "id": "REQ_MAX_HEIGHT",
+    "measurement": "bounding_box_z",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The finished part shall not exceed 32 mm in height.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 32.0,
+     "unit": "mm"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   },
+   {
+    "comparison": "at_most",
+    "id": "REQ_MAX_WEIGHT",
+    "measurement": "mass",
+    "source": "derived",
+    "state": "not_tested",
+    "statement": "The finished part shall not exceed 30 g in weight.",
+    "strength": "hard",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "g"
+    },
+    "type": "functional",
+    "verification": "exact_geometry"
+   }
+  ],
+  "risk_class": "low",
+  "unknowns": [
+   {
+    "blocks": [],
+    "critical": true,
+    "id": "UNKNOWN_LOAD",
+    "question": "What is the magnitude and direction of the load on the arm?",
+    "suggested_default": "",
+    "why_it_matters": "The load is not stated in the brief, and it is necessary to determine the bearing stress and safety factor."
+   }
+  ]
+ },
+ "run": "20260915T094545-a-3d-printed-motor-mount-plate-in-pla-th",
+ "which": "requirements_only"
+}

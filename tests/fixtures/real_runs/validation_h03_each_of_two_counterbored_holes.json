@@ -1,0 +1,595 @@
+{
+ "brief": "A steel plate 60 mm long, 40 mm wide and 10 mm thick with two counterbored holes for M5 screws, 40 mm apart along the length: each a 5.5 mm through hole with a 10 mm counterbore 5 mm deep from the top face. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel mounting plate with two counterbored clearance holes for M5 screws, intended to position/fasten rather than carry load.",
+  "part_kind": "plate",
+  "stated": [
+   "Material: steel (no grade given)",
+   "Plate dimensions: 60 mm long x 40 mm wide x 10 mm thick",
+   "Two counterbored holes for M5 screws, 40 mm apart along the length",
+   "Each hole: 5.5 mm through hole",
+   "Counterbore: 10 mm diameter, 5 mm deep, from the top face",
+   "User states it carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Counterbore allows M5 socket head cap screw heads to sit flush with or below the top face",
+   "Through holes are perpendicular to the top/bottom faces for standard screw assembly",
+   "Holes are likely centered on the width (20 mm from each edge) and symmetric about the length centerline, though not stated",
+   "Plate has a flat top face to receive the counterbore and a flat bottom face to seat against a mating surface"
+  ],
+  "unstated": [
+   "Exact position (offset from edges) of each hole center on the 40 mm width",
+   "Steel grade/alloy and its mechanical properties",
+   "Surface finish or coating (e.g. plating, anti-corrosion treatment)",
+   "Edge/corner treatment: sharp, chamfered, or filleted",
+   "Tolerances on hole diameters, counterbore depth, and overall plate dimensions",
+   "Whether the plate must be flat/parallel within some tolerance",
+   "Environmental conditions: temperature, humidity, exposure",
+   "Even though stated as 'no load,' whether any incidental handling, clamping, or screw preload forces apply",
+   "Screw torque/preload specification if screws are to be tightened",
+   "Any requirement for electrical conductivity, grounding, or insulation",
+   "Whether additional features (chamfers, markings, logos) are required"
+  ],
+  "out_of_scope": [
+   "Load-bearing analysis (explicitly excluded by user)",
+   "Material grade selection",
+   "Dimensioning beyond what was specified",
+   "Surface treatment or coating specification"
+  ],
+  "risk_signals": [
+   "None apparent: user explicitly states the part carries no load and gives no indication of personnel-carrying, overhead lifting, pressure containment, stored energy, or vehicle/regulated-equipment use. The 'no load case' claim should still be treated as an assumption to verify rather than a given fact, since even nominally unloaded plates can see incidental forces during assembly or handling."
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The plate shall be 60 mm long overall.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the plate is 60 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The plate shall be 40 mm wide overall.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the plate is 40 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The plate shall be 10 mm thick overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the plate is 10 mm thick.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_HOLE_SPACING",
+    "statement": "The two counterbored holes shall be 40 mm apart along the plate's length.",
+    "measurement": "parameter:hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the M5 holes are 40 mm apart along the length.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_THROUGH_HOLE_DIAMETER",
+    "statement": "Each through hole shall be 5.5 mm in diameter, a clearance hole for an M5 screw.",
+    "measurement": "parameter:through_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief specifies a 5.5 mm through hole for M5 clearance.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DIAMETER",
+    "statement": "Each counterbore shall be 10 mm in diameter.",
+    "measurement": "parameter:counterbore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief specifies a 10 mm counterbore diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_COUNTERBORE_DEPTH",
+    "statement": "Each counterbore shall be 5 mm deep from the top face.",
+    "measurement": "parameter:counterbore_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief specifies a 5 mm counterbore depth from the top face.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "The plate shall have exactly two counterbored mounting holes for M5 screws.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief specifies two counterbored M5 holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The plate is made from a generic structural/mild steel grade since the brief says 'steel' without specifying an alloy or temper.",
+    "rationale": "No grade was given; a generic steel is a reasonable default for an unloaded fastening plate.",
+    "consequence_if_wrong": "If a specific grade (e.g. stainless, alloy steel) was intended for corrosion resistance or other properties, the material callout would need correction, though since there is no load case this does not affect structural requirements.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_HOLE_LAYOUT_SYMMETRY",
+    "statement": "The two mounting holes are centred on the 40 mm width (20 mm from each long edge) and symmetric about the plate's length centreline, i.e. 10 mm in from each end of the 60 mm length given the 40 mm spacing.",
+    "rationale": "The brief gives hole spacing but not their exact position on the plate; centring is the conventional, most defensible layout.",
+    "consequence_if_wrong": "If the holes were meant to be offset from centre, the mounting pattern would not align with the mating part.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_EDGE_AND_FINISH",
+    "statement": "The plate has sharp (unbroken or only lightly deburred) edges and an as-machined/standard mill surface finish, with no coating or plating specified.",
+    "rationale": "Brief does not mention edge treatment, surface finish, or coating; these are left at the unremarkable default for a simple steel plate.",
+    "consequence_if_wrong": "If corrosion protection or a specific finish was required, the part would need rework or secondary processing not currently planned.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   },
+   {
+    "id": "ASM_HOLE_ORIENTATION",
+    "statement": "Both through holes are drilled perpendicular to the top and bottom faces, with the counterbore concentric to the through hole and recessed from the top face.",
+    "rationale": "Standard practice for a counterbored clearance hole receiving a socket-head screw; the brief's description implies this without stating it explicitly.",
+    "consequence_if_wrong": "An angled or offset hole would prevent the screw head from seating flush in the counterbore.",
+    "risk": "low",
+    "reversible": true,
+    "approved": true
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Steel mounting plate",
+   "description": "Flat rectangular steel mounting plate with two counterbored clearance holes for M5 socket-head screws, positioning/fastening only -- no load case.",
+   "components": [
+    {
+     "id": "mounting_plate",
+     "name": "Mounting plate",
+     "parameters": [
+      {
+       "id": "plate_length",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       },
+       "description": "Overall length of the plate (X)"
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Overall width of the plate (Y)"
+      },
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Overall thickness of the plate (Z)"
+      },
+      {
+       "id": "hole_spacing",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Centre-to-centre distance between the two mounting holes along the plate's length"
+      },
+      {
+       "id": "through_hole_diameter",
+       "value": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "description": "Clearance through-hole diameter for M5 screws"
+      },
+      {
+       "id": "counterbore_diameter",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Counterbore diameter for M5 socket-head screw heads"
+      },
+      {
+       "id": "counterbore_depth",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       },
+       "description": "Counterbore depth measured from the top face"
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "lies": "flat",
+       "description": "Rectangular plate body",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "base"
+       ],
+       "description": "First counterbored M5 clearance hole, offset +hole_spacing/2 along the length from centre",
+       "parameters": {
+        "diameter": {
+         "expression": "through_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_spacing / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "counterbore_diameter": {
+         "expression": "counterbore_diameter",
+         "unit": "mm"
+        },
+        "counterbore_depth": {
+         "expression": "counterbore_depth",
+         "unit": "mm"
+        },
+        "entry": "start",
+        "fit": "clearance_normal",
+        "thread": "none"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "mounting_hole_1"
+       ],
+       "description": "Second counterbored M5 clearance hole, offset -hole_spacing/2 along the length from centre",
+       "parameters": {
+        "diameter": {
+         "expression": "through_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_spacing / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "counterbore_diameter": {
+         "expression": "counterbore_diameter",
+         "unit": "mm"
+        },
+        "counterbore_depth": {
+         "expression": "counterbore_depth",
+         "unit": "mm"
+        },
+        "entry": "start",
+        "fit": "clearance_normal",
+        "thread": "none"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "mount_port_1",
+       "type": "bore",
+       "geometry": "mounting_hole_1.bore",
+       "nominal_size": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Clearance bore for M5 screw, counterbored at the top face"
+      },
+      {
+       "id": "mount_port_2",
+       "type": "bore",
+       "geometry": "mounting_hole_2.bore",
+       "nominal_size": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Clearance bore for M5 screw, counterbored at the top face"
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The plate is a single centered box (plate_length x plate_width x plate_thickness) so the hole pattern can be placed symmetrically about the origin. Two separate `hole` features (not a `place`-driven pattern, since the tag-count requirement needs discrete features) are chained base -> mounting_hole_1 -> mounting_hole_2, each offset \u00b1hole_spacing/2 along X at the plate's mid-plane, axis [0,0,-1] so the counterbore (entry \"start\") sits at the top face as specified. All four checked dimensions (hole_spacing, through_hole_diameter, counterbore_diameter, counterbore_depth) are named component parameters referenced by expression from both holes, keeping them identical and parametric. Material is left unset since the brief only says \"steel\" with no grade, per the unapproved ASM_MATERIAL_GRADE assumption and the rule against inventing a grade."
+ },
+ "answer_released": {
+  "document": {
+   "name": "Steel mounting plate",
+   "components": [
+    {
+     "id": "mounting_plate",
+     "name": "Mounting plate",
+     "parameters": [
+      {
+       "id": "plate_length",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       },
+       "description": "Overall length of the plate (X)"
+      },
+      {
+       "id": "plate_width",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Overall width of the plate (Y)"
+      },
+      {
+       "id": "plate_thickness",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Overall thickness of the plate (Z)"
+      },
+      {
+       "id": "hole_spacing",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Centre-to-centre distance between the two mounting holes along the plate's length"
+      },
+      {
+       "id": "through_hole_diameter",
+       "value": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "description": "Clearance through-hole diameter for M5 screws"
+      },
+      {
+       "id": "counterbore_diameter",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Counterbore diameter for M5 socket-head screw heads"
+      },
+      {
+       "id": "counterbore_depth",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       },
+       "description": "Counterbore depth measured from the top face"
+      }
+     ],
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "description": "Rectangular plate body",
+       "parameters": {
+        "size": {
+         "vector": [
+          "plate_length",
+          "plate_width",
+          "plate_thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "base"
+       ],
+       "description": "First counterbored M5 clearance hole, offset +hole_spacing/2 along the length from centre",
+       "parameters": {
+        "diameter": {
+         "expression": "through_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_spacing / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "counterbore_diameter": {
+         "expression": "counterbore_diameter",
+         "unit": "mm"
+        },
+        "counterbore_depth": {
+         "expression": "counterbore_depth",
+         "unit": "mm"
+        },
+        "entry": "start",
+        "fit": "clearance_normal",
+        "thread": "none"
+       }
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "mounting_hole_1"
+       ],
+       "description": "Second counterbored M5 clearance hole, offset -hole_spacing/2 along the length from centre",
+       "parameters": {
+        "diameter": {
+         "expression": "through_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_spacing / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "fit": "clearance_normal",
+        "thread": "none"
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "mount_port_1",
+       "type": "bore",
+       "geometry": "mounting_hole_1.bore",
+       "nominal_size": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Clearance bore for M5 screw, counterbored at the top face"
+      },
+      {
+       "id": "mount_port_2",
+       "type": "bore",
+       "geometry": "mounting_hole_2.bore",
+       "nominal_size": {
+        "magnitude": 5.5,
+        "unit": "mm"
+       },
+       "fit": "clearance_normal",
+       "description": "Clearance bore for M5 screw, counterbored at the top face"
+      }
+     ],
+     "material": "steel_1018_cd"
+    }
+   ]
+  },
+  "rationale": ""
+ },
+ "run": "validation H03, 17 October 2026",
+ "which": "first design (both holes counterbored) and the released part (one)",
+ "note": "Forge read 'two counterbored holes ...: each a 5.5 mm through hole with a 10 mm counterbore' as one counterbored hole. The repair took the second counterbore off to obey; the last look saw it and put it back; Forge reverted the last look because the (wrong) claim failed again."
+}

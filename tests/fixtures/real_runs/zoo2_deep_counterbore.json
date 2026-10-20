@@ -1,0 +1,293 @@
+{
+ "brief": "A 60 x 40 x 6 mm steel plate with two 6.6 mm holes 30 mm apart on its centre line, each counterbored 11 mm across and 5 mm deep from the top. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 60 x 40 x 6 mm steel plate with two 6.6 mm holes 30 mm apart on its centre line, each counterbored 11 mm across and 5 mm deep from the top.",
+  "part_kind": "zoo2_deep_counterbore",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_HOLES",
+    "statement": "REQ_HOLES",
+    "measurement": "holes_of_diameter:6.6",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_CB",
+    "statement": "REQ_CB",
+    "measurement": "counterbores:6.6:11x5,top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_LENGTH",
+    "statement": "length",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WIDTH",
+    "statement": "width",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_THICKNESS",
+    "statement": "thickness",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HOLE_DIAMETER",
+    "statement": "hole_diameter",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_COUNTERBORE_DIAMETER",
+    "statement": "counterbore_diameter",
+    "measurement": "parameter:counterbore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 11,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_COUNTERBORE_DEPTH",
+    "statement": "counterbore_depth",
+    "measurement": "parameter:counterbore_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_SPACING",
+    "statement": "spacing",
+    "measurement": "parameter:spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_deep_counterbore",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 40,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 6.6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "counterbore_diameter",
+       "value": {
+        "magnitude": 11,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "counterbore_depth",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "spacing",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "plate",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cb_1",
+       "kind": "hole",
+       "inputs": [
+        "plate"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-spacing / 2",
+          0,
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "counterbore_diameter": {
+         "expression": "counterbore_diameter",
+         "unit": "mm"
+        },
+        "counterbore_depth": {
+         "expression": "counterbore_depth",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "cb_2",
+       "kind": "hole",
+       "inputs": [
+        "cb_1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "spacing / 2",
+          0,
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         -1
+        ],
+        "counterbore_diameter": {
+         "expression": "counterbore_diameter",
+         "unit": "mm"
+        },
+        "counterbore_depth": {
+         "expression": "counterbore_depth",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

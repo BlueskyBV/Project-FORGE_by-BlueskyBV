@@ -1,0 +1,113 @@
+{
+ "brief": "A steel compression spring 20 mm across, wound from 2 mm wire at a 5 mm pitch, 8 turns. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel compression spring 20 mm across, wound from 2 mm wire at a 5 mm pitch, 8 turns.",
+  "part_kind": "zoo2_spring",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WIRE",
+    "statement": "wire",
+    "measurement": "parameter:wire",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_PITCH",
+    "statement": "pitch",
+    "measurement": "parameter:pitch",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_spring",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "wire",
+       "value": {
+        "magnitude": 2,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "pitch",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "turns",
+       "value": {
+        "magnitude": 8,
+        "unit": ""
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "spring",
+       "kind": "coil",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter - wire",
+         "unit": "mm"
+        },
+        "wire_diameter": {
+         "expression": "wire",
+         "unit": "mm"
+        },
+        "pitch": {
+         "expression": "pitch",
+         "unit": "mm"
+        },
+        "turns": {
+         "expression": "turns",
+         "unit": ""
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is. The coil's own `diameter` is to the middle of the wire, so a spring 20 mm across is wound on diameter - wire."
+}

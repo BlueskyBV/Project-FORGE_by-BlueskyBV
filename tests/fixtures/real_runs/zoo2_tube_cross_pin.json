@@ -1,0 +1,246 @@
+{
+ "brief": "An aluminium tube 20 mm in diameter and 60 mm long with an 18 mm bore right through it, and a 4 mm cross hole right through both walls, 10 mm from one end. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An aluminium tube 20 mm in diameter and 60 mm long with an 18 mm bore right through it, and a 4 mm cross hole right through both walls, 10 mm from one end.",
+  "part_kind": "zoo2_tube_cross_pin",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BBOX_X",
+    "statement": "REQ_BBOX_X",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Y",
+    "statement": "REQ_BBOX_Y",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BBOX_Z",
+    "statement": "REQ_BBOX_Z",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_BORE",
+    "statement": "REQ_BORE",
+    "measurement": "holes_of_diameter:18",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_CROSS",
+    "statement": "REQ_CROSS",
+    "measurement": "holes_of_diameter:4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_OUTER_DIAMETER",
+    "statement": "outer_diameter",
+    "measurement": "parameter:outer_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_LENGTH",
+    "statement": "length",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_BORE_DIAMETER",
+    "statement": "bore_diameter",
+    "measurement": "parameter:bore_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 18,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_CROSS_HOLE_DIAMETER",
+    "statement": "cross_hole_diameter",
+    "measurement": "parameter:cross_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_CROSS_HOLE_FROM_END",
+    "statement": "cross_hole_from_end",
+    "measurement": "parameter:cross_hole_from_end",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_tube_cross_pin",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "bore_diameter",
+       "value": {
+        "magnitude": 18,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "cross_hole_diameter",
+       "value": {
+        "magnitude": 4,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "cross_hole_from_end",
+       "value": {
+        "magnitude": 10,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "length",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "body"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "bore_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "cross",
+       "kind": "hole",
+       "role": "cross",
+       "inputs": [
+        "bore"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "cross_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "cross_hole_from_end"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1,
+         0,
+         0
+        ]
+       }
+      }
+     ],
+     "interfaces": [
+      {
+       "id": "cross_port",
+       "type": "shaft",
+       "geometry": "cross.bore",
+       "nominal_size": {
+        "magnitude": 4,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

@@ -1,0 +1,680 @@
+{
+ "brief": "An aluminium stepped shaft on one axis: a section 20 mm in diameter and 30 mm long, followed by a section 12 mm in diameter and 40 mm long. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A two-diameter stepped cylindrical shaft on a single axis, apparently intended as a non-load-bearing spacer, locator, or placeholder component rather than a power/load-transmitting shaft.",
+  "part_kind": "stepped shaft",
+  "stated": [
+   "Material is aluminium",
+   "Single axis, stepped shaft geometry",
+   "First section: 20 mm diameter, 30 mm long",
+   "Second section: 12 mm diameter, 40 mm long",
+   "Carries no load",
+   "No load case to be considered"
+  ],
+  "implied": [
+   "Two sections are coaxial and joined end-to-end given it's described as a single stepped shaft",
+   "The step between 20 mm and 12 mm sections implies a shoulder/fillet transition exists, since no transition geometry was specified",
+   "Being called a 'shaft' implies it is meant to rotate or be supported in bearings/bores at some point, even though the brief says it carries no load"
+  ],
+  "unstated": [
+   "Which aluminium alloy/temper (affects stiffness, fatigue, corrosion resistance) is not specified",
+   "Surface finish requirements on the diameters (e.g. for bearing fit or sliding contact) not given",
+   "Tolerances on the two diameters and lengths not given",
+   "Shoulder/fillet radius or chamfer at the step transition not specified",
+   "End conditions (e.g. threaded ends, keyways, retaining ring grooves, center-drilled holes) not specified",
+   "How the shaft is supported or mounted (bearings, bushings, clamped) not specified, despite 'no load' claim",
+   "Concentricity/runout requirements between the two sections not specified",
+   "Whether the shaft rotates, is static, or is purely a dimensional placeholder not specified",
+   "Operating environment (temperature, humidity, exposure to fluids) not specified",
+   "Any coating or anodizing requirement not specified"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "None stated in the brief itself (no mention of carrying a person, lifting, pressure, stored energy, or vehicle/regulated use)",
+   "The claim 'carries no load' is asserted without context -- if this shaft is later installed in an assembly where it does bear load (e.g. support, impact, or vibration), the stated absence of a load case could mask a real hazard; this should be flagged if the end-use context changes"
+  ],
+  "suggested_name": "stepped_shaft_20_12",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The finished shaft's overall width (X) shall equal the largest section diameter, 20 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "A round part's bounding box in X equals its largest outer diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The finished shaft's overall depth (Y) shall equal the largest section diameter, 20 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "A round part's bounding box in Y equals its largest outer diameter, the same number as X.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The finished shaft's overall length (Z) shall equal the sum of both section lengths, 70 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "rationale": "The shaft's total length along its axis is the sum of the 30 mm and 40 mm sections (Z is up/along the shaft axis).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived"
+   },
+   {
+    "id": "REQ_SECTION1_DIAMETER",
+    "statement": "The first (larger) section of the shaft shall be 20 mm in diameter.",
+    "measurement": "parameter:section1_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the first section is 20 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_SECTION1_LENGTH",
+    "statement": "The first section of the shaft shall be 30 mm long.",
+    "measurement": "parameter:section1_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the first section is 30 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_SECTION2_DIAMETER",
+    "statement": "The second (stepped-down) section of the shaft shall be 12 mm in diameter.",
+    "measurement": "parameter:section2_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the second section is 12 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_SECTION2_LENGTH",
+    "statement": "The second section of the shaft shall be 40 mm long.",
+    "measurement": "parameter:section2_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the second section is 40 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ALLOY",
+    "statement": "The shaft shall be made from a general-purpose aluminium alloy, e.g. 6061-T6, since the brief does not specify an alloy or temper.",
+    "rationale": "6061-T6 is the conventional default for a non-critical aluminium machine component with no stated load case.",
+    "consequence_if_wrong": "A different alloy would change stiffness, fatigue life and corrosion resistance, but since the part carries no load this has negligible functional impact.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FILLET",
+    "statement": "The step between the 20 mm and 12 mm sections will include a small transition fillet or chamfer sized to standard shaft-turning practice, since no transition geometry is specified.",
+    "rationale": "A sharp internal corner at a diameter step is not standard turning practice; a small fillet is the conventional default.",
+    "consequence_if_wrong": "If a specific fillet/chamfer size or a sharp square shoulder was actually required, the step geometry would need to be revised, but this has no functional consequence for an unloaded part.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_TOLERANCE",
+    "statement": "Standard general machining tolerances apply to the stated diameters and lengths, as none are specified.",
+    "rationale": "No fits, bearings or mating parts are described, so there is no basis for tighter tolerances.",
+    "consequence_if_wrong": "If the shaft must later fit a bearing or bore, tolerances would need to be tightened, but this does not affect the current design intent.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "A standard as-turned surface finish is assumed on both diameters, since no finish or sliding/bearing-fit requirement is stated.",
+    "rationale": "No rotating or sliding contact is described in the brief; a standard finish is the conventional default.",
+    "consequence_if_wrong": "If the shaft is later used in a bearing or sliding fit, a finer finish would be required, but this does not affect the stated geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_COAXIAL",
+    "statement": "The two sections are coaxial on a single shared axis, as described by the brief's single-axis stepped shaft language.",
+    "rationale": "The brief explicitly describes a single-axis stepped shaft with two sections in series.",
+    "consequence_if_wrong": "An offset axis would be a fundamentally different part, but the brief gives no indication of this.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Stepped shaft 20/12",
+   "description": "A single-axis stepped cylindrical shaft: a 20 mm diameter by 30 mm long section joined to a 12 mm diameter by 40 mm long section, with a small transition fillet at the step. Non-load-bearing per brief.",
+   "components": [
+    {
+     "id": "stepped_shaft",
+     "name": "Stepped shaft 20/12",
+     "material": "aluminium_6061_t6",
+     "parameters": [
+      {
+       "id": "section1_diameter",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the first (larger) section"
+      },
+      {
+       "id": "section1_length",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       },
+       "description": "Length of the first (larger) section"
+      },
+      {
+       "id": "section2_diameter",
+       "value": {
+        "magnitude": 12.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the second (stepped-down) section"
+      },
+      {
+       "id": "section2_length",
+       "value": {
+        "magnitude": 40.0,
+        "unit": "mm"
+       },
+       "description": "Length of the second (stepped-down) section"
+      },
+      {
+       "id": "transition_fillet_radius",
+       "value": {
+        "magnitude": 1.5,
+        "unit": "mm"
+       },
+       "bounds": {
+        "min": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true,
+       "description": "Small fillet at the diameter step, per standard turning practice (ASM_FILLET); not stated in the brief, chosen conservatively small relative to the 12 mm section"
+      }
+     ],
+     "features": [
+      {
+       "id": "section1",
+       "kind": "cylinder",
+       "description": "First (larger) section, 20 mm diameter by 30 mm long, from z=0",
+       "parameters": {
+        "diameter": {
+         "expression": "section1_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "section1_length",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "section2",
+       "kind": "cylinder",
+       "description": "Second (stepped-down) section, 12 mm diameter by 40 mm long, stacked on top of section1",
+       "parameters": {
+        "diameter": {
+         "expression": "section2_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "section2_length",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "section1_length"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "description": "Join the two coaxial sections with a small transition fillet at the step",
+       "inputs": [
+        "section1",
+        "section2"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "expression": "transition_fillet_radius",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The shaft is two coaxial cylinders (section1, larger, from z=0; section2, smaller, stacked on top at z=section1_length) joined by a single union whose blend_radius parametrically drives the step's transition fillet (ASM_FILLET). All four required parameters (section1/2 diameter/length) directly size the cylinders, so bounding_box_x/y equal section1_diameter and bounding_box_z equals section1_length+section2_length automatically, and the terminal union is the single round solid the roundness check expects."
+ },
+ "document_released": {
+  "name": "Stepped shaft 20/12",
+  "description": "A single-axis stepped cylindrical shaft: a 20 mm diameter by 30 mm long section joined to a 12 mm diameter by 40 mm long section, with a small transition fillet at the step. Non-load-bearing per brief.",
+  "components": [
+   {
+    "id": "stepped_shaft",
+    "name": "Stepped shaft 20/12",
+    "material": "aluminium_6061_t6",
+    "parameters": [
+     {
+      "id": "section1_diameter",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the first (larger) section"
+     },
+     {
+      "id": "section1_length",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      },
+      "description": "Length of the first (larger) section"
+     },
+     {
+      "id": "section2_diameter",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the second (stepped-down) section"
+     },
+     {
+      "id": "section2_length",
+      "value": {
+       "magnitude": 40.0,
+       "unit": "mm"
+      },
+      "description": "Length of the second (stepped-down) section"
+     },
+     {
+      "id": "transition_fillet_radius",
+      "value": {
+       "magnitude": 1.5,
+       "unit": "mm"
+      },
+      "bounds": {
+       "min": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true,
+      "description": "Small fillet at the diameter step, per standard turning practice (ASM_FILLET); not stated in the brief, chosen conservatively small relative to the 12 mm section"
+     }
+    ],
+    "features": [
+     {
+      "id": "section1",
+      "kind": "cylinder",
+      "description": "First (larger) section, 20 mm diameter by 30 mm long, from z=0",
+      "parameters": {
+       "diameter": {
+        "expression": "section1_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section1_length",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         0
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "id": "section2",
+      "kind": "cylinder",
+      "description": "Second (stepped-down) section, 12 mm diameter by 40 mm long, stacked on top of section1",
+      "parameters": {
+       "diameter": {
+        "expression": "section2_diameter",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "section2_length",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "section1_length"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "description": "Join the two coaxial sections with a small transition fillet at the step",
+      "inputs": [
+       "section1",
+       "section2"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "transition_fillet_radius",
+        "unit": "mm"
+       }
+      }
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "f44dac7f-6d59-508d-894c-b2be02b62fce",
+  "project_id": "f20bcd9a-48c6-5df2-881b-15c81c9fa321",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The finished shaft's overall width (X) shall equal the largest section diameter, 20 mm.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "A round part's bounding box in X equals its largest outer diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The finished shaft's overall depth (Y) shall equal the largest section diameter, 20 mm.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "A round part's bounding box in Y equals its largest outer diameter, the same number as X.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The finished shaft's overall length (Z) shall equal the sum of both section lengths, 70 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 70.0,
+     "unit": "mm"
+    },
+    "rationale": "The shaft's total length along its axis is the sum of the 30 mm and 40 mm sections (Z is up/along the shaft axis).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION1_DIAMETER",
+    "statement": "The first (larger) section of the shaft shall be 20 mm in diameter.",
+    "measurement": "parameter:section1_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the first section is 20 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION1_LENGTH",
+    "statement": "The first section of the shaft shall be 30 mm long.",
+    "measurement": "parameter:section1_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the first section is 30 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION2_DIAMETER",
+    "statement": "The second (stepped-down) section of the shaft shall be 12 mm in diameter.",
+    "measurement": "parameter:section2_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the second section is 12 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SECTION2_LENGTH",
+    "statement": "The second section of the shaft shall be 40 mm long.",
+    "measurement": "parameter:section2_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the second section is 40 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_ALLOY",
+    "statement": "The shaft shall be made from a general-purpose aluminium alloy, e.g. 6061-T6, since the brief does not specify an alloy or temper.",
+    "rationale": "6061-T6 is the conventional default for a non-critical aluminium machine component with no stated load case.",
+    "consequence_if_wrong": "A different alloy would change stiffness, fatigue life and corrosion resistance, but since the part carries no load this has negligible functional impact.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FILLET",
+    "statement": "The step between the 20 mm and 12 mm sections will include a small transition fillet or chamfer sized to standard shaft-turning practice, since no transition geometry is specified.",
+    "rationale": "A sharp internal corner at a diameter step is not standard turning practice; a small fillet is the conventional default.",
+    "consequence_if_wrong": "If a specific fillet/chamfer size or a sharp square shoulder was actually required, the step geometry would need to be revised, but this has no functional consequence for an unloaded part.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_TOLERANCE",
+    "statement": "Standard general machining tolerances apply to the stated diameters and lengths, as none are specified.",
+    "rationale": "No fits, bearings or mating parts are described, so there is no basis for tighter tolerances.",
+    "consequence_if_wrong": "If the shaft must later fit a bearing or bore, tolerances would need to be tightened, but this does not affect the current design intent.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SURFACE_FINISH",
+    "statement": "A standard as-turned surface finish is assumed on both diameters, since no finish or sliding/bearing-fit requirement is stated.",
+    "rationale": "No rotating or sliding contact is described in the brief; a standard finish is the conventional default.",
+    "consequence_if_wrong": "If the shaft is later used in a bearing or sliding fit, a finer finish would be required, but this does not affect the stated geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_COAXIAL",
+    "statement": "The two sections are coaxial on a single shared axis, as described by the brief's single-axis stepped shaft language.",
+    "rationale": "The brief explicitly describes a single-axis stepped shaft with two sections in series.",
+    "consequence_if_wrong": "An offset axis would be a fundamentally different part, but the brief gives no indication of this.",
+    "risk": "low",
+    "reversible": false,
+    "approved": false
+   }
+  ]
+ },
+ "run": "validation C04, 18 October 2026",
+ "note": "A blend nobody asked for at the step, and held for ASM_COAXIAL -- the brief's own 'on one axis'."
+}

@@ -1,0 +1,261 @@
+{
+ "brief": "A steel strip 3 mm thick, 30 mm wide and 80 mm long, bent 90 degrees in the middle, with a 6 mm hole 15 mm from each end. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel strip 3 mm thick, 30 mm wide and 80 mm long, bent 90 degrees in the middle, with a 6 mm hole 15 mm from each end.",
+  "part_kind": "zoo2_bent_strip",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_ANGLE",
+    "statement": "REQ_ANGLE",
+    "measurement": "bend_angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90,
+     "unit": "deg"
+    }
+   },
+   {
+    "id": "REQ_HOLES",
+    "statement": "REQ_HOLES",
+    "measurement": "holes_of_diameter:6",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    }
+   },
+   {
+    "id": "REQ_P_THICKNESS",
+    "statement": "thickness",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_WIDTH",
+    "statement": "width",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_LENGTH",
+    "statement": "length",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HOLE",
+    "statement": "hole",
+    "measurement": "parameter:hole",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_HOLE_FROM_END",
+    "statement": "hole_from_end",
+    "measurement": "parameter:hole_from_end",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P_ANGLE",
+    "statement": "angle",
+    "measurement": "parameter:angle",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90,
+     "unit": "deg"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "zoo2_bent_strip",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 3,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 80,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole",
+       "value": {
+        "magnitude": 6,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_from_end",
+       "value": {
+        "magnitude": 15,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "angle",
+       "value": {
+        "magnitude": 90,
+        "unit": "deg"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "strip",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true,
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "h1",
+       "kind": "hole",
+       "inputs": [
+        "strip"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-length / 2 + hole_from_end",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "h2",
+       "kind": "hole",
+       "inputs": [
+        "h1"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "length / 2 - hole_from_end",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "bent",
+       "kind": "bend",
+       "inputs": [
+        "h2"
+       ],
+       "parameters": {
+        "angle": {
+         "expression": "angle",
+         "unit": "deg"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "along": [
+         1,
+         0,
+         0
+        ],
+        "toward": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design that must pass as it is."
+}

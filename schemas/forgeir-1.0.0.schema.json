@@ -1,0 +1,4058 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assumptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "type": "boolean"
+          },
+          "consequence_if_wrong": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "reversible": {
+            "type": "boolean"
+          },
+          "risk": {
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "critical"
+            ]
+          },
+          "statement": {
+            "type": "string"
+          },
+          "value": {
+            "additionalProperties": false,
+            "description": "A dimensional value. Always carries a unit.",
+            "properties": {
+              "interval": {
+                "additionalProperties": false,
+                "properties": {
+                  "hi": {
+                    "type": "number"
+                  },
+                  "lo": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lo",
+                  "hi"
+                ],
+                "type": "object"
+              },
+              "magnitude": {
+                "type": "number"
+              },
+              "unit": {
+                "description": "e.g. mm, N, MPa, deg",
+                "type": "string"
+              }
+            },
+            "required": [
+              "magnitude",
+              "unit"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "risk"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "components": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "features": {
+            "items": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "box"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "centered": {
+                          "type": "boolean"
+                        },
+                        "origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "size": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "size"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "cylinder"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "axis": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "height": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "diameter",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "datum_axis"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "direction": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "origin",
+                        "direction"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "datum_plane"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "base": {
+                          "enum": [
+                            "XY",
+                            "YZ",
+                            "XZ"
+                          ]
+                        },
+                        "offset": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "base"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "datum_point"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "position": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "position"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "extrude"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "distance": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "mode": {
+                          "enum": [
+                            "normal",
+                            "reverse",
+                            "symmetric"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "distance"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "hole"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "axis": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "counterbore_depth": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "counterbore_diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "countersink_angle": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "depth": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "fit": {
+                          "enum": [
+                            "clearance_close",
+                            "clearance_normal",
+                            "clearance_loose",
+                            "transition",
+                            "interference"
+                          ]
+                        },
+                        "position": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "thread": {
+                          "enum": [
+                            "none",
+                            "M2",
+                            "M2.5",
+                            "M3",
+                            "M4",
+                            "M5",
+                            "M6",
+                            "M8",
+                            "M10",
+                            "M12"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "diameter",
+                        "position"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "intersect"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "blend_radius": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "mirror"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "keep_original": {
+                          "type": "boolean"
+                        },
+                        "plane_normal": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "plane_origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "plane_normal"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "offset"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "distance": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "distance"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "pattern_circular"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "axis_direction": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "axis_origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "count": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "total_angle": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "axis_origin",
+                        "axis_direction"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "pattern_linear"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "count": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "spacing": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "symmetric": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "spacing"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "profile_circle"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "center_u": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "center_v": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "diameter"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "profile_polygon"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "center_u": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "center_v": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "circumscribed_diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "rotation": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "sides": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "circumscribed_diameter",
+                        "sides"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "profile_rectangle"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "center_u": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "center_v": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "corner_radius": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "height": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "width": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "width",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "profile_slot"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "center_u": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "center_v": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "length": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "rotation": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "width": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "length",
+                        "width"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "revolve"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "angle": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "angle"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "shell"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "direction": {
+                          "enum": [
+                            "inward",
+                            "outward",
+                            "both"
+                          ]
+                        },
+                        "thickness": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "thickness"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "sphere"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "diameter": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "diameter"
+                      ],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "parameters"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "subtract"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "blend_radius": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "transform"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "rotate_angle": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "rotate_axis": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "rotate_origin": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "translate": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "number"
+                              },
+                              "maxItems": 3,
+                              "minItems": 3,
+                              "type": "array"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "normalise": {
+                                  "type": "boolean"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "vector": {
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxItems": 3,
+                                  "minItems": 3,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "vector"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inputs": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "kind": {
+                      "const": "union"
+                    },
+                    "parameters": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "blend_radius": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "A dimensional value. Always carries a unit.",
+                              "properties": {
+                                "interval": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "hi": {
+                                      "type": "number"
+                                    },
+                                    "lo": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "lo",
+                                    "hi"
+                                  ],
+                                  "type": "object"
+                                },
+                                "magnitude": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "description": "e.g. mm, N, MPa, deg",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "magnitude",
+                                "unit"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A value computed from other parameters.",
+                              "properties": {
+                                "expression": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expression"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "interfaces": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "allowable_motion": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "fit": {
+                  "type": "string"
+                },
+                "geometry": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "load_transfer": {
+                  "type": "string"
+                },
+                "nominal_size": {
+                  "additionalProperties": false,
+                  "description": "A dimensional value. Always carries a unit.",
+                  "properties": {
+                    "interval": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hi": {
+                          "type": "number"
+                        },
+                        "lo": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "lo",
+                        "hi"
+                      ],
+                      "type": "object"
+                    },
+                    "magnitude": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "description": "e.g. mm, N, MPa, deg",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "magnitude",
+                    "unit"
+                  ],
+                  "type": "object"
+                },
+                "type": {
+                  "enum": [
+                    "bore",
+                    "shaft",
+                    "planar_mount",
+                    "bolt_pattern",
+                    "keyway",
+                    "gear_pitch_surface",
+                    "slider_rail",
+                    "electrical_placeholder",
+                    "fluid_placeholder",
+                    "custom"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "geometry"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "material": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parameters": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "bounds": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max": {
+                      "additionalProperties": false,
+                      "description": "A dimensional value. Always carries a unit.",
+                      "properties": {
+                        "interval": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "hi": {
+                              "type": "number"
+                            },
+                            "lo": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "lo",
+                            "hi"
+                          ],
+                          "type": "object"
+                        },
+                        "magnitude": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "description": "e.g. mm, N, MPa, deg",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "magnitude",
+                        "unit"
+                      ],
+                      "type": "object"
+                    },
+                    "min": {
+                      "additionalProperties": false,
+                      "description": "A dimensional value. Always carries a unit.",
+                      "properties": {
+                        "interval": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "hi": {
+                              "type": "number"
+                            },
+                            "lo": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "lo",
+                            "hi"
+                          ],
+                          "type": "object"
+                        },
+                        "magnitude": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "description": "e.g. mm, N, MPa, deg",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "magnitude",
+                        "unit"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "expression": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "optimizable": {
+                  "type": "boolean"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "value": {
+                  "additionalProperties": false,
+                  "description": "A dimensional value. Always carries a unit.",
+                  "properties": {
+                    "interval": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hi": {
+                          "type": "number"
+                        },
+                        "lo": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "lo",
+                        "hi"
+                      ],
+                      "type": "object"
+                    },
+                    "magnitude": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "description": "e.g. mm, N, MPa, deg",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "magnitude",
+                    "unit"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "features"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "description": {
+      "type": "string"
+    },
+    "document_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "requirements": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "comparison": {
+            "enum": [
+              "at_least",
+              "at_most",
+              "equals",
+              "within",
+              "none"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "measurement": {
+            "description": "What measures this requirement. Required for any numeric requirement, or it cannot be checked. e.g. `mass`, `minimum_wall_thickness`, `parameter:base_width`, `interface_size:shaft_port`, `entity:shaft.bore:diameter`, `safety_factor:bearing`.",
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "proposed",
+              "accepted",
+              "rejected",
+              "superseded",
+              "satisfied",
+              "failed",
+              "blocked",
+              "not_tested"
+            ]
+          },
+          "statement": {
+            "type": "string"
+          },
+          "strength": {
+            "enum": [
+              "hard",
+              "soft",
+              "preference",
+              "informational"
+            ]
+          },
+          "threshold": {
+            "additionalProperties": false,
+            "description": "A dimensional value. Always carries a unit.",
+            "properties": {
+              "interval": {
+                "additionalProperties": false,
+                "properties": {
+                  "hi": {
+                    "type": "number"
+                  },
+                  "lo": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lo",
+                  "hi"
+                ],
+                "type": "object"
+              },
+              "magnitude": {
+                "type": "number"
+              },
+              "unit": {
+                "description": "e.g. mm, N, MPa, deg",
+                "type": "string"
+              }
+            },
+            "required": [
+              "magnitude",
+              "unit"
+            ],
+            "type": "object"
+          },
+          "type": {
+            "enum": [
+              "functional",
+              "geometric",
+              "interface",
+              "performance",
+              "manufacturing",
+              "safety",
+              "cost",
+              "environmental",
+              "aesthetic",
+              "regulatory"
+            ]
+          },
+          "verification": {
+            "enum": [
+              "exact_geometry",
+              "analytical",
+              "simulation",
+              "visual_review",
+              "user_confirmation",
+              "physical_test",
+              "external_certification",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "type",
+          "strength",
+          "verification"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "risk_class": {
+      "enum": [
+        "low",
+        "moderate",
+        "high",
+        "critical"
+      ]
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "units": {
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "type": "string"
+        },
+        "force": {
+          "type": "string"
+        },
+        "length": {
+          "type": "string"
+        },
+        "mass": {
+          "type": "string"
+        },
+        "stress": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "document_id",
+    "project_id",
+    "revision",
+    "name",
+    "components"
+  ],
+  "title": "ForgeIR document",
+  "type": "object"
+}

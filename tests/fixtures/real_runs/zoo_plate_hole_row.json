@@ -1,0 +1,180 @@
+{
+ "brief": "An aluminium bar 120 mm long, 20 mm wide and 5 mm thick with five 5 mm holes along its centreline, 20 mm apart. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "An aluminium bar 120 mm long, 20 mm wide and 5 mm thick with five 5 mm holes along its centreline, 20 mm apart. It carries no load, so there is no load case.",
+  "part_kind": "plate_hole_row",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_P",
+    "statement": "REQ_P",
+    "measurement": "parameter:pitch",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "plate_hole_row",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 120,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 5,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "pitch",
+       "value": {
+        "magnitude": 20,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "bar",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "h1",
+       "kind": "hole",
+       "inputs": [
+        "bar"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-2 * pitch",
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      },
+      {
+       "id": "row",
+       "kind": "pattern_linear",
+       "inputs": [
+        "h1"
+       ],
+       "parameters": {
+        "count": {
+         "magnitude": 5,
+         "unit": ""
+        },
+        "spacing": {
+         "vector": [
+          "pitch",
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

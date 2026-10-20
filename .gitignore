@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.stl
+*.obj
+!examples/**/*.stl
+.DS_Store
+
+# --- Kept on disk, never committed --------------------------------------
+# What runs produce: every design run, the validation suite's runs and the
+# grades made from them, and responses recorded with --record.
+/runs/
+/validation/runs/
+/validation/results.csv
+/validation/report.md
+/fixtures/
+# Work done with Forge, not Forge itself.
+/exo_arm/
+# Sync bundles and assistant scratch, should any land in here.
+_sync/
+outputs/
+*.tgz

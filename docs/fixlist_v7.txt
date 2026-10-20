@@ -1,0 +1,277 @@
+Forge v7 -- 14 October 2026 (deep dive)
+=========================================
+
+From a read of every package on the design path, a replay of the 157 recorded
+real answers through the parsers as they are now, the 297 runs in runs/
+(144 completed, 55 blocked, 97 failed; of the 97, six ended as OR1004_INTERNAL,
+which Forge itself labels a defect in Forge rather than in the design), and
+three independent reviews -- of the geometry kernel, of the document and type
+layers, and of the model transport -- each confirming its findings by running
+code.
+
+Forge's own faults, fixed: the design path
+------------------------------------------
+* A component parameter whose expression would not parse (`a *`, an empty
+  string, `a.b`, `360 deg / n` before the grammar learned "a figure with its
+  unit") left Document.from_json as the expression engine's own exception
+  instead of a SchemaError. The designer's judge turns a SchemaError into a
+  correction the model can act on; anything else became a generic "Forge
+  could not read this answer" retry carrying a Forge traceback -- a paid
+  model round that told the model nothing about its mistake. A feature's
+  expression was always wrapped; a component's now is too, pointed at
+  /components/N/parameters/M/expression with the cause and a hint.
+  (packages/forge_ir/document.py)
+
+* A hollow dome whose record already carried the model's wall claim, bound
+  to `wall_thickness` (a box's measurement, across at half the height, where
+  a shell is never that thick), had Forge's own `minimum_wall_thickness`
+  claim appended under the SAME id. Forge's validation then refused the
+  duplicate and dropped BOTH -- recorded as a FORGE DEFECT -- so a 3 mm shell
+  drawn any thickness at all had no wall claim left to fail it. The record's
+  claim is now rebound to the thinnest wall anywhere; when the id is taken by
+  something else, Forge's claim gets a fresh one.
+  (packages/forge_roles/library.py, _a_hollow_dome_the_record_carries)
+
+* A fault inside any one of the thirty-odd measurement readers -- a NaN out of
+  a degenerate bend chain, an index past a short run -- left verify_component
+  as a bare exception, which the orchestrator records as an internal error,
+  and a run that had built and measured a part ended with no evidence at all.
+  Each requirement's reader now fails closed AS EVIDENCE: that claim is
+  BLOCKED, says "FORGE DEFECT" with the traceback in its detail, holds the
+  release, and every other claim on the part is still measured and reported.
+  (packages/forge_pipeline/verify.py, _measured_or_blocked)
+
+* A response carrying no structured answer and not cut off reached
+  require_structured, whose ValueError no caller catches, and the run ended
+  as an internal error. Every live adapter raises for this itself; a replayed
+  fixture or an adapter that does not is now asked again as a repair.
+  (packages/forge_roles/base.py)
+
+Forge's own faults, fixed: the document and type layers
+-------------------------------------------------------
+* An unapproved assumption written `"risk": "HIGH"` (or "severe", or "")
+  decoded cleanly and simply stopped blocking release: `risk` was never
+  validated, and the release gate tests `risk in ("high", "critical")`. The
+  one human gate in the system, bypassed by spelling. `risk`, `risk_class`,
+  `comparison` and `state` are now folded to lower case and checked against
+  their vocabularies at decode, with the pointer. (document.py)
+
+* A patch `add` at array index 0 was read as "no index" (`index or -1`),
+  applied first in the given order instead of last among inserts, and a
+  `replace` of `/features/1` beside it edited what had been feature 0 --
+  the applier silently editing the wrong node, the one failure ADR-0010
+  says it exists to prevent. (patch.py)
+
+* A computed lower bound of exactly +0.0 was widened to -5e-324, so
+  `2 * [0, 1]` reached below zero and `sqrt`, `hypot` and `ln` refused a
+  toleranced offset of [0, 0.1] mm on a correct design -- a false FAIL.
+  Under round-to-nearest a negative true value never rounds to +0.0, so
+  zero is a sound lower bound and is kept; a -0.0 is still widened.
+  (interval.py)
+
+* `atan2` guarded the branch cut only when x was wholly negative; the cut is
+  inside the box whenever x reaches below zero and y touches zero, and
+  atan2([-1, 1], [-2, 1]) came back excluding pi. (mathfns.py)
+
+* Each of these escaped Document.from_json as something other than a
+  SchemaError, which upstream is a wasted paid retry naming a Forge
+  traceback: a unit exponent that overflows the scale (`km^99999`); a unit
+  nested two thousand parentheses deep; a quantity whose `interval` is not
+  an object; an infinite magnitude (`1e400`, the JSON `Infinity` literal) --
+  which then built a part and raised bare ValueErrors in every function of
+  it; a parameter named `pi`, `e`, `tau` or `g0`, or with `-` or `.` in its
+  id; duplicate parameter, requirement or assumption ids; an expression deep
+  enough to break the parser itself; a bound in another dimension from its
+  parameter; a document nested too deeply for json.loads. Each is now
+  refused by name at its pointer. (unit.py, quantity.py, expression.py,
+  document.py, values.py)
+
+* A negative fractional power of an interval reaching zero raised a bare
+  ZeroDivisionError; float overflow inside an expression, `inf // 1`,
+  `inf % 3`, `sin(inf)` and a 400-digit literal each surfaced as a Python
+  message quoted verbatim in a compile error. Each is an EvaluationError
+  with its span now. (interval.py, expression.py)
+
+* `s⁻¹` was read as `s^-^1` ("exponent is missing"); Greek small mu was not
+  the micro sign. (unit.py)
+
+Forge's own faults, fixed: the geometry kernel
+----------------------------------------------
+* A partial `revolve`'s wedge term was `-radius` inside the wedge and
+  `+radius` outside: not a distance, discontinuous across the cut planes (a
+  measured secant slope of 7869 against a declared Lipschitz constant of 1),
+  so the octree decided cells it had no right to decide and a rectangle
+  revolved through 60 degrees measured [5144.8, 6159.9] mm^3 against a true
+  6283.2 -- an "enclosure" that did not contain the answer, the one thing
+  ADR-0005 says a measurement must never be. The wedge is now the signed
+  distance to the two half-planes through the axis (their intersection up
+  to a half turn, their union past it), which is a 1-Lipschitz lower bound;
+  every enclosure at 30, 60, 90 and 270 degrees now contains the analytic
+  volume. The same change exposed a second fault the old term hid: a
+  reference direction along the axis projected to the zero vector, every
+  point then read as inside the wedge, and a partial revolve built that
+  way silently came out as the whole turn. A perpendicular is now chosen
+  the way `Frame.from_axis` chooses one. The ForgeIR builder always passed
+  a perpendicular, so no document was affected. (sdf.py, Revolve)
+
+* A chamfered boolean over three or more operands declared sqrt(2) for
+  its Lipschitz constant, where the left fold compounds it exactly as the
+  blend's does: 1.707 for three, 1.914 for four, 2.164 for six, measured.
+  Understated, the octree decided cells half a millimetre outside a
+  three-sphere intersection as empty while a corner of each held material.
+  (sdf.py, _chamfer_lipschitz)
+
+* A drafted extrusion declared a Lipschitz constant of 1 and measures
+  sqrt(1 + sin(draft)); under an `offset` or `shell`, 435 cells were
+  decided inside that held empty space. Declared honestly, the fallback
+  bounds are sound again. (sdf.py, ExtrusionSDF)
+
+* A sweep's envelope padded the path's box by 1.5 times the profile's
+  largest half-extent, which a square profile's corner on a short turned
+  path reached 1.13 mm past; only the octree's own padding caught it. The
+  envelope is now the union of each run's box, exact for the field as
+  built. (sdf.py, SweepSDF)
+
+* The compiler's cache served a feature another feature's geometry: two
+  features of the same kind, parameters and inputs share a content hash,
+  and the cached product carried the first's entity names and tokens, so
+  `sketch_b.frame` resolved to nothing and a valid reference raised
+  SelectionError. The cache is now looked up by content AND the feature's
+  identity; the content hash still feeds the part hash unchanged, so no
+  part's identity moves -- the golden clevis still compiles to
+  f596df96c01cc6259bf9169c3978ccc4fd1f2c3f. (compiler.py)
+
+* Surface nets draw a cylinder met at a slant (axis along (1, 2, 2)) with
+  edges shared by four faces on every grid tried, and `GEOM_WATERTIGHT`,
+  critical, FAILED a valid primitive and sent the analyst to repair it.
+  Closed but non-manifold on every grid is now reported as the range it
+  is, from none to all of them, so the gate is INCONCLUSIVE: it still
+  holds the release and no longer calls a right part wrong. (verify.py)
+
+* A pattern count of a thousand million was accepted and the field looped
+  over it for ever; counts are capped at 10 000 at decode. (features.py,
+  values.py)
+
+* A rounded sketch corner's arc began and ended at cos/sin of an atan2 of
+  its tangent points rather than at the points themselves, which put the
+  ends of a 20 mm square's corners at -8.9e-16: its bounds were not the 0
+  and 20 it was drawn to, and `test_a_rounded_sketch_corner_is_an_arc`
+  failed on this machine's NumPy before any of this pass. The ends are the
+  tangent points now, exactly. (sdf.py, sketch_outline)
+
+Known and left as they are (kernel)
+-----------------------------------
+* A `shell` of a `bend` is thicker than asked at the inside of the bend
+  (2.87 mm for a 2 mm wall in a 10 mm plate bent to a 2 mm inside radius):
+  the bend's zone field underestimates depth near the inside radius. The
+  measurement of that field is self-consistent, so the report is right
+  about the part that was built; the part is not quite the one asked for.
+  The exact radial component inside the zone is the fix, and it is not a
+  small one.
+
+Forge's own faults, fixed: the model transport
+----------------------------------------------
+* `--max-cost` was a silent no-op for a local model, an OpenAI-compatible
+  endpoint, a replay, or a Claude model outside the price table: the budget
+  only compares when a cost is known. `forge design` now refuses the flag
+  up front for a provider that cannot price its calls, naming --max-tokens
+  and --max-calls as the bounds that work, and the budget refuses the
+  second call if no price arrived with the first. (design.py, provider.py)
+
+* A 429, a 5xx or a dropped connection on the follow-up call Forge makes
+  when Claude answers in words left the first, paid-for call unrecorded;
+  the retry then made both again and the budget saw none of it. The first
+  call's tokens now go out with the error. (anthropic.py)
+
+* A reply Ollama cut off at the output limit was raised as a retryable
+  error and regenerated four times under the pinned seed -- 16 000 output
+  tokens for four copies of the same cut-off bytes -- and the role never
+  heard it had run out of room. It is returned as the truncation it is, so
+  the role asks again with more room, as it does for Claude. A 404 or 400
+  from Ollama was likewise retried with backoff; it is refused once.
+  (ollama_native.py)
+
+* The padding repair under a feature's `oneOf` computed the deduplicated
+  list and threw it away, so the run log said "the repeats were dropped"
+  and they never were. (ollama_native.py)
+
+* The OpenAI-compatible adapter cached the schema's token size by `id()`,
+  which a later role's schema could inherit after the first was freed, and
+  crashed on `usage.prompt_tokens: null`, a null `function`, or content
+  sent as a list of parts. (openai_compatible.py)
+
+* The request fingerprint left out the tool description, which goes on
+  the wire: editing a role's `schema_description()` replayed the fixture
+  recorded against the old words. It is in the fingerprint now; the two
+  recorded libraries under fixtures/ were already stale and need
+  re-recording either way. (types.py)
+
+* The `opaque` schema dialect collapsed scalar leaves past the depth limit
+  into `{"type": "object"}`, so a model following the sent schema wrote `{}`
+  where a number belonged. Only structured nodes collapse now.
+  (schema_dialect.py)
+
+* Smaller: a retried response lost the transport's notes; the sampling and
+  forced-tool step-downs were forgotten between calls (an unbilled 400 and
+  a resend per call); a `retry-after` of NaN or a negative number crashed
+  the plain-sleep path; a `tool_use.input` sent as JSON text was refused
+  as "no structured output"; a non-object content block or body raised an
+  AttributeError; a `refusal` stop still made the follow-up call; the live
+  page could be left reloading for ever when its mesh would not serialise.
+
+Already fixed before this pass, confirmed on the current code
+-------------------------------------------------------------
+* The four OR1004 crashes of 13 October (a unit inside an expression, a
+  patch list of strings, a size written as a bare list, a depth given with
+  `through: first_wall`) each have a guard now: the grammar reads "360 deg"
+  as a product, answer_in_shape reshapes or refuses a wrong-shaped field,
+  _parse_guarded turns any remaining reader fault into a retry, and a last
+  look's change is compiled before it is measured.
+* `rear_opening_width / 2 + 10` and `mounting_hole_diameter + 8`, the two
+  compile failures that ended the 11 October runs, are settled by
+  _a_number_added_to_a_length before the compiler sees them.
+* The empty-volume crash of 4 October is reported as GEOM_NON_EMPTY.
+
+Known and left as they are
+--------------------------
+* An exact value converted through an inexact unit scale (60 deg -> rad ->
+  deg) comes back one ulp off and is no longer provably equal to itself,
+  which the interval module's one-ulp claim does not cover. No role writes
+  a strict `greater_than`/`less_than` claim and every `equals` carries a
+  tolerance, so nothing on the design path reads it; widening every unit
+  conversion would blur every exact comparison in the suite for it.
+* `--max-cost` can still be exceeded by exactly one call, as documented on
+  the budget: the ceiling is checked before a call, never after.
+* schemas/forgeir-1.0.0.schema.json is a stale export of document_schema()
+  (22 feature kinds against 32); nothing reads it.
+
+Checked and found sound
+-----------------------
+* The golden clevis verifies on this machine to the documented part hash,
+  f596df96c01cc6259bf9169c3978ccc4fd1f2c3f, with the documented measurements.
+* 129 of the 130 recorded real designer answers parse on the current code;
+  the 130th is refused for a reason the model can act on. None crash.
+* The repair loop's oscillation, no-change, broke-a-passing-gate and
+  retryable-outcome paths; the release decision; the six-status roll-up;
+  every hostile expression, unit and pointer the reviews tried that the
+  code already refused by name; the live page's escaping of model text.
+
+New
+---
+* validation\run-suite.ps1 -Claude [-Model ...] [-MaxCost ...] runs the V1
+  validation suite on Anthropic's Claude with the settings
+  run-design-claude.ps1 uses. The suite has never been run end to end; the
+  runs/ folder holds only hand-launched briefs.
+* tests/test_deep_dive_regressions.py holds a test for each fix above.
+
+Verified
+--------
+* The complete suite on the finished code: 1877 tests, all passing, in
+  2900 s on Windows 11 / CPython 3.12 / NumPy 2.4.6. The suite on the code
+  as it was before this pass: 1839 tests, two failing -- the rounded-corner
+  arc above, and one `inspect.getsource` test disturbed by editing the
+  library while that run was in progress.
+* The golden clevis: part hash f596df96c01cc6259bf9169c3978ccc4fd1f2c3f
+  before and after, with identical measurements.
+* All 130 recorded real designer answers: 129 parse, one is refused for a
+  reason the model can act on, before and after.

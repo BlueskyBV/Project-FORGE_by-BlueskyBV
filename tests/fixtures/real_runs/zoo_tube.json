@@ -1,0 +1,124 @@
+{
+ "brief": "A PLA tube 30 mm outside diameter, 26 mm inside diameter and 50 mm long. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A PLA tube 30 mm outside diameter, 26 mm inside diameter and 50 mm long. It carries no load, so there is no load case.",
+  "part_kind": "tube",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_OD",
+    "statement": "REQ_OD",
+    "measurement": "parameter:outer_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_ID",
+    "statement": "REQ_ID",
+    "measurement": "parameter:inner_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 26,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_L",
+    "statement": "REQ_L",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "tube",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 30,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "inner_diameter",
+       "value": {
+        "magnitude": 26,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 50,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "outer",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "outer_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "length",
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "bore",
+       "kind": "hole",
+       "inputs": [
+        "outer"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "inner_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

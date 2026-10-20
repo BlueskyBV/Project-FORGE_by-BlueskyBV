@@ -1,0 +1,366 @@
+{
+ "brief": "An aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end. A load of 150 N pushes straight down on the free end. It must have a safety factor of at least 2.",
+ "intent": {
+  "summary": "An aluminium cantilever bracket with dimensions 60 mm x 20 mm x 6 mm, fixed at one end by two 5 mm bolt holes 15 mm apart near that end. A load of 150 N pushes straight down on the free end. It must have a safety factor of at least 2.",
+  "part_kind": "cantilever bracket",
+  "stated": [
+   "60 mm long",
+   "20 mm wide",
+   "6 mm thick",
+   "fixed at one end by two 5 mm bolt holes 15 mm apart near that end",
+   "load of 150 N pushes straight down on the free end",
+   "safety factor of at least 2"
+  ],
+  "implied": [
+   "the cantilever is fixed at one end",
+   "the cantilever is 60 mm long",
+   "the cantilever is 20 mm wide",
+   "the cantilever is 6 mm thick",
+   "the cantilever is fixed at one end by two 5 mm bolt holes",
+   "the cantilever is fixed at one end by two 5 mm bolt holes 15 mm apart near that end"
+  ],
+  "unstated": [
+   "the magnitude and direction of the load on the arm"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [
+   "the cantilever is fixed at one end by two 5 mm bolt holes 15 mm apart near that end"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_LENGTH",
+    "statement": "The cantilever is 60 mm long",
+    "measurement": "parameter:length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The cantilever is 20 mm wide",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The cantilever is 6 mm thick",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PRIMARY_BOLT_HOLE_COUNT",
+    "statement": "The cantilever has two primary bolt holes",
+    "measurement": "feature_count:hole:bolt",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SF_BEARING",
+    "statement": "The part shall keep a safety factor of at least 2 against yield in bending at its support.",
+    "measurement": "safety_factor:bending",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "type": "safety",
+    "verification": "analytical",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "statement": "The part shall have 2 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_SPACING",
+    "statement": "an aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end.",
+    "measurement": "parameter:hole_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_DESIGN_LOAD",
+    "statement": "The 150 N acts downwards at the cantilever's free end, statically.",
+    "risk": "high",
+    "reversible": false,
+    "approved": false,
+    "value": {
+     "magnitude": 150.0,
+     "unit": "N"
+    },
+    "consequence_if_wrong": "A larger, dynamic or differently placed load invalidates every margin computed from this one."
+   },
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The aluminium is aluminium_6061_t6 (aluminium_6061_t6), the only grade of it Forge knows.",
+    "rationale": "The brief names the family, not the grade, and the safety factor depends on which grade it is.",
+    "consequence_if_wrong": "Grades of aluminium differ in yield strength several times over; every margin computed here would be wrong.",
+    "risk": "high",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": [
+   "`feature_count:bolt_hole:primary` names no feature kind, so it was read as `feature_count:hole:bolt`.",
+   "added REQ_HOLES_5MM: the brief states 2 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLE_SPACING at 15 mm: the brief places the holes with it -- \"an aluminium cantilever bracket: a 60 mm long, 20 mm wide, 6 mm thick bar fixed at one end by two 5 mm bolt holes 15 mm apart near that end\" -- and no requirement carried it.",
+   "REQ_SF_BEARING measured `safety_factor:bearing`, and the brief describes a bar held at one end and loaded at the other, with no pin in a bore: its margin is the bending at the support. Now `safety_factor:bending`; the threshold is unchanged.",
+   "ASM_DESIGN_LOAD states the load in words -- \"The 150 N acts downwards at the cantilever's free end, statically.\" -- and carried no value, so no margin could have been computed from it. Its value is now 150 N, the force the brief states.",
+   "added ASM_MATERIAL_GRADE: the brief says `aluminium`, the safety factor depends on the grade, and `aluminium_6061_t6` is the only one Forge knows. The margin is computed for it, and the part is not released until that is approved."
+  ]
+ },
+ "answer": {
+  "rationale": "The brief describes a cantilever bracket with specific dimensions and requirements. The design must accurately reflect these specifications and ensure the part meets the stated safety factor.",
+  "document": {
+   "name": "Cantilever Bracket",
+   "components": [
+    {
+     "id": "cantilever_bracket",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "length",
+          "width",
+          "thickness"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "primary_bolt_hole_1",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "5",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "place": {
+        "through": "base",
+        "from": "front",
+        "distance": "hole_spacing / 2"
+       }
+      },
+      {
+       "id": "primary_bolt_hole_2",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "5",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "place": {
+        "through": "base",
+        "from": "front",
+        "distance": "-hole_spacing / 2"
+       }
+      },
+      {
+       "id": "secondary_bolt_hole_1",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "5",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "place": {
+        "through": "base",
+        "from": "front",
+        "distance": "hole_spacing / 2"
+       }
+      },
+      {
+       "id": "secondary_bolt_hole_2",
+       "kind": "hole",
+       "role": "bolt",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "5",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "thickness / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         1.0,
+         0.0,
+         0.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "place": {
+        "through": "base",
+        "from": "front",
+        "distance": "-hole_spacing / 2"
+       }
+      }
+     ],
+     "parameters": [
+      {
+       "id": "length",
+       "value": {
+        "magnitude": 60.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "width",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 6.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_spacing",
+       "value": {
+        "magnitude": 15.0,
+        "unit": "mm"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Run 20261002T215613: the designer answer refused twice."
+}

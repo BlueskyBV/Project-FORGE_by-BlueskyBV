@@ -1,0 +1,394 @@
+{
+ "brief": "A PLA L-bracket 40 mm wide, made of 5 mm thick plate. The base leg is 50 mm long and lies flat; the upright leg stands on the back end of the base and is 40 mm tall overall. Two 5 mm holes pass through the base, 20 mm apart across its width, centred 25 mm from the front end. Two 5 mm holes pass through the upright, 20 mm apart across its width, centred 25 mm above the bottom. It carries no load, so there is no load case.",
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_WIDTH",
+    "statement": "The L-bracket shall be 40 mm wide.",
+    "measurement": "parameter:width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_THICKNESS",
+    "statement": "The L-bracket shall be 5 mm thick.",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_LENGTH",
+    "statement": "The base leg shall be 50 mm long.",
+    "measurement": "parameter:base_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HEIGHT",
+    "statement": "The upright leg shall be 40 mm tall.",
+    "measurement": "parameter:upright_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DISTANCE",
+    "statement": "The holes on the base shall be 20 mm apart.",
+    "measurement": "parameter:hole_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DISTANCE_UPRIGHT",
+    "statement": "The holes on the upright shall be 20 mm apart.",
+    "measurement": "parameter:hole_distance_upright",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_CENTER_DISTANCE_BASE",
+    "statement": "The holes on the base shall be centred 25 mm from the front end.",
+    "measurement": "parameter:hole_center_distance_base",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_CENTER_DISTANCE_UPRIGHT",
+    "statement": "The holes on the upright shall be centred 25 mm above the bottom.",
+    "measurement": "parameter:hole_center_distance_upright",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HOLE_COUNT",
+    "statement": "There shall be two 5 mm holes on the base.",
+    "measurement": "feature_count:hole:base",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_UPRIGHT_HOLE_COUNT",
+    "statement": "There shall be two 5 mm holes on the upright.",
+    "measurement": "feature_count:hole:upright",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_5MM",
+    "measurement": "holes_of_diameter:5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": ""
+    },
+    "statement": "The part shall have 4 open holes of 5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OVERALL_HEIGHT",
+    "statement": "The part shall be 40 mm tall overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 40.0,
+     "unit": "mm"
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "dropped REQ_SF_BEARING: the brief states this part carries no load, so there is no load case to take a margin against and nothing could have computed one",
+   "dropped 1 load question(s): the brief states that this part carries no load, so there was nothing to be uncertain about",
+   "added REQ_HOLES_5MM: the brief states 4 open holes of 5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_OVERALL_HEIGHT at 40 mm: the brief gives the part's overall height and nothing measured the part's height -- a parameter reads back what the design declares, on a part of any height."
+  ]
+ },
+ "intent": {
+  "summary": "A PLA L-bracket made of 5 mm thick plate with dimensions 40 mm wide, 50 mm long base leg, and 40 mm tall upright leg. It has two 5 mm holes on the base and two 5 mm holes on the upright, both 20 mm apart and centred 25 mm from the respective edges. The part carries no load.",
+  "part_kind": "L-bracket",
+  "stated": [
+   "The L-bracket is made of PLA",
+   "The L-bracket is 40 mm wide",
+   "The L-bracket is 5 mm thick",
+   "The L-bracket has a base leg that is 50 mm long",
+   "The L-bracket has an upright leg that is 40 mm tall",
+   "There are two 5 mm holes on the base, 20 mm apart and centred 25 mm from the front end",
+   "There are two 5 mm holes on the upright, 20 mm apart and centred 25 mm above the bottom",
+   "The L-bracket carries no load"
+  ],
+  "implied": [
+   "The L-bracket is made of a material that is suitable for PLA",
+   "The L-bracket is designed to be lightweight and durable",
+   "The L-bracket is designed to be easy to assemble and disassemble",
+   "The L-bracket is designed to be aesthetically pleasing"
+  ],
+  "unstated": [
+   "The material grade of the PLA used",
+   "The operating temperature of the L-bracket",
+   "The safety factor of the L-bracket",
+   "The dimensions of the holes on the base and upright",
+   "The dimensions of the base leg and upright leg",
+   "The dimensions of the L-bracket as a whole"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "answer": {
+  "rationale": "reconstructed from the run's notes: the model's second answer",
+  "document": {
+   "name": "L-bracket",
+   "components": [
+    {
+     "id": "l_bracket",
+     "material": "pla",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "width",
+          "thickness",
+          "base_length"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "upright",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "width",
+          "thickness",
+          "upright_height"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "base_hole_1",
+       "kind": "hole",
+       "role": "base",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_distance / 2",
+          0,
+          "hole_center_distance_base"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         1,
+         0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "base_hole_2",
+       "kind": "hole",
+       "role": "base",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_distance / 2",
+          0,
+          "hole_center_distance_base"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         1,
+         0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "upright_hole_1",
+       "kind": "hole",
+       "role": "upright",
+       "inputs": [
+        "base"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-hole_distance_upright / 2",
+          0,
+          "hole_center_distance_upright"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         1,
+         0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "upright_hole_2",
+       "kind": "hole",
+       "role": "upright",
+       "inputs": [
+        "upright"
+       ],
+       "parameters": {
+        "diameter": {
+         "magnitude": 5.0,
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "hole_distance_upright / 2",
+          0,
+          "hole_center_distance_upright"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         1,
+         0
+        ],
+        "fit": "clearance_normal"
+       }
+      },
+      {
+       "id": "part_body",
+       "kind": "union",
+       "inputs": [
+        "base",
+        "upright_hole_2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Reconstructed: run 20260929T184133 kept only the settled document; this is the answer its notes describe."
+}

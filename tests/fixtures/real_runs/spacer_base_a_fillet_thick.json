@@ -1,0 +1,565 @@
+{
+ "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
+ "intent": {
+  "summary": "A 3D-printed PLA spacer block with a 30 mm square base, 4 mm thick, a 12 mm diameter post 10 mm tall, and two 3 mm mounting holes 20 mm apart. It weighs no more than 8 g and carries no load.",
+  "part_kind": "Spacer",
+  "stated": [
+   "A 3D-printed PLA spacer block",
+   "The base is a 30 mm square plate 4 mm thick",
+   "A 12 mm diameter post 10 mm tall stands in the middle of it",
+   "A 5 mm hole runs all the way through the post and the plate",
+   "Two 3 mm mounting holes pass all the way through the plate, 20 mm apart",
+   "It must weigh no more than 8 g",
+   "It carries no load"
+  ],
+  "implied": [
+   "The spacer block is printed",
+   "The spacer block is made of PLA",
+   "The spacer block is a printed spacer",
+   "The spacer block is a printed spacer block"
+  ],
+  "unstated": [
+   "The load on the spacer block",
+   "The magnitude and direction of the load on the spacer block"
+  ],
+  "out_of_scope": [],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "critical",
+  "requirements": [
+   {
+    "id": "REQ_BASE_WIDTH",
+    "statement": "The base width is 30 mm",
+    "measurement": "parameter:base_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BASE_HEIGHT",
+    "statement": "The base height is 4 mm",
+    "measurement": "parameter:base_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_DIAMETER",
+    "statement": "The post diameter is 12 mm",
+    "measurement": "parameter:post_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_POST_HEIGHT",
+    "statement": "The post height is 10 mm",
+    "measurement": "parameter:post_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_FILLET_RADIUS",
+    "statement": "The fillet radius is 2 mm",
+    "measurement": "parameter:fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLE_DIAMETER",
+    "statement": "The hole diameter is 5 mm",
+    "measurement": "parameter:hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 5.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The mounting hole diameter is 3 mm",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 3.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DISTANCE",
+    "statement": "The mounting hole distance is 20 mm",
+    "measurement": "parameter:mounting_hole_distance",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "There are two mounting holes",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MASS",
+    "statement": "The finished part shall weigh no more than 8 g.",
+    "measurement": "mass",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "g"
+    },
+    "type": "performance",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [],
+  "unknowns": [],
+  "notes": [
+   "added REQ_MASS at_most 8 g: the brief states it as a limit and the whole-part mass slot was left empty, so nothing would have checked the one number a printed part is most often judged on"
+  ]
+ },
+ "answer": {
+  "rationale": "replay",
+  "document": {
+   "name": "Spacer Block",
+   "components": [
+    {
+     "id": "spacer_block",
+     "features": [
+      {
+       "id": "base",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "base_width",
+          "base_height",
+          "fillet_radius"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "post",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "post_diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "post_height",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "base_height / 2"
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "inputs": [
+        "base",
+        "post"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "magnitude": 2.0,
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "hole",
+       "kind": "hole",
+       "parameters": {
+        "diameter": {
+         "expression": "hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          0,
+          0,
+          "base_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "inputs": [
+        "body"
+       ]
+      },
+      {
+       "id": "mounting_hole_1",
+       "kind": "hole",
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "mounting_hole_distance / 2",
+          0,
+          "base_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "hole"
+       ]
+      },
+      {
+       "id": "mounting_hole_2",
+       "kind": "hole",
+       "parameters": {
+        "diameter": {
+         "expression": "mounting_hole_diameter",
+         "unit": "mm"
+        },
+        "position": {
+         "vector": [
+          "-mounting_hole_distance / 2",
+          0,
+          "base_height / 2"
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "fit": "clearance_normal"
+       },
+       "tags": [
+        "mounting"
+       ],
+       "inputs": [
+        "mounting_hole_1"
+       ]
+      }
+     ],
+     "parameters": [
+      {
+       "id": "base_width",
+       "value": {
+        "magnitude": 30.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "base_height",
+       "value": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "post_diameter",
+       "value": {
+        "magnitude": 12.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "post_height",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "fillet_radius",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "hole_diameter",
+       "value": {
+        "magnitude": 5.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_diameter",
+       "value": {
+        "magnitude": 3.0,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "mounting_hole_distance",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       }
+      }
+     ],
+     "material": "pla_fdm"
+    }
+   ],
+   "schema_version": "1.0.0",
+   "revision": 1,
+   "units": {
+    "length": "mm",
+    "mass": "kg",
+    "angle": "deg",
+    "force": "N"
+   },
+   "document_id": "81936263-0fe7-57cd-ae1a-a6baeb3a0858",
+   "project_id": "945dd5ce-6fe3-5ae6-84b5-59f417cafb03",
+   "risk_class": "critical",
+   "requirements": [
+    {
+     "id": "REQ_BASE_WIDTH",
+     "statement": "The base width is 30 mm",
+     "measurement": "parameter:base_width",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 30.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_BASE_HEIGHT",
+     "statement": "The base height is 4 mm",
+     "measurement": "parameter:base_height",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 4.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_POST_DIAMETER",
+     "statement": "The post diameter is 12 mm",
+     "measurement": "parameter:post_diameter",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 12.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_POST_HEIGHT",
+     "statement": "The post height is 10 mm",
+     "measurement": "parameter:post_height",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 10.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_FILLET_RADIUS",
+     "statement": "The fillet radius is 2 mm",
+     "measurement": "parameter:fillet_radius",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 2.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_HOLE_DIAMETER",
+     "statement": "The hole diameter is 5 mm",
+     "measurement": "parameter:hole_diameter",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 5.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_MOUNTING_HOLE_DIAMETER",
+     "statement": "The mounting hole diameter is 3 mm",
+     "measurement": "parameter:mounting_hole_diameter",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 3.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_MOUNTING_HOLE_DISTANCE",
+     "statement": "The mounting hole distance is 20 mm",
+     "measurement": "parameter:mounting_hole_distance",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 20.0,
+      "unit": "mm"
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_MOUNTING_HOLE_COUNT",
+     "statement": "There are two mounting holes",
+     "measurement": "feature_count:hole:mounting",
+     "comparison": "equals",
+     "threshold": {
+      "magnitude": 2,
+      "unit": ""
+     },
+     "type": "geometric",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    },
+    {
+     "id": "REQ_MASS",
+     "statement": "The finished part shall weigh no more than 8 g.",
+     "measurement": "mass",
+     "comparison": "at_most",
+     "threshold": {
+      "magnitude": 8.0,
+      "unit": "g"
+     },
+     "type": "performance",
+     "verification": "exact_geometry",
+     "strength": "hard",
+     "source": "user",
+     "state": "accepted"
+    }
+   ],
+   "assumptions": []
+  }
+ },
+ "note": "Run 20260922T104042: completed with the base 2 mm thick (the fillet radius) and the post floating above it."
+}

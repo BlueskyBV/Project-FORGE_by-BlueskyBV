@@ -1,0 +1,82 @@
+{
+ "brief": "A rubber O-ring 50 mm across with a 4 mm thick round section. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A rubber O-ring 50 mm across with a 4 mm thick round section. It carries no load, so there is no load case.",
+  "part_kind": "part",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_D",
+    "statement": "REQ_D",
+    "measurement": "parameter:diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_T",
+    "statement": "REQ_T",
+    "measurement": "parameter:thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "p",
+   "components": [
+    {
+     "id": "part",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "diameter",
+       "value": {
+        "magnitude": 50,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "thickness",
+       "value": {
+        "magnitude": 4,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "cylinder",
+       "parameters": {
+        "diameter": {
+         "expression": "diameter",
+         "unit": "mm"
+        },
+        "height": {
+         "expression": "thickness",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a shape the kernel gained (cone, torus, wedge), as a model answers it."
+}

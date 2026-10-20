@@ -1,0 +1,549 @@
+{
+ "brief": "A PLA dumbbell: a bar 50 mm long and 10 mm square, with a 16 mm ball centred on each end of it. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A small decorative or display object shaped like a dumbbell: a square bar with a ball centered at each end, intended to carry no functional load.",
+  "part_kind": "decorative/novelty model (dumbbell-shaped bar with ball ends)",
+  "stated": [
+   "Material is PLA",
+   "Bar is 50 mm long",
+   "Bar cross-section is 10 mm square",
+   "A 16 mm ball is centred on each end of the bar",
+   "It carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Since it's PLA and explicitly stated to carry no load, it is likely a display/decorative piece or printed demo model rather than a functional mechanical component",
+   "'Centred on each end' implies the ball's center axis aligns with the bar's central axis, requiring the balls to be symmetric about the bar's cross-section centroid",
+   "Likely intended for 3D printing given PLA material callout"
+  ],
+  "unstated": [
+   "Whether the balls and bar are a single continuous printed part or separate assembled components",
+   "The fillet/blend radius or transition geometry where the square bar meets the spherical ball ends",
+   "Surface finish requirements",
+   "Tolerances on the 50 mm length, 10 mm square section, and 16 mm ball diameter",
+   "Orientation for printing (if intended for 3D printing) and any print-specific requirements like layer adhesion direction",
+   "Any handling, aesthetic, or packaging requirements",
+   "Whether 'no load' also excludes handling loads, drop impacts, or shipping stresses (even non-functional parts experience incidental handling forces)",
+   "Color or finish of the PLA",
+   "Quantity to be produced"
+  ],
+  "out_of_scope": [
+   "Any load-bearing analysis, since the brief explicitly states there is no load case",
+   "Material strength properties beyond identifying PLA as the stated material"
+  ],
+  "risk_signals": [],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BAR_LENGTH",
+    "statement": "The connecting bar shall be 50 mm long.",
+    "measurement": "parameter:bar_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 50 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BAR_CROSS_SECTION_SIDE",
+    "statement": "The bar shall have a square cross-section 10 mm on a side.",
+    "measurement": "parameter:bar_cross_section_side",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 10 mm square in cross-section.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BALL_DIAMETER",
+    "statement": "Each ball end shall be 16 mm in diameter.",
+    "measurement": "parameter:ball_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 16.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 16 mm ball at each end of the bar.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BALL_END_SPHERE_COUNT",
+    "statement": "There shall be exactly two ball ends, one centred on each end of the bar.",
+    "measurement": "feature_count:sphere:ball_end",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief describes a ball centred on each of the bar's two ends.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_PLA",
+    "statement": "The part is modelled in PLA with no special grade or additive called out; this is recorded in the component's material field, not as a dimensional requirement.",
+    "rationale": "Brief names PLA explicitly as the material.",
+    "consequence_if_wrong": "Negligible -- PLA is explicitly stated, this assumption only governs how it is recorded.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BLEND_TRANSITION",
+    "statement": "The bar-to-ball transition at each end is a simple tangent/smooth blend typical of a printed dumbbell shape, with no separate fillet dimension called out.",
+    "rationale": "Brief gives no fillet or blend radius between the square bar and the spherical ends.",
+    "consequence_if_wrong": "A sharp, undefined junction could create a stress riser or print artefact, though this is cosmetic given the no-load case.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SINGLE_PART",
+    "statement": "The dumbbell is produced as a single, continuous printed part (bar and both balls as one solid), not an assembly of separate components.",
+    "rationale": "Brief describes one dumbbell shape with no mention of assembly or fasteners.",
+    "consequence_if_wrong": "If separate parts were intended, interface and attachment features would be needed that are absent from this design.",
+    "risk": "moderate",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_STANDARD_TOLERANCE",
+    "statement": "Standard FDM/PLA printing tolerance (approx. +/-0.2 mm) applies to all dimensions; no tight tolerance is called out.",
+    "rationale": "Brief gives no tolerance information.",
+    "consequence_if_wrong": "Tighter tolerance needs would require secondary machining or a different process, not indicated by the brief.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_QUANTITY_ONE",
+    "statement": "One unit of the dumbbell is to be produced/modelled.",
+    "rationale": "Brief gives no production quantity.",
+    "consequence_if_wrong": "Irrelevant to the geometric design itself; only affects production planning.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Dumbbell display bar",
+   "description": "Decorative dumbbell: a square-section bar with a sphere centred on each end, printed as one continuous PLA body. Carries no load; all dimensions are driven by named parameters so bar length, section size and ball diameter can be changed together without breaking alignment.",
+   "components": [
+    {
+     "id": "dumbbell",
+     "name": "Dumbbell display bar",
+     "material": "pla_fdm",
+     "parameters": [
+      {
+       "id": "bar_length",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       },
+       "description": "Length of the connecting bar, along X"
+      },
+      {
+       "id": "bar_cross_section_side",
+       "value": {
+        "magnitude": 10.0,
+        "unit": "mm"
+       },
+       "description": "Side length of the bar's square cross-section (Y and Z)"
+      },
+      {
+       "id": "ball_diameter",
+       "value": {
+        "magnitude": 16.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of each ball end"
+      },
+      {
+       "id": "transition_blend_radius",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "description": "Cosmetic fillet radius where the bar meets each ball; not called out in the brief, chosen purely for a smooth printable junction since the part is non-load-bearing.",
+       "bounds": {
+        "min": {
+         "magnitude": 0.0,
+         "unit": "mm"
+        },
+        "max": {
+         "magnitude": 4.0,
+         "unit": "mm"
+        }
+       },
+       "optimizable": true
+      }
+     ],
+     "features": [
+      {
+       "id": "bar",
+       "kind": "box",
+       "description": "Square-section connecting bar, centred on the origin along X",
+       "lies": "standing",
+       "parameters": {
+        "size": {
+         "vector": [
+          "bar_length",
+          "bar_cross_section_side",
+          "bar_cross_section_side"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "ball_1",
+       "kind": "sphere",
+       "description": "Ball centred on the left (negative X) end of the bar",
+       "tags": [
+        "ball_end"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "ball_diameter",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "-bar_length / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "ball_2",
+       "kind": "sphere",
+       "description": "Ball centred on the right (positive X) end of the bar",
+       "tags": [
+        "ball_end"
+       ],
+       "parameters": {
+        "diameter": {
+         "expression": "ball_diameter",
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          "bar_length / 2",
+          0,
+          0
+         ],
+         "unit": "mm"
+        }
+       }
+      },
+      {
+       "id": "body",
+       "kind": "union",
+       "description": "Bar and both ball ends joined into the single printed body",
+       "inputs": [
+        "bar",
+        "ball_1",
+        "ball_2"
+       ],
+       "parameters": {
+        "blend_radius": {
+         "expression": "transition_blend_radius",
+         "unit": "mm"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "rationale": "The dumbbell is built from three primitives -- one centred box for the bar (its thinnest/square section in Y and Z) and two spheres placed symmetrically at +-bar_length/2 so the ball centres stay on the bar's axis and end faces regardless of parameter changes -- joined by a single blended union that is the part's one terminal solid. bar_length, bar_cross_section_side and ball_diameter are declared exactly as required and drive every position by expression; the only invented value is a small cosmetic transition_blend_radius for a printable junction, called out as a bounded, optimizable parameter rather than baked into geometry, consistent with the brief's explicit no-load statement. Each sphere carries the \"ball_end\" tag so the feature-count requirement sees exactly two, and the union itself is untagged."
+ },
+ "document_released": {
+  "name": "Dumbbell display bar",
+  "description": "Decorative dumbbell: a square-section bar with a sphere centred on each end, printed as one continuous PLA body. Carries no load; all dimensions are driven by named parameters so bar length, section size and ball diameter can be changed together without breaking alignment.",
+  "components": [
+   {
+    "id": "dumbbell",
+    "name": "Dumbbell display bar",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "bar_length",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      },
+      "description": "Length of the connecting bar, along X"
+     },
+     {
+      "id": "bar_cross_section_side",
+      "value": {
+       "magnitude": 10.0,
+       "unit": "mm"
+      },
+      "description": "Side length of the bar's square cross-section (Y and Z)"
+     },
+     {
+      "id": "ball_diameter",
+      "value": {
+       "magnitude": 16.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of each ball end"
+     },
+     {
+      "id": "transition_blend_radius",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "description": "Cosmetic fillet radius where the bar meets each ball; not called out in the brief, chosen purely for a smooth printable junction since the part is non-load-bearing.",
+      "bounds": {
+       "min": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       },
+       "max": {
+        "magnitude": 4.0,
+        "unit": "mm"
+       }
+      },
+      "optimizable": true
+     }
+    ],
+    "features": [
+     {
+      "id": "bar",
+      "kind": "box",
+      "description": "Square-section connecting bar, centred on the origin along X",
+      "parameters": {
+       "size": {
+        "vector": [
+         "bar_length",
+         "bar_cross_section_side",
+         "bar_cross_section_side"
+        ],
+        "unit": "mm"
+       },
+       "centered": true
+      }
+     },
+     {
+      "id": "ball_1",
+      "kind": "sphere",
+      "description": "Ball centred on the left (negative X) end of the bar",
+      "tags": [
+       "ball_end"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "ball_diameter",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "-bar_length / 2",
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "ball_2",
+      "kind": "sphere",
+      "description": "Ball centred on the right (positive X) end of the bar",
+      "tags": [
+       "ball_end"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "ball_diameter",
+        "unit": "mm"
+       },
+       "origin": {
+        "vector": [
+         "bar_length / 2",
+         0,
+         0
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body",
+      "kind": "union",
+      "description": "Bar and both ball ends joined into the single printed body",
+      "inputs": [
+       "bar",
+       "ball_1",
+       "ball_2"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "transition_blend_radius",
+        "unit": "mm"
+       }
+      }
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "fa15ba61-c917-5a3b-8195-6689e7ef2bf3",
+  "project_id": "370fdfa8-2e8d-59aa-9411-0879df8f8bf8",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BAR_LENGTH",
+    "statement": "The connecting bar shall be 50 mm long.",
+    "measurement": "parameter:bar_length",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 50 mm long.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BAR_CROSS_SECTION_SIDE",
+    "statement": "The bar shall have a square cross-section 10 mm on a side.",
+    "measurement": "parameter:bar_cross_section_side",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states the bar is 10 mm square in cross-section.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BALL_DIAMETER",
+    "statement": "Each ball end shall be 16 mm in diameter.",
+    "measurement": "parameter:ball_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 16.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states a 16 mm ball at each end of the bar.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BALL_END_SPHERE_COUNT",
+    "statement": "There shall be exactly two ball ends, one centred on each end of the bar.",
+    "measurement": "feature_count:sphere:ball_end",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": ""
+    },
+    "rationale": "Brief describes a ball centred on each of the bar's two ends.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_PLA",
+    "statement": "The part is modelled in PLA with no special grade or additive called out; this is recorded in the component's material field, not as a dimensional requirement.",
+    "rationale": "Brief names PLA explicitly as the material.",
+    "consequence_if_wrong": "Negligible -- PLA is explicitly stated, this assumption only governs how it is recorded.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_BLEND_TRANSITION",
+    "statement": "The bar-to-ball transition at each end is a simple tangent/smooth blend typical of a printed dumbbell shape, with no separate fillet dimension called out.",
+    "rationale": "Brief gives no fillet or blend radius between the square bar and the spherical ends.",
+    "consequence_if_wrong": "A sharp, undefined junction could create a stress riser or print artefact, though this is cosmetic given the no-load case.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_SINGLE_PART",
+    "statement": "The dumbbell is produced as a single, continuous printed part (bar and both balls as one solid), not an assembly of separate components.",
+    "rationale": "Brief describes one dumbbell shape with no mention of assembly or fasteners.",
+    "consequence_if_wrong": "If separate parts were intended, interface and attachment features would be needed that are absent from this design.",
+    "risk": "moderate",
+    "reversible": false,
+    "approved": false
+   },
+   {
+    "id": "ASM_STANDARD_TOLERANCE",
+    "statement": "Standard FDM/PLA printing tolerance (approx. +/-0.2 mm) applies to all dimensions; no tight tolerance is called out.",
+    "rationale": "Brief gives no tolerance information.",
+    "consequence_if_wrong": "Tighter tolerance needs would require secondary machining or a different process, not indicated by the brief.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_QUANTITY_ONE",
+    "statement": "One unit of the dumbbell is to be produced/modelled.",
+    "rationale": "Brief gives no production quantity.",
+    "consequence_if_wrong": "Irrelevant to the geometric design itself; only affects production planning.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ]
+ },
+ "run": "validation C15, 18 October 2026",
+ "note": "The bar written `lies: standing` with its balls placed along X: Forge stood it up; and a cosmetic blend between bar and balls the brief never asked for."
+}

@@ -1,0 +1,54 @@
+[project]
+name = "forge"
+version = "0.1.0"
+description = "An evidence-driven parametric mechanical design system"
+# 3.10 is the floor, and it is a verified floor rather than an assumed one: the
+# full suite was run on CPython 3.10.12 as well as 3.11. Nothing here uses the
+# match statement or PEP 604 unions outside annotations, and every module carries
+# `from __future__ import annotations`.
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# The trust core needs none of these. They arrive with the backends.
+dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.6", "mypy>=1.11"]
+exact = ["cadquery>=2.4"]          # OpenCascade B-Rep backend (planned)
+simulation = ["gmsh>=4.12"]        # meshing (planned; invoked out-of-process)
+optimisation = ["scipy>=1.11", "optuna>=3.6"]
+
+[project.scripts]
+forge = "forge_cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "packages" }
+
+[tool.setuptools.packages.find]
+where = ["packages"]
+
+[tool.setuptools.package-data]
+# The 3D viewer the live page shows the finished part in (three.js, MIT),
+# copied beside each run so the page works offline.
+forge_cli = ["viewer/*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501"]   # long lines in prose docstrings are deliberate
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+mypy_path = "packages"
+namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = "numpy.*"
+ignore_missing_imports = true

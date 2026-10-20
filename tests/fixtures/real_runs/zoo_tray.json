@@ -1,0 +1,113 @@
+{
+ "brief": "A 60 mm cube box, open at the top, with 2 mm walls and a 2 mm floor. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A 60 mm cube box, open at the top, with 2 mm walls and a 2 mm floor. It carries no load, so there is no load case.",
+  "part_kind": "tray",
+  "stated": [],
+  "implied": [],
+  "unstated": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_S",
+    "statement": "REQ_S",
+    "measurement": "parameter:size",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60,
+     "unit": "mm"
+    }
+   },
+   {
+    "id": "REQ_W",
+    "statement": "REQ_W",
+    "measurement": "parameter:wall",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2,
+     "unit": "mm"
+    }
+   }
+  ],
+  "assumptions": [],
+  "unknowns": []
+ },
+ "answer": {
+  "rationale": "",
+  "document": {
+   "name": "tray",
+   "components": [
+    {
+     "id": "part",
+     "parameters": [
+      {
+       "id": "size",
+       "value": {
+        "magnitude": 60,
+        "unit": "mm"
+       }
+      },
+      {
+       "id": "wall",
+       "value": {
+        "magnitude": 2,
+        "unit": "mm"
+       }
+      }
+     ],
+     "features": [
+      {
+       "id": "body",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "size",
+          "size",
+          "size"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "space",
+       "kind": "box",
+       "parameters": {
+        "size": {
+         "vector": [
+          "size - 2 * wall",
+          "size - 2 * wall",
+          "size"
+         ],
+         "unit": "mm"
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          "wall"
+         ],
+         "unit": "mm"
+        },
+        "centered": true
+       }
+      },
+      {
+       "id": "tray",
+       "kind": "subtract",
+       "inputs": [
+        "body",
+        "space"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "note": "Written for Forge, not from a run: a correct design for a common part, which must pass as it is."
+}

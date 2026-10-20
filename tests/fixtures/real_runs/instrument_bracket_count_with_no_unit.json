@@ -1,0 +1,2204 @@
+{
+ "brief": "A one-piece 3D-printed PLA instrument bracket. Put the origin at the centre of the base plate's bottom face, X along its length, Y across it, Z up. Base: a flat plate 150 mm long in X, 80 mm wide in Y and 6 mm thick, its four vertical corner edges rounded to 6 mm. Build everything flat first, then bend: the left 30 mm of the plate is bent straight up through 90 degrees about a line across the plate at x = -45, inside bend radius 3 mm, and the right 23 mm is bent up through 45 degrees about a line across the plate at x = 52, inside bend radius 6 mm. Left flange, positions given flat before bending: a 20 by 8 mm obround through slot centred at x = -60, y = 0, its length along Y, and two M4 countersunk holes, 4.5 mm through with a 90 degree countersink 9 mm across on the plate's top face, at x = -60, y = 25 and y = -25. Two triangular ribs, each 4 mm thick and centred at y = 20 and y = -20, fill the inside corner of the left bend, running 18 mm along the base and 18 mm up the flange. Right flange, positions given flat: three 12 by 4 mm obround through slots, their length along X, centred at x = 64 and y = -14, 0 and 14. On the flat middle of the base: a hollow neck centred at x = -5, y = 0 that lofts from a 30 mm square on the top face to a 20 mm circle 25 mm above it, with a 12 mm bore straight through the neck and the plate, and a bead of 3 mm round section running around the top of the neck, its centre line on a 16 mm circle in the neck's top face. Six 4 mm through holes, equally spaced on a 44 mm circle centred on the neck, the first at x = 17, y = 0. Four M5 counterbored holes, 5.5 mm through with a 10 mm counterbore 3 mm deep from the top, at x = -32 and x = 42, y = 32 and y = -32. A 6 mm hole through the plate, entering the top face at x = 5, y = -32, tilted 30 degrees from vertical towards +X. A hexagonal boss 19 mm across flats and 12 mm tall at x = 22, y = -18, two of its flats parallel to X, with a 1 mm chamfer round its top edge and an M8 threaded blind hole 12 mm deep in the middle of its top. Standing on that boss, coaxial with the M8 hole and fused to it, a compression spring of 1.5 mm wire, 12 mm outside diameter, 6 coils and 24 mm long. A round boss 16 mm in diameter and 20 mm tall at x = 22, y = 18, with a 3 mm cross hole straight through it along Y, 10 mm above the plate's top face, and on top of it a sealed hollow ball 16 mm across with a 2 mm wall, its centre 7 mm above the boss's top face. A cone 14 mm across its base and 12 mm tall, coming to a point, standing on the top face at x = 40, y = 0. A grab handle of 8 mm round bar whose two legs rise from the top face at x = -10 and x = 10, both at y = 32, its centre line 30 mm above the top face, running straight between them along X, its two corners bent to an 8 mm radius. On the underside, a spherical dimple 24 mm across and 4 mm deep, centred at x = 32, y = 0. A 3 mm pin in the cross hole carries 120 N, and the bearing stress there must keep a safety factor of at least 2. The whole part must weigh no more than 160 g and be no taller than 60 mm.",
+ "intent": {
+  "summary": "A single 3D-printed PLA sheet-metal-style bracket (flat base with two bent flanges) carrying mounting slots/holes, a bored/beaded neck boss, counterbored and tilted holes, a threaded hexagonal boss with an integral compression spring, a ball-tipped boss with a cross-pin, a conical standoff, a bent grab handle, and an underside dimple.",
+  "part_kind": "bracket (multi-feature instrument mounting bracket)",
+  "stated": [
+   "Material/process: one-piece 3D-printed PLA",
+   "Coordinate system: origin at centre of base plate bottom face, X along length, Y across, Z up",
+   "Base plate: 150 x 80 x 6 mm, four vertical corner edges rounded to 6 mm radius",
+   "Left 30 mm bent up 90\u00b0 about line at x=-45, inside bend radius 3 mm",
+   "Right 23 mm bent up 45\u00b0 about line at x=52, inside bend radius 6 mm",
+   "Left flange: 20x8 mm obround slot at x=-60,y=0, length along Y; two M4 countersunk holes (4.5mm through, 90\u00b0 CSK 9mm) at x=-60, y=\u00b125",
+   "Two triangular ribs, 4 mm thick, at y=\u00b120, 18x18 mm, filling inside corner of left bend",
+   "Right flange: three 12x4 mm obround slots along X at x=64, y=-14/0/14",
+   "Hollow neck at x=-5,y=0: lofts 30mm square (top face) to 20mm circle 25mm above, 12mm bore through neck and plate, 3mm round bead on 16mm circle at neck top",
+   "Six 4mm through holes on 44mm circle centred on neck, first at x=17,y=0, equally spaced",
+   "Four M5 counterbored holes (5.5mm through, 10mm counterbore 3mm deep) at x=-32/42, y=\u00b132",
+   "6mm hole through plate at x=5,y=-32, tilted 30\u00b0 from vertical toward +X",
+   "Hexagonal boss 19mm AF, 12mm tall, at x=22,y=-18, two flats parallel to X, 1mm top edge chamfer, M8 threaded blind hole 12mm deep in top centre",
+   "Compression spring on boss, coaxial with M8 hole, fused to it: 1.5mm wire, 12mm OD, 6 coils, 24mm long",
+   "Round boss 16mm dia, 20mm tall at x=22,y=18; 3mm cross hole through along Y, 10mm above top face",
+   "Sealed hollow ball 16mm dia, 2mm wall, centre 7mm above boss top face, on top of round boss",
+   "Cone 14mm base, 12mm tall, pointed, at x=40,y=0 on top face",
+   "Grab handle: 8mm round bar, legs at x=-10/+10, y=32, centreline 30mm above top face, straight run along X, corner bend radius 8mm",
+   "Underside spherical dimple 24mm across, 4mm deep, at x=32,y=0",
+   "3mm pin in cross hole carries 120 N load; required bearing stress safety factor \u22652",
+   "Max total weight 160 g",
+   "Max overall height 60 mm"
+  ],
+  "implied": [
+   "Because it is \"one-piece 3D-printed,\" no assembly fasteners are needed for the body itself -- the spring and ball must print as part of the same build (likely requiring support/clearance strategy), implying additive manufacturing tolerances govern feature feasibility (e.g. free-moving? or fused spring as stated).",
+   "Because slots and holes are described \"positions given flat before bending,\" the flange features must be laid out in the flat pattern and will relocate/rotate in space once bending is applied -- implies a sheet-metal-style flat-pattern-to-formed workflow even though it's a solid printed part, not metal.",
+   "Countersunk and counterbored holes imply flush/recessed fastener heads are needed on the top face, so mating fasteners are flat/countersunk or socket-head screws.",
+   "M4/M5/M8 call-outs imply standard metric threaded fasteners will mate with these features, so thread tolerance and engagement length matter for the blind M8 hole.",
+   "The tilted 6mm hole \"toward +X\" implies a mating pin/fastener enters at that angle, so the hole's full length and exit point on the underside must clear the 6mm plate thickness and any bend geometry.",
+   "A pin carrying a stated load with a required safety factor implies the cross-hole boss and pin are structurally load-bearing, so the surrounding plastic bearing area, not just hole diameter, is a performance-critical interface.",
+   "The grab handle, sized and shaped like a hand grip, implies it is meant to be grasped by a person, so it is subject to human-applied pulling/lifting forces even though no value is given.",
+   "\"Sealed hollow ball\" with 2mm wall implies no drain or vent hole, meaning trapped material/support removal is a manufacturing concern.",
+   "Overall height and weight caps imply the design must be checked against the combination of all stacked features (handle, ball, neck, spring) -- constraints to validate against, not already satisfied."
+  ],
+  "unstated": [
+   "PLA material grade/batch and its mechanical properties (yield strength, bearing strength, modulus) needed to actually compute the bearing-stress safety factor against the 120 N pin load",
+   "Direction and line of action of the 120 N load relative to the cross hole (radial, axial, combined) -- only magnitude is given",
+   "Print orientation and layer direction, which for FDM PLA strongly affects whether the bearing/handle features can meet the stated safety factor (anisotropic strength not addressed)",
+   "Whether the compression spring is meant to function mechanically (preload, spring rate, deflection, force) or is purely a fused decorative/geometric feature -- no spring force or working deflection given",
+   "Expected load/force on the grab handle from a person's grip or pull, and in what direction",
+   "Expected load on the hexagonal boss / M8 threaded hole in service (torque or axial pull on whatever screws into it)",
+   "Loads or environment for the instrument(s) mounted via the neck bore, flange slots, and counterbored holes (what is bolted where, static or dynamic)",
+   "Operating temperature range (relevant for PLA, which has low heat deflection temperature)",
+   "Fit/tolerance class for the 12mm bore, 4mm/6mm through holes, and obround slots relative to whatever shafts/fasteners pass through them",
+   "Thread tolerance/class for M4, M5, M8 features and whether they are printed-and-tapped or printed-as-thread",
+   "Surface finish requirements, especially for the sealed ball and threaded hole",
+   "General dimensional tolerances for the bend angles (90\u00b0, 45\u00b0) and bend radii, and acceptable springback allowance for a printed (not formed) part described using bend terminology",
+   "Support/orientation strategy for printing overhangs (ball, spring, loft, tilted hole) -- not a stated constraint but affects achievability of stated geometry",
+   "Finish/color/cosmetic requirements",
+   "Any required certification or standard the \"instrument bracket\" must meet given it is called an instrument-mounting part"
+  ],
+  "out_of_scope": [
+   "No fastener hardware (screws, pins) is specified as supplied -- only the mating hole/thread geometry is described",
+   "No instrument or mating component geometry is given beyond the bracket's own interface features",
+   "No finishing, coating, or color specification"
+  ],
+  "risk_signals": [
+   "Explicit statement that a pin in the cross hole \"carries 120 N\" and \"the bearing stress there must keep a safety factor of at least 2\" -- indicates a structurally load-bearing interface whose failure is a named concern",
+   "A grab handle sized for a human hand is present, implying the part may be pulled on or used to lift/steady something by a person",
+   "Material specified is PLA, a polymer with known creep, brittleness, and low heat tolerance, used here in a load-bearing and human-contact role",
+   "\"Sealed hollow ball\" and fused spring are complex internal/overhang geometries whose actual as-printed strength is unverified by the brief"
+  ],
+  "suggested_name": "Instrument Mounting Bracket",
+  "is_a_part": true,
+  "notes": []
+ },
+ "answers": [
+  {
+   "risk_class": "moderate",
+   "requirements": {
+    "whole_part": {
+     "mass": {
+      "statement": "The finished part shall weigh no more than 160 g.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 160,
+       "unit": "g"
+      },
+      "rationale": "Stated overall weight cap."
+     },
+     "bounding_box_z": {
+      "statement": "The finished part shall be no taller than 60 mm overall.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 60,
+       "unit": "mm"
+      },
+      "rationale": "Stated overall height cap."
+     },
+     "bounding_box_y": {
+      "statement": "The base plate is 80 mm wide in Y and no feature extends beyond it, so the part's overall Y extent shall equal 80 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 80,
+       "unit": "mm"
+      },
+      "rationale": "Bending occurs about lines across the plate (perpendicular to X), so Y extent is unaffected by bending and equals the base width."
+     }
+    },
+    "dimensions": [
+     {
+      "parameter": "base_length_x",
+      "statement": "The base plate's flat length along X shall be 150 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 150,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_thickness",
+      "statement": "The base plate shall be 6 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_corner_radius",
+      "statement": "The base plate's four vertical corner edges shall be rounded to 6 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_flat_length",
+      "statement": "The left bent section shall measure 30 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_angle",
+      "statement": "The left flange shall be bent up through 90 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "left_bend_radius",
+      "statement": "The left bend's inside radius shall be 3 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_flat_length",
+      "statement": "The right bent section shall measure 23 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 23,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_angle",
+      "statement": "The right flange shall be bent up through 45 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 45,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "right_bend_radius",
+      "statement": "The right bend's inside radius shall be 6 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_length",
+      "statement": "The left flange's obround slot shall be 20 mm long (along Y).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_width",
+      "statement": "The left flange's obround slot shall be 8 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_hole_diameter",
+      "statement": "Each M4 clearance hole shall be 4.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_countersink_angle",
+      "statement": "Each M4 hole's countersink shall be 90 degrees included angle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "m4_countersink_diameter",
+      "statement": "Each M4 hole's countersink shall be 9 mm across on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 9,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_thickness",
+      "statement": "Each triangular rib shall be 4 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_base_run",
+      "statement": "Each rib shall run 18 mm along the base.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_flange_run",
+      "statement": "Each rib shall run 18 mm up the flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_length",
+      "statement": "Each right flange obround slot shall be 12 mm long (along X).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_width",
+      "statement": "Each right flange obround slot shall be 4 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_square_size",
+      "statement": "The neck's loft shall start from a 30 mm square on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_top_circle_diameter",
+      "statement": "The neck's loft shall end at a 20 mm diameter circle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_height",
+      "statement": "The neck's top circle shall be 25 mm above the base top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 25,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bore_diameter",
+      "statement": "The neck bore shall be 12 mm diameter straight through neck and plate.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_wire_diameter",
+      "statement": "The bead around the neck top shall have a 3 mm round cross-section.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_circle_diameter",
+      "statement": "The bead's centreline shall lie on a 16 mm diameter circle in the neck's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_diameter",
+      "statement": "The six holes equally spaced around the neck shall each be 4 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_pattern_diameter",
+      "statement": "The six holes shall be equally spaced on a 44 mm diameter circle centred on the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 44,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_hole_diameter",
+      "statement": "Each M5 counterbored hole shall be 5.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 5.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_diameter",
+      "statement": "Each M5 hole's counterbore shall be 10 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_depth",
+      "statement": "Each M5 hole's counterbore shall be 3 mm deep from the top.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_diameter",
+      "statement": "The tilted through hole shall be 6 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_angle",
+      "statement": "The tilted hole shall be angled 30 degrees from vertical toward +X.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "hex_boss_across_flats",
+      "statement": "The hexagonal boss shall measure 19 mm across flats.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 19,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_height",
+      "statement": "The hexagonal boss shall be 12 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_chamfer",
+      "statement": "The hexagonal boss's top edge shall carry a 1 mm chamfer.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m8_blind_hole_depth",
+      "statement": "The M8 threaded blind hole in the hex boss shall be 12 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_wire_diameter",
+      "statement": "The integral compression spring's wire shall be 1.5 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_outside_diameter",
+      "statement": "The compression spring's outside diameter shall be 12 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_coil_count",
+      "statement": "The compression spring shall have 6 coils.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": ""
+      }
+     },
+     {
+      "parameter": "spring_length",
+      "statement": "The compression spring shall be 24 mm long.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_diameter",
+      "statement": "The round boss shall be 16 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_height",
+      "statement": "The round boss shall be 20 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_diameter",
+      "statement": "The round boss's cross hole shall be 3 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_height_above_top",
+      "statement": "The cross hole shall be 10 mm above the plate's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_diameter",
+      "statement": "The sealed hollow ball atop the round boss shall be 16 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_wall_thickness",
+      "statement": "The sealed hollow ball's wall shall be 2 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_centre_height_above_boss_top",
+      "statement": "The ball's centre shall be 7 mm above the round boss's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 7,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_base_diameter",
+      "statement": "The cone's base shall be 14 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 14,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_height",
+      "statement": "The cone shall be 12 mm tall, coming to a point.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_bar_diameter",
+      "statement": "The grab handle's round bar shall be 8 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_height_above_top",
+      "statement": "The grab handle's straight centreline shall sit 30 mm above the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_corner_radius",
+      "statement": "The grab handle's two corner bends shall have an 8 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_diameter",
+      "statement": "The underside spherical dimple shall be 24 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_depth",
+      "statement": "The underside spherical dimple shall be 4 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     }
+    ],
+    "counts": [
+     {
+      "feature_kind": "hole",
+      "tag": "m4_mounting",
+      "statement": "There shall be exactly two M4 countersunk mounting holes on the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "extrude",
+      "tag": "rib",
+      "statement": "There shall be exactly two triangular stiffening ribs at the left bend.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "left_flange",
+      "statement": "There shall be exactly one obround slot in the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "right_flange",
+      "statement": "There shall be exactly three obround slots in the right flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "neck_circle",
+      "statement": "There shall be exactly six through holes equally spaced on the 44 mm circle around the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "m5_counterbore",
+      "statement": "There shall be exactly four M5 counterbored holes.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": ""
+      }
+     }
+    ],
+    "safety_factors": [
+     {
+      "against": "bearing",
+      "statement": "Bearing stress at the 3 mm pin / cross-hole interface under the 120 N load shall keep a safety factor of at least 2.",
+      "comparison": "at_least",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      },
+      "rationale": "Explicitly required by the brief for the pin-carrying cross hole."
+     }
+    ]
+   },
+   "assumptions": [
+    {
+     "id": "ASM_LOAD_DIRECTION",
+     "statement": "The stated 120 N pin load acts radially (transverse to the pin/cross-hole axis), consistent with a conventional bearing-stress check.",
+     "rationale": "The brief gives only a magnitude and names a 'bearing stress' safety factor, which presumes a transverse load on the pin.",
+     "consequence_if_wrong": "An axial or combined load component would change the governing stress state and the computed safety factor.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false,
+     "value": {
+      "magnitude": 120,
+      "unit": "N"
+     }
+    },
+    {
+     "id": "ASM_LOAD_STATIC",
+     "statement": "The 120 N pin load is static, not cyclic or shock-applied.",
+     "rationale": "No duty cycle is stated; static service is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "A dynamic or fatigue load would invalidate a safety factor computed from static yield/bearing strength alone.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_MATERIAL_PROPERTIES",
+     "statement": "Generic, published mechanical properties for FDM-printed PLA (typical yield/bearing strength) are used to evaluate the bearing safety factor, since no specific grade or batch data is given.",
+     "rationale": "The brief names PLA as the material but gives no datasheet values needed to compute stress.",
+     "consequence_if_wrong": "If the actual printed PLA is weaker (common with FDM anisotropy and poor layer adhesion), the real safety factor could be below the required 2.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_PRINT_ORIENTATION",
+     "statement": "Print orientation and layer adhesion at the load-bearing cross-hole boss are assumed adequate and are not degraded by unfavourable layer-line direction.",
+     "rationale": "FDM PLA is anisotropic; the brief does not specify build orientation.",
+     "consequence_if_wrong": "Interlayer bonding weaker than assumed could reduce the real bearing safety factor below 2 even if geometry is correct.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_SPRING_NONFUNCTIONAL",
+     "statement": "The integral compression spring is a fused, geometric (decorative/structural) feature of the one-piece print, not expected to function as a working spring with a stated preload or deflection.",
+     "rationale": "No spring rate, preload or working deflection is given, and the spring is described as 'fused' to the boss.",
+     "consequence_if_wrong": "If mechanical spring action is actually required, the fused geometry as specified cannot provide it.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_THREAD_CLASS",
+     "statement": "M4, M5 and M8 features use standard ISO metric coarse thread tolerances for clearance/counterbore sizing and the printed M8 blind thread.",
+     "rationale": "No thread class is stated; standard metric coarse is the ordinary default.",
+     "consequence_if_wrong": "A non-standard thread pitch or class would change fastener engagement and fit.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_HOLE_FIT",
+     "statement": "Through holes, slots and the neck bore are sized to nominal as stated, with ordinary FDM-printed dimensional tolerance (no tight fit class called out).",
+     "rationale": "No fit class or tolerance is specified for any hole or slot.",
+     "consequence_if_wrong": "Mating shafts, pins or fasteners sized to a tighter fit might not seat as intended.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_OPERATING_TEMP",
+     "statement": "The bracket operates at ordinary indoor ambient temperature, well below PLA's heat deflection temperature.",
+     "rationale": "No operating environment is stated; indoor ambient is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "Elevated temperature exposure could soften PLA and invalidate the bearing safety factor and dimensional stability.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BEND_AS_PRINTED",
+     "statement": "The 'build flat then bend' description is a flat-pattern modelling method for the one-piece print; the part is printed directly in its final bent/folded shape, not formed after printing.",
+     "rationale": "The part is stated to be one-piece 3D-printed, so no post-print forming operation is implied.",
+     "consequence_if_wrong": "If an actual post-print bending step were intended, springback and bend-line stress would need separate analysis.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BALL_NO_VENT",
+     "statement": "The sealed hollow ball requires no vent or drain hole; any trapped internal support material is acceptable or managed by the print process.",
+     "rationale": "The brief explicitly calls for a sealed ball with no opening mentioned.",
+     "consequence_if_wrong": "Unremovable support material could add unaccounted mass or trapped stress risers.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    }
+   ],
+   "unknowns": [
+    {
+     "id": "UNK_HANDLE_LOAD",
+     "question": "What magnitude and direction of grip/pull load should the grab handle be designed to withstand (e.g. light repositioning only, or full support of the bracket's weight, or more)?",
+     "why_it_matters": "The handle is sized and shaped for a human hand, implying human-applied force, but the brief gives no load value and requests no safety factor for it, so its structural adequacy cannot be assessed without this figure.",
+     "critical": true,
+     "suggested_default": "Light manual repositioning only, assume 50 N static pull, no safety-factor verification requested"
+    },
+    {
+     "id": "UNK_FASTENER_MATING_SPEC",
+     "question": "Are the mating fasteners (M4/M5/M8 screws, the cross-hole pin) supplied as part of this design, and what head styles/lengths must the countersunk and counterbored holes accommodate?",
+     "why_it_matters": "Countersink and counterbore depths assume flush-fitting hardware; without knowing the actual fastener, clearance and engagement cannot be fully verified.",
+     "critical": false,
+     "blocks": [],
+     "suggested_default": "Standard ISO metric countersunk/socket-head screws, customer-supplied"
+    }
+   ]
+  },
+  {
+   "risk_class": "moderate",
+   "requirements": {
+    "whole_part": {
+     "mass": {
+      "statement": "The finished part shall weigh no more than 160 g.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 160,
+       "unit": "g"
+      },
+      "rationale": "Stated overall weight cap."
+     },
+     "bounding_box_z": {
+      "statement": "The finished part shall be no taller than 60 mm overall.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 60,
+       "unit": "mm"
+      },
+      "rationale": "Stated overall height cap."
+     },
+     "bounding_box_y": {
+      "statement": "The base plate is 80 mm wide in Y and no feature extends beyond it, so the part's overall Y extent shall equal 80 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 80,
+       "unit": "mm"
+      },
+      "rationale": "Bending occurs about lines across the plate (perpendicular to X), so Y extent is unaffected by bending and equals the base width."
+     }
+    },
+    "dimensions": [
+     {
+      "parameter": "base_length_x",
+      "statement": "The base plate's flat length along X shall be 150 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 150,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_thickness",
+      "statement": "The base plate shall be 6 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_corner_radius",
+      "statement": "The base plate's four vertical corner edges shall be rounded to 6 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_flat_length",
+      "statement": "The left bent section shall measure 30 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_angle",
+      "statement": "The left flange shall be bent up through 90 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "left_bend_radius",
+      "statement": "The left bend's inside radius shall be 3 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_flat_length",
+      "statement": "The right bent section shall measure 23 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 23,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_angle",
+      "statement": "The right flange shall be bent up through 45 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 45,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "right_bend_radius",
+      "statement": "The right bend's inside radius shall be 6 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_length",
+      "statement": "The left flange's obround slot shall be 20 mm long (along Y).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_width",
+      "statement": "The left flange's obround slot shall be 8 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_hole_diameter",
+      "statement": "Each M4 clearance hole shall be 4.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_countersink_angle",
+      "statement": "Each M4 hole's countersink shall be 90 degrees included angle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "m4_countersink_diameter",
+      "statement": "Each M4 hole's countersink shall be 9 mm across on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 9,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_thickness",
+      "statement": "Each triangular rib shall be 4 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_base_run",
+      "statement": "Each rib shall run 18 mm along the base.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_flange_run",
+      "statement": "Each rib shall run 18 mm up the flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_length",
+      "statement": "Each right flange obround slot shall be 12 mm long (along X).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_width",
+      "statement": "Each right flange obround slot shall be 4 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_square_size",
+      "statement": "The neck's loft shall start from a 30 mm square on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_top_circle_diameter",
+      "statement": "The neck's loft shall end at a 20 mm diameter circle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_height",
+      "statement": "The neck's top circle shall be 25 mm above the base top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 25,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bore_diameter",
+      "statement": "The neck bore shall be 12 mm diameter straight through neck and plate.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_wire_diameter",
+      "statement": "The bead around the neck top shall have a 3 mm round cross-section.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_circle_diameter",
+      "statement": "The bead's centreline shall lie on a 16 mm diameter circle in the neck's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_diameter",
+      "statement": "The six holes equally spaced around the neck shall each be 4 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_pattern_diameter",
+      "statement": "The six holes shall be equally spaced on a 44 mm diameter circle centred on the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 44,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_hole_diameter",
+      "statement": "Each M5 counterbored hole shall be 5.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 5.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_diameter",
+      "statement": "Each M5 hole's counterbore shall be 10 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_depth",
+      "statement": "Each M5 hole's counterbore shall be 3 mm deep from the top.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_diameter",
+      "statement": "The tilted through hole shall be 6 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_angle",
+      "statement": "The tilted hole shall be angled 30 degrees from vertical toward +X.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "hex_boss_across_flats",
+      "statement": "The hexagonal boss shall measure 19 mm across flats.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 19,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_height",
+      "statement": "The hexagonal boss shall be 12 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_chamfer",
+      "statement": "The hexagonal boss's top edge shall carry a 1 mm chamfer.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m8_blind_hole_depth",
+      "statement": "The M8 threaded blind hole in the hex boss shall be 12 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_wire_diameter",
+      "statement": "The integral compression spring's wire shall be 1.5 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_outside_diameter",
+      "statement": "The compression spring's outside diameter shall be 12 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_coil_count",
+      "statement": "The compression spring shall have 6 coils.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "turns"
+      }
+     },
+     {
+      "parameter": "spring_length",
+      "statement": "The compression spring shall be 24 mm long.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_diameter",
+      "statement": "The round boss shall be 16 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_height",
+      "statement": "The round boss shall be 20 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_diameter",
+      "statement": "The round boss's cross hole shall be 3 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_height_above_top",
+      "statement": "The cross hole shall be 10 mm above the plate's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_diameter",
+      "statement": "The sealed hollow ball atop the round boss shall be 16 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_wall_thickness",
+      "statement": "The sealed hollow ball's wall shall be 2 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_centre_height_above_boss_top",
+      "statement": "The ball's centre shall be 7 mm above the round boss's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 7,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_base_diameter",
+      "statement": "The cone's base shall be 14 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 14,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_height",
+      "statement": "The cone shall be 12 mm tall, coming to a point.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_bar_diameter",
+      "statement": "The grab handle's round bar shall be 8 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_height_above_top",
+      "statement": "The grab handle's straight centreline shall sit 30 mm above the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_corner_radius",
+      "statement": "The grab handle's two corner bends shall have an 8 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_diameter",
+      "statement": "The underside spherical dimple shall be 24 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_depth",
+      "statement": "The underside spherical dimple shall be 4 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     }
+    ],
+    "counts": [
+     {
+      "feature_kind": "hole",
+      "tag": "m4_mounting",
+      "statement": "There shall be exactly two M4 countersunk mounting holes on the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "extrude",
+      "tag": "rib",
+      "statement": "There shall be exactly two triangular stiffening ribs at the left bend.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "left_flange",
+      "statement": "There shall be exactly one obround slot in the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "right_flange",
+      "statement": "There shall be exactly three obround slots in the right flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "neck_circle",
+      "statement": "There shall be exactly six through holes equally spaced on the 44 mm circle around the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "m5_counterbore",
+      "statement": "There shall be exactly four M5 counterbored holes.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": ""
+      }
+     }
+    ],
+    "safety_factors": [
+     {
+      "against": "bearing",
+      "statement": "Bearing stress at the 3 mm pin / cross-hole interface under the 120 N load shall keep a safety factor of at least 2.",
+      "comparison": "at_least",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      },
+      "rationale": "Explicitly required by the brief for the pin-carrying cross hole."
+     }
+    ]
+   },
+   "assumptions": [
+    {
+     "id": "ASM_LOAD_DIRECTION",
+     "statement": "The stated 120 N pin load acts radially (transverse to the pin/cross-hole axis), consistent with a conventional bearing-stress check.",
+     "rationale": "The brief gives only a magnitude and names a 'bearing stress' safety factor, which presumes a transverse load on the pin.",
+     "consequence_if_wrong": "An axial or combined load component would change the governing stress state and the computed safety factor.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false,
+     "value": {
+      "magnitude": 120,
+      "unit": "N"
+     }
+    },
+    {
+     "id": "ASM_LOAD_STATIC",
+     "statement": "The 120 N pin load is static, not cyclic or shock-applied.",
+     "rationale": "No duty cycle is stated; static service is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "A dynamic or fatigue load would invalidate a safety factor computed from static yield/bearing strength alone.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_MATERIAL_PROPERTIES",
+     "statement": "Generic, published mechanical properties for FDM-printed PLA (typical yield/bearing strength) are used to evaluate the bearing safety factor, since no specific grade or batch data is given.",
+     "rationale": "The brief names PLA as the material but gives no datasheet values needed to compute stress.",
+     "consequence_if_wrong": "If the actual printed PLA is weaker (common with FDM anisotropy and poor layer adhesion), the real safety factor could be below the required 2.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_PRINT_ORIENTATION",
+     "statement": "Print orientation and layer adhesion at the load-bearing cross-hole boss are assumed adequate and are not degraded by unfavourable layer-line direction.",
+     "rationale": "FDM PLA is anisotropic; the brief does not specify build orientation.",
+     "consequence_if_wrong": "Interlayer bonding weaker than assumed could reduce the real bearing safety factor below 2 even if geometry is correct.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_SPRING_NONFUNCTIONAL",
+     "statement": "The integral compression spring is a fused, geometric (decorative/structural) feature of the one-piece print, not expected to function as a working spring with a stated preload or deflection.",
+     "rationale": "No spring rate, preload or working deflection is given, and the spring is described as 'fused' to the boss.",
+     "consequence_if_wrong": "If mechanical spring action is actually required, the fused geometry as specified cannot provide it.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_THREAD_CLASS",
+     "statement": "M4, M5 and M8 features use standard ISO metric coarse thread tolerances for clearance/counterbore sizing and the printed M8 blind thread.",
+     "rationale": "No thread class is stated; standard metric coarse is the ordinary default.",
+     "consequence_if_wrong": "A non-standard thread pitch or class would change fastener engagement and fit.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_HOLE_FIT",
+     "statement": "Through holes, slots and the neck bore are sized to nominal as stated, with ordinary FDM-printed dimensional tolerance (no tight fit class called out).",
+     "rationale": "No fit class or tolerance is specified for any hole or slot.",
+     "consequence_if_wrong": "Mating shafts, pins or fasteners sized to a tighter fit might not seat as intended.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_OPERATING_TEMP",
+     "statement": "The bracket operates at ordinary indoor ambient temperature, well below PLA's heat deflection temperature.",
+     "rationale": "No operating environment is stated; indoor ambient is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "Elevated temperature exposure could soften PLA and invalidate the bearing safety factor and dimensional stability.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BEND_AS_PRINTED",
+     "statement": "The 'build flat then bend' description is a flat-pattern modelling method for the one-piece print; the part is printed directly in its final bent/folded shape, not formed after printing.",
+     "rationale": "The part is stated to be one-piece 3D-printed, so no post-print forming operation is implied.",
+     "consequence_if_wrong": "If an actual post-print bending step were intended, springback and bend-line stress would need separate analysis.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BALL_NO_VENT",
+     "statement": "The sealed hollow ball requires no vent or drain hole; any trapped internal support material is acceptable or managed by the print process.",
+     "rationale": "The brief explicitly calls for a sealed ball with no opening mentioned.",
+     "consequence_if_wrong": "Unremovable support material could add unaccounted mass or trapped stress risers.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    }
+   ],
+   "unknowns": [
+    {
+     "id": "UNK_HANDLE_LOAD",
+     "question": "What magnitude and direction of grip/pull load should the grab handle be designed to withstand (e.g. light repositioning only, or full support of the bracket's weight, or more)?",
+     "why_it_matters": "The handle is sized and shaped for a human hand, implying human-applied force, but the brief gives no load value and requests no safety factor for it, so its structural adequacy cannot be assessed without this figure.",
+     "critical": true,
+     "suggested_default": "Light manual repositioning only, assume 50 N static pull, no safety-factor verification requested"
+    },
+    {
+     "id": "UNK_FASTENER_MATING_SPEC",
+     "question": "Are the mating fasteners (M4/M5/M8 screws, the cross-hole pin) supplied as part of this design, and what head styles/lengths must the countersunk and counterbored holes accommodate?",
+     "why_it_matters": "Countersink and counterbore depths assume flush-fitting hardware; without knowing the actual fastener, clearance and engagement cannot be fully verified.",
+     "critical": false,
+     "blocks": [],
+     "suggested_default": "Standard ISO metric countersunk/socket-head screws, customer-supplied"
+    }
+   ]
+  },
+  {
+   "assumptions": [
+    {
+     "id": "ASM_LOAD_DIRECTION",
+     "statement": "The stated 120 N pin load acts radially (transverse to the pin/cross-hole axis), consistent with a conventional bearing-stress check.",
+     "rationale": "The brief gives only a magnitude and names a 'bearing stress' safety factor, which presumes a transverse load on the pin.",
+     "consequence_if_wrong": "An axial or combined load component would change the governing stress state and the computed safety factor.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false,
+     "value": {
+      "magnitude": 120,
+      "unit": "N"
+     }
+    },
+    {
+     "id": "ASM_LOAD_STATIC",
+     "statement": "The 120 N pin load is static, not cyclic or shock-applied.",
+     "rationale": "No duty cycle is stated; static service is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "A dynamic or fatigue load would invalidate a safety factor computed from static yield/bearing strength alone.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_MATERIAL_PROPERTIES",
+     "statement": "Generic, published mechanical properties for FDM-printed PLA (typical yield/bearing strength) are used to evaluate the bearing safety factor, since no specific grade or batch data is given.",
+     "rationale": "The brief names PLA as the material but gives no datasheet values needed to compute stress.",
+     "consequence_if_wrong": "If the actual printed PLA is weaker (common with FDM anisotropy and poor layer adhesion), the real safety factor could be below the required 2.",
+     "risk": "high",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_PRINT_ORIENTATION",
+     "statement": "Print orientation and layer adhesion at the load-bearing cross-hole boss are assumed adequate and are not degraded by unfavourable layer-line direction.",
+     "rationale": "FDM PLA is anisotropic; the brief does not specify build orientation.",
+     "consequence_if_wrong": "Interlayer bonding weaker than assumed could reduce the real bearing safety factor below 2 even if geometry is correct.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_SPRING_NONFUNCTIONAL",
+     "statement": "The integral compression spring is a fused, geometric (decorative/structural) feature of the one-piece print, not expected to function as a working spring with a stated preload or deflection.",
+     "rationale": "No spring rate, preload or working deflection is given, and the spring is described as 'fused' to the boss.",
+     "consequence_if_wrong": "If mechanical spring action is actually required, the fused geometry as specified cannot provide it.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_THREAD_CLASS",
+     "statement": "M4, M5 and M8 features use standard ISO metric coarse thread tolerances for clearance/counterbore sizing and the printed M8 blind thread.",
+     "rationale": "No thread class is stated; standard metric coarse is the ordinary default.",
+     "consequence_if_wrong": "A non-standard thread pitch or class would change fastener engagement and fit.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_HOLE_FIT",
+     "statement": "Through holes, slots and the neck bore are sized to nominal as stated, with ordinary FDM-printed dimensional tolerance (no tight fit class called out).",
+     "rationale": "No fit class or tolerance is specified for any hole or slot.",
+     "consequence_if_wrong": "Mating shafts, pins or fasteners sized to a tighter fit might not seat as intended.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_OPERATING_TEMP",
+     "statement": "The bracket operates at ordinary indoor ambient temperature, well below PLA's heat deflection temperature.",
+     "rationale": "No operating environment is stated; indoor ambient is the ordinary default for an instrument bracket.",
+     "consequence_if_wrong": "Elevated temperature exposure could soften PLA and invalidate the bearing safety factor and dimensional stability.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BEND_AS_PRINTED",
+     "statement": "The 'build flat then bend' description is a flat-pattern modelling method for the one-piece print; the part is printed directly in its final bent/folded shape, not formed after printing.",
+     "rationale": "The part is stated to be one-piece 3D-printed, so no post-print forming operation is implied.",
+     "consequence_if_wrong": "If an actual post-print bending step were intended, springback and bend-line stress would need separate analysis.",
+     "risk": "moderate",
+     "reversible": true,
+     "approved": false
+    },
+    {
+     "id": "ASM_BALL_NO_VENT",
+     "statement": "The sealed hollow ball requires no vent or drain hole; any trapped internal support material is acceptable or managed by the print process.",
+     "rationale": "The brief explicitly calls for a sealed ball with no opening mentioned.",
+     "consequence_if_wrong": "Unremovable support material could add unaccounted mass or trapped stress risers.",
+     "risk": "low",
+     "reversible": true,
+     "approved": false
+    }
+   ],
+   "unknowns": [
+    {
+     "id": "UNK_HANDLE_LOAD",
+     "question": "What magnitude and direction of grip/pull load should the grab handle be designed to withstand (e.g. light repositioning only, or full support of the bracket's weight, or more)?",
+     "why_it_matters": "The handle is sized and shaped for a human hand, implying human-applied force, but the brief gives no load value and requests no safety factor for it, so its structural adequacy cannot be assessed without this figure.",
+     "critical": true,
+     "suggested_default": "Light manual repositioning only, assume 50 N static pull, no safety-factor verification requested"
+    },
+    {
+     "id": "UNK_FASTENER_MATING_SPEC",
+     "question": "Are the mating fasteners (M4/M5/M8 screws, the cross-hole pin) supplied as part of this design, and what head styles/lengths must the countersunk and counterbored holes accommodate?",
+     "why_it_matters": "Countersink and counterbore depths assume flush-fitting hardware; without knowing the actual fastener, clearance and engagement cannot be fully verified.",
+     "critical": false,
+     "blocks": [],
+     "suggested_default": "Standard ISO metric countersunk/socket-head screws, customer-supplied"
+    }
+   ],
+   "risk_class": "moderate",
+   "requirements": {
+    "whole_part": {
+     "mass": {
+      "statement": "The finished part shall weigh no more than 160 g.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 160,
+       "unit": "g"
+      },
+      "rationale": "Stated overall weight cap."
+     },
+     "bounding_box_z": {
+      "statement": "The finished part shall be no taller than 60 mm overall.",
+      "comparison": "at_most",
+      "threshold": {
+       "magnitude": 60,
+       "unit": "mm"
+      },
+      "rationale": "Stated overall height cap."
+     },
+     "bounding_box_y": {
+      "statement": "The base plate is 80 mm wide in Y and no feature extends beyond it, so the part's overall Y extent shall equal 80 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 80,
+       "unit": "mm"
+      },
+      "rationale": "Bending occurs about lines across the plate (perpendicular to X), so Y extent is unaffected by bending and equals the base width."
+     }
+    },
+    "dimensions": [
+     {
+      "parameter": "base_length_x",
+      "statement": "The base plate's flat length along X shall be 150 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 150,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_thickness",
+      "statement": "The base plate shall be 6 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "base_corner_radius",
+      "statement": "The base plate's four vertical corner edges shall be rounded to 6 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_flat_length",
+      "statement": "The left bent section shall measure 30 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_bend_angle",
+      "statement": "The left flange shall be bent up through 90 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "left_bend_radius",
+      "statement": "The left bend's inside radius shall be 3 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_flat_length",
+      "statement": "The right bent section shall measure 23 mm along the flat pattern.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 23,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_bend_angle",
+      "statement": "The right flange shall be bent up through 45 degrees.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 45,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "right_bend_radius",
+      "statement": "The right bend's inside radius shall be 6 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_length",
+      "statement": "The left flange's obround slot shall be 20 mm long (along Y).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "left_slot_width",
+      "statement": "The left flange's obround slot shall be 8 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_hole_diameter",
+      "statement": "Each M4 clearance hole shall be 4.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m4_countersink_angle",
+      "statement": "Each M4 hole's countersink shall be 90 degrees included angle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 90,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "m4_countersink_diameter",
+      "statement": "Each M4 hole's countersink shall be 9 mm across on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 9,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_thickness",
+      "statement": "Each triangular rib shall be 4 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_base_run",
+      "statement": "Each rib shall run 18 mm along the base.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "rib_flange_run",
+      "statement": "Each rib shall run 18 mm up the flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 18,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_length",
+      "statement": "Each right flange obround slot shall be 12 mm long (along X).",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "right_slot_width",
+      "statement": "Each right flange obround slot shall be 4 mm wide.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_square_size",
+      "statement": "The neck's loft shall start from a 30 mm square on the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_top_circle_diameter",
+      "statement": "The neck's loft shall end at a 20 mm diameter circle.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_height",
+      "statement": "The neck's top circle shall be 25 mm above the base top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 25,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bore_diameter",
+      "statement": "The neck bore shall be 12 mm diameter straight through neck and plate.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_wire_diameter",
+      "statement": "The bead around the neck top shall have a 3 mm round cross-section.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_bead_circle_diameter",
+      "statement": "The bead's centreline shall lie on a 16 mm diameter circle in the neck's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_diameter",
+      "statement": "The six holes equally spaced around the neck shall each be 4 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "neck_circle_hole_pattern_diameter",
+      "statement": "The six holes shall be equally spaced on a 44 mm diameter circle centred on the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 44,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_hole_diameter",
+      "statement": "Each M5 counterbored hole shall be 5.5 mm diameter through.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 5.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_diameter",
+      "statement": "Each M5 hole's counterbore shall be 10 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m5_counterbore_depth",
+      "statement": "Each M5 hole's counterbore shall be 3 mm deep from the top.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_diameter",
+      "statement": "The tilted through hole shall be 6 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "tilted_hole_angle",
+      "statement": "The tilted hole shall be angled 30 degrees from vertical toward +X.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "deg"
+      }
+     },
+     {
+      "parameter": "hex_boss_across_flats",
+      "statement": "The hexagonal boss shall measure 19 mm across flats.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 19,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_height",
+      "statement": "The hexagonal boss shall be 12 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "hex_boss_chamfer",
+      "statement": "The hexagonal boss's top edge shall carry a 1 mm chamfer.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "m8_blind_hole_depth",
+      "statement": "The M8 threaded blind hole in the hex boss shall be 12 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_wire_diameter",
+      "statement": "The integral compression spring's wire shall be 1.5 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_outside_diameter",
+      "statement": "The compression spring's outside diameter shall be 12 mm.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "spring_coil_count",
+      "statement": "The compression spring shall have 6 coils.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": ""
+      }
+     },
+     {
+      "parameter": "spring_length",
+      "statement": "The compression spring shall be 24 mm long.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_diameter",
+      "statement": "The round boss shall be 16 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "round_boss_height",
+      "statement": "The round boss shall be 20 mm tall.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 20,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_diameter",
+      "statement": "The round boss's cross hole shall be 3 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cross_hole_height_above_top",
+      "statement": "The cross hole shall be 10 mm above the plate's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 10,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_diameter",
+      "statement": "The sealed hollow ball atop the round boss shall be 16 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 16,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_wall_thickness",
+      "statement": "The sealed hollow ball's wall shall be 2 mm thick.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "ball_centre_height_above_boss_top",
+      "statement": "The ball's centre shall be 7 mm above the round boss's top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 7,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_base_diameter",
+      "statement": "The cone's base shall be 14 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 14,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "cone_height",
+      "statement": "The cone shall be 12 mm tall, coming to a point.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 12,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_bar_diameter",
+      "statement": "The grab handle's round bar shall be 8 mm diameter.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_height_above_top",
+      "statement": "The grab handle's straight centreline shall sit 30 mm above the top face.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 30,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "handle_corner_radius",
+      "statement": "The grab handle's two corner bends shall have an 8 mm radius.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 8,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_diameter",
+      "statement": "The underside spherical dimple shall be 24 mm across.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 24,
+       "unit": "mm"
+      }
+     },
+     {
+      "parameter": "dimple_depth",
+      "statement": "The underside spherical dimple shall be 4 mm deep.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": "mm"
+      }
+     }
+    ],
+    "counts": [
+     {
+      "feature_kind": "hole",
+      "tag": "m4_mounting",
+      "statement": "There shall be exactly two M4 countersunk mounting holes on the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "extrude",
+      "tag": "rib",
+      "statement": "There shall be exactly two triangular stiffening ribs at the left bend.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "left_flange",
+      "statement": "There shall be exactly one obround slot in the left flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 1,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "profile_slot",
+      "tag": "right_flange",
+      "statement": "There shall be exactly three obround slots in the right flange.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 3,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "neck_circle",
+      "statement": "There shall be exactly six through holes equally spaced on the 44 mm circle around the neck.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 6,
+       "unit": ""
+      }
+     },
+     {
+      "feature_kind": "hole",
+      "tag": "m5_counterbore",
+      "statement": "There shall be exactly four M5 counterbored holes.",
+      "comparison": "equals",
+      "threshold": {
+       "magnitude": 4,
+       "unit": ""
+      }
+     }
+    ],
+    "safety_factors": [
+     {
+      "against": "bearing",
+      "statement": "Bearing stress at the 3 mm pin / cross-hole interface under the 120 N load shall keep a safety factor of at least 2.",
+      "comparison": "at_least",
+      "threshold": {
+       "magnitude": 2,
+       "unit": ""
+      },
+      "rationale": "Explicitly required by the brief for the pin-carrying cross hole."
+     }
+    ]
+   }
+  }
+ ],
+ "run": "the instrument bracket, 18 October 2026",
+ "note": "Every shape and process in one part. The requirements died three times on `parameter:spring_coil_count = 6` with an empty unit: Forge refused the empty unit, then refused 'turns' as no unit and said a count takes an empty one. `answers` are the three answers, in order."
+}

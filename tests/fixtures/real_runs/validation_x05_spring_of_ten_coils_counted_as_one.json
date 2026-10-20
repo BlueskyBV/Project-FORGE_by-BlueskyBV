@@ -1,0 +1,512 @@
+{
+ "brief": "A steel compression spring: 20 mm outside diameter, 2 mm wire, 10 coils, 50 mm free length. It carries no load, so there is no load case.",
+ "intent": {
+  "summary": "A steel compression spring defined by its coil geometry, intended per the brief to operate without carrying any load.",
+  "part_kind": "compression spring",
+  "stated": [
+   "Steel compression spring",
+   "Outside diameter: 20 mm",
+   "Wire diameter: 2 mm",
+   "Number of coils: 10",
+   "Free length: 50 mm",
+   "User states it carries no load, so there is no load case"
+  ],
+  "implied": [
+   "Being a compression spring with specified coil count and free length implies a helical wound geometry with evenly spaced coils",
+   "Specifying wire diameter and OD implies an inside diameter can be derived (ID = OD - 2*wire diameter), though end coil behavior affects this",
+   "Steel material implies some conventional spring steel, but the specific alloy/grade is not given"
+  ],
+  "unstated": [
+   "Specific steel grade/alloy (e.g. music wire, chrome-silicon, stainless) and its mechanical properties (shear modulus, yield/tensile strength)",
+   "End type of the spring (plain, plain ground, squared, squared and ground) which affects active coil count and seating",
+   "Whether the 10 coils are total coils or active coils",
+   "Surface finish or coating (relevant for fatigue and corrosion)",
+   "Intended installed length or deflection range even if nominal load is zero -- i.e. whether the spring will ever be compressed during assembly or operation",
+   "Operating environment (temperature, corrosive exposure, cyclic loading expectations)",
+   "Tolerances on OD, wire diameter, free length, and squareness",
+   "Why a compression spring is specified at all if no load is ever applied -- the functional purpose of the part is not explained",
+   "Spring rate requirement, even if only for verification purposes",
+   "Any contact/interface geometry (does it sit in a bore, over a rod, between plates) that constrains its diametral fit"
+  ],
+  "out_of_scope": [
+   "Selecting a specific steel alloy or spring wire specification",
+   "Determining spring rate or stress calculations",
+   "Deciding end coil treatment or grinding",
+   "Assigning tolerances",
+   "Any dimensioning or material choice beyond what was explicitly stated"
+  ],
+  "risk_signals": [
+   "The brief asserts a compression spring 'carries no load,' but compression springs are definitionally load-bearing elements; this claim is internally inconsistent and should be challenged rather than accepted at face value",
+   "If this unstated/unverified load assumption is wrong and the spring is later loaded in service, no load case has been defined, so deflection, stress, and fatigue life are entirely unverified",
+   "No information given on whether this spring is part of a larger assembly that could involve personal safety (e.g. mechanism holding a load, safety latch, pressure relief) -- absence of context here is itself a signal worth flagging given the contradictory 'no load' statement"
+  ],
+  "suggested_name": "",
+  "notes": []
+ },
+ "requirements": {
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The spring's overall outside diameter shall be 20 mm, measured across X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states a 20 mm outside diameter; a coil spring is round, so this applies equally to X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The spring's overall outside diameter shall be 20 mm, measured across Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Same outside diameter figure as bounding_box_x, since the part is round about its axis.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The spring's overall free length shall be 50 mm.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states a 50 mm free length, which is the whole part's extent along its coil axis (Z).",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_WIRE_DIAMETER",
+    "statement": "The spring wire diameter shall be 2 mm.",
+    "measurement": "parameter:wire_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief explicitly states a 2 mm wire diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   },
+   {
+    "id": "REQ_TOTAL_COIL_COUNT",
+    "statement": "The spring shall have 10 coils.",
+    "measurement": "feature_count:coil:total",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10,
+     "unit": ""
+    },
+    "rationale": "The brief states 10 coils; interpreted as the total coil count for the helical geometry.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The spring is made from a generic conventional spring steel (e.g. ASTM A228 music wire or equivalent), since no specific grade is stated.",
+    "rationale": "The brief says 'steel' but gives no alloy or temper; a conventional spring wire grade is the ordinary default for an unspecified steel spring.",
+    "consequence_if_wrong": "If a different grade or corrosion-resistant steel was actually intended, the material field would need correction but the geometry is unaffected.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_END_TYPE",
+    "statement": "The spring ends are assumed plain (unground, unsquared) coils, since no end condition is specified.",
+    "rationale": "No end treatment is given; plain ends are the simplest default consistent with the stated total coil count.",
+    "consequence_if_wrong": "If squared or ground ends were intended, the active coil count and seating behaviour would differ, though since no load case applies this has no functional consequence here.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_COIL_COUNT_TOTAL",
+    "statement": "The stated '10 coils' is interpreted as the total coil count (not just active coils) driving the helical geometry.",
+    "rationale": "The brief does not distinguish active vs total coils; total coil count is the natural reading of a bare 'coils' figure in a geometry-only brief.",
+    "consequence_if_wrong": "If 10 was meant as active coils only, the as-built coil pitch and total wire length would differ slightly from intended, though the part would still be buildable.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_STANDARD_TOLERANCES",
+    "statement": "Standard commercial manufacturing tolerances apply to the stated dimensions (OD, wire diameter, free length), since none are specified.",
+    "rationale": "No tolerances are given; ordinary commercial spring tolerances are the conventional default for an otherwise undimensioned brief.",
+    "consequence_if_wrong": "Tighter tolerance requirements, if actually needed, would require re-specification but would not change the nominal geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [],
+  "notes": []
+ },
+ "answer": {
+  "document": {
+   "name": "Compression spring",
+   "description": "A helical compression spring defined purely by its coil geometry: outside diameter, wire diameter, coil count and free length. No load case applies per the brief.",
+   "components": [
+    {
+     "id": "spring",
+     "name": "Compression spring",
+     "parameters": [
+      {
+       "id": "outer_diameter",
+       "value": {
+        "magnitude": 20.0,
+        "unit": "mm"
+       },
+       "description": "Overall outside diameter of the spring, across the wire."
+      },
+      {
+       "id": "wire_diameter",
+       "value": {
+        "magnitude": 2.0,
+        "unit": "mm"
+       },
+       "description": "Diameter of the spring wire."
+      },
+      {
+       "id": "turns",
+       "value": {
+        "magnitude": 10,
+        "unit": ""
+       },
+       "description": "Total number of coils, per the brief's bare 'number of coils' figure."
+      },
+      {
+       "id": "free_length",
+       "value": {
+        "magnitude": 50.0,
+        "unit": "mm"
+       },
+       "description": "Overall unloaded (free) length of the spring, along its axis."
+      },
+      {
+       "id": "mean_diameter",
+       "expression": "outer_diameter - wire_diameter",
+       "unit": "mm",
+       "description": "Diameter to the middle of the wire, derived so the coil's outer envelope matches outer_diameter."
+      },
+      {
+       "id": "pitch",
+       "expression": "(free_length - wire_diameter) / turns",
+       "unit": "mm",
+       "description": "Axial advance per turn, derived so the stacked coils span exactly free_length end to end."
+      }
+     ],
+     "features": [
+      {
+       "id": "spring_coil",
+       "kind": "coil",
+       "tags": [
+        "total"
+       ],
+       "description": "The whole spring, one coil.",
+       "parameters": {
+        "diameter": {
+         "expression": "mean_diameter",
+         "unit": "mm"
+        },
+        "wire_diameter": {
+         "expression": "wire_diameter",
+         "unit": "mm"
+        },
+        "pitch": {
+         "expression": "pitch",
+         "unit": "mm"
+        },
+        "turns": {
+         "expression": "turns",
+         "unit": ""
+        },
+        "origin": {
+         "vector": [
+          0,
+          0,
+          0.0
+         ],
+         "unit": "mm"
+        },
+        "axis": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ],
+     "material": "steel_1018_cd"
+    }
+   ]
+  },
+  "rationale": "The part is modelled as a single `coil` feature -- the dedicated primitive for a spring -- rather than a box or cylinder approximation, since the brief gives exactly the parameters that feature wants: wire diameter, turns, pitch and axis. `mean_diameter` is derived from `outer_diameter - wire_diameter` so the coil's wire-to-wire envelope equals the stated 20 mm OD in both X and Y, and `pitch` is derived from `(free_length - wire_diameter) / turns` so the stacked helix spans exactly the stated 50 mm free length without any invented pitch value. Material is left unset because \"steel\" is a family name only, consistent with the recorded assumption that no specific grade was given; the coil feature is tagged `total` so the total-coil-count requirement reads directly off it."
+ },
+ "run": "validation X05, 18 October 2026",
+ "note": "A spring of 10 coils built as one coil of 10 turns, and counted as one coil: `feature_count:coil:total` read the number of coil features. The repair split it into ten one-turn coils joined end to end, the joins left the surface non-manifold, and the spring was held. `answer` is the first design, the one coil of ten turns. `held` is the rerun's design, counted right and then held: its coil drew 13 edges shared by four faces on every grid, the grid's guess on a wire met at a slant.",
+ "held": {
+  "name": "Compression spring, 20mm OD x 2mm wire x 10 coils",
+  "description": "A plain-ended compression spring defined purely by its stated geometry (outside diameter, wire diameter, coil count, free length). No load case applies per the brief; pitch is derived from free length, wire diameter and coil count so the geometry stays internally consistent if any of those change.",
+  "components": [
+   {
+    "id": "spring",
+    "name": "Compression spring",
+    "material": "steel_1018_cd",
+    "parameters": [
+     {
+      "id": "outer_diameter",
+      "value": {
+       "magnitude": 20.0,
+       "unit": "mm"
+      },
+      "description": "Outside diameter of the finished coil, across the wire"
+     },
+     {
+      "id": "wire_diameter",
+      "value": {
+       "magnitude": 2.0,
+       "unit": "mm"
+      },
+      "description": "Diameter of the round wire the spring is wound from"
+     },
+     {
+      "id": "turns",
+      "value": {
+       "magnitude": 10.0,
+       "unit": ""
+      },
+      "description": "Number of coils (plain ends assumed)"
+     },
+     {
+      "id": "free_length",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      },
+      "description": "Overall axial length with no load applied"
+     },
+     {
+      "id": "coil_diameter",
+      "expression": "outer_diameter - wire_diameter",
+      "unit": "mm",
+      "description": "Diameter to the middle of the wire (mean coil diameter), as the coil feature expects; derived so the stated 20 mm outside diameter is reproduced exactly once the wire thickness is added back on each side"
+     },
+     {
+      "id": "pitch",
+      "expression": "(free_length - wire_diameter) / turns",
+      "unit": "mm",
+      "description": "Axial advance per turn, derived from free length, wire diameter and coil count so free length, wire size and coil count stay the true drivers of the geometry"
+     }
+    ],
+    "features": [
+     {
+      "id": "spring_coil",
+      "kind": "coil",
+      "tags": [
+       "spring"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "coil_diameter",
+        "unit": "mm"
+       },
+       "wire_diameter": {
+        "expression": "wire_diameter",
+        "unit": "mm"
+       },
+       "pitch": {
+        "expression": "pitch",
+        "unit": "mm"
+       },
+       "turns": {
+        "expression": "turns"
+       },
+       "origin": {
+        "vector": [
+         0,
+         0,
+         "wire_diameter / 2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "6311d2a8-a05b-5ab2-bc81-d908007ec8ef",
+  "project_id": "da0de566-8afe-5a7d-907e-538e740daaa4",
+  "risk_class": "low",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_X",
+    "statement": "The spring's outside diameter shall be 20 mm, measured across the finished coil in X.",
+    "measurement": "bounding_box_x",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states a 20 mm outside diameter; a round part carries this figure in both X and Y.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Y",
+    "statement": "The spring's outside diameter shall be 20 mm, measured across the finished coil in Y.",
+    "measurement": "bounding_box_y",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 20.0,
+     "unit": "mm"
+    },
+    "rationale": "Same stated outside diameter, carried in the other horizontal axis for a round part.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The spring's free length shall be 50 mm, measured along its axis with no load applied.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief states a 50 mm free length, which is the overall axial extent of the finished part in its unloaded state.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WIRE_DIAMETER",
+    "statement": "The spring wire shall be 2 mm in diameter.",
+    "measurement": "parameter:wire_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": "mm"
+    },
+    "rationale": "The brief explicitly states a 2 mm wire diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_SPRING_COIL_COUNT",
+    "statement": "The spring shall have exactly 10 coils.",
+    "measurement": "feature_count:coil:spring",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 10.0,
+     "unit": ""
+    },
+    "rationale": "The brief states 10 coils as the defining feature count of the spring body.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_ROUND",
+    "measurement": "roundness",
+    "comparison": "at_least",
+    "threshold": {
+     "magnitude": 0.95,
+     "unit": ""
+    },
+    "statement": "The part shall be round about its axis.",
+    "source": "user",
+    "rationale": "The brief gives this part's size as a diameter, or calls it round.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL_GRADE",
+    "statement": "The spring is made from a generic spring steel (e.g. ASTM A228 music wire or equivalent cold-drawn carbon spring steel), since no specific grade is given.",
+    "rationale": "The brief only says 'steel'; a conventional spring-steel grade is the ordinary default for a compression spring with no stated duty.",
+    "consequence_if_wrong": "A different grade changes modulus, allowable stress and corrosion behaviour, but since the brief states no load case, this does not affect structural verification.",
+    "risk": "moderate",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_END_TYPE",
+    "statement": "The spring has plain (unground, open) ends, as no end condition is specified.",
+    "rationale": "Plain ends are the simplest conventional default when the brief gives only wire diameter, coil count and free length without describing end treatment.",
+    "consequence_if_wrong": "Closed or closed-and-ground ends would change the seating geometry and active coil count, but since there is no load case this has no functional consequence for the stated geometry.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_OPERATING_ENVIRONMENT",
+    "statement": "The spring operates at ordinary indoor ambient temperature with no corrosive exposure, as no environment is stated.",
+    "rationale": "Default assumption for an unspecified static/decorative application.",
+    "consequence_if_wrong": "Exposure to heat, corrosion or outdoor conditions could require a different steel grade or coating, but does not affect the stated geometric requirements.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_TOLERANCES",
+    "statement": "Standard commercial manufacturing tolerances apply to diameter, wire size, coil count and free length, since none are specified.",
+    "rationale": "No tolerance band is given in the brief; conventional commercial spring tolerances are assumed.",
+    "consequence_if_wrong": "Tighter tolerance needs (e.g. for a precision assembly) would require re-specification, but do not change the nominal requirements already captured.",
+    "risk": "low",
+    "reversible": true,
+    "approved": false
+   }
+  ]
+ }
+}

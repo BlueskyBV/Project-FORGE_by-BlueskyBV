@@ -1,0 +1,2451 @@
+{
+ "brief": "Create a hollow, anatomically shaped lower-leg shell, 330 mm tall, with 8 mm thick walls, a closed top and bottom, and a smooth rounded calf shape tapering toward the ankle. Use five rounded rectangular cross-sections: 85 \u00d7 80 mm at the bottom, 95 \u00d7 90 mm at 80 mm height, 115 \u00d7 110 mm at 190 mm height, 120 \u00d7 115 mm at 260 mm height, and 115 \u00d7 105 mm at the top. Round the profile corners with a 15 mm radius and curve the rear surface outward to resemble a muscular human calf. Add a 210 mm tall and 60 mm wide rectangular opening through the rear wall, centered horizontally and vertically, providing access to the hollow interior for removable sandbags. Add six 4.5 mm diameter mounting holes around the opening, arranged in two vertical columns 72 mm apart, with three holes per column at heights of 50, 165, and 280 mm from the bottom. Add one integral hinge tab at the center of each end, 12 mm thick and 30 mm wide, extending 50 mm beyond the shell and embedded 25 mm into it. Add one 8.5 mm diameter horizontal pivot hole through each tab, with its center 37.5 mm beyond the corresponding shell end. Round the hinge tab ends and reinforce their roots with 8 mm fillets. The main shell must be 330 mm tall, while the complete component including both hinge tabs must be approximately 430 mm tall. Make the entire part one connected, hollow, watertight, 3D-printable solid without a separate rear cover. Use fixed numerical dimensions in millimeters.",
+ "requirements": {
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The complete component including both hinge tabs shall be approximately 430 mm tall overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 430.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states complete component with both hinge tabs is approximately 430 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MAIN_SHELL_HEIGHT",
+    "statement": "The main shell (excluding hinge tabs) shall be 330 mm tall.",
+    "measurement": "parameter:main_shell_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states shell is 330 mm tall and must remain 330 mm tall separate from the overall component height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The shell walls shall be 8 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 8 mm thick walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_BOTTOM",
+    "statement": "The cross-section at the bottom shall be 85 mm wide.",
+    "measurement": "parameter:cross_section_width_bottom",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 85.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives bottom cross-section 85 x 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_BOTTOM",
+    "statement": "The cross-section at the bottom shall be 80 mm deep.",
+    "measurement": "parameter:cross_section_depth_bottom",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives bottom cross-section 85 x 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_80MM",
+    "statement": "The cross-section at 80 mm height shall be 95 mm wide.",
+    "measurement": "parameter:cross_section_width_80mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 95.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 80 mm height as 95 x 90 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_80MM",
+    "statement": "The cross-section at 80 mm height shall be 90 mm deep.",
+    "measurement": "parameter:cross_section_depth_80mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 80 mm height as 95 x 90 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_2",
+    "statement": "The second cross-section station shall be located at 80 mm height from the bottom.",
+    "measurement": "parameter:station_height_2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 95x90 mm cross-section at 80 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_190MM",
+    "statement": "The cross-section at 190 mm height shall be 115 mm wide.",
+    "measurement": "parameter:cross_section_width_190mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 190 mm height as 115 x 110 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_190MM",
+    "statement": "The cross-section at 190 mm height shall be 110 mm deep.",
+    "measurement": "parameter:cross_section_depth_190mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 110.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 190 mm height as 115 x 110 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_3",
+    "statement": "The third cross-section station shall be located at 190 mm height from the bottom.",
+    "measurement": "parameter:station_height_3",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 190.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 115x110 mm cross-section at 190 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_260MM",
+    "statement": "The cross-section at 260 mm height shall be 120 mm wide.",
+    "measurement": "parameter:cross_section_width_260mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 260 mm height as 120 x 115 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_260MM",
+    "statement": "The cross-section at 260 mm height shall be 115 mm deep.",
+    "measurement": "parameter:cross_section_depth_260mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 260 mm height as 120 x 115 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_4",
+    "statement": "The fourth cross-section station shall be located at 260 mm height from the bottom.",
+    "measurement": "parameter:station_height_4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 260.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 120x115 mm cross-section at 260 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_TOP",
+    "statement": "The cross-section at the top shall be 115 mm wide.",
+    "measurement": "parameter:cross_section_width_top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives top cross-section as 115 x 105 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_TOP",
+    "statement": "The cross-section at the top shall be 105 mm deep.",
+    "measurement": "parameter:cross_section_depth_top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 105.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives top cross-section as 115 x 105 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PROFILE_CORNER_RADIUS",
+    "statement": "The profile corners of the cross-sections shall be rounded with a 15 mm radius.",
+    "measurement": "parameter:profile_corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 15 mm corner radius.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_HEIGHT",
+    "statement": "The rear wall access opening shall be 210 mm tall.",
+    "measurement": "parameter:rear_opening_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 210.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states opening is 210 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_WIDTH",
+    "statement": "The rear wall access opening shall be 60 mm wide.",
+    "measurement": "parameter:rear_opening_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states opening is 60 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The six mounting holes around the opening shall each be 4.5 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 4.5 mm diameter mounting holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COLUMN_SPACING",
+    "statement": "The two vertical columns of mounting holes shall be 72 mm apart.",
+    "measurement": "parameter:mounting_hole_column_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 72.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states columns are 72 mm apart.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_1",
+    "statement": "The lowest mounting hole in each column shall be at 50 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_1",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_2",
+    "statement": "The middle mounting hole in each column shall be at 165 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 165.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_3",
+    "statement": "The uppermost mounting hole in each column shall be at 280 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_3",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 280.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_THICKNESS",
+    "statement": "Each hinge tab shall be 12 mm thick.",
+    "measurement": "parameter:hinge_tab_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hinge tabs are 12 mm thick.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_WIDTH",
+    "statement": "Each hinge tab shall be 30 mm wide.",
+    "measurement": "parameter:hinge_tab_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hinge tabs are 30 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_EXTENSION",
+    "statement": "Each hinge tab shall extend 50 mm beyond the shell.",
+    "measurement": "parameter:hinge_tab_extension",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states tabs extend 50 mm beyond the shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_EMBED_DEPTH",
+    "statement": "Each hinge tab shall be embedded 25 mm into the shell.",
+    "measurement": "parameter:hinge_tab_embed_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states tabs are embedded 25 mm into the shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "Each hinge tab shall have one horizontal pivot hole 8.5 mm in diameter.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states pivot holes are 8.5 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_OFFSET",
+    "statement": "Each pivot hole center shall be located 37.5 mm beyond the corresponding shell end.",
+    "measurement": "parameter:pivot_hole_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 37.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states pivot hole centers are 37.5 mm beyond the shell end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_ROOT_FILLET_RADIUS",
+    "statement": "The hinge tab roots shall be reinforced with 8 mm fillets.",
+    "measurement": "parameter:hinge_root_fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 8 mm fillets at tab roots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be exactly six mounting holes arranged around the rear opening.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": ""
+    },
+    "rationale": "Brief states six mounting holes in two columns of three.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "There shall be exactly two pivot holes, one through each hinge tab.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states one pivot hole through each of the two hinge tabs.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_PROFILE_RECTANGLE_COUNT",
+    "statement": "There shall be exactly two hinge tabs, one at the center of each end.",
+    "measurement": "feature_count:profile_rectangle:hinge_tab",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states one integral hinge tab at the center of each end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM",
+    "measurement": "holes_of_diameter:4.5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "statement": "The part shall have 6 open holes of 4.5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM_ONE_WALL",
+    "statement": "Each 4.5 mm hole shall cut only the wall the brief puts it on, not run on through the facing wall.",
+    "measurement": "walls_crossed:4.5",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_210X60",
+    "statement": "The part shall have 1 opening 210 by 60 mm through its wall.",
+    "measurement": "windows_of_size:210x60",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL",
+    "statement": "The shell and hinge tabs will be made from a rigid 3D-printable polymer (e.g., PLA/PETG/ABS equivalent) suitable for FDM/SLA printing, with no specific grade stated.",
+    "risk": "high",
+    "rationale": "Brief gives no material, yet hinge tabs and walls appear load-bearing (sandbags, pivoting).",
+    "consequence_if_wrong": "If the actual service material or load is very different, wall and tab strength, fillet sizing, and safety margins could be grossly inadequate or overbuilt.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_OPERATING_ENV",
+    "statement": "The part is assumed to be used in ordinary indoor, dry/ambient conditions with no special environmental exposure (temperature extremes, chemical exposure, prolonged outdoor UV/moisture) despite the 'watertight' requirement referring only to the hollow interior being sealed from the opening, not full submersion resistance.",
+    "risk": "moderate",
+    "rationale": "Brief mentions 'watertight' for the hollow solid but gives no environmental context such as outdoor or submerged use.",
+    "consequence_if_wrong": "If used outdoors or in wet conditions, surface finish and sealing assumptions may be inadequate.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FIT_TOLERANCE",
+    "statement": "No specific fit tolerance (clearance vs. press fit) is assumed for the 8.5 mm pivot holes; they are modeled as nominal through holes.",
+    "risk": "low",
+    "rationale": "Brief gives only a nominal diameter, no tolerance class or mating pin size.",
+    "consequence_if_wrong": "If a specific pin fit is required, the hole may need adjustment, but this is a minor rework.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PROFILE_BLEND",
+    "statement": "The transitions (loft) between the five stated cross-section stations are assumed to be smooth continuous blends (e.g., lofted/swept surfaces) rather than sharp steps, consistent with 'smooth rounded calf shape tapering.'",
+    "risk": "low",
+    "rationale": "Brief requires a smooth tapering shape but does not specify the blending/loft method.",
+    "consequence_if_wrong": "A different blending approach could change the surface appearance but not the stated station dimensions.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_REAR_CURVE_UNSPECIFIED",
+    "statement": "The degree/radius of the rear surface's outward curve to resemble a 'muscular calf' is assumed to be a modest aesthetic bulge within the stated cross-section envelopes, with no specific numeric target beyond the stated station dimensions.",
+    "risk": "low",
+    "rationale": "Brief asks for a muscular curved rear appearance but gives no additional numeric parameter for this beyond the cross-section sizes already captured.",
+    "consequence_if_wrong": "Aesthetic variation only; does not affect functional dimensions or load paths.",
+    "reversible": true,
+    "approved": false
+   }
+  ],
+  "unknowns": [
+   {
+    "id": "UNK_MATING_BRACKET",
+    "question": "What does the hinge pivot mate to (a clevis, bracket, or fixed mount), and what pin diameter/fit is expected?",
+    "why_it_matters": "The pivot hole size and tab geometry must be compatible with the mating hardware, which is not described in the brief.",
+    "blocks": [
+     "pivot_hole_diameter"
+    ],
+    "critical": false,
+    "suggested_default": ""
+   }
+  ],
+  "notes": [
+   "REQ_WALL_THICKNESS was bound to `parameter:wall_thickness`; `wall_thickness` is a measurement of the part, not a dimension the design declares, and the claim is now measured as it says.",
+   "REQ_MOUNTING_HOLE_HEIGHT_2 carried `source: \"user\"` against a threshold the brief does not state. The figure may be sound -- a derived dimension, a manufacturing limit -- but the user did not write it, so it is recorded as `derived` rather than reported back to them as their own requirement.",
+   "dropped 5 load question(s): the brief names no load, force or margin -- it describes a shape, so there was nothing to be uncertain about",
+   "REQ_BOUNDING_BOX_Z held the part's z extent to at least 430 mm, a bound; the brief states the size -- \"the main shell must be 330 mm tall, while the complete component including both hinge tabs must be approximately 430 mm tall\" -- so it is exactly that.",
+   "added REQ_HOLES_4_5MM: the brief states 6 open holes of 4.5 mm, counted on the built part by diameter. A claim bound to a hole's parameter passes whenever some hole reads that parameter -- a collar had both set screws drawn at the bore's 12 mm, and no bore, and it passed.",
+   "added REQ_HOLES_4_5MM_ONE_WALL: the brief puts 4.5 mm holes on one face of a hollow part, and a hole drilled with no depth runs on through the facing wall -- the right number of holes, the right size, half of them on the wrong side. Counted on the part: the walls each cuts.",
+   "added REQ_OPENINGS_210X60: the brief gives openings a length and a width -- slots, not holes of one diameter -- and nothing counted them. Counted on the built part, laid flat, by their size."
+  ]
+ },
+ "document": {
+  "name": "Sandbag-loaded training leg shell",
+  "description": "Hollow anatomically-shaped lower-leg shell, lofted through five rounded-rectangle stations, with a rear sandbag-access opening, six mounting holes, and two end hinge tabs each with a pivot hole.",
+  "components": [
+   {
+    "id": "leg_shell",
+    "name": "Leg shell assembly",
+    "material": "pla_fdm",
+    "parameters": [
+     {
+      "id": "main_shell_height",
+      "value": {
+       "magnitude": 330.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "wall_thickness",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "station_height_1",
+      "value": {
+       "magnitude": 0.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_width_bottom",
+      "value": {
+       "magnitude": 85.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_depth_bottom",
+      "value": {
+       "magnitude": 80.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "station_height_2",
+      "value": {
+       "magnitude": 80.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_width_80mm",
+      "value": {
+       "magnitude": 95.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_depth_80mm",
+      "value": {
+       "magnitude": 90.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "station_height_3",
+      "value": {
+       "magnitude": 190.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_width_190mm",
+      "value": {
+       "magnitude": 115.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_depth_190mm",
+      "value": {
+       "magnitude": 110.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "station_height_4",
+      "value": {
+       "magnitude": 260.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_width_260mm",
+      "value": {
+       "magnitude": 120.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_depth_260mm",
+      "value": {
+       "magnitude": 115.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "station_height_5",
+      "expression": "main_shell_height",
+      "unit": "mm"
+     },
+     {
+      "id": "cross_section_width_top",
+      "value": {
+       "magnitude": 115.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "cross_section_depth_top",
+      "value": {
+       "magnitude": 105.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "profile_corner_radius",
+      "value": {
+       "magnitude": 15.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "rear_opening_height",
+      "value": {
+       "magnitude": 210.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "rear_opening_width",
+      "value": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_diameter",
+      "value": {
+       "magnitude": 4.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_column_spacing",
+      "value": {
+       "magnitude": 72.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_height_1",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_height_2",
+      "value": {
+       "magnitude": 165.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "mounting_hole_height_3",
+      "value": {
+       "magnitude": 280.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tab_thickness",
+      "value": {
+       "magnitude": 12.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tab_width",
+      "value": {
+       "magnitude": 30.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tab_extension",
+      "value": {
+       "magnitude": 50.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tab_embed_depth",
+      "value": {
+       "magnitude": 25.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_tab_total_length",
+      "expression": "hinge_tab_extension + hinge_tab_embed_depth",
+      "unit": "mm"
+     },
+     {
+      "id": "pivot_hole_diameter",
+      "value": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "pivot_hole_offset",
+      "value": {
+       "magnitude": 37.5,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "hinge_root_fillet_radius",
+      "value": {
+       "magnitude": 8.0,
+       "unit": "mm"
+      }
+     },
+     {
+      "id": "rear_opening_center_u",
+      "value": {
+       "magnitude": 0.0,
+       "unit": "mm"
+      }
+     }
+    ],
+    "features": [
+     {
+      "id": "plane_1",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_1",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_2",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_2",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_3",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_3",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_4",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_4",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "plane_5",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_5",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_1",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_1"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_bottom",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_bottom",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_2",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_2"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_80mm",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_80mm",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_3",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_3"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_190mm",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_190mm",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_4",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_4"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_260mm",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_260mm",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "prof_5",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "plane_5"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_top",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_top",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "loft_12",
+      "kind": "loft",
+      "inputs": [
+       "prof_1",
+       "prof_2"
+      ]
+     },
+     {
+      "id": "loft_23",
+      "kind": "loft",
+      "inputs": [
+       "prof_2",
+       "prof_3"
+      ]
+     },
+     {
+      "id": "loft_34",
+      "kind": "loft",
+      "inputs": [
+       "prof_3",
+       "prof_4"
+      ]
+     },
+     {
+      "id": "loft_45",
+      "kind": "loft",
+      "inputs": [
+       "prof_4",
+       "prof_5"
+      ]
+     },
+     {
+      "id": "outer_body_1",
+      "kind": "union",
+      "inputs": [
+       "loft_12",
+       "loft_23"
+      ]
+     },
+     {
+      "id": "outer_body_2",
+      "kind": "union",
+      "inputs": [
+       "outer_body_1",
+       "loft_34"
+      ]
+     },
+     {
+      "id": "outer_body",
+      "kind": "union",
+      "inputs": [
+       "outer_body_2",
+       "loft_45"
+      ]
+     },
+     {
+      "id": "inner_plane_1",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_1 + wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_plane_2",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_2",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_plane_3",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_3",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_plane_4",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_4",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_plane_5",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "station_height_5 - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_prof_1",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "inner_plane_1"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_bottom - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_bottom - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_prof_2",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "inner_plane_2"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_80mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_80mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_prof_3",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "inner_plane_3"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_190mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_190mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_prof_4",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "inner_plane_4"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_260mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_260mm - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_prof_5",
+      "kind": "profile_rectangle",
+      "inputs": [
+       "inner_plane_5"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "cross_section_width_top - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "cross_section_depth_top - 2 * wall_thickness",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "profile_corner_radius - wall_thickness",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "inner_loft_12",
+      "kind": "loft",
+      "inputs": [
+       "inner_prof_1",
+       "inner_prof_2"
+      ]
+     },
+     {
+      "id": "inner_loft_23",
+      "kind": "loft",
+      "inputs": [
+       "inner_prof_2",
+       "inner_prof_3"
+      ]
+     },
+     {
+      "id": "inner_loft_34",
+      "kind": "loft",
+      "inputs": [
+       "inner_prof_3",
+       "inner_prof_4"
+      ]
+     },
+     {
+      "id": "inner_loft_45",
+      "kind": "loft",
+      "inputs": [
+       "inner_prof_4",
+       "inner_prof_5"
+      ]
+     },
+     {
+      "id": "inner_body_1",
+      "kind": "union",
+      "inputs": [
+       "inner_loft_12",
+       "inner_loft_23"
+      ]
+     },
+     {
+      "id": "inner_body_2",
+      "kind": "union",
+      "inputs": [
+       "inner_body_1",
+       "inner_loft_34"
+      ]
+     },
+     {
+      "id": "inner_body",
+      "kind": "union",
+      "inputs": [
+       "inner_body_2",
+       "inner_loft_45"
+      ]
+     },
+     {
+      "id": "hollow_shell",
+      "kind": "subtract",
+      "inputs": [
+       "outer_body",
+       "inner_body"
+      ]
+     },
+     {
+      "id": "rear_opening_cutter",
+      "kind": "box",
+      "parameters": {
+       "size": {
+        "vector": [
+         "rear_opening_width",
+         "wall_thickness * 3",
+         "rear_opening_height"
+        ],
+        "unit": "mm"
+       },
+       "centered": true,
+       "origin": {
+        "vector": [
+         "rear_opening_center_u",
+         "-cross_section_depth_260mm / 2",
+         "main_shell_height / 2"
+        ],
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "shell_with_opening",
+      "kind": "subtract",
+      "inputs": [
+       "hollow_shell",
+       "rear_opening_cutter"
+      ]
+     },
+     {
+      "id": "tab_plane_bottom",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "magnitude": 0.0,
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "tab_profile_bottom",
+      "kind": "profile_rectangle",
+      "tags": [
+       "hinge_tab"
+      ],
+      "inputs": [
+       "tab_plane_bottom"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "hinge_tab_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "hinge_tab_thickness",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-hinge_tab_thickness / 2",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "hinge_tab_width / 4",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "tab_extrude_bottom",
+      "kind": "extrude",
+      "inputs": [
+       "tab_profile_bottom"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "hinge_tab_total_length",
+        "unit": "mm"
+       },
+       "mode": "reverse",
+       "end_radius": {
+        "expression": "hinge_tab_width / 4",
+        "unit": "mm"
+       },
+       "ends": "start"
+      }
+     },
+     {
+      "id": "tab_plane_top",
+      "kind": "datum_plane",
+      "parameters": {
+       "base": "XY",
+       "offset": {
+        "expression": "main_shell_height",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "tab_profile_top",
+      "kind": "profile_rectangle",
+      "tags": [
+       "hinge_tab"
+      ],
+      "inputs": [
+       "tab_plane_top"
+      ],
+      "parameters": {
+       "width": {
+        "expression": "hinge_tab_width",
+        "unit": "mm"
+       },
+       "height": {
+        "expression": "hinge_tab_thickness",
+        "unit": "mm"
+       },
+       "center_v": {
+        "expression": "-hinge_tab_thickness / 2",
+        "unit": "mm"
+       },
+       "corner_radius": {
+        "expression": "hinge_tab_width / 4",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "tab_extrude_top",
+      "kind": "extrude",
+      "inputs": [
+       "tab_profile_top"
+      ],
+      "parameters": {
+       "distance": {
+        "expression": "hinge_tab_total_length",
+        "unit": "mm"
+       },
+       "mode": "normal",
+       "end_radius": {
+        "expression": "hinge_tab_width / 4",
+        "unit": "mm"
+       },
+       "ends": "end"
+      }
+     },
+     {
+      "id": "body_plus_bottom_tab",
+      "kind": "union",
+      "inputs": [
+       "shell_with_opening",
+       "tab_extrude_bottom"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "hinge_root_fillet_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "body_plus_both_tabs",
+      "kind": "union",
+      "inputs": [
+       "body_plus_bottom_tab",
+       "tab_extrude_top"
+      ],
+      "parameters": {
+       "blend_radius": {
+        "expression": "hinge_root_fillet_radius",
+        "unit": "mm"
+       }
+      }
+     },
+     {
+      "id": "mount_hole_1",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "body_plus_both_tabs"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_1"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_2",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_1"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_3",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_2"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_3"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_4",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_3"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_1"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_5",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_4"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_2"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "mount_hole_6",
+      "kind": "hole",
+      "tags": [
+       "mounting"
+      ],
+      "inputs": [
+       "mount_hole_5"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "mounting_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         "-mounting_hole_column_spacing / 2",
+         "-cross_section_depth_260mm / 2",
+         "mounting_hole_height_3"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        0,
+        1,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole_bottom",
+      "kind": "hole",
+      "tags": [
+       "pivot"
+      ],
+      "inputs": [
+       "mount_hole_6"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "-pivot_hole_offset"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     },
+     {
+      "id": "pivot_hole_top",
+      "kind": "hole",
+      "tags": [
+       "pivot"
+      ],
+      "inputs": [
+       "pivot_hole_bottom"
+      ],
+      "parameters": {
+       "diameter": {
+        "expression": "pivot_hole_diameter",
+        "unit": "mm"
+       },
+       "position": {
+        "vector": [
+         0,
+         0,
+         "main_shell_height + pivot_hole_offset"
+        ],
+        "unit": "mm"
+       },
+       "axis": [
+        1,
+        0,
+        0
+       ],
+       "fit": "clearance_normal"
+      }
+     }
+    ],
+    "interfaces": [
+     {
+      "id": "bottom_pivot_port",
+      "type": "bore",
+      "geometry": "pivot_hole_bottom.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     },
+     {
+      "id": "top_pivot_port",
+      "type": "bore",
+      "geometry": "pivot_hole_top.bore",
+      "nominal_size": {
+       "magnitude": 8.5,
+       "unit": "mm"
+      },
+      "fit": "clearance_normal"
+     },
+     {
+      "id": "rear_access_port",
+      "type": "custom",
+      "geometry": "rear_opening_cutter.body",
+      "nominal_size": {
+       "magnitude": 60.0,
+       "unit": "mm"
+      }
+     }
+    ]
+   }
+  ],
+  "schema_version": "1.0.0",
+  "revision": 1,
+  "units": {
+   "length": "mm",
+   "mass": "kg",
+   "angle": "deg",
+   "force": "N"
+  },
+  "document_id": "d1079326-3881-598d-82f2-2dfa12768d59",
+  "project_id": "a131f8c6-1b7b-58d5-a928-52161c842c9a",
+  "risk_class": "high",
+  "requirements": [
+   {
+    "id": "REQ_BOUNDING_BOX_Z",
+    "statement": "The complete component including both hinge tabs shall be approximately 430 mm tall overall.",
+    "measurement": "bounding_box_z",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 430.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states complete component with both hinge tabs is approximately 430 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MAIN_SHELL_HEIGHT",
+    "statement": "The main shell (excluding hinge tabs) shall be 330 mm tall.",
+    "measurement": "parameter:main_shell_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 330.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states shell is 330 mm tall and must remain 330 mm tall separate from the overall component height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_WALL_THICKNESS",
+    "statement": "The shell walls shall be 8 mm thick.",
+    "measurement": "wall_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 8 mm thick walls.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_BOTTOM",
+    "statement": "The cross-section at the bottom shall be 85 mm wide.",
+    "measurement": "parameter:cross_section_width_bottom",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 85.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives bottom cross-section 85 x 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_BOTTOM",
+    "statement": "The cross-section at the bottom shall be 80 mm deep.",
+    "measurement": "parameter:cross_section_depth_bottom",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives bottom cross-section 85 x 80 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_80MM",
+    "statement": "The cross-section at 80 mm height shall be 95 mm wide.",
+    "measurement": "parameter:cross_section_width_80mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 95.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 80 mm height as 95 x 90 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_80MM",
+    "statement": "The cross-section at 80 mm height shall be 90 mm deep.",
+    "measurement": "parameter:cross_section_depth_80mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 90.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 80 mm height as 95 x 90 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_2",
+    "statement": "The second cross-section station shall be located at 80 mm height from the bottom.",
+    "measurement": "parameter:station_height_2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 80.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 95x90 mm cross-section at 80 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_190MM",
+    "statement": "The cross-section at 190 mm height shall be 115 mm wide.",
+    "measurement": "parameter:cross_section_width_190mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 190 mm height as 115 x 110 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_190MM",
+    "statement": "The cross-section at 190 mm height shall be 110 mm deep.",
+    "measurement": "parameter:cross_section_depth_190mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 110.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 190 mm height as 115 x 110 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_3",
+    "statement": "The third cross-section station shall be located at 190 mm height from the bottom.",
+    "measurement": "parameter:station_height_3",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 190.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 115x110 mm cross-section at 190 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_260MM",
+    "statement": "The cross-section at 260 mm height shall be 120 mm wide.",
+    "measurement": "parameter:cross_section_width_260mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 120.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 260 mm height as 120 x 115 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_260MM",
+    "statement": "The cross-section at 260 mm height shall be 115 mm deep.",
+    "measurement": "parameter:cross_section_depth_260mm",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives cross-section at 260 mm height as 120 x 115 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_STATION_HEIGHT_4",
+    "statement": "The fourth cross-section station shall be located at 260 mm height from the bottom.",
+    "measurement": "parameter:station_height_4",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 260.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief places the 120x115 mm cross-section at 260 mm height.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_WIDTH_TOP",
+    "statement": "The cross-section at the top shall be 115 mm wide.",
+    "measurement": "parameter:cross_section_width_top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 115.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives top cross-section as 115 x 105 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_CROSS_SECTION_DEPTH_TOP",
+    "statement": "The cross-section at the top shall be 105 mm deep.",
+    "measurement": "parameter:cross_section_depth_top",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 105.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief gives top cross-section as 115 x 105 mm.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PROFILE_CORNER_RADIUS",
+    "statement": "The profile corners of the cross-sections shall be rounded with a 15 mm radius.",
+    "measurement": "parameter:profile_corner_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 15.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 15 mm corner radius.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_HEIGHT",
+    "statement": "The rear wall access opening shall be 210 mm tall.",
+    "measurement": "parameter:rear_opening_height",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 210.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states opening is 210 mm tall.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_REAR_OPENING_WIDTH",
+    "statement": "The rear wall access opening shall be 60 mm wide.",
+    "measurement": "parameter:rear_opening_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 60.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states opening is 60 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_DIAMETER",
+    "statement": "The six mounting holes around the opening shall each be 4.5 mm in diameter.",
+    "measurement": "parameter:mounting_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 4.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 4.5 mm diameter mounting holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COLUMN_SPACING",
+    "statement": "The two vertical columns of mounting holes shall be 72 mm apart.",
+    "measurement": "parameter:mounting_hole_column_spacing",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 72.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states columns are 72 mm apart.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_1",
+    "statement": "The lowest mounting hole in each column shall be at 50 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_1",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_2",
+    "statement": "The middle mounting hole in each column shall be at 165 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_2",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 165.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "derived",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_HEIGHT_3",
+    "statement": "The uppermost mounting hole in each column shall be at 280 mm height from the bottom.",
+    "measurement": "parameter:mounting_hole_height_3",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 280.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hole heights of 50, 165, and 280 mm from the bottom.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_THICKNESS",
+    "statement": "Each hinge tab shall be 12 mm thick.",
+    "measurement": "parameter:hinge_tab_thickness",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 12.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hinge tabs are 12 mm thick.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_WIDTH",
+    "statement": "Each hinge tab shall be 30 mm wide.",
+    "measurement": "parameter:hinge_tab_width",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 30.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states hinge tabs are 30 mm wide.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_EXTENSION",
+    "statement": "Each hinge tab shall extend 50 mm beyond the shell.",
+    "measurement": "parameter:hinge_tab_extension",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 50.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states tabs extend 50 mm beyond the shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_EMBED_DEPTH",
+    "statement": "Each hinge tab shall be embedded 25 mm into the shell.",
+    "measurement": "parameter:hinge_tab_embed_depth",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 25.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states tabs are embedded 25 mm into the shell.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_DIAMETER",
+    "statement": "Each hinge tab shall have one horizontal pivot hole 8.5 mm in diameter.",
+    "measurement": "parameter:pivot_hole_diameter",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states pivot holes are 8.5 mm in diameter.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_OFFSET",
+    "statement": "Each pivot hole center shall be located 37.5 mm beyond the corresponding shell end.",
+    "measurement": "parameter:pivot_hole_offset",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 37.5,
+     "unit": "mm"
+    },
+    "rationale": "Brief states pivot hole centers are 37.5 mm beyond the shell end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_ROOT_FILLET_RADIUS",
+    "statement": "The hinge tab roots shall be reinforced with 8 mm fillets.",
+    "measurement": "parameter:hinge_root_fillet_radius",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 8.0,
+     "unit": "mm"
+    },
+    "rationale": "Brief states 8 mm fillets at tab roots.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_MOUNTING_HOLE_COUNT",
+    "statement": "There shall be exactly six mounting holes arranged around the rear opening.",
+    "measurement": "feature_count:hole:mounting",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6.0,
+     "unit": ""
+    },
+    "rationale": "Brief states six mounting holes in two columns of three.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_PIVOT_HOLE_COUNT",
+    "statement": "There shall be exactly two pivot holes, one through each hinge tab.",
+    "measurement": "feature_count:hole:pivot",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states one pivot hole through each of the two hinge tabs.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HINGE_TAB_PROFILE_RECTANGLE_COUNT",
+    "statement": "There shall be exactly two hinge tabs, one at the center of each end.",
+    "measurement": "feature_count:profile_rectangle:hinge_tab",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 2.0,
+     "unit": ""
+    },
+    "rationale": "Brief states one integral hinge tab at the center of each end.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "source": "user",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM",
+    "measurement": "holes_of_diameter:4.5",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 6,
+     "unit": ""
+    },
+    "statement": "The part shall have 6 open holes of 4.5 mm.",
+    "source": "user",
+    "rationale": "The brief sizes and counts these holes.",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_HOLES_4_5MM_ONE_WALL",
+    "statement": "Each 4.5 mm hole shall cut only the wall the brief puts it on, not run on through the facing wall.",
+    "measurement": "walls_crossed:4.5",
+    "comparison": "at_most",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   },
+   {
+    "id": "REQ_OPENINGS_210X60",
+    "statement": "The part shall have 1 opening 210 by 60 mm through its wall.",
+    "measurement": "windows_of_size:210x60",
+    "comparison": "equals",
+    "threshold": {
+     "magnitude": 1,
+     "unit": ""
+    },
+    "source": "user",
+    "type": "geometric",
+    "verification": "exact_geometry",
+    "strength": "hard",
+    "state": "accepted"
+   }
+  ],
+  "assumptions": [
+   {
+    "id": "ASM_MATERIAL",
+    "statement": "The shell and hinge tabs will be made from a rigid 3D-printable polymer (e.g., PLA/PETG/ABS equivalent) suitable for FDM/SLA printing, with no specific grade stated.",
+    "risk": "high",
+    "rationale": "Brief gives no material, yet hinge tabs and walls appear load-bearing (sandbags, pivoting).",
+    "consequence_if_wrong": "If the actual service material or load is very different, wall and tab strength, fillet sizing, and safety margins could be grossly inadequate or overbuilt.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_OPERATING_ENV",
+    "statement": "The part is assumed to be used in ordinary indoor, dry/ambient conditions with no special environmental exposure (temperature extremes, chemical exposure, prolonged outdoor UV/moisture) despite the 'watertight' requirement referring only to the hollow interior being sealed from the opening, not full submersion resistance.",
+    "risk": "moderate",
+    "rationale": "Brief mentions 'watertight' for the hollow solid but gives no environmental context such as outdoor or submerged use.",
+    "consequence_if_wrong": "If used outdoors or in wet conditions, surface finish and sealing assumptions may be inadequate.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_FIT_TOLERANCE",
+    "statement": "No specific fit tolerance (clearance vs. press fit) is assumed for the 8.5 mm pivot holes; they are modeled as nominal through holes.",
+    "risk": "low",
+    "rationale": "Brief gives only a nominal diameter, no tolerance class or mating pin size.",
+    "consequence_if_wrong": "If a specific pin fit is required, the hole may need adjustment, but this is a minor rework.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_PROFILE_BLEND",
+    "statement": "The transitions (loft) between the five stated cross-section stations are assumed to be smooth continuous blends (e.g., lofted/swept surfaces) rather than sharp steps, consistent with 'smooth rounded calf shape tapering.'",
+    "risk": "low",
+    "rationale": "Brief requires a smooth tapering shape but does not specify the blending/loft method.",
+    "consequence_if_wrong": "A different blending approach could change the surface appearance but not the stated station dimensions.",
+    "reversible": true,
+    "approved": false
+   },
+   {
+    "id": "ASM_REAR_CURVE_UNSPECIFIED",
+    "statement": "The degree/radius of the rear surface's outward curve to resemble a 'muscular calf' is assumed to be a modest aesthetic bulge within the stated cross-section envelopes, with no specific numeric target beyond the stated station dimensions.",
+    "risk": "low",
+    "rationale": "Brief asks for a muscular curved rear appearance but gives no additional numeric parameter for this beyond the cross-section sizes already captured.",
+    "consequence_if_wrong": "Aesthetic variation only; does not affect functional dimensions or load paths.",
+    "reversible": true,
+    "approved": false
+   }
+  ]
+ }
+}
