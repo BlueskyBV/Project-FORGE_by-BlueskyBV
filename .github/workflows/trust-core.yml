@@ -1,0 +1,48 @@
+# The trust core on every push to main (ADR-0023): its tests on CPython 3.14, the runtime, and on 3.15 and
+# the free-threaded 3.14t, where OCP has no wheels yet, so the move is ready the day it ships them. The files
+# are found by .github/trust_core_tests.py (everything Forge they import is L0); only NumPy and the test tools
+# are installed beside them (ADR-0034), and the free-threaded build runs with the GIL off.
+name: trust-core
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # One SIMD level on every runner, as forge-runs pins it (the last bit of NumPy's and OpenBLAS's results
+  # depends on it until 4b.0c makes Forge's numbers the same on any machine).
+  NPY_DISABLE_CPU_FEATURES: "X86_V4 AVX512_ICL AVX512_SPR"
+  OPENBLAS_CORETYPE: "Haswell"
+  OPENBLAS_NUM_THREADS: "1"
+  PYTHONHASHSEED: "0"
+
+jobs:
+  trust-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.14.10", "3.15", "3.14t"]
+    name: trust core on ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: NumPy and the test tools
+        run: |
+          python -m pip install --disable-pip-version-check -q numpy==2.5.3 pytest==9.1.1 hypothesis==6.170.15
+          python -c "import sys, sysconfig, numpy; print(sys.version, 'free-threaded:', bool(sysconfig.get_config_var('Py_GIL_DISABLED')), 'numpy', numpy.__version__)"
+      - name: The trust core's tests
+        env:
+          PYTHONPATH: packages
+          PYTHON_GIL: ${{ endsWith(matrix.python, 't') && '0' || '' }}
+        run: |
+          python .github/trust_core_tests.py > trust-core-tests.txt
+          echo "$(wc -l < trust-core-tests.txt) files"
+          python -m pytest -q -p no:cacheprovider $(cat trust-core-tests.txt)
