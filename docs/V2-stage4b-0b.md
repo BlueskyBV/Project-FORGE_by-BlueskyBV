@@ -259,6 +259,21 @@ measured: every branch is hit by those runs, or it is listed and reviewed
 before the move, with a case written for it (the fault, CAN'T and question
 paths: `_check_shape`, the shell faults in `solve`, `_check_exits`, fits
 and severs, `_physical`, the planner's gap for a kind it doesn't serve).
+**Measured, 15 November 2026,** on the runners (`coverage` mode, the base
+branch's code): over the sample and the base's whole suite, 6,601 of the
+old bodies' 6,874 lines and 2,792 of their 3,052 branches ran; of what
+didn't, 253 lines moved verbatim, and 20 lines and 70 branches had their
+text changed by the move. (A run over 30,000 seeds, to shorten that list,
+was stopped: on the runners coverage ran far slower than measured in the
+cloud, so it could not finish in their six hours; the review below covers
+the list whole.) Every one of those was read against its new place by
+hand: each is the old code verbatim, a kind's fact holding exactly the old
+tuple's kinds, or a default doing what the old fall-through did. Three
+differences were found, none reachable (the oracle's hollow of a kind no
+shell hollows, a pattern mode outside `PATTERN_FIELDS`, a non-cut's cut
+tool on a round side: the spec's checks admit no input that gets there).
+The review is kept with the proof's records,
+`runs/stage4b0b/coverage-review.md`.
 
 ### 6.4 Baseline and end
 
@@ -269,6 +284,16 @@ and severs, `_physical`, the planner's gap for a kind it doesn't serve).
 - **At the end:** all 10,000 seeds with their mutants and impossible parts,
   the corpus and the regressions, every digest equal; the lint at zero;
   the totality tests green; then the review.
+- **The machine, found at the end (15 November 2026):** NumPy's and
+  OpenBLAS's kernels round some results' last bit differently by the
+  CPU's SIMD level, so the same code's digests differed between the
+  cloud's AVX-512 Intel and an AVX2 AMD runner (3 of 20 parts), while
+  each machine repeats itself exactly. The proof holds every runner to
+  one level (`NPY_DISABLE_CPU_FEATURES`, `OPENBLAS_CORETYPE=Haswell`, one
+  BLAS thread), under which the cloud reproduces the runners bit for bit,
+  and runs the base and the restructured code on the same runner, so the
+  move is proven whatever the level. Making Forge's numbers the same on
+  any machine is 4b.0c's first item (V2-stage4b.md).
 
 ## 7. The order
 
@@ -365,7 +390,22 @@ and severs, `_physical`, the planner's gap for a kind it doesn't serve).
    (finding a row removed, a method filled by a kind, a stray reservation
    and a wrong step, each planted). Step 2's wrapper test is retired: the
    wrappers are gone, and a decorated method is not one.
-7. The ratchet at zero, the full fingerprint, the review.
+7. The ratchet at zero, the full fingerprint, the review. **Done 15
+   November 2026,** on GitHub's runners (ADR-0036's end, in an afternoon
+   rather than days): the base branch (`proof/base-4b0b`, the baseline's
+   tree) and the restructured code run one after the other on each runner;
+   every digest equal on all 10,000 counted seeds under hash seed 0, the
+   sample's with the verdict on the built part and on its mutant, and on
+   the sample under hash seed 1, the one difference the planned `once
+   kinds` (step 4); beyond the scale, the 20,000 seeds from 10,000 on under
+   hash seed 0, every digest equal (19,978 on the run, the 22 its slowest
+   runner hadn't reached in its six hours on one more); every kept
+   regression equal under both hash seeds; the whole suite green (on the
+   cloud, and on the runners the two files whose memory the cloud can't
+   hold); the ratchet at zero; no slowdown that can be measured (five
+   rounds of the same seeds, 137.5 s against 139.8 s, the noise about 5 s);
+   and the review of what the runs don't reach (6.3). The machine's part in
+   the last bit is 6.4's.
 
 ## 8. The family tuples
 

@@ -203,7 +203,14 @@ kind modules on the same foundation, never as a rebuild of it.
   nominals and verdicts on stage 4's seeds. Done after the 8.0.1 replay
   and before the Python move, on the Python that replay ran on, so the
   move's replay sees Python's differences alone (ADR-0035).
-- **4b.0c, geometry:** frames, depth by geometry, analytic hosts (items 1
+- **4b.0c, geometry:** first, the same numbers on any machine (found at
+  4b.0b's end, V2-stage4b-0b.md 6.4: NumPy's and OpenBLAS's last bit
+  depends on the CPU's SIMD level, so a part's digests differ between an
+  AVX-512 and an AVX2 machine though each repeats itself): every result
+  Forge records or decides by made independent of the SIMD level and the
+  BLAS, proven by the same seeds' fingerprints equal on both kinds of
+  machine with no pins, before anything else in 4b.0c moves; then
+  frames, depth by geometry, analytic hosts (items 1
   to 3), with the schema migration (item 14) that they need.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and

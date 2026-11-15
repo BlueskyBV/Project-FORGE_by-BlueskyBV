@@ -55,6 +55,12 @@ altering anything it consumes would have to be in the unmoved evaluation
 code, and the verdicts of the samples would still catch most such
 changes; none is expected, since that code isn't touched.
 
+**As run (15 November 2026):** on GitHub's free runners, twenty and
+more at once (the repository public, its code all rights reserved), the
+end took an afternoon, not days; so 20,000 seeds past the 10,000 were
+run as well, and the old bodies' coverage measured over the sample with
+the whole suite (V2-stage4b-0b.md, 6.3 and step 7).
+
 ## Alternatives
 
 Revision 2's proof as written: about two weeks of compute before 4b goes
