@@ -196,7 +196,9 @@ kind modules on the same foundation, never as a rebuild of it.
   done and proven (the owner, ADR-0035), CPython 3.14 (ADR-0023) on the
   restructured code, with every regression, the 2,000 held-out seeds and a
   fixed 2,000 of the counted seeds replayed against the 8.0.1 replay's
-  records, any difference sending it to a whole replay.
+  records, any difference sending it to a whole replay. **Both done**:
+  8.0.1 on 14 November 2026, CPython 3.14 on 15 November
+  ([V2-stage4b-kernel.md](V2-stage4b-kernel.md), 4 and 5).
 - **4b.0b, a module per kind, nothing else** (item 6): every program's
   per-kind code moved behind registries; a lint forbids kind names outside
   kind modules. Proven by byte-identical ForgeIR documents, check suites,

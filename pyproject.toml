@@ -2,11 +2,11 @@
 name = "forge"
 version = "0.1.0"
 description = "An evidence-driven parametric mechanical design system"
-# 3.10 is the floor, and it is a verified floor rather than an assumed one: the
-# full suite was run on CPython 3.10.12 as well as 3.11. Nothing here uses the
-# match statement or PEP 604 unions outside annotations, and every module carries
-# `from __future__ import annotations`.
-requires-python = ">=3.10"
+# CPython 3.14 is the floor and the runtime (ADR-0023): on the laptop, the runners
+# and in Docker, since 15 November 2026, when the restructured code gave the same
+# results on it as on 3.13 for the held-out and counted seeds and every kept
+# regression. (V1 was verified on 3.10 to 3.12; it is frozen and runs on 3.14.)
+requires-python = ">=3.14"
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
@@ -38,14 +38,14 @@ forge_cli = ["viewer/*"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
 ignore = ["E501"]   # long lines in prose docstrings are deliberate
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.14"
 strict = true
 warn_unreachable = true
 mypy_path = "packages"

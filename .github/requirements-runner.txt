@@ -1,6 +1,6 @@
-# The runners' environment, pinned to the cloud reference machine's (15 Nov 2026):
-# CPython 3.13.18 (set by the workflow) and exactly these, so a runner's fingerprints can be
-# held against the cloud's.
+# Forge's environment, pinned (15 Nov 2026): CPython 3.14.10 (ADR-0023; the workflows set it)
+# and exactly these, on the runners, the laptop and the cloud alike, so one machine's results
+# can be held against another's. Every one has CPython 3.14 wheels for Linux and Windows.
 numpy==2.5.3
 cadquery-ocp-novtk==8.0.1.1.0
 cadquery-ocp-proxy==8.0.1.1.0

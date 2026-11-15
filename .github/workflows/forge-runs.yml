@@ -56,8 +56,8 @@ on:
         description: "Compare mode: the pair run to compare"
         default: ""
       python:
-        description: "The Python (pypair and pyexit: the second one, held against 3.13.18)"
-        default: "3.13.18"
+        description: "The Python (pypair and pyexit: the second one, held against 3.13.18, the one before ADR-0023's move)"
+        default: "3.14.10"
 
 permissions:
   contents: read

@@ -8,17 +8,19 @@
 # stage that executes geometry code derived from model output should contain as
 # little as possible.
 
-# The base: Python 3.12 on Debian by default; any image with Python 3.10 or later
-# (docs/V2-stage3.md, 2.6; scripts/docker_base_from_archive.sh makes one from
-# Ubuntu 24.04's archive where no registry can be reached):
+# The base: CPython 3.14 on Debian by default (ADR-0023); any image with Python
+# 3.14 or later:
 #   docker build --build-arg BASE=<image> .
-ARG BASE=python:3.12-slim
+# (scripts/docker_base_from_archive.sh makes one from Ubuntu 24.04's archive where
+# no registry can be reached, docs/V2-stage3.md 2.6, but that archive's Python,
+# 3.12, is below the floor now.) Built and checked on the runners: image.yml.
+ARG BASE=python:3.14.10-slim
 FROM ${BASE} AS core
 
 RUN useradd --create-home --shell /usr/sbin/nologin forge
 WORKDIR /app
 
-RUN pip install --no-cache-dir numpy==2.1.3
+RUN pip install --no-cache-dir numpy==2.5.3
 
 COPY packages/ /app/packages/
 COPY examples/ /app/examples/
@@ -47,5 +49,5 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
  && rm -rf /var/lib/apt/lists/*
 # The exact kernel's pins (pyproject's `exact` extra): forge_occ runs on this
 # OpenCascade only, and refuses any other.
-RUN pip install --no-cache-dir cadquery-ocp-novtk==7.9.3.1.1 lib3mf==2.5.0 gmsh==4.13.1
+RUN pip install --no-cache-dir cadquery-ocp-novtk==8.0.1.1.0 lib3mf==2.5.0 gmsh==4.13.1
 USER forge

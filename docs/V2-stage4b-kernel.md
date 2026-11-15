@@ -1,7 +1,8 @@
 # Forge V2, stage 4b.0a′: the kernel switch, its record
 
-Status: the first sub-step done, 14 November 2026: the replay passes and
-every difference from 7.9.3 is explained (section 4). The first sub-step of
+Status: both sub-steps done. The first, 14 November 2026: the replay passes
+and every difference from 7.9.3 is explained (section 4); the second,
+CPython 3.14, 15 November 2026 (section 5). The first sub-step of
 the switch (ADR-0022; [V2-stage4b.md](V2-stage4b.md), 2.1): OpenCascade 8.0.1
 through `cadquery-ocp-novtk==8.0.1.1.0` on today's Python, nothing else
 changed. Every difference from 7.9.3 is listed and explained here, one by
@@ -318,3 +319,31 @@ less time. The three failures were Forge's own faults, older than the
 switch and shown by the held-out fixes' new constructions; each is fixed
 at its root with a regression kept (3.2 to 3.4). The second sub-step,
 CPython 3.14, follows 4b.0b (ADR-0035).
+
+## 5. The second sub-step: CPython 3.14
+
+Done 15 November 2026, once 4b.0b was done and proven, on the
+restructured code: CPython 3.14.10 against 3.13.18, with NumPy 2.5.3 and
+OCP 8.0.1.1.0 on both (every one of Forge's pins,
+`.github/requirements-runner.txt`, has CPython 3.14 wheels, Windows'
+among them). On GitHub's runners, each held to one SIMD level
+([V2-stage4b-0b.md](V2-stage4b-0b.md), 6.4), both Pythons one after the
+other on the same runner:
+
+| | On | 3.13.18 against 3.14.10 |
+|---|---|---|
+| Stage 4's exit harness: parts built, judged and graded, mutants, impossible parts, every tenth part's second kernel and files | the 2,000 held-out seeds (10,000 to 11,999) and the counted 0 to 1,999 | every record the same; all 4,000 parts passed on both |
+| The fingerprint: every program's every output, digested | the same 4,000 seeds | every digest the same |
+| Every kept regression, with the verdict on its built part (in the cloud, at the same level) | 42, under hash seeds 0 and 1 | every digest the same |
+| The whole suite | 107 files, 3,730 tests | all green on 3.14 but one: the blind set's lock (`test_v2_eval_keys`), which reads `eval/`, never pushed, so it runs on the laptop |
+| The trust core alone (`trust-core.yml`, on every push) | its 30 test files | green on 3.14.10, on 3.15.2 and on the free-threaded 3.14t |
+
+Against the 8.0.1 replay's own records (section 4: the cloud's AVX-512
+machine, the code before 4b.0b, with its reruns), the counted seeds 0 to
+1,999 on 3.14: 1,994 records the same; the other 6 differ only in the
+last bits of the exact volume (at most 1.2e-14 of it; on 1670 the
+implicit kernel's interval too), which is the machine's part
+(V2-stage4b-0b.md, 6.4), and every outcome is the same. Nothing sends it
+to a whole replay: CPython 3.14 is Forge's floor and runtime from here
+(ADR-0023), on the laptop ([developer setup](developer/setup.md)), the
+runners and in Docker. The records are in `runs/stage4b_python/`.

@@ -1,0 +1,30 @@
+# Forge's Docker image on CPython 3.14 (ADR-0023): both stages built; the core stage's Python and NumPy shown
+# and its CLI started; the solvers stage's exact kernel checked by `forge doctor` (its pins, a probe part,
+# STEP, STL and 3MF). On a push that changes what the image is made of, and by hand.
+name: image
+
+on:
+  push:
+    branches: [main]
+    paths: [Dockerfile, pyproject.toml, docker-compose.yml, .github/workflows/image.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: The core stage
+        run: |
+          docker build --target core -t forge/cad:ci .
+          docker run --rm --network none --entrypoint python3 forge/cad:ci -c \
+            "import sys, numpy; print(sys.version); print('numpy', numpy.__version__); assert sys.version_info[:2] >= (3, 14)"
+          docker run --rm --network none forge/cad:ci --help | head -n 5
+      - name: The solvers stage, and the exact kernel's doctor
+        run: |
+          docker build --target solvers -t forge/simulation:ci .
+          docker run --rm --network none forge/simulation:ci doctor

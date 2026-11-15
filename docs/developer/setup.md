@@ -1,5 +1,38 @@
 # Developer setup
 
+## Forge V2 on the Windows laptop: CPython 3.14
+
+Forge V2 runs on CPython 3.14 ([ADR-0023](../adr/0023-python-3-14.md)),
+with exactly the versions the runners use, so the laptop's results can be
+held against theirs. Once:
+
+1. Install CPython 3.14.10, 64-bit, from python.org (Downloads, Windows,
+   "Windows installer (64-bit)"), ticking **Add python.exe to PATH** on
+   the first screen. `py -3.14 --version` then prints `Python 3.14.10`.
+2. In PowerShell, in the project folder, Forge's pinned tools and Forge
+   itself (editable: the folder is the code that runs):
+
+   ```powershell
+   PS> cd $HOME\Downloads\FORGE\forge
+   PS> py -3.14 -m pip install --upgrade pip
+   PS> py -3.14 -m pip install -r .github\requirements-runner.txt
+   PS> py -3.14 -m pip install -e . --no-deps
+   ```
+
+3. If an older Python has Forge installed, take it out there, so `forge`
+   is 3.14's: `py -3.12 -m pip uninstall -y forge`.
+4. Check: `py -3.14 -m forge_cli doctor` (the exact kernel's pins, a probe
+   part, STEP, STL and 3MF), and the blind set's lock, which only this
+   machine can run (`eval/` is never pushed):
+   `py -3.14 -m unittest tests.test_v2_eval_keys`.
+
+Afterwards `py -3.14 -m pytest -q tests/<file>` runs a test file, and
+`forge ...` and the `run-design*.ps1` scripts run on 3.14. The runners
+run the whole suite (`forge-runs.yml`, mode `tests`, `tests=all`), and
+the trust core on 3.14, 3.15 and 3.14t on every push (`trust-core.yml`).
+
+The sections below are V1's, as it was frozen.
+
 ## The deterministic core: no install required
 
 The trust core is standard-library only and `forge_geom`/`forge_kernel` need
