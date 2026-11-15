@@ -11,13 +11,15 @@
 #                   the other on the same runner, so both sides of every comparison come from one machine.
 # mode tests:       the test files named by tests, one pytest process each, on this commit (and on base
 #                   when given), each with its peak memory.
+# mode coverage:    branch coverage of the base branch's code over its share of the seeds, and (cover_tests)
+#                   over its share of base's test files: the old bodies' coverage (V2-stage4b-0b.md, 6.3).
 name: forge-runs
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair or tests"
+        description: "fingerprint, pair, tests or coverage"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -37,6 +39,9 @@ on:
       tests:
         description: "Test files for the tests mode, space separated"
         default: ""
+      cover_tests:
+        description: "Coverage mode: also run base's test files (true or false)"
+        default: "false"
 
 permissions:
   contents: read
@@ -120,9 +125,33 @@ jobs:
             done
           done
           cat out/tests.txt
+      - name: Coverage
+        if: inputs.mode == 'coverage'
+        env:
+          PYTHONHASHSEED: ${{ inputs.hash_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
+          COVER_TESTS: ${{ inputs.cover_tests }}
+        run: |
+          python -m pip install coverage==7.17.3
+          mkdir -p out/cov
+          MINE=$(cd fin && python .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
+          cd base
+          python -m coverage run -p --branch --source=packages --data-file="$GITHUB_WORKSPACE/out/cov/.coverage" \
+            ../fin/.github/cov_run.py . "$MINE"
+          if [ "$COVER_TESTS" = "true" ]; then
+            for f in $(ls tests/test_*.py | awk -v n="$SHARDS" -v k="$SHARD" '(NR - 1) % n == k'); do
+              PYTHONPATH=packages timeout 3000 python -m coverage run -p --branch --source=packages \
+                --data-file="$GITHUB_WORKSPACE/out/cov/.coverage" -m pytest -q -p no:cacheprovider "$f" \
+                > "$GITHUB_WORKSPACE/out/cov/$(basename $f .py).log" 2>&1 || true
+            done
+          fi
+          ls -la "$GITHUB_WORKSPACE/out/cov" | head
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: out-${{ matrix.shard }}
           path: out/
+          include-hidden-files: true
           retention-days: 30
