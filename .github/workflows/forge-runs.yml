@@ -1,10 +1,24 @@
 # Forge's runs on GitHub's runners. Started by hand only (gh workflow run): nothing runs on a push.
 # Each shard is one runner (4 cores, 16 GB); the free plan runs up to 20 at once, each up to 6 hours.
+#
+# Every runner is held to one instruction level (x86-64-v3: AVX2, no AVX-512) for NumPy and OpenBLAS:
+# GitHub's runners are AMD or Intel, and their SIMD paths round the last bit differently (found
+# 15 Nov 2026: the judge's digests of 3 of 20 parts differed between an AVX-512 Intel and an AVX2 AMD
+# until both were held to x86-64-v3). With it, a part's digests are the same on any runner.
+#
+# mode fingerprint: tests/v2_fingerprint.py on this commit's code.
+# mode pair:        the same seeds on this commit's code (fin) and on the branch named by base, one after
+#                   the other on the same runner, so both sides of every comparison come from one machine.
+# mode tests:       the test files named by tests, one pytest process each, on this commit (and on base
+#                   when given), each with its peak memory.
 name: forge-runs
 
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: "fingerprint, pair or tests"
+        default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
         default: "sample:20"
@@ -17,9 +31,20 @@ on:
       verdicts:
         description: "Build and judge each part (true or false)"
         default: "false"
+      base:
+        description: "The branch the pair and tests modes hold this commit against"
+        default: "proof/base-4b0b"
+      tests:
+        description: "Test files for the tests mode, space separated"
+        default: ""
 
 permissions:
   contents: read
+
+env:
+  NPY_DISABLE_CPU_FEATURES: "X86_V4 AVX512_ICL AVX512_SPR"
+  OPENBLAS_CORETYPE: "Haswell"
+  OPENBLAS_NUM_THREADS: "1"
 
 jobs:
   plan:
@@ -32,7 +57,7 @@ jobs:
           SHARDS: ${{ inputs.shards }}
         run: python3 -c "import json, os; n = max(1, min(20, int(os.environ['SHARDS']))); print('shards=' + json.dumps(list(range(n))))" >> "$GITHUB_OUTPUT"
 
-  fingerprint:
+  run:
     needs: plan
     runs-on: ubuntu-24.04
     timeout-minutes: 355
@@ -42,33 +67,62 @@ jobs:
         shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: fin
+      - uses: actions/checkout@v4
+        if: inputs.mode != 'fingerprint' && inputs.base != ''
+        with:
+          ref: ${{ inputs.base }}
+          path: base
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13.18"
-      - name: Forge and its pinned tools
+      - name: Forge's pinned tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r .github/requirements-runner.txt
-          python -m pip install --no-deps -e .
+          python -m pip install -r fin/.github/requirements-runner.txt
       - name: The environment
         run: |
           python -VV
-          python -c "import numpy, forge_occ; print('numpy', numpy.__version__); print('exact kernel:', forge_occ.status() or 'ready')"
+          python -c "import numpy; numpy.show_runtime()"
           lscpu | grep -E 'Model name|^CPU\(s\)'
-      - name: This shard's seeds
+          free -g | head -2
+      - name: Fingerprints
+        if: inputs.mode == 'fingerprint' || inputs.mode == 'pair'
         env:
           PYTHONHASHSEED: ${{ inputs.hash_seed }}
           SEEDS: ${{ inputs.seeds }}
           SHARDS: ${{ inputs.shards }}
           SHARD: ${{ matrix.shard }}
           VERDICTS: ${{ inputs.verdicts }}
+          MODE: ${{ inputs.mode }}
         run: |
-          MINE=$(python .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
+          MINE=$(cd fin && python .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
           EXTRA=""; [ "$VERDICTS" = "true" ] && EXTRA="--verdicts"
-          python tests/v2_fingerprint.py --seeds "$MINE" --out "out/shard-$SHARD" --workers 4 $EXTRA
+          SIDES="fin"; [ "$MODE" = "pair" ] && SIDES="base fin"
+          for side in $SIDES; do
+            (cd $side && python tests/v2_fingerprint.py --seeds "$MINE" --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD" --workers 4 $EXTRA)
+          done
+      - name: Tests
+        if: inputs.mode == 'tests'
+        env:
+          TESTS: ${{ inputs.tests }}
+          BASE: ${{ inputs.base }}
+        run: |
+          mkdir -p out
+          SIDES="fin"; [ -n "$BASE" ] && SIDES="base fin"
+          for side in $SIDES; do
+            for f in $TESTS; do
+              [ -f "$side/$f" ] || { echo "$side $f absent" >> out/tests.txt; continue; }
+              log="$GITHUB_WORKSPACE/out/$side-$(basename $f .py).log"
+              (cd $side && PYTHONPATH=packages python -c "import resource, subprocess, sys; rc = subprocess.call([sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider', sys.argv[1]], stdout=open(sys.argv[2], 'w'), stderr=subprocess.STDOUT); print(rc, resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)" "$f" "$log") > out/rcrss.txt
+              echo "$side $f rc_and_maxrss_kb $(cat out/rcrss.txt) $(tail -n 1 "$log")" >> out/tests.txt
+            done
+          done
+          cat out/tests.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fp-shard-${{ matrix.shard }}
+          name: out-${{ matrix.shard }}
           path: out/
           retention-days: 30
