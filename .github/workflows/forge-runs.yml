@@ -11,6 +11,11 @@
 #                   the other on the same runner, so both sides of every comparison come from one machine.
 # mode tests:       the test files named by tests, one pytest process each, on this commit (and on base
 #                   when given), each with its peak memory.
+# mode pypair:      the same seeds on this commit's code under CPython 3.13.18 (base) and under the Python
+#                   named by python (fin), one after the other on the same runner (the fingerprint harness).
+# mode pyexit:      the same, with stage 4's exit harness (tests/v2_exit4.py) on a contiguous seed range
+#                   (seeds "A-B"), split over the shards: parts built, judged and graded, mutants,
+#                   impossible specs, and every tenth part's second kernel and files.
 # mode compare:     a finished pair run's records (run_id) merged and held against each other here, so
 #                   only the summary has to be fetched.
 # mode coverage_report: a finished coverage run's data (run_id) combined here, and the step-0 inventory's
@@ -23,7 +28,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair, tests, coverage, coverage_report or compare"
+        description: "fingerprint, pair, pypair, pyexit, tests, coverage, coverage_report or compare"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -49,6 +54,9 @@ on:
       run_id:
         description: "Compare mode: the pair run to compare"
         default: ""
+      python:
+        description: "The Python (pypair and pyexit: the second one, held against 3.13.18)"
+        default: "3.13.18"
 
 permissions:
   contents: read
@@ -89,11 +97,26 @@ jobs:
           path: base
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13.18"
+          python-version: ${{ (inputs.mode == 'pypair' || inputs.mode == 'pyexit') && '3.13.18' || inputs.python }}
+      - uses: actions/setup-python@v5
+        if: inputs.mode == 'pypair' || inputs.mode == 'pyexit'
+        with:
+          python-version: ${{ inputs.python }}
       - name: Forge's pinned tools
+        env:
+          MODE: ${{ inputs.mode }}
+          PYB: ${{ inputs.python }}
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r fin/.github/requirements-runner.txt
+          if [ "$MODE" = "pypair" ] || [ "$MODE" = "pyexit" ]; then
+            for exe in python3.13 "python$(echo "$PYB" | cut -d. -f1-2)"; do
+              $exe -VV
+              $exe -m pip install --upgrade pip
+              $exe -m pip install -r fin/.github/requirements-runner.txt
+            done
+          else
+            python -m pip install --upgrade pip
+            python -m pip install -r fin/.github/requirements-runner.txt
+          fi
       - name: The environment
         run: |
           python -VV
@@ -116,6 +139,29 @@ jobs:
           for side in $SIDES; do
             (cd $side && python tests/v2_fingerprint.py --seeds "$MINE" --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD" --workers 4 $EXTRA)
           done
+      - name: Python pair
+        if: inputs.mode == 'pypair' || inputs.mode == 'pyexit'
+        env:
+          PYTHONHASHSEED: ${{ inputs.hash_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
+          VERDICTS: ${{ inputs.verdicts }}
+          MODE: ${{ inputs.mode }}
+          PYB: ${{ inputs.python }}
+        run: |
+          B="python$(echo "$PYB" | cut -d. -f1-2)"
+          cd fin
+          if [ "$MODE" = "pypair" ]; then
+            MINE=$(python3.13 .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
+            EXTRA=""; [ "$VERDICTS" = "true" ] && EXTRA="--verdicts"
+            python3.13 tests/v2_fingerprint.py --seeds "$MINE" --out "$GITHUB_WORKSPACE/out/base/shard-$SHARD" --workers 4 $EXTRA
+            $B tests/v2_fingerprint.py --seeds "$MINE" --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" --workers 4 $EXTRA
+          else
+            read FROM TO < <(python3.13 -c "import sys; a, b = map(int, sys.argv[1].split('-')); n, k = int(sys.argv[2]), int(sys.argv[3]); print(a + (b - a) * k // n, a + (b - a) * (k + 1) // n)" "$SEEDS" "$SHARDS" "$SHARD")
+            python3.13 tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/base/shard-$SHARD" || true
+            $B tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" || true
+          fi
       - name: Tests
         if: inputs.mode == 'tests'
         env:
