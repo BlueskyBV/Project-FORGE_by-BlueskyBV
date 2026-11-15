@@ -1,0 +1,90 @@
+{
+  "spec_format": 1,
+  "name": "hollow PLA dome",
+  "items": [
+    {
+      "id": "dome",
+      "kind": "sphere",
+      "words": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "diameter": {
+        "value": 70,
+        "unit": "mm",
+        "from": {
+          "words": [
+            7,
+            8,
+            9
+          ]
+        }
+      },
+      "portion": {
+        "choose": "upper_half",
+        "from": {
+          "words": [
+            3,
+            4
+          ]
+        }
+      }
+    },
+    {
+      "id": "hollow",
+      "kind": "shell",
+      "words": [
+        17,
+        18,
+        20
+      ],
+      "of": "dome",
+      "thickness": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief asks for the dome to be hollow on the inside but gives no wall thickness, so a typical minimum printable wall thickness is assumed"
+        }
+      },
+      "open": {
+        "faces": [],
+        "from": {
+          "assumed": "the brief doesn't mention any opening into the hollow, so it is modelled as fully sealed"
+        }
+      }
+    }
+  ],
+  "not_modelled": [
+    {
+      "words": [
+        10,
+        11,
+        12,
+        13,
+        15,
+        16
+      ],
+      "reason": "the brief asks for the dome's flat side to face to the right, but a dome can only be modelled standing with its flat side down, so this sideways orientation can't be built"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says nothing about the shape: it only states that the part carries no load and so has no load case"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  }
+}

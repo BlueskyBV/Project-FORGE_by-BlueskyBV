@@ -1,5 +1,10 @@
 # Licensing: undecided
 
+**Decided, 15 November 2026 (the owner):** the source is published on GitHub
+for viewing only, all rights reserved (`LICENSE`), so its test runs can use
+GitHub's runners. An open or source-available licence remains undecided, as
+below.
+
 No licence is applied yet. This is deliberate: applying one carelessly is harder
 to undo than leaving it open, and the dependency picture below constrains the
 choice.

@@ -1,0 +1,159 @@
+{
+  "spec_format": 1,
+  "name": "M8 hex bolt",
+  "items": [
+    {
+      "id": "shaft",
+      "kind": "cylinder",
+      "words": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "diameter": {
+        "value": 8,
+        "unit": "mm",
+        "from": {
+          "assumed": "M8 is a standard metric thread designation whose nominal major (outer) diameter is 8 mm; the brief gives no separate shank diameter"
+        }
+      },
+      "length": {
+        "value": 40,
+        "unit": "mm",
+        "from": {
+          "words": [
+            4,
+            5,
+            6
+          ]
+        }
+      },
+      "axis": {
+        "choose": "z",
+        "from": {
+          "assumed": "a bolt is conventionally drawn standing upright with its head on top, axis vertical"
+        }
+      }
+    },
+    {
+      "id": "thread",
+      "kind": "thread",
+      "words": [
+        1
+      ],
+      "of": "shaft",
+      "designation": {
+        "text": "M8",
+        "from": {
+          "words": [
+            1
+          ]
+        }
+      },
+      "hand": {
+        "choose": "right",
+        "from": {
+          "assumed": "bolts are conventionally right-handed unless the brief states otherwise"
+        }
+      }
+    },
+    {
+      "id": "head",
+      "kind": "extrusion",
+      "words": [
+        9,
+        10,
+        11
+      ],
+      "on": {
+        "item": "shaft",
+        "face": "+end"
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "a hex bolt head is centred on, and concentric with, its shank"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "a hex bolt head is centred on, and concentric with, its shank"
+          }
+        }
+      },
+      "length": {
+        "value": 5.3,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief asks for a 'standard hex head' with no dimensions given; 5.3 mm is the standard (ISO 4014/4017) head height for an M8 hex bolt"
+        }
+      },
+      "profile": {
+        "start": [
+          6.5,
+          3.7528
+        ],
+        "unit": "mm",
+        "segments": [
+          {
+            "line_to": [
+              0,
+              7.5056
+            ]
+          },
+          {
+            "line_to": [
+              -6.5,
+              3.7528
+            ]
+          },
+          {
+            "line_to": [
+              -6.5,
+              -3.7528
+            ]
+          },
+          {
+            "line_to": [
+              0,
+              -7.5056
+            ]
+          },
+          {
+            "line_to": [
+              6.5,
+              -3.7528
+            ]
+          },
+          {
+            "line_to": [
+              6.5,
+              3.7528
+            ]
+          }
+        ],
+        "from": {
+          "assumed": "the brief asks for a 'standard hex head' with no dimensions given; 13 mm across-flats is the standard (ISO 4014/4017) size for an M8 hex bolt head, giving this regular hexagon"
+        }
+      }
+    }
+  ],
+  "not_modelled": [],
+  "requirements": {
+    "material": {
+      "text": "steel",
+      "from": {
+        "words": [
+          2
+        ]
+      }
+    }
+  },
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says the bolt carries no load and has no load case: a service/loading condition, not a shape"
+    }
+  ]
+}

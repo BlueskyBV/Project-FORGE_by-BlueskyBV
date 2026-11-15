@@ -3,6 +3,12 @@
 Subcommands:
 
 ``design``    a sentence in, a verified ForgeIR document and its evidence out
+``spec``      a brief in, its part spec drafted, settled with you and confirmed (V2)
+``build``     a confirmed spec built, judged on every view, and its files released (V2)
+``eval-spec`` draft every brief of a locked answer-key set, and grade the drafts (V2)
+``eval-corpus`` draft every recorded brief, and build each determinate draft (V2)
+``eval-false-passes`` draft V1's 27 false passes under --auto, build them, judge them by their keys (V2)
+``doctor``    check the exact kernel works here: its pins, a probe part, STEP, STL and 3MF (V2)
 ``verify``    compile a ForgeIR document, measure it, run gates, print evidence
 ``export``    write a mesh (STL/OBJ) from a document
 ``inspect``   show the feature graph, parameters and published geometry
@@ -39,7 +45,12 @@ from forge_kernel import Compiler, backend_capabilities
 from forge_pipeline import LoadCase, verify_component
 from forge_units import Q, Quantity
 
+from .build import add_build_parser
 from .design import EXIT_QUESTIONS, add_design_parser
+from .doctor import add_doctor_parser
+from .eval_corpus import add_eval_corpus_parsers
+from .eval_spec import add_eval_spec_parser
+from .spec import add_spec_parser
 
 EXIT_PASS = 0
 EXIT_FAIL = 1
@@ -329,6 +340,11 @@ def build_parser() -> argparse.ArgumentParser:
         )
 
     add_design_parser(subparsers)
+    add_spec_parser(subparsers)
+    add_build_parser(subparsers)
+    add_eval_spec_parser(subparsers)
+    add_eval_corpus_parsers(subparsers)
+    add_doctor_parser(subparsers)
 
     verify = subparsers.add_parser("verify", help="compile, measure and gate")
     add_common(verify)

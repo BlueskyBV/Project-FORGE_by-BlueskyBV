@@ -31,6 +31,39 @@ CLI are tested against the real prompts for free and identically on every run.
 
 ---
 
+## V2, in progress: a spec you confirm, a part that is proven
+
+V2 ([docs/V2-plan.md](docs/V2-plan.md)) splits a run in two. A model writes
+the part's spec; you settle what only you can and confirm it; from there on
+no model is called, and nothing reaches you unless two programs written
+independently from the same definitions agree on it.
+
+```console
+$ forge doctor                                   # the exact kernel works here
+$ forge spec "a 60 x 40 x 6 mm plate with a 10 mm hole through its middle"   # needs a key
+$ forge build runs/spec-<time>-<brief>           # no key, no model
+```
+
+- **`forge spec`** drafts the spec, checks every number against your words,
+  asks what only you can settle, and locks the spec when you type back the
+  code shown in Forge's own window (the confirmation is sealed with this
+  installation's key, kept in `~/.forge`).
+- **`forge build`** plans and builds the confirmed spec with OpenCascade,
+  judges the part on every view (the exact model, the STEP, STL and 3MF
+  read back, and a second kernel), and writes its verdict and record into a
+  build folder of its own. The files are released beside the verdict only
+  when everything passes. Endings and exit codes: VERIFIED, VERIFIED EXCEPT
+  or BUILT TO DRAFT 0; HELD 1; a refused spec or an error 2; UNABLE 3;
+  CAN'T 4. See [docs/V2-stage4.md](docs/V2-stage4.md), section 9, and a
+  walk through one part in [docs/user/v2-first-part.md](docs/user/v2-first-part.md).
+
+Next is stage 5: a construction agent for the shapes the compiler leaves to
+it (freeform regions, and items OpenCascade refuses every way the compiler
+writes them), each still judged before anything is released. Its design,
+for review, is [docs/V2-stage5.md](docs/V2-stage5.md).
+
+---
+
 ## The five ideas
 
 Most of what distinguishes Forge from a prompt wrapper around a CAD kernel comes
@@ -294,6 +327,8 @@ byte document, measured by the test that holds it that way. A model shown the
 whole design will comment on the whole design, and the repair loop is not where
 the parts that already compile should be renegotiated.
 ([ADR-0010](docs/adr/0010-patch-based-repair.md))
+
+---
 
 ---
 

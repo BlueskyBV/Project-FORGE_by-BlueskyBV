@@ -1,0 +1,40 @@
+{
+  "spec_format": 1,
+  "name": "washer",
+  "items": [
+    {
+      "id": "washer",
+      "kind": "tube",
+      "words": [
+        2
+      ],
+      "outer_diameter": {
+        "value": 20,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief gives no outer diameter for the washer; assumed a generic size since none is stated"
+        }
+      },
+      "inner_diameter": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief gives no bore diameter for the washer; assumed a generic size since none is stated"
+        }
+      },
+      "length": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief gives no thickness for the washer; assumed a generic thickness since none is stated"
+        }
+      },
+      "axis": {
+        "choose": "z",
+        "from": {
+          "assumed": "a washer lies flat, so its axis runs vertically"
+        }
+      }
+    }
+  ]
+}

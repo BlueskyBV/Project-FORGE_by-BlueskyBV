@@ -1,0 +1,65 @@
+{
+  "name": "PLA dome",
+  "spec_format": 1,
+  "items": [
+    {
+      "id": "dome",
+      "kind": "sphere",
+      "words": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "diameter": {
+        "value": 50,
+        "unit": "mm",
+        "from": {
+          "words": [
+            7,
+            8,
+            9
+          ]
+        }
+      },
+      "portion": {
+        "choose": "upper_half",
+        "from": {
+          "words": [
+            3,
+            4,
+            10,
+            11,
+            12,
+            13
+          ]
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  },
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "describes load conditions, not the part's shape"
+    }
+  ],
+  "not_modelled": []
+}

@@ -2,6 +2,8 @@
 
 **Status:** Accepted · **Date:** 2026-09-11
 
+*Superseded in part by [ADR-0034](0034-trust-core-dependencies.md) (10 November 2026): V2's trust core may also import NumPy and Forge's own compiled crate, and V2's Python floor is ADR-0023's. V1's five packages keep this record's rule.*
+
 ## Context
 
 The reference specification proposed Pydantic v2 for the document model, which is

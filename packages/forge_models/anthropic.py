@@ -231,6 +231,7 @@ class AnthropicProvider(Provider):
             context_window=self._context_window,
             supports_images=True,
             thinking=self._thinking,
+            effort=self._effort,
             schema_fidelity=(
                 self.last_reduction.fidelity if self.last_reduction else "exact"
             ),
@@ -251,6 +252,27 @@ class AnthropicProvider(Provider):
         return self._api_key
 
     # ------------------------------------------------------------------
+    def worst_cost_usd(self, request: ModelRequest) -> float | None:
+        """The most this request can cost, estimated before it is sent: a
+        cost ceiling that holds before a call (`Budget.price`).
+
+        Its input a third more than the budget's estimate of it (four
+        characters a token; three is a token in a dense schema), at the
+        input price and a quarter more, as if all of it were written to the
+        cache; and every output token `max_tokens` allows -- the answer's
+        and, where the model thinks, its thinking's room -- at the output
+        price. None for a model outside the price table: such a call can't
+        be priced at all."""
+        thinks = self._thinking != "off" and request.schema is not None
+        output = request.max_output_tokens + (
+            self._thinking_room(request) if thinks else 0)
+        tokens_in = request.approximate_input_tokens() * 4.0 / 3.0
+        for prefix, (input_price, output_price) in PRICE_TABLE.items():
+            if self._model.startswith(prefix):
+                return (tokens_in * input_price * 1.25
+                        + output * output_price) / 1_000_000.0
+        return None
+
     def _thinking_room(self, request: ModelRequest) -> int:
         """Output tokens set aside for thinking, on top of the answer's own:
         `max_tokens` caps the two together, and a design cut off because the

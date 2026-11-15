@@ -80,6 +80,13 @@ class Budget:
 
     calls: int = 0
     usage: Usage = field(default_factory=Usage)
+    #: The most one request can cost, where the provider can say
+    #: (``AnthropicProvider.worst_cost_usd``). Given, the cost ceiling holds
+    #: before a call, not only after one: a call whose worst cost would take
+    #: the run past it is refused, and each retry is checked again. Not
+    #: given, the ceiling refuses the call after the one that reaches it, as
+    #: it always has (docs/V2-stage4.md, 14.4).
+    price: Callable[[ModelRequest], float | None] | None = None
 
     def check_before(self, request: ModelRequest) -> None:
         # The cost ceiling is held here, before a call, and not after one: a
@@ -115,6 +122,16 @@ class Budget:
                 hint="bound the run with --max-tokens or --max-calls instead, "
                 "or add the model to the provider's price table",
             )
+        if self.max_cost_usd is not None and self.price is not None:
+            worst = self.price(request)
+            spent = self.usage.cost_usd or 0.0
+            if worst is not None and spent + worst > self.max_cost_usd:
+                raise BudgetExceededError(
+                    "the next call could take the run past its cost budget",
+                    spent_usd=round(spent, 4),
+                    worst_usd=round(worst, 4),
+                    limit_usd=self.max_cost_usd,
+                )
         if self.max_calls is not None and self.calls >= self.max_calls:
             raise BudgetExceededError(
                 "the run has reached its model-call budget",
@@ -221,6 +238,10 @@ class Provider(ABC):
         for attempt in range(1, self.retry.max_attempts + 1):
             if cancellation is not None:
                 cancellation.raise_if_cancelled()
+            if attempt > 1 and self.budget.price is not None:
+                # A retry is paid for like the first try: a ceiling that
+                # holds before a call holds before each attempt at it.
+                self.budget.check_before(request)
             try:
                 response = self._send(request)
             except ModelError as error:

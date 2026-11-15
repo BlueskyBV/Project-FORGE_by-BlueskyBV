@@ -1,0 +1,28 @@
+"""How the sentences say a pocket: its entry in the ``words`` registry (moved from ``render.py``'s table at stage 4b.0b's step 3)."""
+
+from __future__ import annotations
+
+from forge_spec.items.words._common import _c, _count, _depth, _Line, _where
+from forge_spec.items.words.protocol import WordsKind
+
+
+class Pocket(WordsKind):
+    key = "pocket"
+
+    def sentence(self, line: _Line) -> str:
+        if line.item.get("shape") is not None and _c(line.item.get("shape")).startswith(
+            "circle"
+        ):
+            shape = f"round pocket {line.item.id} ({_c(line.get('shape'))}): Ø{line.v('diameter')}"
+        else:
+            corners = (
+                f", corners R{line.v('corner_radius')}"
+                if line.item.get("corner_radius")
+                else ""
+            )
+            shape = (f"rectangular pocket {line.item.id} ({_c(line.get('shape'))}): {line.v('length')} x "
+                     f"{line.v('width')}{corners}")  # fmt: skip
+        return f"{_count(line)}{shape}, {_depth(line.get('depth'))}, {_where(line, cut=True)}"
+
+
+ENTRY = Pocket()

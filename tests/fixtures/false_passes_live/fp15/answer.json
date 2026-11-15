@@ -1,0 +1,397 @@
+{
+  "name": "PLA L-bracket",
+  "spec_format": 1,
+  "items": [
+    {
+      "id": "base",
+      "kind": "block",
+      "words": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        16,
+        17,
+        18,
+        20,
+        21
+      ],
+      "length": {
+        "value": 50,
+        "unit": "mm",
+        "from": {
+          "words": [
+            16,
+            17,
+            18
+          ]
+        }
+      },
+      "width": {
+        "value": 60,
+        "unit": "mm",
+        "from": {
+          "words": [
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      "height": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            8,
+            9,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "upright",
+      "kind": "block",
+      "words": [
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        32,
+        35,
+        36,
+        37,
+        38
+      ],
+      "on": {
+        "item": "base",
+        "face": "+z"
+      },
+      "place": {
+        "x": {
+          "side": "+x",
+          "distance": {
+            "value": 1,
+            "unit": "mm",
+            "from": {
+              "formula": "2 mm / 2",
+              "words": [
+                8,
+                9,
+                10
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "centred": {
+            "assumed": "the bracket's single 60 mm width runs through both legs, so the upright is aligned with the base across the width"
+          }
+        }
+      },
+      "length": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            8,
+            9,
+            10
+          ]
+        }
+      },
+      "width": {
+        "value": 60,
+        "unit": "mm",
+        "from": {
+          "words": [
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      "height": {
+        "value": 38,
+        "unit": "mm",
+        "from": {
+          "formula": "40 mm - 2 mm",
+          "words": [
+            8,
+            9,
+            10,
+            35,
+            36,
+            37,
+            38
+          ]
+        }
+      }
+    },
+    {
+      "id": "hole_base",
+      "kind": "hole",
+      "words": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ],
+      "on": {
+        "item": "base",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "words": [
+            40,
+            41
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            43,
+            44
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            39
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 25,
+            "unit": "mm",
+            "from": {
+              "words": [
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief gives the holes' separation across the width but not their offset from it, so the pair is centred"
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "y",
+              "from": {
+                "words": [
+                  50,
+                  51,
+                  52
+                ]
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  47,
+                  48,
+                  49
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  39
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "hole_upright",
+      "kind": "hole",
+      "words": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "on": {
+        "item": "upright",
+        "face": "+x"
+      },
+      "diameter": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            61,
+            62
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            64,
+            65
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            60
+          ]
+        }
+      },
+      "place": {
+        "y": {
+          "centred": {
+            "assumed": "the brief gives the holes' separation across the width but not their offset from it, so the pair is centred"
+          }
+        },
+        "z": {
+          "side": "-z",
+          "distance": {
+            "value": 25,
+            "unit": "mm",
+            "from": {
+              "words": [
+                74,
+                75,
+                76,
+                77,
+                78,
+                79
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "y",
+              "from": {
+                "words": [
+                  71,
+                  72,
+                  73
+                ]
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  68,
+                  69,
+                  70
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  60
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  },
+  "not_modelled": [],
+  "silent": [
+    {
+      "sentence": 5,
+      "reason": "says the bracket carries no load and has no load case, which is not a shape fact"
+    }
+  ]
+}

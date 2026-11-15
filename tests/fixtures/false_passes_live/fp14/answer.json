@@ -1,0 +1,43 @@
+{
+  "spec_format": 1,
+  "name": "PLA sphere",
+  "items": [
+    {
+      "id": "ball",
+      "kind": "sphere",
+      "words": [
+        2,
+        5,
+        6
+      ],
+      "diameter": {
+        "value": 100,
+        "unit": "mm",
+        "from": {
+          "words": [
+            5,
+            6
+          ]
+        }
+      },
+      "portion": {
+        "choose": "whole",
+        "from": {
+          "words": [
+            2
+          ]
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  }
+}

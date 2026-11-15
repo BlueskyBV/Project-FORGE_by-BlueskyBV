@@ -1,0 +1,353 @@
+{
+  "spec_format": 1,
+  "name": "PLA L-bracket",
+  "items": [
+    {
+      "id": "base",
+      "kind": "block",
+      "words": [
+        2,
+        6,
+        7,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        21
+      ],
+      "length": {
+        "value": 50,
+        "unit": "mm",
+        "from": {
+          "words": [
+            16,
+            17,
+            18
+          ]
+        }
+      },
+      "width": {
+        "value": 40,
+        "unit": "mm",
+        "from": {
+          "words": [
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      "height": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            8,
+            9,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "upright",
+      "kind": "block",
+      "words": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        37,
+        38
+      ],
+      "on": {
+        "item": "base",
+        "face": "+z"
+      },
+      "place": {
+        "x": {
+          "side": "+x",
+          "distance": {
+            "value": 0,
+            "unit": "mm",
+            "from": {
+              "assumed": "the brief says the upright stands on the back end of the base; assumed flush with that edge since no setback is given"
+            }
+          },
+          "to": "edge"
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief doesn't offset the upright across the base's width; assumed centred to match the full width"
+          }
+        }
+      },
+      "length": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            8,
+            9,
+            10
+          ]
+        }
+      },
+      "width": {
+        "value": 40,
+        "unit": "mm",
+        "from": {
+          "words": [
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      "height": {
+        "value": 35,
+        "unit": "mm",
+        "from": {
+          "formula": "40 mm - 5 mm",
+          "words": [
+            8,
+            9,
+            35,
+            36
+          ]
+        }
+      }
+    },
+    {
+      "id": "base_holes",
+      "kind": "hole",
+      "words": [
+        39,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "on": {
+        "item": "base",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            40,
+            41
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            43,
+            44
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            39
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 25,
+            "unit": "mm",
+            "from": {
+              "words": [
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief gives the 20 mm spacing across the width but not its offset; assumed centred across the width"
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "y",
+              "from": {
+                "words": [
+                  50,
+                  51,
+                  52
+                ]
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  47,
+                  48,
+                  49
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  39
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "upright_holes",
+      "kind": "hole",
+      "words": [
+        60,
+        63,
+        64,
+        65,
+        66,
+        67
+      ],
+      "on": {
+        "item": "upright",
+        "face": "-x"
+      },
+      "diameter": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            61,
+            62
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            64,
+            65
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            60
+          ]
+        }
+      },
+      "place": {
+        "y": {
+          "centred": {
+            "assumed": "the brief gives the 20 mm spacing across the width but not its offset; assumed centred across the width"
+          }
+        },
+        "z": {
+          "side": "-z",
+          "distance": {
+            "value": 25,
+            "unit": "mm",
+            "from": {
+              "words": [
+                74,
+                75,
+                76,
+                77,
+                78,
+                79
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "y",
+              "from": {
+                "words": [
+                  71,
+                  72,
+                  73
+                ]
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  68,
+                  69,
+                  70
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  60
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  },
+  "silent": [
+    {
+      "sentence": 5,
+      "reason": "states there is no load case; says nothing about the shape"
+    }
+  ]
+}

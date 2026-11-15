@@ -1,0 +1,13 @@
+Copyright (c) 2026 BlueskyBV. All rights reserved.
+
+This source code is published for viewing only. No permission
+is granted to use, copy, modify, merge, publish, distribute,
+sublicense or sell it, in whole or in part, without the author's
+prior written permission.
+
+GitHub's Terms of Service let GitHub users view and fork public
+repositories on GitHub; no other right is granted.
+
+Third-party files keep their own licences: packages/forge_cli/viewer/three.min.js
+and OrbitControls.js (three.js, MIT, as their headers state) and the font in
+packages/forge_fonts/fonts (DejaVu, see LICENSE-DejaVu.txt there).

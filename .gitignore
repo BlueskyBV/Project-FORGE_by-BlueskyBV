@@ -27,3 +27,62 @@ dist/
 _sync/
 outputs/
 *.tgz
+
+# --- Never published ------------------------------------------------------
+# The locked answer keys, blind sets and corpus: never committed, never pushed
+# (a pre-push guard in .git/hooks refuses any push holding them, 15 Nov 2026).
+/eval/
+
+# Secrets of any kind, should one ever land here, and the GitHub tool's login.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa*
+id_ed25519*
+.netrc
+.pypirc
+.npmrc
+*.token
+*.secret
+secrets/
+credentials*.json
+token*.json
+_gh/
+
+# Model weights and other large binaries (Ollama and the like keep their own).
+*.gguf
+*.safetensors
+*.onnx
+*.ckpt
+
+# What Forge makes when run by hand outside runs/: parts and drawings.
+*.step
+*.stp
+*.3mf
+*.brep
+*.iges
+*.igs
+!examples/**/*.step
+!examples/**/*.3mf
+
+# Local tools, editors and caches.
+.vscode/
+.idea/
+*.code-workspace
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.cache/
+*.log
+*.prof
+*.swp
+*~
+Thumbs.db
+desktop.ini

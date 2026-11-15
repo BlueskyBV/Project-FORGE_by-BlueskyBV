@@ -1,0 +1,307 @@
+{
+  "spec_format": 1,
+  "name": "spacer block",
+  "items": [
+    {
+      "id": "plate",
+      "kind": "block",
+      "words": [
+        3,
+        4,
+        6,
+        11,
+        12,
+        15
+      ],
+      "length": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            9,
+            10
+          ]
+        }
+      },
+      "width": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            9,
+            10
+          ]
+        }
+      },
+      "height": {
+        "value": 4,
+        "unit": "mm",
+        "from": {
+          "words": [
+            13,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "id": "post",
+      "kind": "cylinder",
+      "words": [
+        19,
+        20,
+        23,
+        24
+      ],
+      "on": {
+        "item": "plate",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 12,
+        "unit": "mm",
+        "from": {
+          "words": [
+            17,
+            18
+          ]
+        }
+      },
+      "length": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "words": [
+            21,
+            22
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "words": [
+              25,
+              26,
+              27,
+              28,
+              29
+            ]
+          }
+        },
+        "y": {
+          "centred": {
+            "words": [
+              25,
+              26,
+              27,
+              28,
+              29
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "post_fillet",
+      "kind": "fillet",
+      "words": [
+        34
+      ],
+      "edges": {
+        "of": "post",
+        "which": "joint",
+        "where_meets": "plate",
+        "words": [
+          35,
+          36,
+          37,
+          38,
+          39,
+          40
+        ]
+      },
+      "radius": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            32,
+            33
+          ]
+        }
+      }
+    },
+    {
+      "id": "centre_hole",
+      "kind": "hole",
+      "words": [
+        44,
+        50,
+        51,
+        52,
+        53,
+        54
+      ],
+      "on": {
+        "item": "post",
+        "face": "+end"
+      },
+      "diameter": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            42,
+            43
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            45,
+            46,
+            47,
+            48,
+            49
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "the brief doesn't give an offset; a hole running through the round post naturally sits on its centre"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief doesn't give an offset; a hole running through the round post naturally sits on its centre"
+          }
+        }
+      }
+    },
+    {
+      "id": "mount_holes",
+      "kind": "hole",
+      "words": [
+        58,
+        59,
+        66,
+        69
+      ],
+      "on": {
+        "item": "plate",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 3,
+        "unit": "mm",
+        "from": {
+          "words": [
+            56,
+            57
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            60,
+            61,
+            62,
+            63,
+            64
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            55
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "the plate is square, so the row's axis is arbitrary; chosen along x"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief gives no offset across the row's axis, so the pair is centred on the plate"
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "x",
+              "from": {
+                "assumed": "the plate is square, so the row's axis is arbitrary; chosen along x"
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  67,
+                  68
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  55
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "not_modelled": [
+    {
+      "words": [
+        1
+      ],
+      "reason": "3D-printed describes how the part is made, not its shape"
+    },
+    {
+      "words": [
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77
+      ],
+      "reason": "a mass limit is a performance requirement, not a shape feature"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 6,
+      "reason": "describes the part's load case and purpose, not its shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          2
+        ]
+      }
+    }
+  }
+}

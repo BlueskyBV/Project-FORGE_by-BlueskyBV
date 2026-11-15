@@ -1,0 +1,122 @@
+{
+  "spec_format": 1,
+  "name": "open-top box",
+  "items": [
+    {
+      "id": "box",
+      "kind": "block",
+      "words": [
+        2,
+        3,
+        14,
+        15,
+        16
+      ],
+      "length": {
+        "value": 60,
+        "unit": "mm",
+        "from": {
+          "words": [
+            4,
+            5,
+            6
+          ]
+        }
+      },
+      "width": {
+        "value": 40,
+        "unit": "mm",
+        "from": {
+          "words": [
+            7,
+            8,
+            9
+          ]
+        }
+      },
+      "height": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            11,
+            12,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "hollow",
+      "kind": "shell",
+      "words": [
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "of": "box",
+      "thickness": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            18,
+            19,
+            20
+          ]
+        }
+      },
+      "floor": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            23,
+            24,
+            25,
+            26
+          ]
+        }
+      },
+      "open": {
+        "faces": [
+          "+z"
+        ],
+        "from": {
+          "words": [
+            28,
+            30,
+            31
+          ]
+        }
+      }
+    }
+  ],
+  "not_modelled": [],
+  "silent": [
+    {
+      "sentence": 2,
+      "reason": "says the part carries no load / has no load case, which is not a shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  }
+}

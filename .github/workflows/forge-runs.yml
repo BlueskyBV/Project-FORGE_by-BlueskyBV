@@ -1,0 +1,74 @@
+# Forge's runs on GitHub's runners. Started by hand only (gh workflow run): nothing runs on a push.
+# Each shard is one runner (4 cores, 16 GB); the free plan runs up to 20 at once, each up to 6 hours.
+name: forge-runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
+        default: "sample:20"
+      shards:
+        description: "Runners to split the seeds over (1 to 20)"
+        default: "1"
+      hash_seed:
+        description: "PYTHONHASHSEED"
+        default: "0"
+      verdicts:
+        description: "Build and judge each part (true or false)"
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      shards: ${{ steps.split.outputs.shards }}
+    steps:
+      - id: split
+        env:
+          SHARDS: ${{ inputs.shards }}
+        run: python3 -c "import json, os; n = max(1, min(20, int(os.environ['SHARDS']))); print('shards=' + json.dumps(list(range(n))))" >> "$GITHUB_OUTPUT"
+
+  fingerprint:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.18"
+      - name: Forge and its pinned tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r .github/requirements-runner.txt
+          python -m pip install --no-deps -e .
+      - name: The environment
+        run: |
+          python -VV
+          python -c "import numpy, forge_occ; print('numpy', numpy.__version__); print('exact kernel:', forge_occ.status() or 'ready')"
+          lscpu | grep -E 'Model name|^CPU\(s\)'
+      - name: This shard's seeds
+        env:
+          PYTHONHASHSEED: ${{ inputs.hash_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
+          VERDICTS: ${{ inputs.verdicts }}
+        run: |
+          MINE=$(python .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
+          EXTRA=""; [ "$VERDICTS" = "true" ] && EXTRA="--verdicts"
+          python tests/v2_fingerprint.py --seeds "$MINE" --out "out/shard-$SHARD" --workers 4 $EXTRA
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fp-shard-${{ matrix.shard }}
+          path: out/
+          retention-days: 30

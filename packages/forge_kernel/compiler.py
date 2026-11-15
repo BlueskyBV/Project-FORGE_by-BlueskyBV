@@ -403,7 +403,24 @@ def _resolve_feature_parameters(
     boundary between the unit-typed world and the numeric one, so no builder
     ever has to wonder what units it was handed.
     """
-    spec = feature.spec
+    return resolve_feature_parameters(feature, resolution, component_id)
+
+
+def resolve_feature_parameters(
+    feature: Feature,
+    resolution: Resolution,
+    component_id: str,
+    *,
+    spec: Any = None,
+) -> dict[str, Any]:
+    """A feature's parameters as every kernel reads them: lengths in mm, angles in radians.
+
+    Public so that the exact kernel (forge_occ) reads a document exactly as
+    this one does (docs/V2-stage3.md, section 3). ``spec`` is the feature's
+    kind's contract, for a kind V1's catalogue doesn't hold (ForgeIR v2's own
+    operations); by default, V1's.
+    """
+    spec = feature.spec if spec is None else spec
     resolved: dict[str, Any] = {}
 
     for name, value in feature.parameters.items():
@@ -473,6 +490,46 @@ def _to_radians(quantity: Quantity) -> float:
     return quantity.to(_RAD).magnitude.midpoint
 
 
+def compile_products(
+    component: Component,
+    *,
+    overrides: Mapping[str, Quantity] | None = None,
+) -> dict[str, Product]:
+    """Every feature's product, as this kernel builds it, unvalidated and uncached.
+
+    For the exact kernel (forge_occ), which reads from these the parameters V1
+    defines by its own envelopes -- a bend's face and thickness, a hole's
+    margins -- since those are what a V1 document means (docs/V2-stage3.md,
+    section 7.4). Fails as :meth:`Compiler.compile_component` fails.
+    """
+    try:
+        resolution = component.parameters.resolve(overrides)
+    except Exception as exc:
+        raise CompileError(
+            f"parameter resolution failed: {exc}", component=component.identifier
+        ) from exc
+    products: dict[str, Product] = {}
+    for feature in component.features:
+        resolved = _resolve_feature_parameters(feature, resolution, component.identifier)
+        context = BuildContext(
+            feature_id=feature.identifier,
+            kind=feature.kind,
+            role=feature.role,
+            parameters=resolved,
+            inputs=[products[source] for source in feature.inputs],
+        )
+        try:
+            products[feature.identifier] = builder_for(feature.kind)(context)
+        except (GeometryError, BackendError) as exc:
+            raise CompileError(
+                f"feature could not be built: {exc.message}",
+                component=component.identifier,
+                feature=feature.identifier,
+                kind=feature.kind,
+            ) from exc
+    return products
+
+
 # ----------------------------------------------------------------------
 # Convenience
 # ----------------------------------------------------------------------
@@ -513,5 +570,7 @@ __all__ = [
     "FeatureTrace",
     "CompileError",
     "compile_component",
+    "compile_products",
+    "resolve_feature_parameters",
     "backend_capabilities",
 ]

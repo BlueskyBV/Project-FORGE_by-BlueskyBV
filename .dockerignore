@@ -1,0 +1,15 @@
+# What a Forge image never needs: run outputs, the blind evaluation sets, the
+# exo-arm build, git history and caches. Only packages/, examples/, schemas/,
+# tests/, Makefile and pyproject.toml are copied in (see the Dockerfile).
+.git
+eval
+runs
+exo_arm
+validation
+fixtures
+docs
+**/__pycache__
+**/*.pyc
+*.egg-info
+packages/*.egg-info
+build
