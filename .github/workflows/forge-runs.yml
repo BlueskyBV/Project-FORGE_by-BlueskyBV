@@ -13,6 +13,8 @@
 #                   when given), each with its peak memory.
 # mode compare:     a finished pair run's records (run_id) merged and held against each other here, so
 #                   only the summary has to be fetched.
+# mode coverage_report: a finished coverage run's data (run_id) combined here, and the step-0 inventory's
+#                   functions reported branch by branch.
 # mode coverage:    branch coverage of the base branch's code over its share of the seeds, and (cover_tests)
 #                   over its share of base's test files: the old bodies' coverage (V2-stage4b-0b.md, 6.3).
 name: forge-runs
@@ -21,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair, tests, coverage or compare"
+        description: "fingerprint, pair, tests, coverage, coverage_report or compare"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -132,7 +134,7 @@ jobs:
           done
           cat out/tests.txt
       - uses: actions/download-artifact@v4
-        if: inputs.mode == 'compare'
+        if: inputs.mode == 'compare' || inputs.mode == 'coverage_report'
         with:
           run-id: ${{ inputs.run_id }}
           github-token: ${{ github.token }}
@@ -143,6 +145,13 @@ jobs:
           mkdir -p out
           cd fin && python .github/compare_run.py "$GITHUB_WORKSPACE/in" "$GITHUB_WORKSPACE/merged"
           cp "$GITHUB_WORKSPACE/merged/compare.txt" "$GITHUB_WORKSPACE/out/compare.txt"
+      - name: Coverage report
+        if: inputs.mode == 'coverage_report'
+        run: |
+          python -m pip install coverage==7.17.3
+          mkdir -p out
+          cd fin && python .github/coverage_report.py "$GITHUB_WORKSPACE/in" "$GITHUB_WORKSPACE/base" "$GITHUB_WORKSPACE/covrep"
+          cp "$GITHUB_WORKSPACE/covrep/report.md" "$GITHUB_WORKSPACE/covrep/summary.tsv" "$GITHUB_WORKSPACE/out/"
       - name: Coverage
         if: inputs.mode == 'coverage'
         env:
