@@ -1,0 +1,39 @@
+{
+  "spec_format": 1,
+  "name": "bridges",
+  "items": [
+    {
+      "id": "part",
+      "kind": "block",
+      "words": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "length": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief asks for a poem about bridges and gives no part, shape, size, or material at all, so no dimension can be derived from its words; a placeholder value is used instead"
+        }
+      },
+      "width": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief gives no width, or any shape information whatsoever, since it asks for a poem about bridges rather than describing a part; placeholder value only, pending human clarification"
+        }
+      },
+      "height": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief gives no height, or any shape information whatsoever, since it asks for a poem about bridges rather than describing a part; placeholder value only, pending human clarification"
+        }
+      }
+    }
+  ]
+}

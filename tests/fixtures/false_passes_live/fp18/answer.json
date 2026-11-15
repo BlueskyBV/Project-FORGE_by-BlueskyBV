@@ -1,0 +1,181 @@
+{
+  "spec_format": 1,
+  "name": "steel plate with counterbored M5 holes",
+  "items": [
+    {
+      "id": "plate",
+      "kind": "block",
+      "words": [
+        2
+      ],
+      "length": {
+        "value": 60,
+        "unit": "mm",
+        "from": {
+          "words": [
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      "width": {
+        "value": 40,
+        "unit": "mm",
+        "from": {
+          "words": [
+            6,
+            7,
+            8
+          ]
+        }
+      },
+      "height": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "words": [
+            10,
+            11,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "id": "holes",
+      "kind": "hole",
+      "words": [
+        15,
+        16,
+        42,
+        43
+      ],
+      "on": {
+        "item": "plate",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 5.5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            28,
+            29
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            30,
+            31
+          ]
+        }
+      },
+      "counterbore": {
+        "diameter": {
+          "value": 10,
+          "unit": "mm",
+          "from": {
+            "words": [
+              34,
+              35,
+              36
+            ]
+          }
+        },
+        "depth": {
+          "value": 5,
+          "unit": "mm",
+          "from": {
+            "words": [
+              37,
+              38,
+              39
+            ]
+          }
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            14
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "the brief gives the pitch between the two holes but not where that pair sits along the 60 mm length, so the row is centred"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief doesn't place the holes across the 40 mm width, so they are centred"
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "x",
+              "from": {
+                "words": [
+                  23,
+                  24,
+                  25
+                ]
+              }
+            },
+            "pitch": {
+              "value": 40,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  20,
+                  21,
+                  22
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  14
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "not_modelled": [
+    {
+      "words": [
+        18,
+        19
+      ],
+      "reason": "names the M5 screws the holes are sized to fit; already captured by the stated 5.5 mm hole diameter and 10 mm counterbore, not itself a shape feature of the plate"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says what load case the part is designed for, not anything about its shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "steel",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  }
+}

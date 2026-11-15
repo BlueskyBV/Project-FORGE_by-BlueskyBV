@@ -1,0 +1,94 @@
+{
+  "spec_format": 1,
+  "name": "hollow PLA cube",
+  "items": [
+    {
+      "id": "cube",
+      "kind": "block",
+      "words": [
+        1,
+        2,
+        3
+      ],
+      "length": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            1,
+            2,
+            3
+          ]
+        }
+      },
+      "width": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            1,
+            2,
+            3
+          ]
+        }
+      },
+      "height": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "id": "hollow",
+      "kind": "shell",
+      "words": [
+        6,
+        9,
+        12,
+        13
+      ],
+      "of": "cube",
+      "thickness": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief says the cube is hollow but never gives a wall thickness; 2 mm is a typical printable wall for a 30 mm PLA cube"
+        }
+      },
+      "open": {
+        "faces": [
+          "+z"
+        ],
+        "from": {
+          "words": [
+            12,
+            13
+          ]
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          5
+        ]
+      }
+    }
+  },
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says what the part is for and its load case, not its shape"
+    }
+  ],
+  "not_modelled": []
+}

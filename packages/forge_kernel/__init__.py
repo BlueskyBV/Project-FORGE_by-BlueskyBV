@@ -43,6 +43,8 @@ from .compiler import (
     FeatureTrace,
     backend_capabilities,
     compile_component,
+    compile_products,
+    resolve_feature_parameters,
 )
 from .implicit_backend import (
     BACKEND_IDENTITY,
@@ -81,6 +83,8 @@ __all__ = [
     "FeatureTrace",
     "CompileError",
     "compile_component",
+    "compile_products",
+    "resolve_feature_parameters",
     "backend_capabilities",
     "lineage_token",
     "derived_token",

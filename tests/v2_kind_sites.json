@@ -1,0 +1,26 @@
+{
+ "_doc": "Sites dispatching on an item's kind, a pattern's mode or a category, per file (tests/v2_kind_sites.py): the ratchet of V2-stage4b-0b.md, 5. A count may fall, never rise; when one falls, lower it here.",
+ "counts": {
+  "forge_checks/capabilities.py": 2,
+  "forge_checks/checks.py": 3,
+  "forge_checks/compiler.py": 54,
+  "forge_checks/oracle.py": 48,
+  "forge_checks/place.py": 88,
+  "forge_cli/spec.py": 1,
+  "forge_eval/generator.py": 168,
+  "forge_eval/spec_grade.py": 17,
+  "forge_plan/edges.py": 19,
+  "forge_plan/planner.py": 23,
+  "forge_plan/regions.py": 2,
+  "forge_plan/shells.py": 3,
+  "forge_plan/threads.py": 2,
+  "forge_plan/tools.py": 25,
+  "forge_spec/checks.py": 24,
+  "forge_spec/compare.py": 33,
+  "forge_spec/guide.py": 1,
+  "forge_spec/placement.py": 130,
+  "forge_spec/questions.py": 4,
+  "forge_spec/render.py": 11,
+  "forge_spec/render_views.py": 76
+ }
+}

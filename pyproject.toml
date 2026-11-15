@@ -11,8 +11,10 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 # The trust core needs none of these. They arrive with the backends.
-dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.6", "mypy>=1.11"]
-exact = ["cadquery>=2.4"]          # OpenCascade B-Rep backend (planned)
+dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.6", "mypy>=1.11", "jsonschema>=4.18"]
+# The exact kernel (forge_occ): OpenCascade 8.0.1 through the OCP wheel Forge is built and tested
+# against (ADR-0022), and lib3mf for 3MF. Pinned exactly: forge_occ refuses to run on any other.
+exact = ["cadquery-ocp-novtk==8.0.1.1.0", "lib3mf==2.5.0"]
 simulation = ["gmsh>=4.12"]        # meshing (planned; invoked out-of-process)
 optimisation = ["scipy>=1.11", "optuna>=3.6"]
 
@@ -51,4 +53,21 @@ namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = "numpy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Only scripts/font_metrics.py reads the font file itself; the spec layer
+# reads the table it writes (packages/forge_spec/font.py).
+module = "fontTools.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# The tests alone make reference meshes with manifold3d; Forge never imports it.
+module = "manifold3d.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# The exact kernel's bindings (forge_occ): OpenCascade through OCP, and 3MF through lib3mf.
+# Neither ships type information; forge_occ types what it takes from them as Any.
+module = ["OCP.*", "lib3mf.*"]
 ignore_missing_imports = true

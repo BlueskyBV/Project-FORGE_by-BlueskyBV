@@ -1,0 +1,1029 @@
+"""The geometry the placement solver reasons with: faces, outlines, fits, material.
+
+Everything here is exact and axis-aligned:
+
+- a **flat face** is a rectangle (whose corners may be rounded, each by its
+  own radius: a round-ended tab rounds two of them), a disc, a ring, or an
+  outline of lines and arcs (an extrusion's end: :mod:`forge_spec.outline`);
+- a **side face** is the round side of a cylinder, a tube or a bore;
+- an **outline** is what an item covers on the face it is on, as rectangles
+  and discs: a round-ended slot is a rectangle and two discs, a pocket with
+  rounded corners two rectangles and four discs. Every outline is centrally
+  symmetric about the item's position;
+- the **material** under a face is how far a cut can go before it breaks
+  through: a plate's thickness, a shelled box's wall, a cone's height falling
+  off towards its rim, a dome's height over each point of its base, a turned
+  part's height at each distance from its axis.
+
+Whether an outline lies on a face is decided exactly (see
+:func:`outline_on_face`), never by bounding boxes, so a round-ended slot that
+fits a disc isn't questioned and a square pocket whose corners stick out of it
+is.
+
+>>> face = FlatFace("+end", (0, 0, 10), "+z", ("x", "y"), "disc", (10, 10))
+>>> outline_on_face(face, slot_outline(19.5, 6, along_first=True), 0, 0)
+True
+>>> outline_on_face(face, (rect(9.75, 3),), 0, 0)
+False
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Callable, Iterable, Sequence
+from dataclasses import dataclass, replace
+from itertools import pairwise
+
+from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
+
+__all__ = [
+    "EPS",
+    "DepthModel",
+    "Dome",
+    "FlatFace",
+    "Footprint",
+    "Less",
+    "Over",
+    "Part",
+    "SideFace",
+    "Source",
+    "Taper",
+    "Turned",
+    "Vec",
+    "add_material",
+    "bbox",
+    "copies_overlap",
+    "disc",
+    "face_footprint",
+    "far_near",
+    "first_close_pair",
+    "fits_somewhere",
+    "footprint_on_face",
+    "inside_hole",
+    "least_material_under",
+    "material_at",
+    "most_material_under",
+    "outline_meets_face",
+    "outline_on_face",
+    "outline_within",
+    "reach",
+    "rect",
+    "rounded_rect",
+    "shape_meets_face",
+    "shape_on_face",
+    "shape_reach",
+    "side_material",
+    "side_most_material",
+    "slot_outline",
+    "touches_edge",
+    "uniform",
+]
+
+Vec = tuple[float, float, float]
+EPS = 1e-6
+
+#: The quadrants of a face's two axes, in the order a face's corner radii are given.
+QUADRANTS = ((1, 1), (-1, 1), (-1, -1), (1, -1))
+
+
+Source = tuple[str, str]  # (item id, field name)
+
+
+@dataclass(frozen=True)
+class Taper:
+    """The material under a cone's end, away from its centre.
+
+    All of it out to radius ``flat`` (the smaller end's); from there the
+    cone's own ``own`` falls in a straight line to nothing at ``edge`` (the
+    larger end's). Only the cone's own material falls away: what it stands
+    on is under it only within ``flat``.
+    """
+
+    flat: float
+    edge: float
+    own: float
+
+
+@dataclass(frozen=True)
+class Dome:
+    """The material under a dome's flat face: its height above each point."""
+
+    radius: float
+
+
+@dataclass(frozen=True)
+class Turned:
+    """The material under a revolution's end: from the end along the line at each distance from the axis to where it leaves the half outline.
+
+    ``shape`` is the half outline (distance from the axis, height); ``top``
+    whether the face is its greatest height's end. ``extra`` is what is
+    under it besides, where the line runs right through the revolution (the
+    host's material, under the far end of one standing on a face).
+    """
+
+    shape: Shape
+    top: bool
+    extra: float = 0.0
+
+
+DepthModel = Taper | Dome | Turned
+
+
+@dataclass(frozen=True)
+class Over:
+    """What is under a standing item's far face besides its own material: its host's, where it is over its host's face.
+
+    frame.md: at a point over the host's face, the material under the
+    host's face there too; over an overhang, only the item's own. ``host``
+    is the face it stands on, in the same axes; ``at`` this face's centre on
+    it, along those axes from the host face's centre. The host's material
+    adds only where the item's own runs right down to its foot: a cone's
+    within its smaller end (its :class:`Taper`'s ``flat``), a revolution's
+    where the line runs right through it (its :class:`Turned`).
+    """
+
+    host: FlatFace
+    at: tuple[float, float]
+
+
+@dataclass(frozen=True)
+class Less:
+    """A pocket's floor: the material under the face it was cut into, less its depth (frame.md).
+
+    ``base`` is that face, in the same axes; ``at`` this face's centre on it,
+    along those axes from its centre.
+    """
+
+    base: FlatFace
+    at: tuple[float, float]
+    depth: float
+
+
+@dataclass(frozen=True)
+class FlatFace:
+    """A flat face: a rectangle (corners possibly rounded), a disc, a ring or an outline.
+
+    ``depth_below`` is the item's own material under the face's centre,
+    along -normal. ``depth_model`` says how it changes away from the centre:
+    None (it doesn't), a :class:`Taper`, a :class:`Dome` or a :class:`Turned`;
+    ``over``, what is under it besides, on its host (a standing item's far
+    face); ``less``, for a pocket's floor, the material it is all there is of
+    (``depth_below`` is then its least). Read the material under a footprint
+    with :func:`least_material_under` and :func:`most_material_under`.
+    ``room`` is how far something standing on it may rise before it meets a
+    wall (a hollow's far side); outside a hollow there is no limit.
+
+    So that a problem can be traced to the values it rests on, a face keeps
+    the (item, field) pairs its size comes from along each of its axes
+    (``axis_sources``), and those its material comes from (``depth_sources``).
+    """
+
+    name: str
+    centre: Vec
+    normal: str  # "+z"
+    axes: tuple[str, str]
+    shape: str  # "rect", "disc", "annulus", "profile"
+    half: tuple[float, float]  # rect half sizes along axes; disc: (r, r)
+    inner_radius: float = 0.0
+    depth_below: float = 0.0
+    #: A rectangle's corner radii, by quadrant: (+, +), (-, +), (-, -), (+, -).
+    corners: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
+    depth_model: DepthModel | None = None
+    axis_sources: tuple[tuple[Source, ...], tuple[Source, ...]] = ((), ())
+    depth_sources: tuple[Source, ...] = ()
+    room: float = math.inf
+    room_sources: tuple[Source, ...] = ()
+    #: A "profile" face's outline, in the face's axes about its centre (the middle of its box).
+    profile: Shape | None = None
+    over: Over | None = None
+    less: Less | None = None
+
+    @property
+    def sources(self) -> tuple[Source, ...]:
+        """Every (item, field) pair the face's size comes from."""
+        return self.axis_sources[0] + tuple(
+            s for s in self.axis_sources[1] if s not in self.axis_sources[0]
+        )
+
+    @property
+    def symmetric(self) -> bool:
+        """Centrally symmetric and convex: a shape that fits anywhere fits at the centre."""
+        if self.shape == "disc":
+            return True
+        c = self.corners
+        return self.shape == "rect" and c[0] == c[2] and c[1] == c[3]
+
+
+@dataclass(frozen=True)
+class SideFace:
+    """The round side of a body (``outward``) or of a bore (not ``outward``).
+
+    ``wall`` is the material a radial cut meets: a solid rod's whole
+    diameter, a tube's wall. So that a problem is traced to the values it
+    rests on, the side keeps where its radius comes from (``radius_sources``),
+    its length (``length_sources``) and its wall (``depth_sources``).
+    """
+
+    name: str
+    axis: str  # "z"
+    start: Vec  # centre of the end the axis starts from
+    length: float
+    radius: float
+    outward: bool = True
+    wall: float = 0.0
+    radius_sources: tuple[Source, ...] = ()
+    length_sources: tuple[Source, ...] = ()
+    depth_sources: tuple[Source, ...] = ()
+
+    @property
+    def sources(self) -> tuple[Source, ...]:
+        """Every (item, field) pair the side's size comes from."""
+        return self.radius_sources + tuple(
+            s for s in self.length_sources if s not in self.radius_sources
+        )
+
+
+Face = FlatFace | SideFace
+
+
+@dataclass(frozen=True)
+class Part:
+    """One piece of an outline: a rectangle, or a disc of radius ``half[0]``."""
+
+    centre: tuple[float, float]
+    half: tuple[float, float]
+    disc: bool = False
+
+
+#: What an item covers on the face it is on: its outline as parts, or an outline of lines and arcs.
+Footprint = Sequence[Part] | Shape
+
+
+def rect(h1: float, h2: float, c1: float = 0.0, c2: float = 0.0) -> Part:
+    return Part((c1, c2), (h1, h2))
+
+
+def disc(r: float, c1: float = 0.0, c2: float = 0.0) -> Part:
+    return Part((c1, c2), (r, r), disc=True)
+
+
+def rounded_rect(h1: float, h2: float, radius: float) -> tuple[Part, ...]:
+    """A rectangle with rounded corners. The radius must already fit (radius <= h1, h2)."""
+    if radius <= EPS:
+        return (rect(h1, h2),)
+    e1, e2 = h1 - radius, h2 - radius
+    return (rect(e1, h2), rect(h1, e2),
+            *(disc(radius, s1 * e1, s2 * e2) for s1, s2 in QUADRANTS))  # fmt: skip
+
+
+def slot_outline(length: float, width: float, *, along_first: bool) -> tuple[Part, ...]:
+    """A round-ended slot, ``length`` overall, as a rectangle and two discs."""
+    long, wide = length / 2, width / 2
+    reach_ = max(long - wide, 0.0)
+    if along_first:
+        return (rect(reach_, wide), disc(wide, reach_, 0.0), disc(wide, -reach_, 0.0))
+    return (rect(wide, reach_), disc(wide, 0.0, reach_), disc(wide, 0.0, -reach_))
+
+
+def bbox(parts: Iterable[Part]) -> tuple[float, float]:
+    """Half sizes of the box around an outline centred on its position."""
+    b1 = b2 = 0.0
+    for part in parts:
+        b1 = max(b1, abs(part.centre[0]) + part.half[0])
+        b2 = max(b2, abs(part.centre[1]) + part.half[1])
+    return b1, b2
+
+
+def reach(parts: Iterable[Part]) -> float:
+    """How far an outline reaches from its centre."""
+    far = 0.0
+    for part in parts:
+        c1, c2 = abs(part.centre[0]), abs(part.centre[1])
+        if part.disc:
+            far = max(far, math.hypot(c1, c2) + part.half[0])
+        else:
+            far = max(far, math.hypot(c1 + part.half[0], c2 + part.half[1]))
+    return far
+
+
+def _disc_in_rect_face(face: FlatFace, u1: float, u2: float, r: float) -> bool:
+    """Whether a disc (a point when ``r`` is 0) lies on a rectangular face.
+
+    Exact for any corner radii: the disc's centre must lie in the face shrunk
+    by ``r``, whose corners are rounded by ``radius - r`` where that is
+    positive, and sharp where it isn't.
+    """
+    h1, h2 = face.half
+    if abs(u1) + r > h1 + EPS or abs(u2) + r > h2 + EPS:
+        return False
+    # Every corner is asked, not only the quadrant's: a round-ended tab's two
+    # corners are each as big as half its width, and reach past its middle.
+    for radius, (s1, s2) in zip(face.corners, QUADRANTS, strict=True):
+        if r >= radius:
+            continue
+        a1, a2 = s1 * u1 - (h1 - radius), s2 * u2 - (h2 - radius)
+        if a1 > 0 and a2 > 0 and math.hypot(a1, a2) > radius - r + EPS:
+            return False
+    return True
+
+
+def _corners_of(part: Part, p1: float, p2: float) -> list[tuple[float, float]]:
+    c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+    h1, h2 = part.half
+    return [(c1 + s1 * h1, c2 + s2 * h2) for s1, s2 in QUADRANTS]
+
+
+def _far_near(part: Part, p1: float, p2: float) -> tuple[float, float]:
+    """The farthest and nearest distances of a part from the face's centre."""
+    c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+    h1, h2 = part.half
+    if part.disc:
+        d = math.hypot(c1, c2)
+        return d + h1, max(d - h1, 0.0)
+    far = math.hypot(abs(c1) + h1, abs(c2) + h2)
+    near = math.hypot(max(abs(c1) - h1, 0.0), max(abs(c2) - h2, 0.0))
+    return far, near
+
+
+def _covers_hole(part: Part, p1: float, p2: float, radius: float) -> bool:
+    """Whether a part covers a ring's whole central hole (a step around a bore)."""
+    c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+    if part.disc:
+        return math.hypot(c1, c2) + radius <= part.half[0] + EPS
+    return (
+        abs(c1) + radius <= part.half[0] + EPS
+        and abs(c2) + radius <= part.half[1] + EPS
+    )
+
+
+def part_on_face(face: FlatFace, part: Part, p1: float, p2: float) -> bool:
+    """Whether one part lies on the face's material (a ring's hole is not material)."""
+    if face.shape == "profile":
+        assert face.profile is not None
+        centre = (part.centre[0] + p1, part.centre[1] + p2)
+        if part.disc:
+            return face.profile.holds_disc(centre, part.half[0], EPS)
+        return face.profile.holds_rect(centre, part.half, EPS)
+    if face.shape == "rect":
+        c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+        if part.disc:
+            return _disc_in_rect_face(face, c1, c2, part.half[0])
+        return all(
+            _disc_in_rect_face(face, u1, u2, 0.0)
+            for u1, u2 in _corners_of(part, p1, p2)
+        )
+    far, near = _far_near(part, p1, p2)
+    return far <= face.half[0] + EPS and (
+        face.shape != "annulus" or near >= face.inner_radius - EPS
+    )
+
+
+def outline_on_face(face: FlatFace, parts: Sequence[Part], p1: float, p2: float,
+                    *, cut: bool = False) -> bool:  # fmt: skip
+    """Whether an outline placed at (p1, p2) lies on the face.
+
+    For a cut on a ring, covering the whole central hole is fine: that is a
+    step around the bore, the same as a counterbore.
+    """
+    if face.shape == "annulus" and cut:
+        outer = all(_far_near(part, p1, p2)[0] <= face.half[0] + EPS for part in parts)
+        if not outer:
+            return False
+        if any(_covers_hole(part, p1, p2, face.inner_radius) for part in parts):
+            return True
+    return all(part_on_face(face, part, p1, p2) for part in parts)
+
+
+def touches_edge(face: FlatFace, parts: Sequence[Part], p1: float, p2: float) -> bool:
+    """Whether a cut's outline at (p1, p2), on the face, touches the face's edge at a point from inside.
+
+    There the material between the cut and the face's side is pinched to
+    nothing: a hole touching a plate's side, or a disc's rim, leaves an edge
+    on which the part meets itself, which no kernel builds soundly. A part of
+    the outline meets the edge where it lies on the face but, grown by a
+    hair, would not; a straight side lying along the edge only opens the cut
+    there (a rebate), and so does a round end where another part of the same
+    outline meets the edge too (a round-ended slot along the edge). A cut
+    round the face's centre that covers it, or a ring's bore, all round
+    touches nothing at a point.
+
+    >>> face = FlatFace("+z", (0.0, 0.0, 6.0), "+z", ("x", "y"), "rect", (30.0, 10.0))
+    >>> touches_edge(face, (disc(2.5),), 0, 7.5), touches_edge(face, (disc(2.5),), 0, 7)
+    (True, False)
+    >>> touches_edge(face, slot_outline(12, 4, along_first=True), 0, 8)
+    False
+    """
+    if face.shape == "profile" and len(parts) > 1:
+        return False  # where on an outline each part's touch lies isn't worked out: one disc alone is asked
+    covering = face.shape == "annulus" and any(
+        _covers_hole(part, p1, p2, face.inner_radius) for part in parts
+    )
+    for k, part in enumerate(parts):
+        if not part.disc and face.shape in ("rect", "profile"):
+            continue
+        c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+        if face.shape in ("disc", "annulus") and math.hypot(c1, c2) < EPS:
+            continue
+        grown = Part(
+            part.centre, (part.half[0] + 2 * EPS, part.half[1] + 2 * EPS), part.disc
+        )
+        if covering:
+            if _far_near(grown, p1, p2)[0] <= face.half[0] + EPS:
+                continue
+        elif part_on_face(face, grown, p1, p2):
+            continue
+        at = _touching(face, part, c1, c2)
+        others = [other for j, other in enumerate(parts) if j != k]
+        if at is not None and _point_in_parts(others, (p1, p2), *at):
+            continue
+        return True
+    return False
+
+
+def _touching(
+    face: FlatFace, part: Part, c1: float, c2: float
+) -> tuple[float, float] | None:
+    """Where a disc meets a rectangular face's straight edge from inside (None: elsewhere)."""
+    if face.shape != "rect" or not part.disc:
+        return None
+    (h1, h2), r = face.half, part.half[0]
+    if abs(abs(c1) + r - h1) <= 3 * EPS:
+        return math.copysign(h1, c1), c2
+    if abs(abs(c2) + r - h2) <= 3 * EPS:
+        return c1, math.copysign(h2, c2)
+    return None
+
+
+def outline_meets_face(
+    face: FlatFace, parts: Sequence[Part], p1: float, p2: float
+) -> bool:
+    """Whether an outline at (p1, p2) shares some area with the face (overhang allowed).
+
+    Exact for rectangular faces, discs and rings; a rectangle's rounded
+    corners are ignored, which can only say "meets" where it barely doesn't.
+    """
+    for part in parts:
+        c1, c2 = part.centre[0] + p1, part.centre[1] + p2
+        h1, h2 = part.half
+        if face.shape == "profile":
+            piece = (
+                Shape.disc((c1, c2), h1)
+                if part.disc
+                else Shape.rect((c1, c2), part.half)
+            )
+            if shape_meets_face(face, piece, 0.0, 0.0):
+                return True
+            continue
+        if face.shape == "rect":
+            g1 = max(abs(c1) - face.half[0], 0.0)
+            g2 = max(abs(c2) - face.half[1], 0.0)
+            if part.disc:
+                if math.hypot(g1, g2) < h1 - EPS:
+                    return True
+            elif (
+                abs(c1) - h1 < face.half[0] - EPS and abs(c2) - h2 < face.half[1] - EPS
+            ):
+                return True
+            continue
+        far, near = _far_near(part, p1, p2)
+        if near < face.half[0] - EPS and (
+            face.shape != "annulus" or far > face.inner_radius + EPS
+        ):
+            return True
+    return False
+
+
+def fits_somewhere(
+    face: FlatFace, parts: Sequence[Part], *, cut: bool = False
+) -> bool | None:
+    """Whether the outline fits anywhere on the face; None when it can't be settled.
+
+    For a centrally symmetric convex face (a rectangle with matching
+    opposite corners, a disc), a symmetric outline that fits anywhere also
+    fits at the centre, so the centre decides. A plain rectangle is decided by
+    the outline's box. Other faces are left to the placement's own check.
+    """
+    if face.shape == "rect" and face.corners == (0.0, 0.0, 0.0, 0.0):
+        b1, b2 = bbox(parts)
+        return b1 <= face.half[0] + EPS and b2 <= face.half[1] + EPS
+    if face.symmetric:
+        return outline_on_face(face, parts, 0.0, 0.0, cut=cut)
+    if face.shape == "annulus":
+        if reach(parts) > face.half[0] + EPS:
+            return False
+        if cut and any(
+            _covers_hole(part, 0.0, 0.0, face.inner_radius) for part in parts
+        ):
+            return True  # it fits at the centre, around the hole: a step round the bore
+        lone = len(parts) == 1 and parts[0].disc
+        if lone and 2 * parts[0].half[0] > face.half[0] - face.inner_radius + EPS:
+            return (
+                None if cut else False
+            )  # a cut may still be meant to break into the hole
+    return None
+
+
+def _point_in_parts(
+    parts: Sequence[Part], position: tuple[float, float], u1: float, u2: float
+) -> bool:
+    for part in parts:
+        c1, c2 = part.centre[0] + position[0], part.centre[1] + position[1]
+        if part.disc:
+            if math.hypot(u1 - c1, u2 - c2) <= part.half[0] + EPS:
+                return True
+        elif abs(u1 - c1) <= part.half[0] + EPS and abs(u2 - c2) <= part.half[1] + EPS:
+            return True
+    return False
+
+
+def _part_in_part(
+    a: Part, pa: tuple[float, float], b: Part, pb: tuple[float, float]
+) -> bool:
+    """Whether part ``a`` at ``pa`` lies wholly within part ``b`` at ``pb``: exact."""
+    a1, a2 = a.centre[0] + pa[0], a.centre[1] + pa[1]
+    b1, b2 = b.centre[0] + pb[0], b.centre[1] + pb[1]
+    if b.disc:
+        if a.disc:
+            return math.hypot(a1 - b1, a2 - b2) + a.half[0] <= b.half[0] + EPS
+        return all(math.hypot(a1 + s1 * a.half[0] - b1, a2 + s2 * a.half[1] - b2) <= b.half[0] + EPS
+                   for s1, s2 in QUADRANTS)  # fmt: skip
+    return (
+        abs(a1 - b1) + a.half[0] <= b.half[0] + EPS
+        and abs(a2 - b2) + a.half[1] <= b.half[1] + EPS
+    )
+
+
+def outline_within(inner: Sequence[Part], at: tuple[float, float], outer: Sequence[Part],
+                   outer_at: tuple[float, float]) -> bool:  # fmt: skip
+    """Whether one outline lies wholly within another: an item standing wholly over a cut's mouth.
+
+    Exact where each piece of the one lies in a single piece of the other;
+    otherwise each piece's outline is followed closely (a disc at 256 points,
+    a rectangle at 64 along each side), so it is never said of an outline
+    that pokes out by more than a hair.
+    """
+    for part in inner:
+        if any(_part_in_part(part, at, other, outer_at) for other in outer):
+            continue
+        c1, c2 = part.centre[0] + at[0], part.centre[1] + at[1]
+        if part.disc:
+            r = part.half[0]
+            points = [(c1 + r * math.cos(t), c2 + r * math.sin(t))
+                      for t in (2 * math.pi * k / 256 for k in range(256))]  # fmt: skip
+        else:
+            h1, h2 = part.half
+            edge = [k / 64 for k in range(65)]
+            points = ([(c1 - h1 + 2 * h1 * f, c2 - h2) for f in edge] + [(c1 - h1 + 2 * h1 * f, c2 + h2) for f in edge]
+                      + [(c1 - h1, c2 - h2 + 2 * h2 * f) for f in edge] + [(c1 + h1, c2 - h2 + 2 * h2 * f) for f in edge])  # fmt: skip
+        if not all(_point_in_parts(outer, outer_at, u1, u2) for u1, u2 in points):
+            return False
+    return True
+
+
+def inside_hole(face: FlatFace, parts: Sequence[Part], p1: float, p2: float) -> bool:
+    """Whether an outline lies wholly in a ring's central hole: a cut there cuts nothing."""
+    return face.shape == "annulus" and all(
+        _far_near(part, p1, p2)[0] <= face.inner_radius + EPS for part in parts
+    )
+
+
+def _parts_overlap(
+    a: Part, pa: tuple[float, float], b: Part, pb: tuple[float, float]
+) -> bool:
+    """Whether two parts, at their positions, share some area (touching doesn't count)."""
+    a1, a2 = a.centre[0] + pa[0], a.centre[1] + pa[1]
+    b1, b2 = b.centre[0] + pb[0], b.centre[1] + pb[1]
+    if a.disc and b.disc:
+        return math.hypot(a1 - b1, a2 - b2) < a.half[0] + b.half[0] - EPS
+    if not a.disc and not b.disc:
+        return (
+            abs(a1 - b1) < a.half[0] + b.half[0] - EPS
+            and abs(a2 - b2) < a.half[1] + b.half[1] - EPS
+        )
+    disc_, d1, d2, box, r1, r2 = (
+        (a, a1, a2, b, b1, b2) if a.disc else (b, b1, b2, a, a1, a2)
+    )
+    g1 = max(abs(d1 - r1) - box.half[0], 0.0)
+    g2 = max(abs(d2 - r2) - box.half[1], 0.0)
+    return math.hypot(g1, g2) < disc_.half[0] - EPS
+
+
+def first_close_pair(points: Sequence[tuple[float, float]], owners: Sequence[int], cells: tuple[float, float],
+                     close: Callable[[int, int], bool], *, wrap: float | None = None) -> tuple[int, int] | None:  # fmt: skip
+    """The first two owners with points close to each other, or None: (j, i), j < i, i as small as can be.
+
+    ``points`` belong to ``owners`` (a copy may have more than one point) and
+    are given in owner order. Two points can be close only if they are less
+    than a cell apart along each coordinate, so each point is compared with
+    those in its own and the neighbouring cells of a grid: about linear in
+    the number of points, however they are laid out. With ``wrap``, the first
+    coordinate is an angle that comes round again at that value.
+    """
+    c1, c2 = max(cells[0], EPS), max(cells[1], EPS)
+    bins = max(1, math.floor(wrap / c1)) if wrap is not None else 0
+    grid: dict[tuple[int, int], list[int]] = {}
+
+    def key(p: tuple[float, float]) -> tuple[int, int]:
+        if wrap is not None:
+            return math.floor((p[0] % wrap) / (wrap / bins)) % bins, math.floor(
+                p[1] / c2
+            )
+        return math.floor(p[0] / c1), math.floor(p[1] / c2)
+
+    def around(k: tuple[int, int]) -> set[tuple[int, int]]:
+        firsts = (
+            {(k[0] + d) % bins for d in (-1, 0, 1)}
+            if wrap is not None
+            else {k[0] - 1, k[0], k[0] + 1}
+        )
+        return {(a, b) for a in firsts for b in (k[1] - 1, k[1], k[1] + 1)}
+
+    n = 0
+    while n < len(points):
+        owner = owners[n]
+        best: int | None = None
+        group = []
+        while n < len(points) and owners[n] == owner:
+            group.append(n)
+            n += 1
+        for i in group:
+            for cell in around(key(points[i])):
+                for j in grid.get(cell, ()):
+                    if (
+                        owners[j] < owner
+                        and (best is None or owners[j] < best)
+                        and close(j, i)
+                    ):
+                        best = owners[j]
+        if best is not None:
+            return best, owner
+        for i in group:
+            grid.setdefault(key(points[i]), []).append(i)
+    return None
+
+
+def copies_overlap(
+    parts: Sequence[Part], positions: Sequence[tuple[float, float]]
+) -> tuple[int, int] | None:
+    """The first two copies of an outline, at these positions, that overlap, or None.
+
+    Exact for outlines made of rectangles and discs, and about linear in the
+    number of copies (:func:`first_close_pair`), so no pattern is too big
+    to check.
+    """
+    if not parts or len(positions) < 2:
+        return None
+    b1, b2 = bbox(parts)
+
+    def close(j: int, i: int) -> bool:
+        return any(
+            _parts_overlap(a, positions[j], b, positions[i])
+            for a in parts
+            for b in parts
+        )
+
+    return first_close_pair(positions, range(len(positions)), (2 * b1, 2 * b2), close)
+
+
+def _depth_at(face: FlatFace, rho: float) -> float:
+    """The material under the face at distance ``rho`` from its centre."""
+    model = face.depth_model
+    if model is None:
+        return face.depth_below
+    if isinstance(model, Turned):
+        return turned_depth(model.shape, model.top, rho, rho, model.extra)[0]
+    if isinstance(model, Dome):
+        return math.sqrt(max(model.radius * model.radius - rho * rho, 0.0))
+    if rho <= model.flat:
+        return face.depth_below
+    if rho >= model.edge:
+        return 0.0
+    return model.own * (model.edge - rho) / (model.edge - model.flat)
+
+
+def _depth_range(face: FlatFace, near: float, far: float) -> tuple[float, float]:
+    """The least and the most material under the face between distances ``near`` and ``far`` from its centre.
+
+    Every model but a turned part's falls away from the centre, so the least
+    is at the farthest distance and the most at the nearest; a turned part's
+    is worked out over the run (:func:`~forge_spec.outline.turned_depth`).
+    """
+    model = face.depth_model
+    if isinstance(model, Turned):
+        return turned_depth(model.shape, model.top, near, far, model.extra)
+    return _depth_at(face, far), _depth_at(face, near)
+
+
+def material_at(face: FlatFace, p1: float, p2: float, r: float) -> float:
+    """The least material under a disc of radius ``r`` at (p1, p2) on the face (a point, ``r`` 0): what a blind cut must fit in."""
+    return least_material_under(face, (disc(r),), p1, p2)
+
+
+def side_material(face: SideFace, r: float) -> float:
+    """The least material a cut of radius ``r`` along a radius of a round side meets: what a blind one must fit in.
+
+    Measured from the side's surface on the cut's axis, in along it
+    (docs/definitions/hole.md). Into a solid rod, the far side comes first at
+    the cut's edge; into a tube's wall from outside, the bore comes first at
+    its middle; out through a wall from inside a bore or hollow, the outside
+    comes first at its edge.
+    """
+    radius, wall = face.radius, face.wall
+    if face.outward:
+        if wall >= 2 * radius - EPS:
+            return radius + math.sqrt(max(radius * radius - r * r, 0.0))
+        return wall
+    outer = radius + wall
+    return math.sqrt(max(outer * outer - r * r, 0.0)) - radius
+
+
+def side_most_material(face: SideFace, r: float) -> float:
+    """How far a cut of radius ``r`` through a round side's wall goes: until it is out all across its mouth.
+
+    Through a solid rod, to the far side; through a tube's wall from outside,
+    until it is in the bore everywhere across its mouth; out through a wall
+    from inside, to the outside on its axis.
+    """
+    radius, wall = face.radius, face.wall
+    if face.outward:
+        if wall >= 2 * radius - EPS:
+            return 2 * radius
+        inner = radius - wall
+        return radius - math.sqrt(max(inner * inner - r * r, 0.0))
+    return wall
+
+
+def far_near(footprint: Footprint, p1: float, p2: float) -> tuple[float, float]:
+    """The farthest and the nearest distances of a footprint at (p1, p2) from the face's centre.
+
+    A footprint is an item's outline as parts, or an outline of lines and
+    arcs (an extrusion's or a revolution's, standing on the face). Where it
+    covers the centre, its nearest distance is 0.
+
+    >>> far_near((rect(3, 4),), 0, 0)
+    (5.0, 0.0)
+    >>> far_near(Shape.disc((0.0, 0.0), 2.0), 5, 0)
+    (7.0, 3.0)
+    """
+    if isinstance(footprint, Shape):
+        moved, centre = footprint.moved(p1, p2), (0.0, 0.0)
+        near = 0.0 if moved.inside(centre) else moved.distance(centre)
+        return shape_reach(moved), near
+    ranges = [_far_near(part, p1, p2) for part in footprint]
+    return max(far for far, _ in ranges), min(near for _, near in ranges)
+
+
+@dataclass(frozen=True)
+class _Step:
+    """One face on the way down from a face to what is under it: its own material, and how to take what is under it.
+
+    ``less``: a pocket's floor, its depth less than what it was cut into;
+    else ``face``, a standing item's far face, its own with its host's added
+    (or, for the most, the greater of that and its own, ``own``).
+    """
+
+    less: float = 0.0
+    face: FlatFace | None = None
+    near: float = 0.0
+    far: float = 0.0
+    own: float = 0.0
+
+
+def least_material_under(
+    face: FlatFace, footprint: Footprint, p1: float, p2: float
+) -> float:
+    """The least material under a footprint at (p1, p2): what a blind cut of that outline must fit in.
+
+    The item's own material under a face depends only on the distance from
+    its centre (docs/definitions/frame.md, "The material under a face"), so
+    its least is the least over the footprint's run of distances, from its
+    nearest point to its farthest: where it falls away from the centre, under
+    its farthest point. A standing item's far face has its host's material
+    under it too where it is over the host's face: when the whole footprint
+    is, the least of the host's under it adds to its own (where its own runs
+    right down to its foot); else, over the overhang, its own is all there
+    is. A pocket's floor has what was under it, less its depth. Worked down
+    the stack of faces one at a time, however tall.
+
+    >>> face = FlatFace("+end", (0, 0, 10), "+z", ("x", "y"), "disc", (10, 10), depth_below=10,
+    ...                 depth_model=Dome(10))
+    >>> round(least_material_under(face, (rect(3, 4),), 0, 0), 6)  # its corner is 5 from the centre
+    8.660254
+    >>> plate = FlatFace("+z", (0, 0, 5), "+z", ("x", "y"), "rect", (20, 10), depth_below=5.0)
+    >>> shelf = FlatFace("+z", (15, 0, 8), "+z", ("x", "y"), "rect", (10, 5), depth_below=3.0,
+    ...                  over=Over(plate, (15, 0)))  # over the plate to 5 along x from its centre, then over air
+    >>> least_material_under(shelf, (disc(1),), -5, 0), least_material_under(shelf, (disc(1),), 5, 0)
+    (8.0, 3.0)
+    """
+    steps: list[_Step] = []
+    while True:
+        if face.less is not None:
+            steps.append(_Step(less=face.less.depth))
+            p1, p2, face = p1 + face.less.at[0], p2 + face.less.at[1], face.less.base
+            continue
+        far, near = far_near(footprint, p1, p2)
+        over = face.over
+        if over is None or not footprint_on_face(
+            over.host, footprint, p1 + over.at[0], p2 + over.at[1]
+        ):
+            found = _depth_range(face, near, far)[0]
+            break
+        steps.append(_Step(face=face, near=near, far=far))
+        p1, p2, face = p1 + over.at[0], p2 + over.at[1], over.host
+    for step in reversed(steps):
+        if step.face is None:
+            found -= step.less
+        else:
+            found = _depth_range(add_material(step.face, found), step.near, step.far)[0]
+    return found
+
+
+def most_material_under(
+    face: FlatFace, footprint: Footprint, p1: float, p2: float
+) -> float:
+    """The most material under a footprint at (p1, p2): how far a cut of that outline through goes.
+
+    It comes out of the far side all across its mouth, so it goes as deep as
+    the material is deepest under it: the item's own, where it falls away
+    from the centre, under its nearest point (the centre itself, where it
+    covers it); and where the footprint is over its host's face, its own and
+    the most of the host's under it. A pocket's floor: what was under it, less
+    its depth.
+
+    >>> face = FlatFace("+end", (0, 0, 10), "+z", ("x", "y"), "disc", (10, 10), depth_below=10,
+    ...                 depth_model=Dome(10))
+    >>> most_material_under(face, (rect(3, 4, 6, 0),), 0, 0)  # its nearest point is 3 from the centre
+    9.539392014169456
+    >>> plate = FlatFace("+z", (0, 0, 5), "+z", ("x", "y"), "rect", (20, 10), depth_below=5.0)
+    >>> shelf = FlatFace("+z", (15, 0, 8), "+z", ("x", "y"), "rect", (10, 5), depth_below=3.0,
+    ...                  over=Over(plate, (15, 0)))  # over the plate to 5 along x from its centre, then over air
+    >>> most_material_under(shelf, (disc(1),), 5, 0), most_material_under(shelf, (disc(1),), 7, 0)
+    (8.0, 3.0)
+    """
+    steps: list[_Step] = []
+    while True:
+        if face.less is not None:
+            steps.append(_Step(less=face.less.depth))
+            p1, p2, face = p1 + face.less.at[0], p2 + face.less.at[1], face.less.base
+            continue
+        far, near = far_near(footprint, p1, p2)
+        found = _depth_range(face, near, far)[1]
+        over = face.over
+        if over is None or not _footprint_meets(
+            over.host, footprint, p1 + over.at[0], p2 + over.at[1]
+        ):
+            break
+        steps.append(_Step(face=face, near=near, far=far, own=found))
+        p1, p2, face = p1 + over.at[0], p2 + over.at[1], over.host
+    for step in reversed(steps):
+        if step.face is None:
+            found -= step.less
+        else:
+            found = max(
+                step.own,
+                _depth_range(add_material(step.face, found), step.near, step.far)[1],
+            )
+    return found
+
+
+def add_material(face: FlatFace, host: float) -> FlatFace:
+    """The face with ``host`` more material under it wherever its own runs right down to its foot, and nothing else under it.
+
+    Its own constant material, or a cone's within its smaller end
+    (:class:`Taper` ``flat``); a revolution's where the line runs right
+    through it (:class:`Turned` ``extra``).
+    """
+    model = face.depth_model
+    if isinstance(model, Turned):
+        model = replace(model, extra=model.extra + host)
+    return replace(
+        face, depth_below=face.depth_below + host, depth_model=model, over=None
+    )
+
+
+def uniform(face: FlatFace) -> bool:
+    """Whether the same material is under every point of the face: its own, with no model, host or base to it."""
+    return face.depth_model is None and face.over is None and face.less is None
+
+
+def face_footprint(face: FlatFace) -> Footprint:
+    """A footprint holding all of a face: its outline, or (for a rectangle with rounded corners, a ring) its box or disc."""
+    if face.shape == "profile":
+        assert face.profile is not None
+        return face.profile
+    if face.shape in ("disc", "annulus"):
+        return (disc(face.half[0]),)
+    return (rect(*face.half),)
+
+
+def footprint_on_face(
+    face: FlatFace, footprint: Footprint, p1: float, p2: float
+) -> bool:
+    """Whether a footprint at (p1, p2) lies wholly on the face's material."""
+    if isinstance(footprint, Shape):
+        return shape_on_face(face, footprint, p1, p2)
+    return outline_on_face(face, footprint, p1, p2)
+
+
+def _footprint_meets(
+    face: FlatFace, footprint: Footprint, p1: float, p2: float
+) -> bool:
+    if isinstance(footprint, Shape):
+        return shape_meets_face(face, footprint, p1, p2)
+    return outline_meets_face(face, footprint, p1, p2)
+
+
+# ----------------------------------------------------------------------
+# Outlines of lines and arcs on faces (an extrusion standing on one; anything on an extrusion's end)
+# ----------------------------------------------------------------------
+def _walls(face: FlatFace) -> tuple[Line | Arc, ...]:
+    """The face's boundary, as pieces, in its axes about its centre."""
+    if face.shape == "profile":
+        assert face.profile is not None
+        return face.profile.pieces
+    if face.shape in ("disc", "annulus"):
+        found = Shape.disc((0.0, 0.0), face.half[0]).pieces
+        if face.shape == "annulus":
+            found += Shape.disc((0.0, 0.0), face.inner_radius).pieces
+        return found
+    return Shape.rect((0.0, 0.0), face.half, face.corners).pieces
+
+
+def _on_face(face: FlatFace, p: tuple[float, float]) -> bool:
+    """Whether a point is on the face's material (its boundary included)."""
+    if face.shape == "profile":
+        assert face.profile is not None
+        return face.profile.contains(p, EPS)
+    if face.shape == "rect":
+        return _disc_in_rect_face(face, p[0], p[1], 0.0)
+    far = math.hypot(p[0], p[1])
+    return far <= face.half[0] + EPS and (
+        face.shape != "annulus" or far >= face.inner_radius - EPS
+    )
+
+
+def _in_face(face: FlatFace, p: tuple[float, float]) -> bool:
+    """Whether a point is in the face's material and off its boundary."""
+    return _on_face(face, p) and min(w.distance(p) for w in _walls(face)) > EPS
+
+
+def shape_on_face(face: FlatFace, shape: Shape, p1: float, p2: float) -> bool:
+    """Whether an outline of lines and arcs at (p1, p2) lies wholly on the face's material.
+
+    Its boundary must (each piece split where it meets the face's, each
+    stretch's ends and middle on the face); and on a ring, the hole in the
+    middle must not lie inside it.
+    """
+    moved = shape.moved(p1, p2)
+    if not boundary_within(moved.pieces, lambda p: _on_face(face, p), _walls(face)):
+        return False
+    return face.shape != "annulus" or not moved.inside((0.0, 0.0))
+
+
+def shape_meets_face(face: FlatFace, shape: Shape, p1: float, p2: float) -> bool:
+    """Whether an outline at (p1, p2) shares some area with the face (overhang allowed).
+
+    A stretch of either's boundary inside the other, off its boundary, says
+    so; where the boundaries lie on each other, a point just inside the
+    outline does.
+    """
+    moved = shape.moved(p1, p2)
+    walls = _walls(face)
+
+    def in_shape(p: tuple[float, float]) -> bool:
+        return moved.inside(p) and moved.distance(p) > EPS
+
+    for pieces, others, inside in (
+        (moved.pieces, walls, lambda p: _in_face(face, p)),
+        (walls, moved.pieces, in_shape),
+    ):
+        for q in pieces:
+            cuts = sorted({0.0, 1.0, *(q.param(x) for w in others for x in meet(q, w))})
+            if any(
+                inside(q.at((a + b) / 2)) for a, b in pairwise(cuts) if b - a > 1e-12
+            ):
+                return True
+    q = moved.pieces[0]
+    m, ahead = q.at(0.5), q.at(0.5 + 1e-6)
+    tx, ty = ahead[0] - m[0], ahead[1] - m[1]
+    norm = math.hypot(tx, ty) or 1.0
+    for side in (1.0, -1.0):
+        p = (m[0] - side * ty / norm * 1e-4, m[1] + side * tx / norm * 1e-4)
+        if moved.inside(p):
+            return _on_face(face, p)
+    return False
+
+
+def shape_reach(shape: Shape) -> float:
+    """How far an outline reaches from its own origin."""
+    found = 0.0
+    for q in shape.pieces:
+        points = list(q.ends())
+        if isinstance(q, Arc):
+            cx, cy = q.centre
+            angle = math.atan2(cy, cx) if math.hypot(cx, cy) > 0 else q.start
+            fraction = q.fraction(angle)
+            if fraction is not None:
+                points.append(q.at(fraction))
+        found = max(found, *(math.hypot(x, y) for x, y in points))
+    return found

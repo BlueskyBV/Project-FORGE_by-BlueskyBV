@@ -258,6 +258,9 @@ class ProviderInfo:
     #: token budget) or "off" -- recorded, because an answer written with no
     #: room to work it out is a different kind of answer.
     thinking: str = "off"
+    #: How hard the model is asked to work (low to max), where the endpoint
+    #: takes it; None for its default. Read by what records a measurement.
+    effort: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {

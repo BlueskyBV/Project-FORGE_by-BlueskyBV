@@ -11,7 +11,7 @@ PYTHON  ?= python3
 EXAMPLE := examples/clevis/clevis.forgeir.json
 BUILD   := build
 
-.PHONY: help test test-fast test-ai design verify export sweep inspect capability check lint types clean
+.PHONY: help test test-fast test-ai design verify export sweep inspect capability check lint types clean doctor exact exit-test
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,6 +26,18 @@ test-fast:  ## Skip the suites that measure real geometry
 	$(PYTHON) -m unittest discover -s tests -p "test_kernel.py"
 	$(PYTHON) -m unittest discover -s tests -p "test_patch.py"
 	$(PYTHON) -m unittest discover -s tests -p "test_models.py"
+
+EXACT_SUITES := test_v2_occ_view.py test_v2_occ_cache.py test_v2_occ_export.py test_v2_occ_assembly.py \
+  test_v2_occ_ops.py test_v2_occ_agreement.py test_v2_occ_properties.py test_v2_ir.py test_v2_cli_doctor.py
+
+doctor:  ## Check the exact kernel works here: its pins, a probe part, STEP, STL and 3MF (V2)
+	$(PYTHON) -m forge_cli doctor
+
+exact:  ## The exact kernel's suite (V2 stage 3), the exit test aside (about 15 minutes)
+	@for suite in $(EXACT_SUITES); do $(PYTHON) -m unittest discover -s tests -p $$suite || exit 1; done
+
+exit-test:  ## Stage 3's exit test: both kernels on every recorded part, STEP and FreeCAD (about two hours)
+	$(PYTHON) -m unittest discover -s tests -p test_v2_occ_exit.py
 
 test-ai:  ## The design loop, replayed from fixtures (no key, no network)
 	$(PYTHON) -m unittest discover -s tests -p "test_orchestrator.py"

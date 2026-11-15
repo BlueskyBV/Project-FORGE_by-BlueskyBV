@@ -1,0 +1,94 @@
+{
+  "name": "hollow dome",
+  "spec_format": 1,
+  "items": [
+    {
+      "id": "dome",
+      "kind": "sphere",
+      "words": [
+        2
+      ],
+      "diameter": {
+        "value": 70,
+        "unit": "mm",
+        "from": {
+          "words": [
+            7,
+            8,
+            9
+          ]
+        }
+      },
+      "portion": {
+        "choose": "upper_half",
+        "from": {
+          "words": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "id": "hollow",
+      "kind": "shell",
+      "words": [
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "of": "dome",
+      "thickness": {
+        "value": 3,
+        "unit": "mm",
+        "from": {
+          "assumed": "the brief says the dome is hollow on the inside but gives no wall thickness; 3 mm is assumed as a typical wall for a PLA print"
+        }
+      },
+      "open": {
+        "faces": [
+          "-end"
+        ],
+        "from": {
+          "assumed": "a hollow dome needs an opening to reach the cavity; the brief doesn't say which face, so the flat face it rests on is assumed open"
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  },
+  "not_modelled": [
+    {
+      "words": [
+        13,
+        14,
+        15
+      ],
+      "reason": "Forge places the first body's flat face at the origin, so it can't be oriented sideways; it is modelled facing down, not to the right."
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says the part carries no load and has no load case; this is about loading, not shape"
+    }
+  ]
+}

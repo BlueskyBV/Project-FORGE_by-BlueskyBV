@@ -1,0 +1,120 @@
+{
+  "spec_format": 1,
+  "name": "PLA torus ring",
+  "items": [
+    {
+      "id": "ring",
+      "kind": "revolution",
+      "words": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "axis": {
+        "choose": "z",
+        "from": {
+          "assumed": "the brief gives the ring's cross-section and centreline size but not how it sits in space; a free ring needs an axis to revolve about, so it is set vertical"
+        }
+      },
+      "profile": {
+        "unit": "mm",
+        "start": [
+          24,
+          0
+        ],
+        "segments": [
+          {
+            "arc_to": [
+              16,
+              0
+            ],
+            "centre": [
+              20,
+              0
+            ],
+            "clockwise": true
+          },
+          {
+            "arc_to": [
+              24,
+              0
+            ],
+            "centre": [
+              20,
+              0
+            ],
+            "clockwise": true
+          }
+        ],
+        "from": {
+          "words": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ]
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  },
+  "silent": [
+    {
+      "sentence": 1,
+      "reason": "says there is no load case, which is about use, not shape"
+    }
+  ],
+  "not_modelled": []
+}

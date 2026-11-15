@@ -1,0 +1,350 @@
+{
+  "spec_format": 1,
+  "name": "spacer block",
+  "items": [
+    {
+      "id": "plate",
+      "kind": "block",
+      "words": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "length": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "width": {
+        "value": 30,
+        "unit": "mm",
+        "from": {
+          "words": [
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "height": {
+        "value": 4,
+        "unit": "mm",
+        "from": {
+          "words": [
+            13,
+            14,
+            15
+          ]
+        }
+      }
+    },
+    {
+      "id": "post",
+      "kind": "cylinder",
+      "words": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "diameter": {
+        "value": 12,
+        "unit": "mm",
+        "from": {
+          "words": [
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "length": {
+        "value": 10,
+        "unit": "mm",
+        "from": {
+          "words": [
+            21,
+            22,
+            23
+          ]
+        }
+      },
+      "on": {
+        "item": "plate",
+        "face": "+z"
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "words": [
+              26,
+              27,
+              28,
+              29
+            ]
+          }
+        },
+        "y": {
+          "centred": {
+            "words": [
+              26,
+              27,
+              28,
+              29
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "post_fillet",
+      "kind": "fillet",
+      "words": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "edges": {
+        "of": "post",
+        "which": "joint",
+        "where_meets": "plate",
+        "words": [
+          35,
+          36,
+          37,
+          38,
+          39,
+          40
+        ]
+      },
+      "radius": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            32,
+            33,
+            34
+          ]
+        }
+      }
+    },
+    {
+      "id": "center_hole",
+      "kind": "hole",
+      "words": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ],
+      "on": {
+        "item": "post",
+        "face": "+end"
+      },
+      "diameter": {
+        "value": 5,
+        "unit": "mm",
+        "from": {
+          "words": [
+            42,
+            43,
+            44
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            45,
+            46,
+            47,
+            48,
+            49
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "the hole must run straight down the post's axis to pass through both the post and the plate beneath it, so it is centred on the post's end face"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "the hole must run straight down the post's axis to pass through both the post and the plate beneath it, so it is centred on the post's end face"
+          }
+        }
+      }
+    },
+    {
+      "id": "mount_holes",
+      "kind": "hole",
+      "words": [
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ],
+      "on": {
+        "item": "plate",
+        "face": "+z"
+      },
+      "diameter": {
+        "value": 3,
+        "unit": "mm",
+        "from": {
+          "words": [
+            56,
+            57
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            60,
+            61,
+            62,
+            63,
+            64
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            55
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "centred": {
+            "assumed": "the brief gives the holes' spacing but not where on the plate the pair sits, so the row is centred on the plate"
+          }
+        },
+        "y": {
+          "centred": {
+            "assumed": "the brief doesn't say which axis the holes run along; the row is centred across the other axis"
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "x",
+              "from": {
+                "assumed": "the brief doesn't say which axis the two mounting holes lie along; x is chosen since the plate is square and either axis is equivalent"
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "words": [
+                  67,
+                  68,
+                  69
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  55
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "not_modelled": [
+    {
+      "words": [
+        1
+      ],
+      "reason": "describes the manufacturing process (3D-printed), not a shape feature"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 5,
+      "reason": "states a maximum weight, a performance requirement rather than a shape feature"
+    },
+    {
+      "sentence": 6,
+      "reason": "states that the part carries no load and describes its use case, not its shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          2
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "spec_format": 1,
+  "name": "aluminium shaft collar",
+  "items": [
+    {
+      "id": "collar",
+      "kind": "tube",
+      "words": [
+        3,
+        4
+      ],
+      "outer_diameter": {
+        "value": 25,
+        "unit": "mm",
+        "from": {
+          "words": [
+            6,
+            7,
+            9,
+            10
+          ]
+        }
+      },
+      "inner_diameter": {
+        "value": 12,
+        "unit": "mm",
+        "from": {
+          "words": [
+            18,
+            19,
+            20,
+            21,
+            22,
+            24,
+            25,
+            26,
+            28
+          ]
+        }
+      },
+      "length": {
+        "value": 15,
+        "unit": "mm",
+        "from": {
+          "words": [
+            14,
+            15,
+            16
+          ]
+        }
+      },
+      "axis": {
+        "choose": "z",
+        "from": {
+          "assumed": "the brief doesn't name a frame axis for the collar's bore; chosen as z so it stands upright"
+        }
+      }
+    },
+    {
+      "id": "set_screw_holes",
+      "kind": "hole",
+      "words": [
+        29,
+        32,
+        33,
+        34
+      ],
+      "on": {
+        "item": "collar",
+        "face": "side"
+      },
+      "diameter": {
+        "value": 4,
+        "unit": "mm",
+        "from": {
+          "words": [
+            30,
+            31,
+            32,
+            33,
+            34
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            35,
+            36,
+            38,
+            39,
+            41,
+            42,
+            44
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            29
+          ]
+        }
+      },
+      "place": {
+        "z": {
+          "centred": {
+            "words": [
+              48,
+              49,
+              50,
+              52
+            ]
+          }
+        },
+        "pattern": {
+          "arc": {
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  29
+                ]
+              }
+            },
+            "step": {
+              "value": 90,
+              "unit": "deg",
+              "from": {
+                "words": [
+                  45,
+                  46,
+                  47
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "aluminium",
+      "from": {
+        "words": [
+          2
+        ]
+      }
+    }
+  },
+  "not_modelled": [
+    {
+      "words": [
+        1
+      ],
+      "reason": "machined describes a manufacturing process, not a shape"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 4,
+      "reason": "describes the part's application and load case, not its shape"
+    }
+  ]
+}
