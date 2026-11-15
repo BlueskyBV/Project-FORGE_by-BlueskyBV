@@ -14,7 +14,8 @@
 # (scripts/docker_base_from_archive.sh makes one from Ubuntu 24.04's archive where
 # no registry can be reached, docs/V2-stage3.md 2.6, but that archive's Python,
 # 3.12, is below the floor now.) Built and checked on the runners: image.yml.
-ARG BASE=python:3.14.10-slim
+# Debian 12 (bookworm), not 13: trixie has no CalculiX package (bookworm's is 2.20).
+ARG BASE=python:3.14.10-slim-bookworm
 FROM ${BASE} AS core
 
 RUN useradd --create-home --shell /usr/sbin/nologin forge
