@@ -11,6 +11,8 @@
 #                   the other on the same runner, so both sides of every comparison come from one machine.
 # mode tests:       the test files named by tests, one pytest process each, on this commit (and on base
 #                   when given), each with its peak memory.
+# mode compare:     a finished pair run's records (run_id) merged and held against each other here, so
+#                   only the summary has to be fetched.
 # mode coverage:    branch coverage of the base branch's code over its share of the seeds, and (cover_tests)
 #                   over its share of base's test files: the old bodies' coverage (V2-stage4b-0b.md, 6.3).
 name: forge-runs
@@ -19,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair, tests or coverage"
+        description: "fingerprint, pair, tests, coverage or compare"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -42,9 +44,13 @@ on:
       cover_tests:
         description: "Coverage mode: also run base's test files (true or false)"
         default: "false"
+      run_id:
+        description: "Compare mode: the pair run to compare"
+        default: ""
 
 permissions:
   contents: read
+  actions: read
 
 env:
   NPY_DISABLE_CPU_FEATURES: "X86_V4 AVX512_ICL AVX512_SPR"
@@ -125,6 +131,18 @@ jobs:
             done
           done
           cat out/tests.txt
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'compare'
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: in
+      - name: Compare
+        if: inputs.mode == 'compare'
+        run: |
+          mkdir -p out
+          cd fin && python .github/compare_run.py "$GITHUB_WORKSPACE/in" "$GITHUB_WORKSPACE/merged"
+          cp "$GITHUB_WORKSPACE/merged/compare.txt" "$GITHUB_WORKSPACE/out/compare.txt"
       - name: Coverage
         if: inputs.mode == 'coverage'
         env:
