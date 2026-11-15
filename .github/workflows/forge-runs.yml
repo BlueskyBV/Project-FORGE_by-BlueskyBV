@@ -1,4 +1,5 @@
-# Forge's runs on GitHub's runners. Started by hand only (gh workflow run): nothing runs on a push.
+# Forge's runs on GitHub's runners. Started by hand only (gh workflow run): this workflow never runs on a
+# push (trust-core.yml does).
 # Each shard is one runner (4 cores, 16 GB); the free plan runs up to 20 at once, each up to 6 hours.
 #
 # Every runner is held to one instruction level (x86-64-v3: AVX2, no AVX-512) for NumPy and OpenBLAS:
@@ -9,8 +10,8 @@
 # mode fingerprint: tests/v2_fingerprint.py on this commit's code.
 # mode pair:        the same seeds on this commit's code (fin) and on the branch named by base, one after
 #                   the other on the same runner, so both sides of every comparison come from one machine.
-# mode tests:       the test files named by tests, one pytest process each, on this commit (and on base
-#                   when given), each with its peak memory.
+# mode tests:       the test files named by tests (all: every tests/test_*.py), one pytest process each,
+#                   split over the shards, on this commit (and on base when given), each with its peak memory.
 # mode pypair:      the same seeds on this commit's code under CPython 3.13.18 (base) and under the Python
 #                   named by python (fin), one after the other on the same runner (the fingerprint harness).
 # mode pyexit:      the same, with stage 4's exit harness (tests/v2_exit4.py) on a contiguous seed range
@@ -46,7 +47,7 @@ on:
         description: "The branch the pair and tests modes hold this commit against"
         default: "proof/base-4b0b"
       tests:
-        description: "Test files for the tests mode, space separated"
+        description: "Test files for the tests mode, space separated, or all"
         default: ""
       cover_tests:
         description: "Coverage mode: also run base's test files (true or false)"
@@ -167,11 +168,17 @@ jobs:
         env:
           TESTS: ${{ inputs.tests }}
           BASE: ${{ inputs.base }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
         run: |
           mkdir -p out
+          [ "$TESTS" = "all" ] && TESTS=$(cd fin && ls tests/test_*.py)
+          N=$SHARDS; [ "$N" -gt 20 ] && N=20; [ "$N" -lt 1 ] && N=1  # as the plan job caps them
+          MINE=""; i=0
+          for f in $TESTS; do [ $((i % N)) -eq "$SHARD" ] && MINE="$MINE $f"; i=$((i + 1)); done
           SIDES="fin"; [ -n "$BASE" ] && SIDES="base fin"
           for side in $SIDES; do
-            for f in $TESTS; do
+            for f in $MINE; do
               [ -f "$side/$f" ] || { echo "$side $f absent" >> out/tests.txt; continue; }
               log="$GITHUB_WORKSPACE/out/$side-$(basename $f .py).log"
               (cd $side && PYTHONPATH=packages python -c "import resource, subprocess, sys; rc = subprocess.call([sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider', sys.argv[1]], stdout=open(sys.argv[2], 'w'), stderr=subprocess.STDOUT); print(rc, resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)" "$f" "$log") > out/rcrss.txt
