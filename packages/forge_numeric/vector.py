@@ -716,20 +716,9 @@ def hypot(x: Any, y: Any) -> Array:
     if _use is None:
         return _out(_np_hypot(x, y))
     x, y = _pair(x, y)
-    shape = x.shape
-    if x.size <= _FEW:
-        found = [
-            _hypot1(a, b)
-            for a, b in zip(x.ravel().tolist(), y.ravel().tolist(), strict=True)
-        ]
-        return _out(np.array(found, dtype=np.float64).reshape(shape))
     xf, yf = np.ascontiguousarray(x.ravel()), np.ascontiguousarray(y.ravel())
     out, _ = _native.hypot(xf, yf)
-    return _out(out.reshape(shape))
-
-
-#: Up to this many elements, hypot runs element by element in Python floats (cheaper than the library's call).
-_FEW = 8
+    return _out(out.reshape(x.shape))
 
 
 def _hypot1(x: float, y: float) -> float:
@@ -932,12 +921,13 @@ def roots(coeffs: Any) -> NDArray[np.complex128]:
 
 @contextmanager
 def numpy_twin() -> Iterator[None]:
-    """NumPy computes everything while this is held (the compiled twin set aside): the tests hold the two to each other."""
+    """NumPy computes everything while this is held, and Python every number (the compiled twin set aside): the tests hold the two to each other."""
     global _use
     saved = _use, linear._use
     _use = linear._use = None
     try:
-        yield
+        with sc.long_way():
+            yield
     finally:
         _use, linear._use = saved
 

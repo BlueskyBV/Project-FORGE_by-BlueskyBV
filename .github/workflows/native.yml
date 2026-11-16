@@ -52,8 +52,8 @@ jobs:
           PYTHONHASHSEED: "0"
         run: |
           python -m pip install --disable-pip-version-check -q numpy==2.5.3 pytest==9.1.1
-          python -c "from forge_numeric import _native, vector; print('compiled twin:', _native.LIB is not None, _native.WHY_NOT, '| in use:', vector._use is not None)"
-          python -c "from forge_numeric import vector, _native; import sys; sys.exit(0 if vector._use is not None else 1)"
+          python -c "from forge_numeric import _native, scalar, vector; print('compiled twin:', _native.LIB is not None, _native.WHY_NOT, '| in use:', vector._use is not None, '| numbers:', scalar._two is not None, scalar.WHY_NOT)"
+          python -c "from forge_numeric import scalar, vector; import sys; sys.exit(0 if vector._use is not None and scalar._two is not None else 1)"
           python -m pytest -q -p no:cacheprovider tests/test_v2_numeric.py
       - uses: actions/upload-artifact@v4
         with:

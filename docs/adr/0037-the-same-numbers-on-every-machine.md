@@ -62,15 +62,20 @@ NumPy):
 - **A compiled twin, for speed:** `native/forge_numeric_native`, a Rust
   library with a C interface (Rust never fuses or reorders floating-point
   operations), the vector functions and the matrix product with a short
-  contracted axis, operation for operation. It is loaded
-  with `ctypes` from `packages/forge_numeric/_native/<platform>/`, where the
+  contracted axis, operation for operation, and `hypot` of two or three
+  numbers for the scalar side; its array `hypot` works two lanes at once
+  (four where an x86-64 processor has AVX2: the same correctly rounded
+  operations, no fused ones). It is opened
+  with `ctypes`, without NumPy (`_core`), from
+  `packages/forge_numeric/_native/<platform>/`, where the
   libraries CI builds for Linux x86-64 and ARM, Windows x86-64 and macOS
   ARM (`native.yml`) are committed: one file per platform serves every
   Python (3.14, 3.15, the free-threaded 3.14t), and the laptop gets it with
   the project, with no install step. It is used only if its interface
-  version matches, its compiled-in source digest is the source's, and it
-  reproduces the NumPy twin on fixed inputs at load; otherwise NumPy
-  computes the same bits more slowly.
+  version matches, its compiled-in source digest is the source's, and what
+  each side takes from it reproduces that side's own long way on fixed
+  inputs at load (the arrays NumPy's twin, the numbers the Python);
+  otherwise NumPy and Python compute the same bits more slowly.
 - **The rule's guard:** no V2 code (its packages, and its modules in V1's)
   calls `math`'s or NumPy's elementary functions, `@`, `dot`, `einsum`,
   `linalg`, `fft`, `hypot` (NumPy's or CPython's), `math.dist`, `interp`,

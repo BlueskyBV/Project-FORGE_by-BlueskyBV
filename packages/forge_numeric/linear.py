@@ -45,10 +45,9 @@ SHORT = 8
 #: A matrix of up to this many rows times a short vector is worked row by row in Python floats (cheaper than NumPy's set-up).
 _ROWS = 16
 #: The compiled twin's matrix products (``native/forge_numeric_native``), where this machine has it: the
-#: same sums, for a short contracted axis and at least :data:`_MANY` of them (fewer cost more to hand over
-#: than to add in NumPy). :mod:`.vector` switches it with its own.
+#: same sums, for a short contracted axis (quicker than NumPy's steps from one row up; a row by row dot
+#: product is not, its hand-over costing more than NumPy's few steps). :mod:`.vector` switches it with its own.
 _use: Any = _native.LIB
-_MANY = 160
 
 
 def _f(x: Any) -> Array:
@@ -168,13 +167,7 @@ def matmul(a: Any, b: Any) -> Any:
     if a.shape[-1] != b.shape[-2]:
         raise ValueError(f"matmul: shapes {a.shape} and {b.shape} don't fit")
     k = a.shape[-1]
-    if (
-        _use is not None
-        and a.ndim == 2
-        and b.ndim == 2
-        and 0 < k <= SHORT
-        and a.shape[0] * b.shape[1] >= _MANY
-    ):
+    if _use is not None and a.ndim == 2 and b.ndim == 2 and 0 < k <= SHORT:
         out = _native.matmul(np.ascontiguousarray(a), np.ascontiguousarray(b))
     elif k == 0:
         stack = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])

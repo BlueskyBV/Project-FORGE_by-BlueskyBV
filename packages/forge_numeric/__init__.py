@@ -25,9 +25,9 @@ path rounds its own way), nor about the order of a sum that BLAS adds (``@``,
   draws from uniform ones).
 
 A compiled twin (``native/forge_numeric_native``, Rust behind a C interface)
-computes the array functions and the larger matrix products where this
-machine has it, the same bits faster; numbers and short vectors take Python
-float shortcuts, the same bits again.
+computes the array functions, the matrix products and the hypot of two or
+three numbers where this machine has it, the same bits faster; other
+numbers and short vectors take Python float shortcuts, the same bits again.
 
 ``math.sqrt``, ``math.fsum``, NumPy's elementwise arithmetic, ``np.sqrt``
 and its sums (``np.sum``, its own pairwise addition in scalar C) are the

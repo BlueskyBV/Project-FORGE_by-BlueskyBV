@@ -33,6 +33,8 @@ rounded everywhere.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
@@ -55,6 +57,7 @@ __all__ = [
     "hypot",
     "log",
     "log1p",
+    "long_way",
     "sin",
     "sincos",
     "sq",
@@ -795,9 +798,22 @@ def hypot(*coordinates: float) -> float:
     their squares summed exactly in two parts, the root corrected once),
     with Dekker's exact products for its fused ones and every operation
     rounded on its own: the same bits as CPython's on Linux, everywhere.
-    Infinity wins over NaN, as there.
+    Infinity wins over NaN, as there. Two and three coordinates go to the
+    compiled twin where this machine has it (the same operations, so the
+    same bits; tested against this at load), the rest are computed here.
     """
-    values = [float(c) for c in coordinates]
+    n = len(coordinates)
+    if n == 2 and _two is not None:
+        return _two(float(coordinates[0]), float(coordinates[1]))
+    if n == 3 and _three is not None:
+        return _three(
+            float(coordinates[0]), float(coordinates[1]), float(coordinates[2])
+        )
+    return _hypot([float(c) for c in coordinates])
+
+
+def _hypot(values: list[float]) -> float:
+    """:func:`hypot`, computed here."""
     if any(math.isinf(c) for c in values):
         return _INF
     if any(c != c for c in values):
@@ -812,7 +828,7 @@ def hypot(*coordinates: float) -> float:
     if (
         e < -1023
     ):  # every coordinate subnormal: made normal first (exactly), as CPython does
-        return _TINY * hypot(*(c / _TINY for c in values))
+        return _TINY * _hypot([c / _TINY for c in values])
     scale = math.ldexp(1.0, -e)
     csum, frac1, frac2 = 1.0, 0.0, 0.0
     for c in values:
@@ -848,3 +864,66 @@ def sq[T](x: T) -> T:
 def cube[T](x: T) -> T:
     """``(x * x) * x``."""
     return cast(T, x * x * x)  # type: ignore[operator]
+
+
+# ----------------------------------------------------------------------
+# The compiled twin's one-number entry points
+# ----------------------------------------------------------------------
+def _hypot_cases() -> list[tuple[float, ...]]:
+    """Fixed coordinates the compiled hypot must reproduce at load: the special values, pairwise, and a spread of others."""
+    special = [0.0, -0.0, 1.0, -1.0, 0.5, 3.0, 4.0, _INF, -_INF, math.nan, 5e-324,
+               _TINY, 1e-300, 1e300, 1.7976931348623157e308]  # fmt: skip
+    cases: list[tuple[float, ...]] = [(a, b) for a in special for b in special]
+    cases += [(a, b, c) for a in special[:8] for b in special[7:] for c in special[::3]]
+    state = 0x2545F4914F6CDD1D
+    for k in range(600):
+        draws = []
+        for _ in range(3):
+            state = (state * 6364136223846793005 + 1442695040888963407) % (1 << 64)
+            significand = 1.0 + (state >> 12) / (1 << 52)
+            sign = -1.0 if state & 1 else 1.0
+            spread = (-1070, 1020) if k % 10 == 0 else (-60, 60)
+            low, high_ = spread
+            power = low + (state >> 3) % (high_ - low)
+            draws.append(sign * math.ldexp(significand, power))
+        cases.append(tuple(draws[: 2 + k % 2]))
+    return cases
+
+
+def _compiled() -> tuple[Any, Any, str]:
+    """(the compiled hypot of two coordinates, of three, or None and None; why not, where None)."""
+    from . import _core
+
+    lib = _core.LIB
+    if lib is None:
+        return None, None, _core.WHY_NOT
+    two, three = lib.fnum_hypot2_one, lib.fnum_hypot3_one
+    for case in _hypot_cases():
+        a = (two if len(case) == 2 else three)(*case)
+        b = _hypot(list(case))
+        if bits(a) != bits(b) and not (a != a and b != b):
+            return (
+                None,
+                None,
+                f"its hypot differed from this module's at load, on {case}",
+            )
+    return two, three, ""
+
+
+_two: Callable[[float, float], float] | None
+_three: Callable[[float, float, float], float] | None
+#: Why the compiled twin's numbers are not used, where they are not.
+WHY_NOT: str
+_two, _three, WHY_NOT = _compiled()
+
+
+@contextmanager
+def long_way() -> Iterator[None]:
+    """Everything computed here while this is held (the compiled twin set aside): the tests hold the two to each other."""
+    global _two, _three
+    saved = _two, _three
+    _two = _three = None
+    try:
+        yield
+    finally:
+        _two, _three = saved

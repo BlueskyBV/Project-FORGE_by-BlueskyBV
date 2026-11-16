@@ -606,6 +606,23 @@ class TheCompiledTwinIsNumPysBitForBit(unittest.TestCase):
                 a, b = self._both(f, huge)
                 self.assertTrue(np.array_equal(a.view(np.uint64), b.view(np.uint64)))
 
+    def test_hypots_wide_and_narrow(self) -> None:
+        """The array hypot in AVX2's four lanes (where this processor has them) and in the baseline's two."""
+        from forge_numeric import _native
+
+        sp = np.array(SPECIALS)
+        yy, xx = np.meshgrid(sp, sp)
+        ys, xs = (np.concatenate([g.ravel(), _inputs(100001, lo, hi, 70 + k)])
+                  for k, (g, lo, hi) in enumerate(((yy, -1074, 1024), (xx, -60, 60))))  # fmt: skip
+        wide, narrow = np.empty_like(xs), np.empty_like(xs)
+        _native.LIB.fnum_hypot(
+            _native._at(ys), _native._at(xs), _native._at(wide), xs.size
+        )
+        _native.LIB.fnum_hypot_narrow(
+            _native._at(ys), _native._at(xs), _native._at(narrow), xs.size
+        )
+        self.assertTrue(np.array_equal(wide.view(np.uint64), narrow.view(np.uint64)))
+
     def test_the_golden_digests_both_ways(self) -> None:
         native = GoldenDigests.outputs()
         with fv.numpy_twin():
@@ -640,6 +657,62 @@ class TheCompiledTwinIsNumPysBitForBit(unittest.TestCase):
             self.assertEqual(
                 digest.raw.decode("ascii"), _native.fnv1a(_native.SOURCE.read_bytes())
             )
+
+
+class TheCompiledNumbersAreTheScalarsBitForBit(unittest.TestCase):
+    """The library's one-number entry points (where this machine has them) against :mod:`.scalar` computing each itself."""
+
+    def setUp(self) -> None:
+        if fs._two is None:
+            self.skipTest(f"no compiled numbers here: {fs.WHY_NOT}")
+
+    def test_hypot_of_two_and_three_coordinates(self) -> None:
+        cases: list[tuple[float, ...]] = [(a, b) for a in SPECIALS for b in SPECIALS]
+        cases += [
+            (a, b, c)
+            for a in SPECIALS[::3]
+            for b in SPECIALS[1::3]
+            for c in SPECIALS[2::3]
+        ]
+        spreads = (
+            (-60, 60),
+            (480, 530),
+            (-540, -480),
+            (-1074, -1000),
+            (1000, 1023),
+            (-1074, 1024),
+        )
+        for k, (lo, hi) in enumerate(spreads):
+            x, y, z = (
+                _inputs(20000, lo, hi, 60 + 3 * k + j).tolist() for j in range(3)
+            )
+            cases += zip(x, y, strict=True)
+            cases += zip(x[:5000], y[:5000], z[:5000], strict=True)
+        fast = [fs.hypot(*c) for c in cases]
+        with fs.long_way():
+            slow = [fs.hypot(*c) for c in cases]
+        bad = [c for c, a, b in zip(cases, fast, slow, strict=True) if not _same(a, b)]
+        self.assertEqual(bad[:5], [])
+        self.assertGreater(len(cases), 150000)
+
+    def test_what_it_takes_and_gives(self) -> None:
+        for args in (
+            (3, 4),
+            (np.float64(3.0), 4.0),
+            (True, 0),
+            (3.0, 4.0, 12),
+            (-0.0, -0.0),
+        ):
+            fast = fs.hypot(*args)
+            with fs.long_way():
+                slow = fs.hypot(*args)
+            with self.subTest(args=args):
+                self.assertIs(type(fast), float)
+                self.assertTrue(_same(fast, slow))
+        for bad in ((None, 1.0), (1.0, 2.0, 1j)):
+            with self.subTest(bad=bad), self.assertRaises(TypeError):
+                fs.hypot(*bad)
+        self.assertEqual(fs.dist((0.0, 0.0, 0.0), (2.0, 3.0, 6.0)), 7.0)
 
 
 if __name__ == "__main__":
