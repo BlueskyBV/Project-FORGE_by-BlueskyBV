@@ -43,6 +43,8 @@ from functools import cache
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .brief import Mark, Writer, number
@@ -359,7 +361,7 @@ def _within_outline(outline: Outline2, foot: _Foot, gap: float) -> bool:
     qu = np.abs(points[:, 0] - foot.at[0]) - (foot.half[0] - r)
     qv = np.abs(points[:, 1] - foot.at[1]) - (foot.half[1] - r)
     distance = (
-        np.hypot(np.maximum(qu, 0.0), np.maximum(qv, 0.0))
+        fv.hypot(np.maximum(qu, 0.0), np.maximum(qv, 0.0))
         + np.minimum(np.maximum(qu, qv), 0.0)
         - r
     )
@@ -497,7 +499,7 @@ def _under(face: _Flat, foot: _Foot) -> float:
             return face.material
         top = face.half[0]
         return length * max(top - widest, 0.0) / (top - base)
-    return math.sqrt(max(face.dome**2 - widest**2, 0.0))
+    return math.sqrt(max(face.dome * face.dome - widest * widest, 0.0))
 
 
 def _pattern_draw(mode: str) -> PatternDraw:
@@ -749,7 +751,7 @@ def _widest(shape: Outline2) -> float:
         return 0.0
     sides = shape.followed(0.5)
     gaps = np.min(
-        np.hypot(
+        fv.hypot(
             u[inside, None] - sides[None, :, 0], v[inside, None] - sides[None, :, 1]
         ),
         axis=1,
@@ -935,7 +937,7 @@ def _on_flat(
                     part.steps.append(Step(f.id, copy_index, False,
                                            Prism(_t(p), _t(e1), _t(e2), _t(n), (d / 2, d / 2), d / 2, -third, 0.0), (0.0, REACH)))  # fmt: skip
                 else:
-                    recess = (d / 2 - radius) / math.tan(math.radians(third / 2))
+                    recess = (d / 2 - radius) / fs.tan(math.radians(third / 2))
                     # Carried on into the hole (air), and out of its mouth only as far
                     # as it widens within the gap round it: out there may be the wall
                     # of what its face stands beside.
@@ -1143,14 +1145,14 @@ def _stands_in_air(
         ]
         grid = np.stack(np.meshgrid(*cells, indexing="ij"), axis=-1).reshape(-1, 3)
         point, up = _v(copy.point), _v(copy.direction)
-        above = grid[(grid - point) @ up > REACH + 1e-3]
+        above = grid[fv.matmul(grid - point, up) > REACH + 1e-3]
         within = above[Truth({}, mine).inside(above)]
         if len(within) and np.any(made_before.inside(within)):
             raise DoesNotFitError(f"{f.id} runs into something made before it")
         corners = np.array(
             [[(lo, hi)[(k >> j) & 1][j] for j in range(3)] for k in range(8)]
         )
-        if float(np.min((corners - point) @ up)) >= -(REACH + 1e-3):
+        if float(np.min(fv.matmul(corners - point, up))) >= -(REACH + 1e-3):
             continue  # nothing of it under its face but its foot
         # Over the whole box, and finer over where each cut made before meets it: a hole's air is
         # looked at by points a tenth of its box apart, however large what is sunk over it.
@@ -1163,7 +1165,7 @@ def _stands_in_air(
             if np.all(b > a):
                 regions.append((a, b, min(_SUNK_STEP, float(np.min(b - a)) / 10)))
         under = np.concatenate([_grid(a, b, h) for a, b, h in regions])
-        under = under[(under - point) @ up < -(REACH + 1e-3)]
+        under = under[fv.matmul(under - point, up) < -(REACH + 1e-3)]
         within = under[Truth({}, mine).inside(under)]
         if len(within) and not np.all(made_before.inside(within)):
             raise DoesNotFitError(
@@ -1196,8 +1198,10 @@ def _in_room(face: _Flat, before: set[tuple[str, int, str]], part: _Part) -> Non
     for key in set(part.flats) - before:
         new = part.flats[key]
         new.hollow = face.hollow
-        if float(new.normal @ face.normal) > 0.5:
-            new.room = face.room - float((new.centre - face.centre) @ face.normal)
+        if float(fv.matmul(new.normal, face.normal)) > 0.5:
+            new.room = face.room - float(
+                fv.matmul(new.centre - face.centre, face.normal)
+            )
         else:
             new.room = 0.0 if face.hollow is not None else math.inf
 
@@ -1246,7 +1250,9 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     n = f.pattern.counts["count"] if f.pattern is not None else 1
     angles = [start + k * 360.0 / n for k in range(n)]
     along = _along(f.place.get(side.axis, Position("none")), side, wide)
-    sag = side.radius - math.sqrt(max(side.radius**2 - rounded**2, 0.0))
+    sag = side.radius - math.sqrt(
+        max(side.radius * side.radius - rounded * rounded, 0.0)
+    )
     carry = sag + REACH
     if strict:
         if any(abs(a / 90.0 - round(a / 90.0)) > 1e-9 for a in angles):
@@ -1279,9 +1285,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     made = []
     for k, a in enumerate(angles):
         u = (
-            np.round(
-                math.cos(math.radians(a)) * zero + math.sin(math.radians(a)) * quarter
-            )
+            np.round(fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter)
             + 0.0
         )
         third = "xyz"[int(np.argmax(np.abs(np.cross(u, w))))]
@@ -1354,8 +1358,8 @@ def _foot_in_material(
     depth = np.linspace(solid.low, 0.0, 8)
     points = (across[:, None, :] + depth[None, :, None] * n).reshape(-1, 3)
     d = points - side.start
-    off = d - np.outer(d @ w, w)
-    within = points[np.einsum("ij,ij->i", off, off) < (side.radius - 1e-3) ** 2]
+    off = d - np.outer(fv.matmul(d, w), w)
+    within = points[fv.dot(off, off) < fv.sq(side.radius - 1e-3)]
     if len(within) and not np.all(Truth({}, (*part.steps, *part.late)).inside(within)):
         raise DoesNotFitError(
             f"{f.id}'s foot would fill what is cut into {side.key[0]}"
@@ -1372,7 +1376,7 @@ def _ball(f: Feature) -> Outline2:
     """
     r = f.sizes["diameter"] / 2
     if f.choices["portion"] == "whole":
-        split = (r * math.cos(0.3), -r * math.sin(0.3))
+        split = (r * fs.cos(0.3), -r * fs.sin(0.3))
         return Outline2(
             (0.0, -r),
             (
@@ -1556,7 +1560,7 @@ def _holes_apart(
         return True
 
     def chord(x: float, y: float) -> float:
-        return 2 * radius * abs(math.sin(math.radians((x - y) / 2)))
+        return 2 * radius * abs(fs.sin(math.radians((x - y) / 2)))
 
     mouths1 = [a1] if d1 is not None else [a1, a1 + 180.0]
     mouths2 = [a2] if d2 is not None else [a2, a2 + 180.0]
@@ -1566,15 +1570,14 @@ def _holes_apart(
     if d1 is not None and d2 is not None:
         inner = max(radius - d1, radius - d2)
         return (
-            2 * inner * abs(math.sin(turn / 2)) >= reach
-            or abs(math.cos(turn / 2)) < 1e-9
+            2 * inner * abs(fs.sin(turn / 2)) >= reach or abs(fs.cos(turn / 2)) < 1e-9
         )
     if (
         d1 is not None or d2 is not None
     ):  # a blind one beside one through: its end from the other's line
         depth = d1 if d1 is not None else d2
         assert depth is not None
-        return (radius - depth) * abs(math.sin(turn)) >= reach
+        return (radius - depth) * abs(fs.sin(turn)) >= reach
     return True
 
 
@@ -1782,7 +1785,7 @@ def _recess_depth(f: Feature) -> float:
     what, d, third = f.recess
     if what == "counterbore":
         return third
-    return (d - f.sizes["diameter"]) / 2 / math.tan(math.radians(third / 2))
+    return (d - f.sizes["diameter"]) / 2 / fs.tan(math.radians(third / 2))
 
 
 def _build(plan: Plan, strict: bool) -> _Part:
@@ -2060,7 +2063,7 @@ def _drop_covered(
             np.asarray(v, dtype=float)
             for v in (piece.start, piece.along, piece.a, piece.b)
         )
-        out = -(a + b) / np.linalg.norm(a + b)
+        out = -(a + b) / fv.norm(a + b)
         covered = so_far.inside(
             start + np.outer(at * piece.length, along) + _COVER * out
         )
@@ -2326,7 +2329,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
 
 def _quarter(n: Array, e1: Array, d: Array) -> tuple[float, float]:
     """The quarter turn about ``n`` round the way ``d``, as angles from ``e1`` anticlockwise about ``n``."""
-    angle = math.atan2(float(d @ np.cross(n, e1)), float(d @ e1))
+    angle = fs.atan2(float(fv.matmul(d, np.cross(n, e1))), float(fv.matmul(d, e1)))
     return angle - math.pi / 4, angle + math.pi / 4
 
 
@@ -2469,12 +2472,12 @@ def _threaded_clear(f: Feature, rod: Feature, copy: Copy, rho: float, stretch: t
     """Nothing but the rod copy's own solid is where its thread's groove goes: points round it ``rho`` from its axis, along the threaded stretch (generated part 886: a boss on one of a row of blocks ran through the next, and the groove would have cut that too); and nothing cut into the rod there, from a wall's width in from the thread's root out."""
     w = _v(copy.direction)
     e1 = _v(unit_of("+" + "xyz"[int(np.argmin(np.abs(w)))]))
-    e1 = e1 - (e1 @ w) * w
-    e1 /= np.linalg.norm(e1)
+    e1 = e1 - (fv.matmul(e1, w)) * w
+    e1 /= fv.norm(e1)
     e2 = np.cross(w, e1)
     angles = 2 * math.pi * np.arange(36) / 36
     along = np.linspace(stretch[0] + 0.1 * pitch, stretch[1] - 0.1 * pitch, 24)
-    ring = rho * (np.cos(angles)[:, None] * e1 + np.sin(angles)[:, None] * e2)
+    ring = rho * (fv.cos(angles)[:, None] * e1 + fv.sin(angles)[:, None] * e2)
     points = (_v(copy.point) + along[:, None, None] * w + ring[None, :, :]).reshape(
         -1, 3
     )
@@ -2526,22 +2529,26 @@ def _cross_cleanly(steps: list[Step]) -> None:
             if item1 == item2:
                 continue
             across = np.cross(w1, w2)
-            size = float(np.linalg.norm(across))
+            size = float(fv.norm(across))
             gap = p2 - p1
             if size < 1e-9:  # parallel: how far apart the axes are
-                d = float(np.linalg.norm(gap - (gap @ w1) * w1))
+                d = float(fv.norm(gap - (fv.matmul(gap, w1)) * w1))
                 s1, s2 = (
                     (lo1, hi1),
                     (
-                        float(gap @ w1) + lo2 * float(w1 @ w2),
-                        float(gap @ w1) + hi2 * float(w1 @ w2),
+                        float(fv.matmul(gap, w1)) + lo2 * float(fv.matmul(w1, w2)),
+                        float(fv.matmul(gap, w1)) + hi2 * float(fv.matmul(w1, w2)),
                     ),
                 )
                 overlap = min(max(s1), max(s2)) > max(min(s1), min(s2))
             else:  # crossing: where the axes come nearest
-                d = abs(float(gap @ across)) / size
-                m = np.array([[1.0, -float(w1 @ w2)], [float(w1 @ w2), -1.0]])
-                t1, t2 = np.linalg.solve(m, [float(gap @ w1), float(gap @ w2)])
+                d = abs(float(fv.matmul(gap, across))) / size
+                m = np.array(
+                    [[1.0, -float(fv.matmul(w1, w2))], [float(fv.matmul(w1, w2)), -1.0]]
+                )
+                t1, t2 = fv.solve(
+                    m, [float(fv.matmul(gap, w1)), float(fv.matmul(gap, w2))]
+                )
                 overlap = lo1 - r2 <= t1 <= hi1 + r2 and lo2 - r1 <= t2 <= hi2 + r1
             if not overlap:
                 continue
@@ -2583,11 +2590,11 @@ def _walls_crossed(plan: Plan, steps: list[Step]) -> None:
             t = np.linspace(lo, hi, 64)
             for a, at, (b1, l1, u1), (b2, l2, u2) in walls:
                 # From the wall's plane to the rod's axis:
-                away = abs(float((p - c) @ a) - at)
-                if abs(float(w @ a)) > 1e-9 or abs(away - r) >= _TOUCHING:
+                away = abs(float(fv.matmul(p - c, a)) - at)
+                if abs(float(fv.matmul(w, a))) > 1e-9 or abs(away - r) >= _TOUCHING:
                     continue
-                x1 = float((p - c) @ b1) + t * float(w @ b1)
-                x2 = float((p - c) @ b2) + t * float(w @ b2)
+                x1 = float(fv.matmul(p - c, b1)) + t * float(fv.matmul(w, b1))
+                x2 = float(fv.matmul(p - c, b2)) + t * float(fv.matmul(w, b2))
                 if np.any((x1 > l1) & (x1 < u1) & (x2 > l2) & (x2 < u2)):
                     where = f"{step.item}'s wall"
                     raise DoesNotFitError(f"{item} touches {where} along a line")
@@ -2710,16 +2717,16 @@ def _past_side(s: Prism) -> Array:
         centre = np.array([q1 * (h1 - cr), q2 * (h2 - cr)])
         a = k * math.pi / 2 + np.linspace(0.0, math.pi / 2, 9)
         pieces.append(
-            centre + (cr + _SIDE_OFF) * np.stack([np.cos(a), np.sin(a)], axis=1)
+            centre + (cr + _SIDE_OFF) * np.stack([fv.cos(a), fv.sin(a)], axis=1)
         )
     ring = np.concatenate(pieces)
     # Even spacing along the closed polygon.
     closed = np.vstack([ring, ring[:1]])
-    lengths = np.linalg.norm(np.diff(closed, axis=0), axis=1)
+    lengths = fv.norm(np.diff(closed, axis=0), axis=1)
     at = np.concatenate([[0.0], np.cumsum(lengths)])
     want = np.linspace(0.0, at[-1], _SIDE_ROUND, endpoint=False)
-    u = np.interp(want, at, closed[:, 0])
-    v = np.interp(want, at, closed[:, 1])
+    u = fv.interp(want, at, closed[:, 0])
+    v = fv.interp(want, at, closed[:, 1])
     t = s.low + (np.arange(_SIDE_LAYERS) + 0.5) / _SIDE_LAYERS * (s.high - s.low)
     first, second, normal = (
         np.asarray(w, dtype=np.float64) for w in (s.first, s.second, s.normal)
@@ -2971,7 +2978,7 @@ def _pattern(rng: random.Random, face: _Flat, size: float) -> Pattern | None:
             {},
         )
     n = rng.randint(3, 6)
-    d = _q(max(size / math.sin(math.pi / n) + 2, rng.uniform(10, 40)))
+    d = _q(max(size / fs.sin(math.pi / n) + 2, rng.uniform(10, 40)))
     values: dict[str, float] = {"diameter": d}
     if rng.random() < 0.6:
         values["start"] = _q(rng.uniform(0, 90), 0.5)
@@ -3007,7 +3014,7 @@ def _feature(
                 least += (
                     (recess[1] - sizes["diameter"])
                     / 2
-                    / math.tan(math.radians(recess[2] / 2))
+                    / fs.tan(math.radians(recess[2] / 2))
                 )
             depth = _q(rng.uniform(least, max(least + 0.1, face.material - GAP - 0.1)))
     f = Feature(f"i{k}", kind, sizes, (host, face.key[2]), depth, choices, recess)

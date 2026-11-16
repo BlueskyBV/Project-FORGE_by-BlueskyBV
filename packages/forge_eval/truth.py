@@ -37,6 +37,8 @@ from dataclasses import dataclass
 from functools import cached_property, lru_cache
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 __all__ = [
@@ -134,9 +136,9 @@ class Prism:
 
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.centre)
-        u = d @ np.asarray(self.first)
-        v = d @ np.asarray(self.second)
-        h = d @ np.asarray(self.normal)
+        u = fv.matmul(d, np.asarray(self.first))
+        v = fv.matmul(d, np.asarray(self.second))
+        h = fv.matmul(d, np.asarray(self.normal))
         h1, h2 = self.half
         r = self.corner
         found = (
@@ -168,8 +170,8 @@ class Frustum:
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.base)
         w = np.asarray(self.axis)
-        s = d @ w
-        rho = np.linalg.norm(d - s[:, None] * w, axis=1)
+        s = fv.matmul(d, w)
+        rho = fv.norm(d - s[:, None] * w, axis=1)
         r0, r1 = self.radii
         radius = r0 + (r1 - r0) * np.clip(s / self.length, 0.0, 1.0)
         return np.asarray((s >= 0) & (s <= self.length) & (rho <= radius))
@@ -196,8 +198,8 @@ class Outline2:
                 found.append((here, to, None, 0.0, 0.0, 0.0))
             else:
                 r = math.dist(here, centre)
-                a0 = math.atan2(here[1] - centre[1], here[0] - centre[0])
-                a1 = math.atan2(to[1] - centre[1], to[0] - centre[0])
+                a0 = fs.atan2(here[1] - centre[1], here[0] - centre[0])
+                a1 = fs.atan2(to[1] - centre[1], to[0] - centre[0])
                 sweep = ((a0 - a1) if clockwise else (a1 - a0)) % (2 * math.pi)
                 found.append((here, to, centre, r, a0, -sweep if clockwise else sweep))
             here = to
@@ -225,22 +227,22 @@ class Outline2:
                 continue
             cx, cy = centre
             for start, end in _monotone(a0, sweep):
-                side = 1.0 if math.cos((start + end) / 2) > 0 else -1.0
-                ys, ye = cy + r * math.sin(start), cy + r * math.sin(end)
+                side = 1.0 if fs.cos((start + end) / 2) > 0 else -1.0
+                ys, ye = cy + r * fs.sin(start), cy + r * fs.sin(end)
                 spans = (ys <= v) != (ye <= v)
-                x = cx + side * np.sqrt(np.maximum(r * r - (v - cy) ** 2, 0.0))
+                x = cx + side * np.sqrt(np.maximum(r * r - fv.sq(v - cy), 0.0))
                 crossings += spans & (x > u)
-            angle = np.arctan2(v - cy, u - cx)
+            angle = fv.arctan2(v - cy, u - cx)
             along = (
                 (angle - a0) % (2 * math.pi)
                 if sweep > 0
                 else (a0 - angle) % (2 * math.pi)
             )
-            on |= (np.abs(np.hypot(u - cx, v - cy) - r) <= 1e-9) & (
+            on |= (np.abs(fv.hypot(u - cx, v - cy) - r) <= 1e-9) & (
                 along <= abs(sweep) + 1e-12
             )
-            on |= (np.hypot(u - a[0], v - a[1]) <= 1e-9) | (
-                np.hypot(u - b[0], v - b[1]) <= 1e-9
+            on |= (fv.hypot(u - a[0], v - a[1]) <= 1e-9) | (
+                fv.hypot(u - b[0], v - b[1]) <= 1e-9
             )
         return np.asarray(on | (crossings % 2 == 1))
 
@@ -261,8 +263,8 @@ class Outline2:
                 if along <= abs(sweep):
                     points.append(
                         (
-                            centre[0] + r * math.cos(angle),
-                            centre[1] + r * math.sin(angle),
+                            centre[0] + r * fs.cos(angle),
+                            centre[1] + r * fs.sin(angle),
                         )
                     )
         return (min(p[0] for p in points), min(p[1] for p in points)), (
@@ -287,7 +289,7 @@ def _followed(outline: Outline2, step: float) -> Array:
             ]
         else:
             n = max(1, math.ceil(abs(sweep) * r / step))
-            found += [(centre[0] + r * math.cos(a0 + sweep * k / n), centre[1] + r * math.sin(a0 + sweep * k / n))
+            found += [(centre[0] + r * fs.cos(a0 + sweep * k / n), centre[1] + r * fs.sin(a0 + sweep * k / n))
                       for k in range(n)]  # fmt: skip
     found.append(outline.start)
     points = np.asarray(found, dtype=np.float64)
@@ -304,7 +306,7 @@ def _near_segment(u: Array, v: Array, a: Point, b: Point) -> NDArray[np.bool_]:
         if length2 > 0
         else np.zeros(u.shape)
     )
-    return np.asarray(np.hypot(u - (x0 + t * dx), v - (y0 + t * dy)) <= 1e-9)
+    return np.asarray(fv.hypot(u - (x0 + t * dx), v - (y0 + t * dy)) <= 1e-9)
 
 
 def _monotone(a0: float, sweep: float) -> list[tuple[float, float]]:
@@ -334,9 +336,9 @@ class Pushed:
 
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.origin)
-        h = d @ np.asarray(self.normal)
+        h = fv.matmul(d, np.asarray(self.normal))
         found = self.outline.inside(
-            d @ np.asarray(self.first), d @ np.asarray(self.second)
+            fv.matmul(d, np.asarray(self.first)), fv.matmul(d, np.asarray(self.second))
         )
         return np.asarray(found & (h >= self.low) & (h <= self.high))
 
@@ -352,8 +354,8 @@ class Turned:
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.base)
         w = np.asarray(self.axis)
-        h = d @ w
-        rho = np.linalg.norm(d - h[:, None] * w, axis=1)
+        h = fv.matmul(d, w)
+        rho = fv.norm(d - h[:, None] * w, axis=1)
         return self.outline.inside(rho, h)
 
 
@@ -441,7 +443,7 @@ def ink_box(text: str, height: float) -> tuple[Point, Point] | None:
                 t = (a[k] - c[k]) / bend
                 if 0.0 < t < 1.0:
                     out.append(
-                        (1 - t) ** 2 * a[k] + 2 * (1 - t) * t * c[k] + t * t * b[k]
+                        fv.sq(1 - t) * a[k] + 2 * (1 - t) * t * c[k] + t * t * b[k]
                     )
     scale = height / CAP_HEIGHT
     return (min(xs) * scale, min(ys) * scale), (max(xs) * scale, max(ys) * scale)
@@ -504,15 +506,15 @@ class Letters:
 
         p = np.asarray(points, dtype=np.float64).reshape(-1, 3)
         d = p - np.asarray(self.centre)
-        h = d @ np.asarray(self.normal)
+        h = fv.matmul(d, np.asarray(self.normal))
         found: NDArray[np.bool_] = (h >= self.low) & (h <= self.high)
         rows = np.flatnonzero(found)
         if not len(rows):
             return found
         scale = self.height / CAP_HEIGHT
         _, length = line_pieces(self.text)
-        x = (d[rows] @ np.asarray(self.right)) / scale + length / 2
-        y = (d[rows] @ np.asarray(self.up)) / scale + CAP_HEIGHT / 2
+        x = (fv.matmul(d[rows], np.asarray(self.right))) / scale + length / 2
+        y = (fv.matmul(d[rows], np.asarray(self.up))) / scale + CAP_HEIGHT / 2
         parts = self._parts()
         winding = np.zeros(len(rows), dtype=np.int64)
         y0, y2 = parts[:, 1], parts[:, 5]
@@ -539,7 +541,7 @@ class Letters:
             t = np.clip(
                 np.where(np.abs(qa) <= 1e-12 * (np.abs(qb) + 1.0), linear, t), 0.0, 1.0
             )
-            at_x = (1 - t) ** 2 * q[:, 0] + 2 * (1 - t) * t * q[:, 2] + t * t * q[:, 4]
+            at_x = fv.sq(1 - t) * q[:, 0] + 2 * (1 - t) * t * q[:, 2] + t * t * q[:, 4]
             turn = np.where(at_x > px[row], way[part], 0)
             winding[k : k + 1024] += np.bincount(
                 row, weights=turn, minlength=len(px)
@@ -576,8 +578,8 @@ class Threaded:
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64).reshape(-1, 3) - np.asarray(self.base)
         w = np.asarray(self.axis)
-        s = d @ w
-        rho = np.linalg.norm(d - s[:, None] * w, axis=1)
+        s = fv.matmul(d, w)
+        rho = fv.norm(d - s[:, None] * w, axis=1)
         found: NDArray[np.bool_] = (
             (s >= self.start)
             & (s <= self.end)
@@ -591,7 +593,7 @@ def _rounded_off(u: Array, v: Array, size: float, round_: bool) -> NDArray[np.bo
     """Within ``size`` of an edge along both of its faces (``u`` and ``v``, from the edge into each), and on the edge's side of the round touching both ``size`` back (``round_``), or of the bevel's line between those places."""
     found = (u >= 0) & (u <= size) & (v >= 0) & (v <= size)
     if round_:
-        return np.asarray(found & ((size - u) ** 2 + (size - v) ** 2 >= size * size))
+        return np.asarray(found & (fv.sq(size - u) + fv.sq(size - v) >= size * size))
     return np.asarray(found & (u + v <= size))
 
 
@@ -622,8 +624,8 @@ class Corner:
 
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.start)
-        s = d @ np.asarray(self.along)
-        u, v = d @ np.asarray(self.a), d @ np.asarray(self.b)
+        s = fv.matmul(d, np.asarray(self.along))
+        u, v = fv.matmul(d, np.asarray(self.a)), fv.matmul(d, np.asarray(self.b))
         return np.asarray(
             (s >= 0) & (s <= self.length) & _rounded_off(u, v, self.size, self.round_)
         )
@@ -656,9 +658,9 @@ class RingCorner:
     def contains(self, points: Array) -> NDArray[np.bool_]:
         d = np.asarray(points, dtype=np.float64) - np.asarray(self.centre)
         w = np.asarray(self.axis)
-        h = d @ w
+        h = fv.matmul(d, w)
         across = d - h[:, None] * w
-        du, dh = np.linalg.norm(across, axis=1) - self.radius, h - self.height
+        du, dh = fv.norm(across, axis=1) - self.radius, h - self.height
         u = du * self.a[0] + dh * self.a[1]
         v = du * self.b[0] + dh * self.b[1]
         found = _rounded_off(u, v, self.size, self.round_)
@@ -666,7 +668,7 @@ class RingCorner:
             assert self.first is not None
             e1 = np.asarray(self.first)
             e2 = np.cross(w, e1)
-            angle = np.arctan2(across @ e2, across @ e1)
+            angle = fv.arctan2(fv.matmul(across, e2), fv.matmul(across, e1))
             start, end = self.turn
             found &= np.mod(angle - start, 2 * math.pi) <= (end - start) + 1e-12
         return np.asarray(found)

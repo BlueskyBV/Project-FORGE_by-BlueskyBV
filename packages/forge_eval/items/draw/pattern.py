@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
+from forge_numeric import scalar as fs
 from forge_registry import Registry
 from forge_spec.draft import PATTERN_FIELDS
 
@@ -101,8 +102,8 @@ class Circle(PatternDraw):
         n, r, start = c["count"], v["diameter"] / 2, v.get("start", 0.0)
         return [
             (
-                r * math.cos(math.radians(start + k * 360 / n)),
-                r * math.sin(math.radians(start + k * 360 / n)),
+                r * fs.cos(math.radians(start + k * 360 / n)),
+                r * fs.sin(math.radians(start + k * 360 / n)),
             )
             for k in range(n)
         ]

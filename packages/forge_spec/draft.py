@@ -37,6 +37,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from forge_numeric import scalar as fs
 from forge_units.dimension import DIMENSIONLESS, LENGTH
 
 from .problems import (
@@ -683,8 +684,8 @@ def outline_points(
     for n, seg in enumerate(profile.segments):
         if seg.centre is not None:
             cx, cy = seg.centre
-            a0 = math.atan2(here[1] - cy, here[0] - cx)
-            a1 = math.atan2(seg.to[1] - cy, seg.to[0] - cx)
+            a0 = fs.atan2(here[1] - cy, here[0] - cx)
+            a1 = fs.atan2(seg.to[1] - cy, seg.to[0] - cx)
             sweep = (a0 - a1) if seg.clockwise else (a1 - a0)
             sweep %= 2 * math.pi
             if sweep <= 1e-12:
@@ -694,7 +695,7 @@ def outline_points(
             sign = -1.0 if seg.clockwise else 1.0
             for k in range(1, steps):
                 t = a0 + sign * sweep * k / steps
-                points.append((cx + radius * math.cos(t), cy + radius * math.sin(t), n))
+                points.append((cx + radius * fs.cos(t), cy + radius * fs.sin(t), n))
         points.append((seg.to[0], seg.to[1], n))
         here = seg.to
     return points

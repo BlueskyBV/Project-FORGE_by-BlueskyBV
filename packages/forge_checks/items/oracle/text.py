@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Item
 from forge_spec.draft import Text as Words
 from forge_spec.font import text_width
@@ -44,9 +45,9 @@ def _letters(item: Item, copy: Copy) -> Node | None:
     height = _mm(item.get("height"))
     flat = _frame(copy.point, _axis(copy.axes[0]), _axis(copy.axes[1]))
     outward = np.asarray(copy.direction, dtype=float)
-    sign = float(np.asarray(flat.w) @ -outward)
+    sign = float(fv.matmul(np.asarray(flat.w), -outward))
     t0, t1 = sorted((sign * copy.span[0], sign * copy.span[1]))
-    right = float(np.cross(np.asarray(flat.v), outward) @ np.asarray(flat.u))
+    right = float(fv.matmul(np.cross(np.asarray(flat.v), outward), np.asarray(flat.u)))
     length = text_width(text.text, height)
     ink = Ink.of(text.text, height, right=right, at=(-right * length / 2, -height / 2))
     if ink.box is None:

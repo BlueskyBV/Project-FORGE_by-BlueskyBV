@@ -15,14 +15,16 @@ that would overflow or underflow.
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
 
-from . import _native
+from . import _native, linear
 from . import scalar as sc
+from .scalar import cube, sq  # (numbers or arrays alike)
 
 Array = NDArray[np.float64]
 
@@ -34,19 +36,24 @@ __all__ = [
     "cbrt",
     "cond_symmetric",
     "cos",
+    "cube",
     "det",
     "dot",
     "eigh",
     "exp",
     "hypot",
+    "interp",
     "inv",
     "log",
     "matmul",
     "norm",
+    "normal",
     "real_roots",
+    "roots",
     "sin",
     "sincos",
     "solve",
+    "sq",
     "sum_last",
     "tan",
     "unit",
@@ -571,16 +578,32 @@ def _flat(x: Any) -> tuple[Array, tuple[int, ...]]:
     return np.ascontiguousarray(a.ravel()), a.shape
 
 
+def _out(a: Array) -> Array:
+    """``a``, or its one element as a NumPy float where it has no axes (as a ufunc gives for a number)."""
+    out: Array = a[()]
+    return out
+
+
+def _number(x: Any) -> bool:
+    return type(x) is float or type(x) is np.float64
+
+
 def sincos(x: Any) -> tuple[Array, Array]:
     """(sin x, cos x) elementwise, sharing one argument reduction."""
+    if _number(
+        x
+    ):  # a number: its scalar twin (the same bits), without an array's set-up
+        s0, c0 = sc._sincos(float(x))
+        return cast(Array, np.float64(s0)), cast(Array, np.float64(c0))
     if _use is None:
-        return _np_sincos(x)
+        s, c = _np_sincos(x)
+        return _out(s), _out(c)
     flat, shape = _flat(x)
     s, c, deferred = _native.sincos(flat)
     if deferred:
         for k in np.flatnonzero(~(np.abs(flat) < sc.MEDIUM) & np.isfinite(flat)):
             s[k], c[k] = sc._sincos(float(flat[k]))
-    return cast(Array, s.reshape(shape)), cast(Array, c.reshape(shape))
+    return _out(s.reshape(shape)), _out(c.reshape(shape))
 
 
 def sin(x: Any) -> Array:
@@ -597,11 +620,24 @@ def tan(x: Any) -> Array:
         return s / c
 
 
-def _unary(name: str, numpy_twin: Callable[[Any], Array], x: Any) -> Array:
+#: Each function's scalar twin with an array's answers outside its domain (NaN or infinity, not an error).
+_IEEE: dict[str, Callable[[float], float]] = {
+    "atan": sc.atan,
+    "asin": _asin,
+    "acos": _acos,
+    "exp": _exp,
+    "log": _log,
+    "cbrt": sc.cbrt,
+}
+
+
+def _unary(name: str, twin: Callable[[Any], Array], x: Any) -> Array:
+    if _number(x):
+        return cast(Array, np.float64(_IEEE[name](float(x))))
     if _use is None:
-        return numpy_twin(x)
+        return _out(twin(x))
     flat, shape = _flat(x)
-    return cast(Array, _native.unary(name, flat).reshape(shape))
+    return _out(_native.unary(name, flat).reshape(shape))
 
 
 def arctan(x: Any) -> Array:
@@ -629,29 +665,53 @@ def cbrt(x: Any) -> Array:
 
 
 def arctan2(y: Any, x: Any) -> Array:
+    if _number(y) and _number(x):
+        return cast(Array, np.float64(sc.atan2(float(y), float(x))))
     if _use is None:
-        return _np_arctan2(y, x)
+        return _out(_np_arctan2(y, x))
     y, x = _pair(y, x)
     shape = x.shape
-    return cast(
-        Array,
+    return _out(
         _native.atan2(
             np.ascontiguousarray(y.ravel()), np.ascontiguousarray(x.ravel())
-        ).reshape(shape),
+        ).reshape(shape)
     )
 
 
 def hypot(x: Any, y: Any) -> Array:
     """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, ``math.hypot`` (CPython's own)."""
+    if _number(x) and _number(y):
+        return cast(Array, np.float64(_hypot1(float(x), float(y))))
     if _use is None:
-        return _np_hypot(x, y)
+        return _out(_np_hypot(x, y))
     x, y = _pair(x, y)
     shape = x.shape
+    if x.size <= _FEW:
+        found = [
+            _hypot1(a, b)
+            for a, b in zip(x.ravel().tolist(), y.ravel().tolist(), strict=True)
+        ]
+        return _out(np.array(found, dtype=np.float64).reshape(shape))
     xf, yf = np.ascontiguousarray(x.ravel()), np.ascontiguousarray(y.ravel())
     out, deferred = _native.hypot(xf, yf)
     if deferred:
-        return cast(Array, _np_hypot(xf, yf).reshape(shape))
-    return cast(Array, out.reshape(shape))
+        return _out(_np_hypot(xf, yf).reshape(shape))
+    return _out(out.reshape(shape))
+
+
+#: Up to this many elements, hypot runs element by element in Python floats (cheaper than the library's call).
+_FEW = 8
+
+
+def _hypot1(x: float, y: float) -> float:
+    """:func:`_np_hypot` of one pair, in Python floats: the same operations, so the same bits."""
+    if math.isinf(x) or math.isinf(y):
+        return math.inf
+    ax, ay = abs(x), abs(y)
+    big = ax if ax >= ay else ay
+    if ax == ax and ay == ay and (big > _HYPOT_SAFE[1] or 0.0 < big < _HYPOT_SAFE[0]):
+        return math.hypot(x, y)
+    return math.sqrt(x * x + y * y)
 
 
 def _pair(a: Any, b: Any) -> tuple[Array, Array]:
@@ -659,6 +719,162 @@ def _pair(a: Any, b: Any) -> tuple[Array, Array]:
     if a.shape != b.shape:
         a, b = np.broadcast_arrays(a, b)
     return a, b
+
+
+# ----------------------------------------------------------------------
+# Built on the above
+# ----------------------------------------------------------------------
+def interp(x: Any, xp: Any, fp: Any) -> Array:
+    """``numpy.interp`` (``xp`` increasing; ``fp[0]`` and ``fp[-1]`` outside), by its own formula, one operation at a time.
+
+    NumPy's C computes ``slope * (x - xp[j]) + fp[j]`` in one expression,
+    which a compiler may fuse into one rounding (Clang does on ARM); here
+    each operation rounds, as NumPy's does where it isn't fused.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    xp = np.asarray(xp, dtype=np.float64)
+    fp = np.asarray(fp, dtype=np.float64)
+    if xp.ndim != 1 or fp.shape != xp.shape or len(xp) == 0:
+        raise ValueError("interp: xp and fp must be 1-D, of one length, not empty")
+    n = len(xp)
+    flat = x.ravel()
+    out = np.empty_like(flat)
+    if n == 1:
+        out[:] = fp[0]
+    else:
+        j = np.searchsorted(xp, flat, side="right") - 1
+        j = np.where(flat > xp[-1], n, j)
+        inner = (j >= 0) & (j < n - 1)
+        jj = np.clip(j, 0, n - 2)
+        x0, x1, f0, f1 = xp[jj], xp[jj + 1], fp[jj], fp[jj + 1]
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+            slope = (f1 - f0) / (x1 - x0)
+            value = slope * (flat - x0) + f0
+            retry = (
+                slope * (flat - x1) + f1
+            )  # NumPy's second try where the first is NaN
+        value = np.where(
+            np.isnan(value), np.where(np.isnan(retry) & (f0 == f1), f0, retry), value
+        )
+        value = np.where(x0 == flat, f0, value)
+        out[:] = np.where(inner, value, np.where(j < 0, fp[0], fp[-1]))
+        out = np.where(
+            np.isnan(flat), flat, out
+        )  # (with one point, NumPy gives fp[0] for NaN too)
+    return _out(out.reshape(x.shape))
+
+
+def normal(
+    rng: np.random.Generator,
+    loc: float = 0.0,
+    scale: float = 1.0,
+    size: int | tuple[int, ...] | None = None,
+) -> Array:
+    """Normal draws from ``rng``'s uniform ones (Box and Muller's transform): ``rng.normal``'s place.
+
+    NumPy's own normal draws take ``exp`` and ``log`` from the C library on
+    their rarer path, so a seed may draw other numbers on another machine.
+    Two uniform draws make one normal one.
+    """
+    shape: tuple[int, ...] = (
+        () if size is None else (size,) if isinstance(size, int) else tuple(size)
+    )
+    count = int(np.prod(shape, dtype=np.int64)) if shape else 1
+    u = rng.random(2 * count)
+    radius = np.sqrt(-2.0 * log(1.0 - u[:count]))
+    z = radius * cos((2.0 * math.pi) * u[count:])
+    return _out((loc + scale * z).reshape(shape))
+
+
+def roots(coeffs: Any) -> NDArray[np.complex128]:
+    """A polynomial's roots, complex, in no particular order: ``numpy.roots`` (highest degree first), by Aberth and Ehrlich's iteration.
+
+    ``numpy.roots`` takes the eigenvalues of the companion matrix from LAPACK;
+    here every root is refined at once, in real arithmetic in a fixed order,
+    from points on a circle that holds them all, until no step moves any by
+    more than a few units in its last place (or 200 steps). Leading zero
+    coefficients are dropped and trailing ones are roots at 0, as there.
+    """
+    c = np.atleast_1d(np.asarray(coeffs))
+    if c.ndim != 1:
+        raise ValueError("roots: the coefficients must be one row")
+    re = np.asarray(c.real, dtype=np.float64)
+    im = (
+        np.asarray(c.imag, dtype=np.float64)
+        if np.iscomplexobj(c)
+        else np.zeros_like(re)
+    )
+    nonzero = np.flatnonzero((re != 0.0) | (im != 0.0))
+    if len(nonzero) == 0:
+        return np.zeros(0, dtype=np.complex128)
+    re, im = re[nonzero[0] : nonzero[-1] + 1], im[nonzero[0] : nonzero[-1] + 1]
+    zeros = len(c) - 1 - int(nonzero[-1])
+    n = len(re) - 1
+    if n == 0:
+        return np.zeros(zeros, dtype=np.complex128)
+    # Monic: each coefficient over the first (complex division, one operation at a time).
+    d = re[0] * re[0] + im[0] * im[0]
+    ar = (re * re[0] + im * im[0]) / d
+    ai = (im * re[0] - re * im[0]) / d
+    ar[0], ai[0] = 1.0, 0.0
+    # A circle holding every root (Fujiwara's bound), and n points on it.
+    mags = hypot(ar[1:], ai[1:])
+    mags[-1] = 0.5 * mags[-1]
+    k = np.arange(1, n + 1, dtype=np.float64)
+    powers = np.where(mags > 0.0, exp(log(np.where(mags > 0.0, mags, 1.0)) / k), 0.0)
+    radius = 2.0 * float(np.max(powers))  # 2 max |a_k|^(1/k), the last halved
+    if radius == 0.0:
+        return np.zeros(n + zeros, dtype=np.complex128)
+    s, co = sincos((2.0 * math.pi) * np.arange(n, dtype=np.float64) / n + 0.4)
+    zr, zi = radius * co, radius * s
+    still = np.ones(n, dtype=bool)
+    off = ~np.eye(n, dtype=bool)
+    with np.errstate(all="ignore"):
+        for _ in range(200):
+            # p(z) and p'(z) by Horner's rule.
+            pr, pi_ = np.full(n, ar[0]), np.full(n, ai[0])
+            qr, qi = np.zeros(n), np.zeros(n)
+            for j in range(1, n + 1):
+                qr, qi = qr * zr - qi * zi + pr, qr * zi + qi * zr + pi_
+                pr, pi_ = pr * zr - pi_ * zi + ar[j], pr * zi + pi_ * zr + ai[j]
+            # Newton's step p / p'.
+            qq = qr * qr + qi * qi
+            nr = (pr * qr + pi_ * qi) / qq
+            ni = (pi_ * qr - pr * qi) / qq
+            # The pull of the other roots: the sum over k != j of 1 / (z_j - z_k).
+            dr = zr[:, None] - zr[None, :]
+            di = zi[:, None] - zi[None, :]
+            dd = np.where(off, dr * dr + di * di, 1.0)
+            sr = sum_last(np.where(off, dr / dd, 0.0))
+            si = sum_last(np.where(off, -di / dd, 0.0))
+            # Aberth's step: N / (1 - N S).
+            br = 1.0 - (nr * sr - ni * si)
+            bi = -(nr * si + ni * sr)
+            bb = br * br + bi * bi
+            wr = (nr * br + ni * bi) / bb
+            wi = (ni * br - nr * bi) / bb
+            ok = np.isfinite(wr) & np.isfinite(wi) & still
+            wr, wi = np.where(ok, wr, 0.0), np.where(ok, wi, 0.0)
+            zr, zi = zr - wr, zi - wi
+            small = hypot(wr, wi) <= 4.0 * 2.0**-52 * hypot(zr, zi)
+            still &= ~(small | ((pr == 0.0) & (pi_ == 0.0)))
+            if not still.any():
+                break
+    out = np.zeros(n + zeros, dtype=np.complex128)
+    out.real[:n], out.imag[:n] = zr, zi
+    return out
+
+
+@contextmanager
+def numpy_twin() -> Iterator[None]:
+    """NumPy computes everything while this is held (the compiled twin set aside): the tests hold the two to each other."""
+    global _use
+    saved = _use, linear._use
+    _use = linear._use = None
+    try:
+        yield
+    finally:
+        _use, linear._use = saved
 
 
 def _self_test() -> str:
@@ -685,6 +901,21 @@ def _self_test() -> str:
             a, b = run((native_f,)), run((numpy_f,))
             if not np.array_equal(a.view(np.uint64), b.view(np.uint64)):
                 return name
+    m = xs[:384].reshape(-1, 3)
+    m = np.where(np.isfinite(m), m, 1.0)
+    products: list[tuple[str, Callable[..., Any], tuple[Array, Array]]] = [
+        ("matmul", linear.matmul, (m, np.abs(m[:3].T))),
+    ]
+    for name, f, args in products:
+        with np.errstate(all="ignore"):
+            native = f(*args)
+            saved, linear._use = linear._use, None
+            try:
+                numpy = f(*args)
+            finally:
+                linear._use = saved
+        if not np.array_equal(native.view(np.uint64), numpy.view(np.uint64)):
+            return name
     return ""
 
 
@@ -697,7 +928,7 @@ if _use is not None:
             f"forge_numeric's compiled library differs from NumPy's twin ({_bad}): using NumPy",
             stacklevel=1,
         )
-        _use = None
+        _use = linear._use = None
         _native.WHY_NOT = f"it differed from the NumPy twin on {_bad} at load"
 
 

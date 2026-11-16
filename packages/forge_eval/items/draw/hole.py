@@ -11,6 +11,7 @@ import math
 import random
 
 import numpy as np
+from forge_numeric import scalar as fs
 
 from forge_eval.generator import (
     GAP,
@@ -74,7 +75,7 @@ class Hole(DrawKind):
         elif side.bore > 0:
             if r >= side.bore:
                 raise DoesNotFitError(f"{f.id} is as wide as the bore it goes into")
-            deep = side.radius - math.sqrt(side.bore**2 - r**2)
+            deep = side.radius - math.sqrt(side.bore * side.bore - r * r)
         else:
             deep = None
         if strict:
@@ -114,9 +115,7 @@ class Hole(DrawKind):
                         )
         made = []
         for k, a in enumerate(angles):
-            radial = (
-                math.cos(math.radians(a)) * zero + math.sin(math.radians(a)) * quarter
-            )
+            radial = fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter
             p = side.start + along * w + side.radius * radial
             copy_index = index + k
             made.append(Copy(f.id, copy_index, side.key, _t(p), _t(radial), None))

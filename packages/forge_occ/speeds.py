@@ -35,6 +35,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from OCP.BRep import BRep_Tool
@@ -116,7 +118,7 @@ def speeds(
         return Pieces(*_one(u0, u1, surface.Cylinder().Radius()), *_one(v0, v1, 1.0))
     if kind == GeomAbs_Cone:
         cone = surface.Cone()
-        r, s = cone.RefRadius(), math.sin(cone.SemiAngle())
+        r, s = cone.RefRadius(), fs.sin(cone.SemiAngle())
         return Pieces(
             *_one(u0, u1, max(abs(r + v0 * s), abs(r + v1 * s))), *_one(v0, v1, 1.0)
         )
@@ -198,7 +200,7 @@ def _diameters(poles: Array, window: tuple[int, int]) -> Array:
     spread = np.zeros(np.asarray(poles.shape[:2]) - np.asarray(window) + 1)
     for c in range(3):
         views = sliding_window_view(poles[:, :, c], window)
-        spread += (views.max(axis=(-2, -1)) - views.min(axis=(-2, -1))) ** 2
+        spread += fv.sq(views.max(axis=(-2, -1)) - views.min(axis=(-2, -1)))
     return np.sqrt(spread)
 
 
@@ -218,7 +220,7 @@ def _surface_bounds(spline: Any) -> tuple[Array, Array, Array, Array]:
     ) -> Array:
         if degree == 0:
             return np.zeros_like(w_lo)
-        dp = np.linalg.norm(np.diff(poles, axis=direction), axis=2)
+        dp = fv.norm(np.diff(poles, axis=direction), axis=2)
         dw = np.abs(np.diff(weights, axis=direction))
         count = dp.shape[direction]
         spans = knots[np.arange(count) + degree + 1] - knots[np.arange(count) + 1]
@@ -321,7 +323,7 @@ def _reach(points: Array, line: tuple[Array, Array] | None) -> Array:
     origin, direction = line
     rel = points - origin
     return np.asarray(
-        np.linalg.norm(rel - np.outer(rel @ direction, direction), axis=1)
+        fv.norm(rel - np.outer(fv.matmul(rel, direction), direction), axis=1)
     )
 
 
@@ -392,12 +394,12 @@ def _curve_bounds(
     width = np.zeros(n - p)
     for c in range(3):
         views = sliding_window_view(poles[:, c], p + 1)
-        width += (views.max(axis=-1) - views.min(axis=-1)) ** 2
+        width += fv.sq(views.max(axis=-1) - views.min(axis=-1))
     width = np.sqrt(width)
     if p == 0:
         speed = np.zeros(n - p)
     else:
-        dp = np.linalg.norm(np.diff(poles, axis=0), axis=1)
+        dp = fv.norm(np.diff(poles, axis=0), axis=1)
         dw = np.abs(np.diff(weights))
         lengths = knots[np.arange(n - 1) + p + 1] - knots[np.arange(n - 1) + 1]
         over = np.where(lengths > 0.0, 1.0 / np.where(lengths > 0.0, lengths, 1.0), 0.0)

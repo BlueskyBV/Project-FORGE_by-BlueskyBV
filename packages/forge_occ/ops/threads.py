@@ -44,6 +44,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.BRepAdaptor import BRepAdaptor_Surface
 from OCP.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -75,7 +77,7 @@ TOLERANCE = 1e-5
 _SWEEP = 1e-6
 #: Points measured on each face of the groove, a side.
 _SAMPLES = 9
-_TAN30 = math.tan(math.radians(30.0))
+_TAN30 = fs.tan(math.radians(30.0))
 
 
 def _depth(pitch: float) -> float:
@@ -98,7 +100,7 @@ def groove_area(minor: float, outer: float, pitch: float) -> float:
     b = 2.0 * _TAN30 / pitch
 
     def primitive(rho: float) -> float:
-        return 2.0 * math.pi * (a * rho**2 / 2.0 + b * rho**3 / 3.0)
+        return 2.0 * math.pi * (a * (rho * rho) / 2.0 + b * (rho * rho * rho) / 3.0)
 
     return primitive(outer) - primitive(minor)
 
@@ -147,7 +149,7 @@ class _Helix:
     def way(self, angle: float) -> Any:
         """The unit vector square to the axis at ``angle`` past the groove's start."""
         a = self.turn + angle
-        return math.cos(a) * self.x + math.sin(a) * self.y
+        return fs.cos(a) * self.x + fs.sin(a) * self.y
 
     def at(self, rho: float, s: float, angle: float = 0.0) -> gp_Pnt:
         p = self.origin + rho * self.way(angle) + s * self.z
@@ -156,20 +158,20 @@ class _Helix:
     def coordinates(self, points: Any) -> tuple[Any, Any]:
         """Each point's radius, and its place along the axis less the helix's rise to it, from the groove's middle (-P/2 to P/2)."""
         d = points - self.origin
-        s = d @ self.z
-        theta = np.arctan2(d @ self.y, d @ self.x) - self.turn
+        s = fv.matmul(d, self.z)
+        theta = fv.arctan2(fv.matmul(d, self.y), fv.matmul(d, self.x)) - self.turn
         rise = self.hand * theta * self.pitch / (2.0 * math.pi)
         u = (
             np.mod(s - self.low - rise + self.pitch / 2.0, self.pitch)
             - self.pitch / 2.0
         )
-        return np.sqrt((d @ self.x) ** 2 + (d @ self.y) ** 2), u
+        return np.sqrt(fv.sq(fv.matmul(d, self.x)) + fv.sq(fv.matmul(d, self.y))), u
 
     def points(self, rho: Any, u: Any, angle: Any) -> Any:
         """The points at radius ``rho``, ``u`` along the axis from the groove's middle, ``angle`` round from the start."""
         s = self.low + self.hand * angle * self.pitch / (2.0 * math.pi) + u
         a = self.turn + angle
-        way = np.cos(a)[:, None] * self.x + np.sin(a)[:, None] * self.y
+        way = fv.cos(a)[:, None] * self.x + fv.sin(a)[:, None] * self.y
         return self.origin + rho[:, None] * way + s[:, None] * self.z
 
 
@@ -317,7 +319,7 @@ def _cut(ctx: Context, part: SolidProduct, helix: _Helix, per: float) -> SolidPr
         found = plane_of(face)
         if (
             found is not None
-            and abs(abs(float(np.dot(found[1], helix.z))) - 1.0) <= 1e-9
+            and abs(abs(float(fv.dot(found[1], helix.z))) - 1.0) <= 1e-9
         ):
             return (Name(step, "runout"),)
         rho, _ = helix.coordinates(_samples(face))
@@ -372,7 +374,7 @@ def _plain(shape: Any, helix: _Helix) -> bool:
     ).Shape()
     with boundary("measuring the rod round the thread"):
         there = boolean("intersect", [shape], [zone]).shape
-    rod = math.pi * helix.radius**2 * (helix.end - helix.first)
+    rod = math.pi * (helix.radius * helix.radius) * (helix.end - helix.first)
     return len(faces(there)) == 3 and abs(volume(there) - rod) <= 1e-9 * rod
 
 
@@ -405,7 +407,7 @@ def _held(before: Any, after: Any, helix: _Helix) -> None:
         helix.pitch / 8.0 + (rho - helix.minor) * _TAN30
     )  # the groove's half-width at each radius
     across = 2.0 * np.mod(k * 0.7548776662466927, 1.0) - 1.0
-    slant = margin / math.cos(
+    slant = margin / fs.cos(
         math.radians(30.0)
     )  # a margin square to a flank, along the axis
     in_groove = helix.points(rho, (groove - slant) * across, angle)
@@ -414,7 +416,7 @@ def _held(before: Any, after: Any, helix: _Helix) -> None:
     )
 
     def kept(points: Any) -> Any:
-        s = (points - helix.origin) @ helix.z
+        s = fv.matmul(points - helix.origin, helix.z)
         return points[(s > helix.first + margin) & (s < helix.end - margin)]
 
     in_groove, in_thread = kept(in_groove), kept(in_thread)
@@ -462,13 +464,13 @@ def _off_profile(piece: Any, helix: _Helix) -> float:
         if plane_of(face) is not None:
             continue
         points = _samples(face)
-        s = (points - helix.origin) @ helix.z
+        s = fv.matmul(points - helix.origin, helix.z)
         points = points[(s > helix.first + 1e-6) & (s < helix.end - 1e-6)]
         if not len(points):
             continue
         rho, u = helix.coordinates(points)
         # The section's boundary in (r, |u|): the root (r = minor, |u| <= P/8), a flank (|u| = P/8 + (r - minor) tan 30°).
-        flank = np.abs(np.abs(u) - half_in - (rho - helix.minor) * _TAN30) * math.cos(
+        flank = np.abs(np.abs(u) - half_in - (rho - helix.minor) * _TAN30) * fs.cos(
             math.radians(30.0)
         )
         root = np.where(np.abs(u) <= half_in, np.abs(rho - helix.minor), np.inf)

@@ -52,6 +52,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from itertools import pairwise
 
+from forge_numeric import scalar as fs
+
 __all__ = [
     "TOL",
     "Arc",
@@ -118,8 +120,8 @@ class Arc:
 
     def at(self, angle: float) -> Point:
         return (
-            self.centre[0] + self.radius * math.cos(angle),
-            self.centre[1] + self.radius * math.sin(angle),
+            self.centre[0] + self.radius * fs.cos(angle),
+            self.centre[1] + self.radius * fs.sin(angle),
         )
 
     def holds(self, angle: float) -> bool:
@@ -142,7 +144,7 @@ class Arc:
         dx, dy = c[0] - self.centre[0], c[1] - self.centre[1]
         if dx == 0.0 and dy == 0.0:
             return []  # every point of the circle is as near: its ends and quarters stand for them
-        angle = math.atan2(sign * dy, sign * dx)
+        angle = fs.atan2(sign * dy, sign * dx)
         return [self.at(angle)] if self.holds(angle) else []
 
     def nearest_to(self, c: Point) -> list[Point]:
@@ -454,7 +456,7 @@ def _line_circle(s: Segment, arc: Arc) -> list[Point]:
     for t in {along - half, along + half}:
         if -TOL <= t <= length + TOL:
             point = (ax + t * ux, ay + t * uy)
-            angle = math.atan2(point[1] - arc.centre[1], point[0] - arc.centre[0])
+            angle = fs.atan2(point[1] - arc.centre[1], point[0] - arc.centre[0])
             if arc.holds(angle):
                 found.append(point)
     return found
@@ -474,8 +476,8 @@ def _circle_circle(a: Arc, b: Arc) -> list[Point]:
     found = []
     for sign in (1.0, -1.0):
         point = (mx - sign * half * uy, my + sign * half * ux)
-        on_a = math.atan2(point[1] - a.centre[1], point[0] - a.centre[0])
-        on_b = math.atan2(point[1] - b.centre[1], point[0] - b.centre[0])
+        on_a = fs.atan2(point[1] - a.centre[1], point[0] - a.centre[0])
+        on_b = fs.atan2(point[1] - b.centre[1], point[0] - b.centre[0])
         if a.holds(on_a) and b.holds(on_b):
             found.append(point)
     return found
@@ -563,7 +565,7 @@ def _param(side: Piece, p: Point) -> float:
             )
         )
     turned = (
-        math.atan2(p[1] - side.centre[1], p[0] - side.centre[0]) - side.start
+        fs.atan2(p[1] - side.centre[1], p[0] - side.centre[0]) - side.start
     ) % _TURN
     if turned > side.sweep + TOL / side.radius:
         turned = 0.0 if _TURN - turned < turned - side.sweep else side.sweep
@@ -586,7 +588,7 @@ def _runs(side: Piece, axis: int) -> list[tuple[Point, Point, float]]:
     ordered = sorted(stops)
     for a, b in pairwise(ordered):
         middle = side.start + (a + b) / 2
-        sign = math.cos(middle) if axis == 1 else math.sin(middle)
+        sign = fs.cos(middle) if axis == 1 else fs.sin(middle)
         found.append(
             (
                 side.at(side.start + a),

@@ -20,7 +20,7 @@ from typing import Any
 
 import numpy as np
 
-ABI = 2
+ABI = 3
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent.parent / "native" / "forge_numeric_native" / "src" / "lib.rs"
 
@@ -90,6 +90,8 @@ def _open() -> tuple[Any | None, str]:
     lib.fnum_atan2.restype = None
     lib.fnum_hypot.argtypes = [_P, _P, _P, _N]
     lib.fnum_hypot.restype = _N
+    lib.fnum_matmul.argtypes = [_P, _P, _P, _N, _N, _N]
+    lib.fnum_matmul.restype = None
     return lib, ""
 
 
@@ -122,3 +124,17 @@ def hypot(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, int]:
     """(the lengths, how many elements were deferred: written NaN, for the caller)."""
     out = np.empty_like(x)
     return out, LIB.fnum_hypot(x.ctypes.data, y.ctypes.data, out.ctypes.data, x.size)
+
+
+def matmul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """``a`` (rows by k, contiguous float64) times ``b`` (k by cols, the same), sums left to right."""
+    out = np.empty((a.shape[0], b.shape[1]))
+    LIB.fnum_matmul(
+        a.ctypes.data,
+        b.ctypes.data,
+        out.ctypes.data,
+        a.shape[0],
+        a.shape[1],
+        b.shape[1],
+    )
+    return out

@@ -13,6 +13,8 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 from forge_spec.draft import (
     Choice,
     Counterbore,
@@ -348,4 +350,4 @@ def _turn(degrees: float) -> tuple[float, float]:
     if abs(quarters - round(quarters)) < 1e-12:
         return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
     t = math.radians(degrees)
-    return math.cos(t), math.sin(t)
+    return fs.cos(t), fs.sin(t)

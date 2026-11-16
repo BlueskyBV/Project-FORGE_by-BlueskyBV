@@ -34,6 +34,8 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
 from itertools import pairwise
 
+from forge_numeric import scalar as fs
+
 from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
@@ -568,7 +570,7 @@ def outline_within(inner: Sequence[Part], at: tuple[float, float], outer: Sequen
         c1, c2 = part.centre[0] + at[0], part.centre[1] + at[1]
         if part.disc:
             r = part.half[0]
-            points = [(c1 + r * math.cos(t), c2 + r * math.sin(t))
+            points = [(c1 + r * fs.cos(t), c2 + r * fs.sin(t))
                       for t in (2 * math.pi * k / 256 for k in range(256))]  # fmt: skip
         else:
             h1, h2 = part.half
@@ -1021,7 +1023,7 @@ def shape_reach(shape: Shape) -> float:
         points = list(q.ends())
         if isinstance(q, Arc):
             cx, cy = q.centre
-            angle = math.atan2(cy, cx) if math.hypot(cx, cy) > 0 else q.start
+            angle = fs.atan2(cy, cx) if math.hypot(cx, cy) > 0 else q.start
             fraction = q.fraction(angle)
             if fraction is not None:
                 points.append(q.at(fraction))

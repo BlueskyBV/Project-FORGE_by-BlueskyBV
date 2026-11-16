@@ -62,6 +62,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .mesh import Mesh, MeshView
@@ -695,7 +696,7 @@ def _place(objects: dict[int, _Object], counts: dict[int, tuple[int, int, int]],
             with np.errstate(
                 invalid="ignore", over="ignore"
             ):  # inf and nan are kept, and reported
-                placed = points[corners] @ m + t
+                placed = fv.matmul(points[corners], m) + t
             if mirrored:
                 placed = placed[
                     :, [0, 2, 1]
@@ -704,5 +705,7 @@ def _place(objects: dict[int, _Object], counts: dict[int, tuple[int, int, int]],
             continue
         for child, (cm, ct, flip) in reversed(found.components or []):
             if counts[child][0]:
-                stack.append((child, (cm @ m, ct @ m + t, mirrored != flip)))
+                stack.append(
+                    (child, (fv.matmul(cm, m), fv.matmul(ct, m) + t, mirrored != flip))
+                )
     return np.concatenate(pieces) if pieces else np.zeros((0, 3, 3))

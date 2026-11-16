@@ -126,7 +126,7 @@ def _rotations() -> tuple[Rotation, ...]:
     for perm in itertools.permutations(range(3)):
         swaps = sum(1 for i in range(3) for j in range(i + 1, 3) if perm[i] > perm[j])
         for signs in itertools.product((1, -1), repeat=3):
-            if (-1) ** swaps * signs[0] * signs[1] * signs[2] == 1:
+            if (-1 if swaps % 2 else 1) * signs[0] * signs[1] * signs[2] == 1:
                 found.append(
                     ((perm[0], perm[1], perm[2]), (signs[0], signs[1], signs[2]))
                 )

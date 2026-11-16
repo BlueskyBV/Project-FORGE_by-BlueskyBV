@@ -26,6 +26,7 @@ from forge_geom import (
     refine_extents,
     surface_samples,
 )
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 
@@ -90,7 +91,7 @@ class ImplicitView:
         if not len(points):
             return points.reshape(0, 3), points.reshape(0, 3)
         gradient = self.solid.gradient(points)
-        length = np.linalg.norm(gradient, axis=1)
+        length = fv.norm(gradient, axis=1)
         keep = length > 1e-9
         return points[keep], gradient[keep] / length[keep, None]
 

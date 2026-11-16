@@ -36,6 +36,8 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from forge_numeric import scalar as fs
+
 from .outlines import Arc, Outline, Segment, crossings
 
 __all__ = ["Bulge", "ConvexError", "Pieces", "Side", "convex_pieces", "sides_in_turn"]
@@ -74,7 +76,7 @@ class Bulge:
 
     def area(self) -> float:
         r, sweep = self.arc.radius, self.arc.sweep
-        return r * r * (sweep - math.sin(sweep)) / 2
+        return r * r * (sweep - fs.sin(sweep)) / 2
 
 
 @dataclass(frozen=True)

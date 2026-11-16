@@ -40,6 +40,8 @@ from itertools import pairwise
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.BRep import BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Surface
@@ -141,7 +143,7 @@ class Boundary:
     def _arc_height(self, k: NDArray[np.int64], u: Array) -> Array:
         c, r = self.centre[k], self.radius[k]
         found: Array = c[:, 1] + self.half[k] * np.sqrt(
-            np.maximum(r * r - (u - c[:, 0]) ** 2, 0.0)
+            np.maximum(r * r - fv.sq(u - c[:, 0]), 0.0)
         )
         return found
 
@@ -157,15 +159,15 @@ class Boundary:
     def _on_arc(self, k: int, u: Array, v: Array) -> Mask:
         a, b, c = self.arc_a[k], self.arc_b[k], self.centre[k]
         ulo, uhi = min(a[0], b[0]), max(a[0], b[0])
-        d = np.hypot(u - c[0], v - c[1])
+        d = fv.hypot(u - c[0], v - c[1])
         along = (
             (np.abs(d - self.radius[k]) <= ON)
             & (u >= ulo)
             & (u <= uhi)
             & (self.half[k] * (v - c[1]) >= -ON)
         )
-        ends = (np.hypot(u - a[0], v - a[1]) <= ON) | (
-            np.hypot(u - b[0], v - b[1]) <= ON
+        ends = (fv.hypot(u - a[0], v - a[1]) <= ON) | (
+            fv.hypot(u - b[0], v - b[1]) <= ON
         )
         found: Mask = along | ends
         return found
@@ -283,10 +285,10 @@ def _span(lo: float, hi: float, ascending: Array) -> slice:
 def _distance(u: Array, v: Array, a: Array, b: Array) -> Array:
     """Each point's distance to the segment a-b (``u`` and ``v`` broadcast together)."""
     d = b - a
-    length2 = float(d @ d)
+    length2 = float(fv.matmul(d, d))
     pu, pv = u - a[0], v - a[1]
     t = np.clip((pu * d[0] + pv * d[1]) / length2, 0.0, 1.0) if length2 > 0 else 0.0
-    found: Array = np.hypot(pu - t * d[0], pv - t * d[1])
+    found: Array = fv.hypot(pu - t * d[0], pv - t * d[1])
     return found
 
 
@@ -306,7 +308,7 @@ def _circle(found: _Pieces, curve: Any, t0: float, t1: float) -> None:
     radius = float(circle.Radius())
     x, y = circle.XAxis().Direction(), circle.YAxis().Direction()
     # u(t) = cu + R (cos t · Xu + sin t · Yu) is least or greatest where tan t = Yu / Xu.
-    first = math.atan2(y.X(), x.X())
+    first = fs.atan2(y.X(), x.X())
     lo, hi = min(t0, t1), max(t0, t1)
     k = math.ceil((lo - first) / math.pi)
     cuts = []
@@ -343,7 +345,7 @@ def _follow(
                 [_point(curve, float(t)) for t in ts[:-1] + share * (ts[1:] - ts[:-1])]
             )
             chord = points[:-1] + share * (points[1:] - points[:-1])
-            error = max(error, float(np.max(np.linalg.norm(between - chord, axis=1))))
+            error = max(error, float(np.max(fv.norm(between - chord, axis=1))))
         band = _BAND * error + ON
         if band <= narrow * scale or n >= _FOLLOW_MOST:
             break
@@ -359,7 +361,7 @@ def _close(
     if not starts:
         return
     s, e = np.array(starts), np.array(ends)
-    gaps = np.linalg.norm(e[:, None, :] - s[None, :, :], axis=2)
+    gaps = fv.norm(e[:, None, :] - s[None, :, :], axis=2)
     end_free = np.ones(len(e), dtype=bool)
     start_free = np.ones(len(s), dtype=bool)
     for flat in np.argsort(gaps, axis=None):

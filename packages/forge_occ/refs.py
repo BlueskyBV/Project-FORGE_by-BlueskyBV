@@ -22,6 +22,7 @@ from typing import Any
 
 import numpy as np
 from forge_ir.v2 import EdgeQuery, FaceQuery, Match, Reference, Where
+from forge_numeric import vector as fv
 from OCP.Bnd import Bnd_Box
 from OCP.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface
 from OCP.BRepBndLib import BRepBndLib
@@ -144,19 +145,19 @@ def _fails(facts: Facts, where: Where) -> str | None:
     if where.kind is not None and facts.kind != where.kind:
         return f"kind is {facts.kind}, not {where.kind}"
     if where.axis is not None:
-        wanted = np.asarray(where.axis) / np.linalg.norm(where.axis)
+        wanted = np.asarray(where.axis) / fv.norm(where.axis)
         if facts.axis is None or facts.kind == "plane":
             return (
                 "has no axis" if facts.axis is None else "is a plane, not round an axis"
             )
-        if abs(abs(float(facts.axis @ wanted)) - 1.0) > ANGLE:
+        if abs(abs(float(fv.matmul(facts.axis, wanted))) - 1.0) > ANGLE:
             return "its axis runs another way"
     if where.normal is not None:
-        wanted = np.asarray(where.normal) / np.linalg.norm(where.normal)
+        wanted = np.asarray(where.normal) / fv.norm(where.normal)
         if (
             facts.kind != "plane"
             or facts.axis is None
-            or float(facts.axis @ wanted) < 1.0 - ANGLE
+            or float(fv.matmul(facts.axis, wanted)) < 1.0 - ANGLE
         ):
             return "doesn't face that way"
     if where.radius_mm is not None and (
@@ -167,20 +168,20 @@ def _fails(facts: Facts, where: Where) -> str | None:
         c = np.asarray(where.centre, dtype=np.float64)
         if facts.kind not in ("circle", "sphere") or facts.point is None:
             return f"is a {facts.kind}, which has no centre"
-        if float(np.linalg.norm(c - facts.point)) > LENGTH:
+        if float(fv.norm(c - facts.point)) > LENGTH:
             return "its centre isn't the point"
     if where.through is not None:
         p = np.asarray(where.through, dtype=np.float64)
         if facts.point is None:
             return "has no axis or plane to pass through the point"
         if facts.kind == "plane" and facts.axis is not None:
-            if abs(float((p - facts.point) @ facts.axis)) > LENGTH:
+            if abs(float(fv.matmul(p - facts.point, facts.axis))) > LENGTH:
                 return "its plane misses the point"
         elif facts.axis is not None:
             off = p - facts.point
-            if float(np.linalg.norm(off - (off @ facts.axis) * facts.axis)) > LENGTH:
+            if float(fv.norm(off - (fv.matmul(off, facts.axis)) * facts.axis)) > LENGTH:
                 return "its axis misses the point"
-        elif float(np.linalg.norm(p - facts.point)) > LENGTH:
+        elif float(fv.norm(p - facts.point)) > LENGTH:
             return "its centre isn't the point"
     return None
 
@@ -419,9 +420,9 @@ def _check(match: Match, kept: list[Facts], dropped: list[dict[str, Any]], *, wh
         same = all(
             f.radius is not None and first.radius is not None and abs(f.radius - first.radius) <= LENGTH
             and f.point is not None and first.point is not None
-            and float(np.linalg.norm(f.point - first.point)) <= LENGTH
+            and float(fv.norm(f.point - first.point)) <= LENGTH
             and f.axis is not None and first.axis is not None
-            and abs(abs(float(f.axis @ first.axis)) - 1.0) <= ANGLE
+            and abs(abs(float(fv.matmul(f.axis, first.axis))) - 1.0) <= ANGLE
             for f in kept
         )  # fmt: skip
         if not same:

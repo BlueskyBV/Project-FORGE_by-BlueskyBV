@@ -36,6 +36,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Protocol
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import (
     AxisPosition,
     Choice,
@@ -169,7 +170,7 @@ def turn(degrees: float) -> tuple[float, float]:
     c, s = (
         (1.0, 0.0)
         if rest == 0.0
-        else (math.cos(math.radians(rest)), math.sin(math.radians(rest)))
+        else (fs.cos(math.radians(rest)), fs.sin(math.radians(rest)))
     )
     for _ in range(quarters % 4):
         c, s = -s, c
@@ -827,8 +828,8 @@ def section_of(item: Item) -> Outline:
             sides.append(Segment(here, segment.to))
         else:
             c = segment.centre
-            first = math.atan2(here[1] - c[1], here[0] - c[0])
-            last = math.atan2(segment.to[1] - c[1], segment.to[0] - c[0])
+            first = fs.atan2(here[1] - c[1], here[0] - c[0])
+            last = fs.atan2(segment.to[1] - c[1], segment.to[0] - c[0])
             sweep = ((first - last) if segment.clockwise else (last - first)) % (
                 2 * math.pi
             )

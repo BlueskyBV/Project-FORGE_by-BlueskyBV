@@ -6,6 +6,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Item
 
 from forge_checks import rounds
@@ -106,7 +107,7 @@ def _round_tab_chains(
     found = []
     for f1, f2 in pairs:
         edge = _box_edge(_vec(lo), _vec(hi), f1, f2)
-        rising = float(np.asarray(edge.along) @ np.asarray(f.v)) > 0
+        rising = float(fv.matmul(np.asarray(edge.along), np.asarray(f.v))) > 0
         found.append(
             rounds.Chain((edge,), clean=(True, False) if rising else (False, True))
         )

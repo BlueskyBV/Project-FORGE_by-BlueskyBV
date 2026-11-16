@@ -134,6 +134,48 @@ class EachFunctionIsAccurate(unittest.TestCase):
             s, c = fs.sincos(x)
             self.assertTrue(_same(s, fs.sin(x)) and _same(c, fs.cos(x)), x)
 
+    def test_log1p_and_expm1_within_two_ulps(self) -> None:
+        for name, lo, hi in (("log1p", -60, 10), ("expm1", -60, 10)):
+            f, ref = getattr(fs, name), getattr(math, name)
+            xs = _inputs(40000, lo, hi, 31).tolist() + SPECIALS
+            worst = 0
+            for x in xs:
+                try:
+                    want = ref(x)
+                except (ValueError, OverflowError) as error:
+                    with self.subTest(name=name, x=x), self.assertRaises(type(error)):
+                        f(x)
+                    continue
+                worst = max(worst, _ulps(f(x), want))
+            with self.subTest(name=name):
+                self.assertLessEqual(worst, 2)
+
+    def test_decade_is_the_written_power_of_ten(self) -> None:
+        for x, want in ((1.0, 0), (1000.0, 3), (999.9999999999999, 2), (0.001, -3),
+                        (1e-299, -299), (5e-324, -324), (1.7976931348623157e308, 308),
+                        (np.float64(250.0), 2), (9.999999999999998e22, 22)):  # fmt: skip
+            with self.subTest(x=x):
+                self.assertEqual(fs.decade(x), want)
+        for k in range(-300, 300):
+            self.assertEqual(fs.decade(10.0**k), k)
+        for bad in (0.0, -1.0, math.nan):
+            with self.assertRaises(ValueError):
+                fs.decade(bad)
+
+    def test_log_of_integers_past_a_float(self) -> None:
+        for n in (10**400, 3**2000, 2**1000 + 1, 7**5000):
+            self.assertLessEqual(abs(fs.log(n) - math.log(n)), 4e-16 * math.log(n))
+        self.assertEqual(fs.log(2**20), fs.log(float(2**20)))
+
+    def test_numbers_give_numpy_floats(self) -> None:
+        for value in (fv.sin(1.0), fv.arctan2(1.0, 2.0), fv.hypot(3.0, 4.0), fv.exp(0.5),
+                      fv.norm([3.0, 4.0]), fv.dot([1.0, 2.0], [3.0, 4.0]),
+                      fv.matmul([1.0, 2.0], [3.0, 4.0]), fv.interp(0.5, [0.0, 1.0], [0.0, 2.0]),
+                      fv.det(np.eye(3)), fv.normal(np.random.default_rng(0))):  # fmt: skip
+            self.assertIs(type(value), np.float64)
+        self.assertEqual(fv.hypot(3.0, 4.0), 5.0)
+        self.assertEqual(fv.sin(np.zeros((2, 0))).shape, (2, 0))
+
 
 class TheArraysAreTheScalarsBitForBit(unittest.TestCase):
     def _check(self, vector, scalar, xs: np.ndarray) -> None:
@@ -191,10 +233,15 @@ class GoldenDigests(unittest.TestCase):
         "dot": "7b603503f92c8236",
         "matmul": "19149feff4259fb3",
         "norm": "37032df40cd6ebef",
-        "solve": "80c4d08dcbc1d5e4",
+        "solve": "189c97770290e01a",
         "eigh": "d9439e6f128e786f",
         "real_roots": "0b0d21e414beb779",
         "sum": "7d6cc1fdc2eada4c",
+        "log1p": "28d6b12c27880566",
+        "expm1": "67535d6596fb1e0d",
+        "interp": "3dbf840b9a61d032",
+        "normal": "5754b61e72364619",
+        "roots": "c61ed0aa6e688edf",
     }
 
     @staticmethod
@@ -241,6 +288,21 @@ class GoldenDigests(unittest.TestCase):
         found["sum"] = _digest(
             np.array(
                 [np.sum(_inputs(n, -30, 30, 20 + n)) for n in (3, 7, 8, 9, 100, 12345)]
+            )
+        )
+        small = _inputs(20000, -60, 6, 21)
+        found["log1p"] = _digest(np.array([fs.log1p(abs(x)) for x in small.tolist()]))
+        found["expm1"] = _digest(np.array([fs.expm1(x) for x in small.tolist()]))
+        xp = np.cumsum(np.abs(_inputs(200, -3, 3, 22)))
+        found["interp"] = _digest(
+            fv.interp(_inputs(5000, -2, 8, 23), xp, _inputs(200, -3, 3, 24))
+        )
+        found["normal"] = _digest(fv.normal(np.random.default_rng(25), 1.0, 2.0, 5000))
+        polys = _inputs(9 * 300, -3, 3, 26).reshape(300, 9)
+        found["roots"] = _digest(
+            *(
+                np.sort_complex(fv.roots(c[: 2 + k % 8])).view(np.float64)
+                for k, c in enumerate(polys)
             )
         )
         return found
@@ -301,22 +363,139 @@ class TheLinearAlgebraIsRight(unittest.TestCase):
         np.testing.assert_allclose(double, [0.0, 0.0, 1.0, 1.0], atol=1e-30)
 
 
+class TheShortcutsAreTheLongWayBitForBit(unittest.TestCase):
+    """Numbers and short vectors take Python-float shortcuts: each gives the bits the array path gives."""
+
+    def test_numbers(self) -> None:
+        xs = [*SPECIALS, *_inputs(3000, -40, 40, 51).tolist()]
+        for name, f in (("sin", fv.sin), ("cos", fv.cos), ("tan", fv.tan), ("arctan", fv.arctan),
+                        ("arcsin", fv.arcsin), ("arccos", fv.arccos), ("exp", fv.exp),
+                        ("log", fv.log), ("cbrt", fv.cbrt)):  # fmt: skip
+            with np.errstate(all="ignore"):
+                one = np.array([f(x) for x in xs])
+                many = f(np.array(xs + [0.0] * 30))[: len(xs)]
+            with self.subTest(name=name):
+                self.assertTrue(
+                    np.array_equal(one.view(np.uint64), many.view(np.uint64))
+                )
+        ys = list(reversed(xs))
+        for f in (fv.arctan2, fv.hypot):
+            with np.errstate(all="ignore"):
+                one = np.array([f(a, b) for a, b in zip(xs, ys, strict=True)])
+                many = f(np.array(xs + [1.0] * 30), np.array(ys + [2.0] * 30))[
+                    : len(xs)
+                ]
+            with self.subTest(name=f.__name__):
+                self.assertTrue(
+                    np.array_equal(one.view(np.uint64), many.view(np.uint64))
+                )
+        few = np.array(xs[:12]), np.array(ys[:12])
+        with np.errstate(all="ignore"):
+            self.assertTrue(np.array_equal(fv.hypot(*few).view(np.uint64),
+                                           fv.hypot(np.concatenate([few[0], np.ones(40)]), np.concatenate([few[1], np.ones(40)]))[:12].view(np.uint64)))  # fmt: skip
+
+    def test_short_vectors(self) -> None:
+        rng = np.random.default_rng(52)
+        for k in range(1, 9):
+            for _ in range(50):
+                a, b = (
+                    rng.normal(size=k) * 10.0 ** rng.integers(-3, 4),
+                    rng.normal(size=k),
+                )
+                m = rng.normal(size=(int(rng.integers(1, 17)), k))
+                self.assertEqual(
+                    fv.dot(a, b).view(np.uint64),
+                    fv.dot(a[None], b[None])[0].view(np.uint64),
+                )
+                self.assertEqual(
+                    fv.matmul(a, b).view(np.uint64),
+                    fv.matmul(a[None], b[:, None])[0, 0].view(np.uint64),
+                )
+                self.assertTrue(
+                    np.array_equal(
+                        fv.matmul(m, b).view(np.uint64),
+                        fv.matmul(m, b[:, None])[:, 0].view(np.uint64),
+                    )
+                )
+                self.assertEqual(
+                    fv.norm(a).view(np.uint64),
+                    fv.norm(a[None], axis=1)[0].view(np.uint64),
+                )
+                self.assertTrue(
+                    np.array_equal(
+                        fv.unit(a).view(np.uint64), fv.unit(a[None])[0].view(np.uint64)
+                    )
+                )
+                many = rng.normal(size=(40, k))
+                stack, wide = rng.normal(size=(3, 5, k)), rng.normal(size=(k, 4))
+                for left, right, long_way in (
+                    (many, b, fv.matmul(many, b[:, None])[:, 0]),
+                    (stack, b, fv.matmul(stack, b[:, None])[..., 0]),
+                    (a, wide, fv.matmul(a[None], wide)[0]),
+                ):
+                    self.assertTrue(
+                        np.array_equal(
+                            fv.matmul(left, right).view(np.uint64),
+                            long_way.view(np.uint64),
+                        )
+                    )
+
+
+class TheNewcomersAreNumPys(unittest.TestCase):
+    """interp, roots and normal against NumPy's: the same numbers to rounding, or the same law."""
+
+    def test_interp(self) -> None:
+        rng = np.random.default_rng(4)
+        for k in range(300):
+            xp = np.unique(rng.uniform(-10, 10, int(rng.integers(1, 30))))
+            fp = rng.normal(size=len(xp)) * 10.0
+            if k % 5 == 0:
+                fp[: len(fp) // 2] = 3.0
+            x = np.concatenate(
+                [rng.uniform(-12, 12, 40), xp, [np.nan, np.inf, -np.inf]]
+            )
+            np.testing.assert_allclose(
+                fv.interp(x, xp, fp), np.interp(x, xp, fp), rtol=1e-14, atol=1e-13
+            )
+        self.assertEqual(fv.interp(2.0, [1.0, 3.0], [10.0, 30.0]), 20.0)
+
+    def test_roots(self) -> None:
+        rng = np.random.default_rng(5)
+        for k in range(1000):
+            d = 1 + k % 8
+            c = rng.normal(size=d + 1) + (1j * rng.normal(size=d + 1) if k % 2 else 0.0)
+            ours, theirs = fv.roots(c), np.roots(c)
+            self.assertEqual(len(ours), len(theirs))
+            for z in theirs:
+                self.assertLess(
+                    float(np.min(np.abs(ours - z))), 1e-9 * max(1.0, abs(z))
+                )
+        self.assertEqual(len(fv.roots([0.0, 0.0, 1.0, -3.0, 2.0, 0.0])), 3)
+        self.assertEqual(sorted(fv.roots([1.0, -3.0, 2.0]).real.round(12)), [1.0, 2.0])
+
+    def test_normal(self) -> None:
+        z = fv.normal(np.random.default_rng(6), 1.0, 2.0, (400, 500))
+        self.assertEqual(z.shape, (400, 500))
+        self.assertAlmostEqual(float(np.mean(z)), 1.0, delta=0.02)
+        self.assertAlmostEqual(float(np.std(z)), 2.0, delta=0.02)
+        self.assertAlmostEqual(
+            float(np.mean(np.abs(z - 1.0) < 2.0)), 0.6827, delta=0.005
+        )
+
+
 class TheCompiledTwinIsNumPysBitForBit(unittest.TestCase):
     """The library in ``forge_numeric/_native`` (where this machine has one) against the NumPy twin."""
 
     def setUp(self) -> None:
         from forge_numeric import _native
 
-        if _native.LIB is None:
+        if fv._use is None:
             self.skipTest(f"no compiled twin here: {_native.WHY_NOT}")
 
     def _both(self, f, *args):
         native = f(*args)
-        saved, fv._use = fv._use, None
-        try:
+        with fv.numpy_twin():
             numpy = f(*args)
-        finally:
-            fv._use = saved
         return native, numpy
 
     def test_every_function(self) -> None:
@@ -353,12 +532,26 @@ class TheCompiledTwinIsNumPysBitForBit(unittest.TestCase):
 
     def test_the_golden_digests_both_ways(self) -> None:
         native = GoldenDigests.outputs()
-        saved, fv._use = fv._use, None
-        try:
+        with fv.numpy_twin():
             numpy = GoldenDigests.outputs()
-        finally:
-            fv._use = saved
         self.assertEqual(native, numpy)
+
+    def test_the_products(self) -> None:
+        rng = np.random.default_rng(53)
+        for k in range(1, 9):
+            a, b = rng.normal(size=(300, k)), rng.normal(size=(k, 5))
+            stack, v = rng.normal(size=(4, 50, k)), rng.normal(size=k)
+            for name, f, args in (
+                ("matmul", fv.matmul, (a, b)),
+                ("matmul, wide", fv.matmul, (a[:40], b)),
+                ("by a vector", fv.matmul, (stack, v)),
+                ("dot", fv.dot, (stack, stack[::-1])),
+            ):
+                native, numpy = self._both(f, *args)
+                with self.subTest(name=name, k=k):
+                    self.assertTrue(
+                        np.array_equal(native.view(np.uint64), numpy.view(np.uint64))
+                    )
 
     def test_the_library_is_built_from_the_source_beside_it(self) -> None:
         from forge_numeric import _native

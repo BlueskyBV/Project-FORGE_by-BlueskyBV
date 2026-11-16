@@ -41,6 +41,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .triangles import closest_points
@@ -120,14 +121,14 @@ class _Search:
         gap = np.maximum(
             np.maximum(tree.box_lo[tri] - here, here - tree.box_hi[tri]), 0.0
         )
-        close = np.einsum("ij,ij->i", gap, gap) <= self.best[who] * (1.0 + 1e-9)
+        close = fv.dot(gap, gap) <= self.best[who] * (1.0 + 1e-9)
         tri, who, here = tri[close], who[close], here[close]
         if not tri.size:
             return
         a, b, c, normal = self.corners
         q, r = closest_points(here, a[tri], b[tri], c[tri], normal[tri])
         gap = here - q
-        d2 = np.einsum("ij,ij->i", gap, gap)
+        d2 = fv.dot(gap, gap)
         # The nearest per query, the lowest-numbered triangle on a tie.
         names, slot = np.unique(who, return_inverse=True)
         least = np.full(len(names), np.inf)
@@ -271,7 +272,7 @@ class Tree:
         gap = np.maximum(
             np.maximum(self.lo[nodes] - points, points - self.hi[nodes]), 0.0
         )
-        return np.asarray(np.einsum("ij,ij->i", gap, gap), dtype=np.float64)
+        return np.asarray(fv.dot(gap, gap), dtype=np.float64)
 
     def nearest(
         self, points: Array, a: Array, b: Array, c: Array, normal: Array
@@ -320,7 +321,7 @@ class Tree:
                 continue
             q, _ = closest_points(points[who], a[tri], b[tri], c[tri], normal[tri])
             gap = points[who] - q
-            near = np.sqrt(np.einsum("ij,ij->i", gap, gap)) <= tolerances[who]
+            near = np.sqrt(fv.dot(gap, gap)) <= tolerances[who]
             out[who[near]] = True
         return out
 
@@ -349,7 +350,10 @@ class Tree:
                         (query[:half], node[:half]),
                     ]
                     continue
-                keep = self._box_distance2(points[query], node) <= radius[query] ** 2
+                keep = (
+                    self._box_distance2(points[query], node)
+                    <= radius[query] * radius[query]
+                )
                 query, node = query[keep], node[keep]
                 leaf = self.left[node] < 0
                 lq, ln = query[leaf], node[leaf]
@@ -362,7 +366,7 @@ class Tree:
                         np.maximum(self.box_lo[tri] - here, here - self.box_hi[tri]),
                         0.0,
                     )
-                    close = np.einsum("ij,ij->i", gap, gap) <= radius[who] ** 2
+                    close = fv.dot(gap, gap) <= radius[who] * radius[who]
                     yield who[close], tri[close]
                 query, node = query[~leaf], node[~leaf]
                 if query.size:
@@ -375,12 +379,12 @@ class Tree:
         """:meth:`within` for a tree of :data:`FEW` boxes or fewer: each batch of points against each box."""
         for first in range(0, len(points), _BATCH):
             here = points[first : first + _BATCH]
-            reach = radius[first : first + _BATCH] ** 2
+            reach = fv.sq(radius[first : first + _BATCH])
             for k in range(len(self.box_lo)):
                 gap = np.maximum(
                     np.maximum(self.box_lo[k] - here, here - self.box_hi[k]), 0.0
                 )
-                close = np.flatnonzero(np.einsum("ij,ij->i", gap, gap) <= reach)
+                close = np.flatnonzero(fv.dot(gap, gap) <= reach)
                 if len(close):
                     yield close + first, np.full(len(close), k, dtype=np.int64)
 

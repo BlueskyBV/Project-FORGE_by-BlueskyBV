@@ -17,6 +17,9 @@
 # mode pyexit:      the same, with stage 4's exit harness (tests/v2_exit4.py) on a contiguous seed range
 #                   (seeds "A-B"), split over the shards: parts built, judged and graded, mutants,
 #                   impossible specs, and every tenth part's second kernel and files.
+# mode exitpair:    stage 4's exit harness on a contiguous seed range (seeds "A-B"), split over the shards, on
+#                   the branch named by base and on this commit, one after the other on the same runner, under
+#                   the Python named by python: old code against new (its records held by compare).
 # mode compare:     a finished pair run's records (run_id) merged and held against each other here, so
 #                   only the summary has to be fetched.
 # mode coverage_report: a finished coverage run's data (run_id) combined here, and the step-0 inventory's
@@ -29,7 +32,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair, pypair, pyexit, tests, coverage, coverage_report or compare"
+        description: "fingerprint, pair, pypair, pyexit, exitpair, tests, coverage, coverage_report or compare"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -163,6 +166,18 @@ jobs:
             python3.13 tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/base/shard-$SHARD" || true
             $B tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" || true
           fi
+      - name: Exit pair
+        if: inputs.mode == 'exitpair'
+        env:
+          PYTHONHASHSEED: ${{ inputs.hash_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          read FROM TO < <(python -c "import sys; a, b = map(int, sys.argv[1].split('-')); n, k = int(sys.argv[2]), int(sys.argv[3]); print(a + (b - a) * k // n, a + (b - a) * (k + 1) // n)" "$SEEDS" "$SHARDS" "$SHARD")
+          for side in base fin; do
+            (cd $side && python tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD") || true
+          done
       - name: Tests
         if: inputs.mode == 'tests'
         env:

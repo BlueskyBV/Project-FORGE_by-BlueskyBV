@@ -39,6 +39,8 @@ import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
+from forge_numeric import scalar as fs
+
 from .draft import (
     PATTERN_ANGLES,
     AxisPosition,
@@ -960,7 +962,7 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
         cone = (
             (mm(sink.diameter) - hole)
             / 2
-            / math.tan(math.radians(degrees(sink.angle)) / 2)
+            / fs.tan(math.radians(degrees(sink.angle)) / 2)
         )
         deep.append(
             (
@@ -1169,7 +1171,7 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
 
     def apart(j: int, i: int) -> tuple[float, float]:
         """How far apart two points are, round the side (the straight line) and along it."""
-        return 2 * radius * abs(math.sin((points[i][0] - points[j][0]) / 2)), abs(
+        return 2 * radius * abs(fs.sin((points[i][0] - points[j][0]) / 2)), abs(
             points[i][1] - points[j][1]
         )
 
@@ -1183,7 +1185,7 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
         )
 
     if radius > EPS and reach_ < 2 * radius:
-        turn_cell = 2 * math.asin(reach_ / (2 * radius))
+        turn_cell = 2 * fs.asin(reach_ / (2 * radius))
     else:
         turn_cell = 2 * math.pi
     pair = first_close_pair(

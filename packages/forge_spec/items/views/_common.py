@@ -11,6 +11,8 @@ import math
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 from forge_spec.draft import Choice, Fit, Item, Profile, Through, outline_points
 from forge_spec.geometry import EPS, Vec
 from forge_spec.items.words._common import _n as number
@@ -110,7 +112,7 @@ def _cross(a: Vec, b: Vec) -> Vec:
 
 
 def _unit(a: Vec) -> Vec:
-    n = math.sqrt(a[0] ** 2 + a[1] ** 2 + a[2] ** 2)
+    n = math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
     return a[0] / n, a[1] / n, a[2] / n
 
 
@@ -125,7 +127,7 @@ def _disc(
     points = []
     for step in range(48):
         t = 2 * math.pi * step / 48
-        c, s = math.cos(t), math.sin(t)
+        c, s = fs.cos(t), fs.sin(t)
         points.append(canvas.at((centre[0] + r * (c * e1[0] + s * e2[0]), centre[1] + r * (c * e1[1] + s * e2[1]),
                                  centre[2] + r * (c * e1[2] + s * e2[2]))))  # fmt: skip
     return points

@@ -34,6 +34,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 
@@ -169,7 +170,7 @@ class Coverage:
         _array(self.tolerance, (n,), "a coverage's tolerances", floating=True)
         if (self.tolerance < 0.0).any():
             raise ViewError("a coverage's tolerances can't be negative")
-        length = np.sqrt(np.einsum("ij,ij->i", self.normals, self.normals))
+        length = np.sqrt(fv.dot(self.normals, self.normals))
         if not np.all(np.abs(length - 1.0) <= 1e-9):  # NaN fails too
             raise ViewError("a coverage's normals must be unit")
         if not (
@@ -510,7 +511,7 @@ def _unit(directions: Array) -> Array:
     if (biggest == 0.0).any():
         raise ValueError("a ray needs a direction")
     scaled = directions / biggest[:, None]
-    return np.asarray(scaled / np.sqrt(np.einsum("ij,ij->i", scaled, scaled))[:, None])
+    return np.asarray(scaled / np.sqrt(fv.dot(scaled, scaled))[:, None])
 
 
 class ViewProxy:

@@ -32,6 +32,8 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
 from OCP.BRepLib import BRepLib
 from OCP.BRepOffsetAPI import BRepOffsetAPI_MakePipeShell, BRepOffsetAPI_ThruSections
@@ -87,8 +89,8 @@ def _on_plane(face: Any, point: Array, normal: Array) -> bool:
         return False
     origin, n = found
     return bool(
-        abs(abs(float(n @ normal)) - 1.0) < 1e-9
-        and abs(float((origin - point) @ normal)) < 1e-6
+        abs(abs(float(fv.matmul(n, normal))) - 1.0) < 1e-9
+        and abs(float(fv.matmul(origin - point, normal))) < 1e-6
     )
 
 
@@ -159,9 +161,9 @@ def extrusion(
     low = frame.moved(z * offset)
     face = profile.face(low)
     if taper:
-        angle = math.atan(taper)
+        angle = fs.atan(taper)
         with boundary("a drafted extrusion"):
-            drafted = LocOpe_DPrism(face, distance / math.cos(angle), angle)
+            drafted = LocOpe_DPrism(face, distance / fs.cos(angle), angle)
             shape = drafted.Shape()
         if shape.IsNull():
             raise OperationError("OpenCascade could not draft the extrusion")
@@ -218,7 +220,9 @@ def _prism_expect(face: Any, distance: float, taper: float) -> tuple[float, floa
     if taper < 0.0:
         t, h = -taper, distance
         steiner = (
-            prism + perimeter(face) * t * h * h / 2.0 + math.pi * t * t * h**3 / 3.0
+            prism
+            + perimeter(face) * t * h * h / 2.0
+            + math.pi * t * t * (h * h * h) / 3.0
         )
         return (
             prism,
@@ -272,7 +276,7 @@ def _extrude(ctx: Context) -> Product:
         ctx.step, source.profile, source.frame, offset=offset, distance=distance,
         start_round=radius if near else 0.0, end_round=radius if far else 0.0,
         start_chamfer=chamfer if near else 0.0, end_chamfer=chamfer if far else 0.0,
-        taper=math.tan(ctx.angle("draft_angle", 0.0)),
+        taper=fs.tan(ctx.angle("draft_angle", 0.0)),
     )  # fmt: skip
 
 
@@ -328,17 +332,19 @@ def _revolve(ctx: Context) -> Product:
         plane = _plane_of(f) if full else None
         if plane is not None:
             at, normal = plane
-            height = float((at - origin) @ d)
-            if float(normal @ d) > 1.0 - 1e-9 and abs(height - v_hi) <= 1e-7:
+            height = float(fv.matmul(at - origin, d))
+            if float(fv.matmul(normal, d)) > 1.0 - 1e-9 and abs(height - v_hi) <= 1e-7:
                 found.append(Name(ctx.step, "top"))
-            elif float(normal @ d) < -1.0 + 1e-9 and abs(height - v_lo) <= 1e-7:
+            elif (
+                float(fv.matmul(normal, d)) < -1.0 + 1e-9 and abs(height - v_lo) <= 1e-7
+            ):
                 found.append(Name(ctx.step, "base"))
         return tuple(found)
 
     # Pappus: the section's area times the path of its centroid.
     area = surface_area(face)
     centre = np.asarray(area_centroid(face)) - origin
-    reach = float(np.linalg.norm(centre - (centre @ d) * d))
+    reach = float(fv.norm(centre - (fv.matmul(centre, d)) * d))
     swept = area * reach * (2.0 * math.pi if full else angle)
     return SolidProduct(
         shape,
@@ -377,7 +383,7 @@ def _path(points: Sequence[Sequence[float]], radius: float) -> list[_Run | _Bend
     # Points written twice in a row are one.
     kept = [pts[0]]
     for p in pts[1:]:
-        if float(np.linalg.norm(p - kept[-1])) > 1e-9:
+        if float(fv.norm(p - kept[-1])) > 1e-9:
             kept.append(p)
     if len(kept) < 2:
         raise DesignError("a path needs two different points")
@@ -386,19 +392,19 @@ def _path(points: Sequence[Sequence[float]], radius: float) -> list[_Run | _Bend
     for i in range(1, len(kept) - 1):
         here, before, after = kept[i], kept[i - 1], kept[i + 1]
         a, b = before - here, after - here
-        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        la, lb = float(fv.norm(a)), float(fv.norm(b))
         a, b = a / la, b / lb
-        angle = math.acos(float(np.clip(a @ b, -1.0, 1.0)))
+        angle = fs.acos(float(np.clip(fv.matmul(a, b), -1.0, 1.0)))
         if radius <= 0.0 or angle < 1e-6 or angle > math.pi - 1e-6:
             pieces.append(_Run(cursor, here, unit(here - cursor)))
             cursor = here
             continue
-        cut = min(radius / math.tan(angle / 2.0), la / 2.0, lb / 2.0)
-        r = cut * math.tan(angle / 2.0)
+        cut = min(radius / fs.tan(angle / 2.0), la / 2.0, lb / 2.0)
+        r = cut * fs.tan(angle / 2.0)
         start, end = here + a * cut, here + b * cut
-        bisector = (a + b) / float(np.linalg.norm(a + b))
-        centre = here + bisector * (r / math.sin(angle / 2.0))
-        if float(np.linalg.norm(start - cursor)) > 1e-9:
+        bisector = (a + b) / float(fv.norm(a + b))
+        centre = here + bisector * (r / fs.sin(angle / 2.0))
+        if float(fv.norm(start - cursor)) > 1e-9:
             pieces.append(_Run(cursor, start, unit(start - cursor)))
         turn_axis = unit(np.cross(-a, b))
         pieces.append(_Bend(start, end, centre, turn_axis, math.pi - angle, r))
@@ -415,7 +421,7 @@ def _first_frame(tangent: Array) -> tuple[Array, Array]:
         else np.array([1.0, 0.0, 0.0])
     )
     normal = np.cross(helper, tangent)
-    normal = normal / np.linalg.norm(normal)
+    normal = normal / fv.norm(normal)
     return normal, np.cross(tangent, normal)
 
 
@@ -434,11 +440,11 @@ def _tangent_out(piece: _Run | _Bend) -> Array:
 def _turn(before: Array, after: Array) -> Array:
     """The rotation that takes tangent ``before`` to ``after`` about their common normal (identity if they agree)."""
     axis = np.cross(before, after)
-    s = float(np.linalg.norm(axis))
-    c = float(np.clip(before @ after, -1.0, 1.0))
+    s = float(fv.norm(axis))
+    c = float(np.clip(fv.matmul(before, after), -1.0, 1.0))
     if s < 1e-12:
         return np.eye(3)
-    return rotation_about(axis / s, math.atan2(s, c))
+    return rotation_about(axis / s, fs.atan2(s, c))
 
 
 def _section_frames(pieces: Sequence[_Run | _Bend]) -> list[tuple[Array, Array]]:
@@ -448,11 +454,11 @@ def _section_frames(pieces: Sequence[_Run | _Bend]) -> list[tuple[Array, Array]]
     previous = _tangent_in(pieces[0])
     for piece in pieces:
         r = _turn(previous, _tangent_in(piece))
-        normal, binormal = r @ normal, r @ binormal
+        normal, binormal = fv.matmul(r, normal), fv.matmul(r, binormal)
         frames.append((normal, binormal))
         if isinstance(piece, _Bend):
             r = rotation_about(piece.axis, piece.angle)
-            normal, binormal = r @ normal, r @ binormal
+            normal, binormal = fv.matmul(r, normal), fv.matmul(r, binormal)
         previous = _tangent_out(piece)
     return frames
 
@@ -486,16 +492,24 @@ def _sweep(ctx: Context) -> Product:
         # A straight run, lengthened at a sharp turn as V1 lengthens it.
         pad_lo = pad_hi = 0.0
         if index > 0 and isinstance(pieces[index - 1], _Run):
-            turn = math.acos(
-                float(np.clip(piece.tangent @ _tangent_out(pieces[index - 1]), -1, 1))
+            turn = fs.acos(
+                float(
+                    np.clip(
+                        fv.matmul(piece.tangent, _tangent_out(pieces[index - 1])), -1, 1
+                    )
+                )
             )
-            pad_lo = reach * math.tan(min(turn, 1.4) / 2.0)
+            pad_lo = reach * fs.tan(min(turn, 1.4) / 2.0)
         if index + 1 < len(pieces) and isinstance(pieces[index + 1], _Run):
-            turn = math.acos(
-                float(np.clip(piece.tangent @ _tangent_in(pieces[index + 1]), -1, 1))
+            turn = fs.acos(
+                float(
+                    np.clip(
+                        fv.matmul(piece.tangent, _tangent_in(pieces[index + 1])), -1, 1
+                    )
+                )
             )
-            pad_hi = reach * math.tan(min(turn, 1.4) / 2.0)
-        length = float(np.linalg.norm(piece.end - piece.start))
+            pad_hi = reach * fs.tan(min(turn, 1.4) / 2.0)
+        length = float(fv.norm(piece.end - piece.start))
         origin = piece.start - piece.tangent * pad_lo
         frame = Frame.through(origin, normal, binormal, piece.tangent)
         run = extrusion(
@@ -529,7 +543,7 @@ def _tube(
     for index, piece in enumerate(pieces):
         with boundary("a tube's piece"):
             if isinstance(piece, _Run):
-                length = float(np.linalg.norm(piece.end - piece.start))
+                length = float(fv.norm(piece.end - piece.start))
                 shape = BRepPrimAPI_MakeCylinder(
                     gp_Ax2(gp_Pnt(*piece.start), gp_Dir(*piece.tangent)), radius, length
                 ).Shape()
@@ -688,15 +702,15 @@ def _loft(ctx: Context) -> Product:
     first, second = ctx.profile(0), ctx.profile(1)
     a, b = first.frame, second.frame
     na, nb = np.asarray(a.z), np.asarray(b.z)
-    if abs(abs(float(na @ nb)) - 1.0) > 1e-6:
+    if abs(abs(float(fv.matmul(na, nb))) - 1.0) > 1e-6:
         raise ctx.fail(DesignError("a loft's two profiles must lie on parallel planes"))
     if (
-        float(np.asarray(b.x) @ np.asarray(a.x)) < 0
-        or float(np.asarray(b.y) @ np.asarray(a.y)) < 0
+        float(fv.matmul(np.asarray(b.x), np.asarray(a.x))) < 0
+        or float(fv.matmul(np.asarray(b.y), np.asarray(a.y))) < 0
     ):
         raise ctx.fail(DesignError(
             "a loft's two profiles must be sketched on planes facing the same way"))  # fmt: skip
-    height = float((np.asarray(b.origin) - np.asarray(a.origin)) @ na)
+    height = float(fv.matmul(np.asarray(b.origin) - np.asarray(a.origin), na))
     if abs(height) < 1e-9:
         raise ctx.fail(
             DesignError("the two profiles of a loft must be on different planes")

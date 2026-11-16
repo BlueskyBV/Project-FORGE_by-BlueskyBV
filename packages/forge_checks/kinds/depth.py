@@ -30,6 +30,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import scalar as fs
 
 from ..classes import Tolerance, Verdict, bracket_mutants
 from ..measure import Measurement, Probe, basis
@@ -79,8 +80,8 @@ def _open(target: Open, probe: Probe) -> Measurement:
             target.radius
             * scale
             * (
-                math.cos(angle + k * math.pi / 2) * e1
-                + math.sin(angle + k * math.pi / 2) * e2
+                fs.cos(angle + k * math.pi / 2) * e1
+                + fs.sin(angle + k * math.pi / 2) * e2
             )
             for scale, k in ((0.1, 0.5), (0.5, 0), (0.5, 1), (0.5, 2), (0.5, 3))
         ]

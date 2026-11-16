@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 from forge_spec.draft import (
     Counterbore,
     Countersink,
@@ -87,7 +89,7 @@ class Hole(SolveKind):
             cone = (
                 (mm(sink.diameter) - hole)
                 / 2
-                / math.tan(math.radians(degrees(sink.angle)) / 2)
+                / fs.tan(math.radians(degrees(sink.angle)) / 2)
             )
             if cone >= mm(depth) - EPS:
                 layout.problem("question", at + pointer("countersink"),

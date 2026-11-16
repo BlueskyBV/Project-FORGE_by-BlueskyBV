@@ -11,7 +11,10 @@ functions on NumPy arrays, step for step, so the two agree bit for bit.
 The algorithms are FreeBSD's msun, derived from Sun's fdlibm (their notice
 below), each with its proven bound: under one unit in the last place
 (ulp) for ``sin``, ``cos``, ``atan``, ``atan2``, ``asin``, ``acos``, ``exp``,
-``log``, ``cbrt`` and ``hypot``; ``tan`` is ``sin / cos`` (under two ulps).
+``expm1``, ``log``, ``log1p``, ``cbrt`` and ``hypot``; ``tan`` is
+``sin / cos`` (under two ulps). ``decade`` is ``floor(log10(x))``, exactly;
+``sq`` and ``cube`` are products, for ``x ** 2`` and ``x ** 3`` (which call
+the C library's ``pow``).
 Arguments too large for the argument reduction's three-part pi/2
 (|x| >= 2^20 pi/2) are reduced exactly with integers.
 
@@ -30,8 +33,10 @@ rounded everywhere.
 from __future__ import annotations
 
 import math
+from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
+from typing import cast
 
 from ._bits import bits, from_bits, from_high, high, with_low_zero
 
@@ -42,10 +47,15 @@ __all__ = [
     "atan2",
     "cbrt",
     "cos",
+    "cube",
+    "decade",
     "exp",
+    "expm1",
     "log",
+    "log1p",
     "sin",
     "sincos",
+    "sq",
     "tan",
 ]
 
@@ -497,6 +507,8 @@ def exp(x: float) -> float:
     return math.ldexp(y, k)
 
 
+#: Integers above this are taken apart before converting (float() of them would overflow).
+_LARGEST_INT = 1 << 1000
 LG1 = 6.666666666666735130e-01
 LG2 = 3.999999999940941908e-01
 LG3 = 2.857142874366239149e-01
@@ -507,6 +519,12 @@ LG7 = 1.479819860511658591e-01
 
 
 def log(x: float) -> float:
+    if (
+        isinstance(x, int) and x > _LARGEST_INT
+    ):  # past a float's range, as math.log takes it
+        e = x.bit_length() - 64  # x = m 2^(e + 63), m in [1, 2) to 64 bits
+        de = float(e + 63)
+        return de * LN2HI + (log(math.ldexp(float(x >> e), -63)) + de * LN2LO)
     if x != x:
         return x + x
     if x <= 0.0:
@@ -580,3 +598,181 @@ def cbrt(x: float) -> float:
 def _round_23(t: float) -> float:
     """``t`` rounded away from zero to 23 significant bits, as s_cbrt.c does with its words."""
     return from_bits((bits(t) + 0x80000000) & ~0x3FFFFFFF)
+
+
+# ----------------------------------------------------------------------
+# log1p and expm1: msun's s_log1p.c and s_expm1.c
+# ----------------------------------------------------------------------
+_TWO54 = 1.80143985094819840000e16
+LP1 = 6.666666666666735130e-01
+LP2 = 3.999999999940941908e-01
+LP3 = 2.857142874366239149e-01
+LP4 = 2.222219843214978396e-01
+LP5 = 1.818357216161805012e-01
+LP6 = 1.531383769920937332e-01
+LP7 = 1.479819860511658591e-01
+
+
+def _with_high(x: float, h: int) -> float:
+    """``x`` with its high word set to ``h`` (its low word kept)."""
+    word = (h & 0xFFFFFFFF) << 32 | (bits(x) & 0xFFFFFFFF)
+    return from_bits(word - (1 << 64) if word >= 1 << 63 else word)
+
+
+def log1p(x: float) -> float:
+    """log(1 + x), accurate for small ``x`` (ValueError at and below -1, as ``math.log1p``)."""
+    hx = high(x)
+    ax = hx & 0x7FFFFFFF
+    k = 1
+    f = c = 0.0
+    hu = 0
+    if hx < 0x3FDA827A:  # 1 + x < sqrt(2)+
+        if ax >= 0x3FF00000:  # x <= -1.0 (or a NaN with its sign bit set)
+            return _domain(x)
+        if ax < 0x3E200000:  # |x| < 2^-29
+            if ax < 0x3C900000:  # |x| < 2^-54
+                return x
+            return x - x * x * 0.5
+        if (
+            hx > 0 or hx <= -0x402D413C
+        ):  # (int32) 0xbfd2bec4: sqrt(2)/2- <= 1 + x < sqrt(2)+
+            k, f, hu = 0, x, 1
+    if hx >= 0x7FF00000:
+        return x + x
+    if k != 0:
+        if hx < 0x43400000:
+            u = 1.0 + x
+            hu = high(u)
+            k = (hu >> 20) - 1023
+            c = 1.0 - (u - x) if k > 0 else x - (u - 1.0)  # the correction term
+            c /= u
+        else:
+            u = x
+            hu = high(u)
+            k = (hu >> 20) - 1023
+            c = 0.0
+        hu &= 0x000FFFFF
+        if hu < 0x6A09E:  # u ~< sqrt(2)
+            u = _with_high(u, hu | 0x3FF00000)  # u normalised
+        else:
+            k += 1
+            u = _with_high(u, hu | 0x3FE00000)  # u / 2 normalised
+            hu = (0x00100000 - hu) >> 2
+        f = u - 1.0
+    hfsq = 0.5 * f * f
+    dk = float(k)
+    if hu == 0:  # |f| < 2^-20
+        if f == 0.0:
+            if k == 0:
+                return 0.0
+            c += dk * LN2LO
+            return dk * LN2HI + c
+        r = hfsq * (1.0 - 0.66666666666666666 * f)
+        if k == 0:
+            return f - r
+        return dk * LN2HI - ((r - (dk * LN2LO + c)) - f)
+    s = f / (2.0 + f)
+    z = s * s
+    r = z * (LP1 + z * (LP2 + z * (LP3 + z * (LP4 + z * (LP5 + z * (LP6 + z * LP7))))))
+    if k == 0:
+        return f - (hfsq - s * (hfsq + r))
+    return dk * LN2HI - ((hfsq - (s * (hfsq + r) + (dk * LN2LO + c))) - f)
+
+
+Q1 = -3.33333333333331316428e-02
+Q2 = 1.58730158725481460165e-03
+Q3 = -7.93650757867487942473e-05
+Q4 = 4.00821782732936239552e-06
+Q5 = -2.01099218183624371326e-07
+
+
+def expm1(x: float) -> float:
+    """exp(x) - 1, accurate for small ``x`` (OverflowError past exp's range, as ``math.expm1``)."""
+    hx = high(x)
+    xsb = hx & 0x80000000
+    hx &= 0x7FFFFFFF
+    if hx >= 0x4043687A:  # |x| >= 56 ln 2
+        if hx >= 0x40862E42:  # |x| >= 709.78...
+            if hx >= 0x7FF00000:
+                if x != x:
+                    return x + x
+                return x if xsb == 0 else -1.0
+            if x > O_THRESHOLD:
+                raise OverflowError("math range error")
+        if xsb != 0:  # x < -56 ln 2: -1 to the last bit
+            return -1.0
+    c = 0.0
+    if hx > 0x3FD62E42:  # |x| > 0.5 ln 2
+        if hx < 0x3FF0A2B2:  # and |x| < 1.5 ln 2
+            if xsb == 0:
+                hi, lo, k = x - LN2HI, LN2LO, 1
+            else:
+                hi, lo, k = x + LN2HI, -LN2LO, -1
+        else:
+            k = int(
+                INVLN2 * x + (0.5 if xsb == 0 else -0.5)
+            )  # towards zero, as C's (int)
+            t = float(k)
+            hi = x - t * LN2HI  # exact here
+            lo = t * LN2LO
+        x = hi - lo
+        c = (hi - x) - lo
+    elif hx < 0x3C900000:  # |x| < 2^-54
+        return x
+    else:
+        k = 0
+    hfx = 0.5 * x
+    hxs = x * hfx
+    r1 = 1.0 + hxs * (Q1 + hxs * (Q2 + hxs * (Q3 + hxs * (Q4 + hxs * Q5))))
+    t = 3.0 - r1 * hfx
+    e = hxs * ((r1 - t) / (6.0 - x * t))
+    if k == 0:
+        return x - (x * e - hxs)  # c is 0
+    e = x * (e - c) - c
+    e -= hxs
+    if k == -1:
+        return 0.5 * (x - e) - 0.5
+    if k == 1:
+        if x < -0.25:
+            return -2.0 * (e - (x + 0.5))
+        return 1.0 + 2.0 * (x - e)
+    if k <= -2 or k > 56:  # exp(x) - 1 is enough
+        y = 1.0 - (e - x)
+        if k == 1024:
+            return y * 2.0 * 8.98846567431157953865e307 - 1.0  # 2^1023
+        return y * math.ldexp(1.0, k) - 1.0
+    if k < 20:
+        t = from_high(0x3FF00000 - (0x200000 >> k))  # 1 - 2^-k
+        y = t - (e - x)
+    else:
+        t = from_high((0x3FF - k) << 20)  # 2^-k
+        y = x - (e + t)
+        y += 1.0
+    return y * math.ldexp(1.0, k)
+
+
+# ----------------------------------------------------------------------
+# Exact helpers
+# ----------------------------------------------------------------------
+def decade(x: float) -> int:
+    """The power of ten of x > 0 as written (the exponent of its shortest decimal, ``repr``): ``floor(log10(x))``, computed exactly.
+
+    1e-299 is 10^-299 here, as it reads, though the float is a little below
+    it; ``math.log10`` rounds its way to the same place for powers of ten on
+    one C library and may not on another.
+    """
+    if x != x or x <= 0.0:
+        raise ValueError("math domain error")
+    if math.isinf(x):
+        raise OverflowError("cannot convert float infinity to integer")
+    return Decimal(repr(float(x))).adjusted()
+
+
+def sq[T](x: T) -> T:
+    """``x * x``: a number's or an array's square (``x ** 2`` of a float calls the C library's ``pow``)."""
+    return cast(T, x * x)  # type: ignore[operator]
+
+
+def cube[T](x: T) -> T:
+    """``(x * x) * x``."""
+    return cast(T, x * x * x)  # type: ignore[operator]

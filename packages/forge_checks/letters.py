@@ -44,6 +44,8 @@ from functools import cache, cached_property, partial
 from itertools import pairwise
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_spec.font import ADVANCES, CAP_HEIGHT
 from forge_spec.glyphs import CONTOURS
 from numpy.typing import NDArray
@@ -173,7 +175,7 @@ def _sub(q: Quad, t0: float, t1: float) -> Quad:
 def _straight(q: Quad) -> bool:
     """Whether a piece is straight: its control point on its chord."""
     (x0, y0), (x1, y1), (x2, y2) = q
-    chord = (x2 - x0) ** 2 + (y2 - y0) ** 2
+    chord = fv.sq(x2 - x0) + fv.sq(y2 - y0)
     return abs((x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0)) <= 1e-12 * chord
 
 
@@ -487,7 +489,7 @@ class Ink:
                 for k in range(0, len(centres), _CHUNK)
             ]
         )
-        half = 0.5 * float(np.hypot(step[0], step[1]))
+        half = 0.5 * float(fv.hypot(step[0], step[1]))
         slack = 1e-9 * max(1.0, float(np.max(span)))
         starts, items = [0], []
         for k in range(0, len(centres), _CHUNK):
@@ -503,7 +505,7 @@ class Ink:
                 0.0,
             )
             listed = (
-                np.hypot(gx, gy)
+                fv.hypot(gx, gy)
                 <= (reach[k : k + _CHUNK, None] + 2 * half) * (1 + 1e-9) + slack
             )
             row, edge = np.nonzero(listed)
@@ -584,7 +586,7 @@ class Ink:
         px, py = x[row], y[row]
         gx = np.maximum(np.maximum(hull[:, 0] - px, px - hull[:, 2]), 0.0)
         gy = np.maximum(np.maximum(hull[:, 1] - py, py - hull[:, 3]), 0.0)
-        keep = np.hypot(gx, gy) <= reach[row]
+        keep = fv.hypot(gx, gy) <= reach[row]
         return row[keep], edge[keep]
 
     def _pairs_within(
@@ -600,7 +602,7 @@ class Ink:
             np.maximum(hull[None, :, 1] - y[:, None], y[:, None] - hull[None, :, 3]),
             0.0,
         )
-        row, edge = np.nonzero(np.hypot(gx, gy) <= limit[:, None])
+        row, edge = np.nonzero(fv.hypot(gx, gy) <= limit[:, None])
         return row.astype(np.intp), edge.astype(np.intp)
 
     def _pairs_ends(
@@ -610,7 +612,7 @@ class Ink:
         p0, _, p2, _, _, middle = self._edges
         ends = np.concatenate([p0, p2, middle])
         bound = np.min(
-            np.hypot(x[:, None] - ends[None, :, 0], y[:, None] - ends[None, :, 1]),
+            fv.hypot(x[:, None] - ends[None, :, 0], y[:, None] - ends[None, :, 1]),
             axis=1,
         )
         return self._pairs_within(x, y, bound * (1 + 1e-12) + 1e-12)
@@ -629,7 +631,7 @@ class Ink:
         )
         cells = j * nx + i
         centre = grid.centres[cells]
-        bound = np.hypot(x - centre[:, 0], y - centre[:, 1]) + grid.reach[cells]
+        bound = fv.hypot(x - centre[:, 0], y - centre[:, 1]) + grid.reach[cells]
         return self._pairs_within(x, y, bound * (1 + 1e-12) + 1e-12)
 
     def _pairs_grid(
@@ -639,7 +641,7 @@ class Ink:
         grid = self._grid
         row, edge = grid.pairs(cells)
         centre = grid.centres[cells]
-        bound = np.hypot(x - centre[:, 0], y - centre[:, 1]) + grid.reach[cells]
+        bound = fv.hypot(x - centre[:, 0], y - centre[:, 1]) + grid.reach[cells]
         return self._within(x, y, row, edge, bound * (1 + 1e-12) + 1e-12)
 
     def _nearest_of(
@@ -785,7 +787,7 @@ class Ink:
         if np.any(corner):
             rows = np.flatnonzero(corner)
             way = found[rows, 0] - found[rows, 1]
-            way /= np.linalg.norm(way, axis=1)[:, None]
+            way /= fv.norm(way, axis=1)[:, None]
             inner[rows] = self.inside(
                 x[rows] + 1e3 * _SIDE * way[:, 0], y[rows] + 1e3 * _SIDE * way[:, 1]
             )
@@ -815,7 +817,7 @@ class Ink:
         p0, p1, p2, _, hull, _ = self._edges
         if not len(p0):
             return np.zeros((len(a), 0))
-        speed = np.hypot(da, db)
+        speed = fv.hypot(da, db)
         moving = np.flatnonzero(speed > 0.0)
         cx, cy = 0.5 * (hull[:, 0] + hull[:, 2]), 0.5 * (hull[:, 1] + hull[:, 3])
         hx, hy = (
@@ -850,7 +852,7 @@ class Ink:
                 px = (ax2 * root + bx2) * root + q0[:, 0]
                 py = (ay2 * root + by2) * root + q0[:, 1]
                 t = ((px - la) * lda + (py - lb) * ldb) / (lda * lda + ldb * ldb)
-                apart = np.hypot(la + t * lda - px, lb + t * ldb - py)
+                apart = fv.hypot(la + t * lda - px, lb + t * ldb - py)
                 near = (
                     np.isfinite(t)
                     & (root >= -1e-9)
@@ -907,7 +909,7 @@ def _left_of(p0: Array, p1: Array, p2: Array, t: Array) -> tuple[Array, Array]:
     )  # a piece whose control sits on an end: its way there is to the other end
     vx = np.where(still, p2[:, 0] - p0[:, 0], vx)
     vy = np.where(still, p2[:, 1] - p0[:, 1], vy)
-    length = np.hypot(vx, vy)
+    length = fv.hypot(vx, vy)
     return -vy / length, vx / length
 
 
@@ -971,7 +973,7 @@ def _to_quads(
         u = 1.0 - t
         qx = u * u * x0 + 2 * u * t * x1 + t * t * x2
         qy = u * u * y0 + 2 * u * t * y1 + t * t * y2
-        found: Array = np.hypot(qx - px, qy - py)
+        found: Array = fv.hypot(qx - px, qy - py)
         return found
 
     zero, one = np.zeros(np.shape(px)), np.ones(np.shape(px))
@@ -982,14 +984,14 @@ def _to_quads(
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         a_, b_, c_ = c2 / safe, c1 / safe, c0 / safe
         p = b_ - a_ * a_ / 3
-        q_ = 2 * a_**3 / 27 - a_ * b_ / 3 + c_
-        disc = (q_ / 2) ** 2 + (p / 3) ** 3
+        q_ = 2 * (a_ * a_ * a_) / 27 - a_ * b_ / 3 + c_
+        disc = fv.sq(q_ / 2) + fv.cube(p / 3)
         shift = -a_ / 3
         root = np.sqrt(np.maximum(disc, 0.0))
-        one_real = np.cbrt(-q_ / 2 + root) + np.cbrt(-q_ / 2 - root) + shift
+        one_real = fv.cbrt(-q_ / 2 + root) + fv.cbrt(-q_ / 2 - root) + shift
         m = 2 * np.sqrt(np.maximum(-p / 3, 0.0))
         angle = (
-            np.arccos(np.clip(np.where(p < 0, 3 * q_ / (p * m), 0.0), -1.0, 1.0)) / 3
+            fv.arccos(np.clip(np.where(p < 0, 3 * q_ / (p * m), 0.0), -1.0, 1.0)) / 3
         )
         line = np.where(c1 != 0.0, -c0 / np.where(c1 != 0.0, c1, 1.0), 0.0)
     roots = [
@@ -997,7 +999,7 @@ def _to_quads(
             straight,
             line,
             np.where(
-                disc > 0, one_real, m * np.cos(angle - 2 * math.pi * k / 3) + shift
+                disc > 0, one_real, m * fv.cos(angle - 2 * math.pi * k / 3) + shift
             ),
         )
         for k in range(3)
@@ -1091,7 +1093,7 @@ class LetterPrism(Prism):
             return found
         a, b, c = self.frame.local(origins)
         da, db, dc = (
-            directions @ np.asarray(x)
+            fv.matmul(directions, np.asarray(x))
             for x in (self.frame.u, self.frame.v, self.frame.w)
         )
         walls = found[:, 2:]
@@ -1114,7 +1116,9 @@ class LetterPrism(Prism):
         assert isinstance(self.shape, Letters2D)
         found = super()._candidates(origins, directions)
         a, b, _ = self.frame.local(origins)
-        da, db = (directions @ np.asarray(x) for x in (self.frame.u, self.frame.v))
+        da, db = (
+            fv.matmul(directions, np.asarray(x)) for x in (self.frame.u, self.frame.v)
+        )
         (x0, y0), (x1, y1) = self.shape.lo, self.shape.hi
         for k in (0, 1):  # the floor's and the top's places
             pa, pb = a + found[:, k] * da, b + found[:, k] * db
@@ -1137,7 +1141,7 @@ class LetterPrism(Prism):
         assert isinstance(self.shape, Letters2D)
         a, b, c, d2, dz = self._parts(points)
         inside = np.minimum(np.maximum(d2, dz), 0.0)
-        sd = inside + np.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0))
+        sd = inside + fv.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0))
         side, inner, crowded = self.shape.ink.facets(a, b, eps)
         along = (c >= self.t0 - eps) & (c <= self.t1 + eps)
         side[~along] = np.nan
@@ -1232,9 +1236,9 @@ class WallPatch(Patch):
         f = self.owner.frame
         d = np.asarray(x, dtype=float) - np.asarray(f.origin)
         a, b, c = (
-            float(d @ np.asarray(f.u)),
-            float(d @ np.asarray(f.v)),
-            float(d @ np.asarray(f.w)),
+            float(fv.matmul(d, np.asarray(f.u))),
+            float(fv.matmul(d, np.asarray(f.v))),
+            float(fv.matmul(d, np.asarray(f.w))),
         )
         t = _nearest_t(self.edge.q, a, b)
         (x0, y0), (x1, y1), (x2, y2) = self.edge.q
@@ -1274,21 +1278,16 @@ def _nearest_t(q: Quad, px: float, py: float) -> float:
     else:
         a_, b_, c_ = c2 / c3, c1 / c3, c0 / c3
         p = b_ - a_ * a_ / 3
-        q_ = 2 * a_**3 / 27 - a_ * b_ / 3 + c_
-        disc = (q_ / 2) ** 2 + (p / 3) ** 3
+        q_ = 2 * (a_ * a_ * a_) / 27 - a_ * b_ / 3 + c_
+        disc = fv.sq(q_ / 2) + fv.cube(p / 3)
         shift = -a_ / 3
         if disc > 0:
             root = math.sqrt(disc)
-            roots = [math.copysign(abs(-q_ / 2 + root) ** (1 / 3), -q_ / 2 + root)
-                     + math.copysign(abs(-q_ / 2 - root) ** (1 / 3), -q_ / 2 - root) + shift]  # fmt: skip
+            roots = [fs.cbrt(-q_ / 2 + root) + fs.cbrt(-q_ / 2 - root) + shift]
         else:
             m = 2 * math.sqrt(max(-p / 3, 0.0))
-            angle = (
-                math.acos(max(-1.0, min(1.0, 3 * q_ / (p * m)))) / 3 if p < 0 else 0.0
-            )
-            roots = [
-                m * math.cos(angle - 2 * math.pi * k / 3) + shift for k in range(3)
-            ]
+            angle = fs.acos(max(-1.0, min(1.0, 3 * q_ / (p * m)))) / 3 if p < 0 else 0.0
+            roots = [m * fs.cos(angle - 2 * math.pi * k / 3) + shift for k in range(3)]
     best_t, best = (1.0, dist2(1.0)) if dist2(1.0) < dist2(0.0) else (0.0, dist2(0.0))
     for t in roots:
         t = min(max(t, 0.0), 1.0)

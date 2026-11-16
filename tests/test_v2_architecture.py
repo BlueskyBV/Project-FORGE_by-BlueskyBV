@@ -636,5 +636,175 @@ class EveryRoleHasAnEntryForEveryKind(unittest.TestCase):
                     self.assertEqual(done.returncode, 0, done.stderr[-2000:])
 
 
+# ----------------------------------------------------------------------
+# The same numbers on every machine (ADR-0037)
+# ----------------------------------------------------------------------
+#: math's functions the C library computes, each rounding its own way.
+_MATH_FUNCTIONS = frozenset({
+    "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "exp", "exp2", "expm1", "log", "log1p",
+    "log2", "log10", "pow", "cbrt", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "erf",
+    "erfc", "gamma", "lgamma",
+})  # fmt: skip
+#: NumPy's: its SIMD paths and C library (elementary functions), BLAS and LAPACK (products and
+#: linear algebra), and C a compiler may fuse into multiply-adds (einsum, interp, complex numbers).
+_NUMPY_FUNCTIONS = frozenset({
+    "sin", "cos", "tan", "arcsin", "arccos", "arctan", "arctan2", "sinh", "cosh", "tanh",
+    "arcsinh", "arccosh", "arctanh", "exp", "exp2", "expm1", "log", "log2", "log10", "log1p",
+    "logaddexp", "logaddexp2", "power", "float_power", "cbrt", "hypot", "sinc", "i0", "angle",
+    "dot", "vdot", "inner", "matmul", "vecdot", "matvec", "vecmat", "einsum", "tensordot",
+    "convolve", "correlate", "cov", "corrcoef", "polyfit", "polyval", "roots", "interp",
+    "linalg", "fft", "polynomial",
+})  # fmt: skip
+#: Random draws by a law other than the uniform one (which take logarithms and exponentials).
+_RANDOM_LAWS = frozenset({
+    "normal", "standard_normal", "gauss", "normalvariate", "lognormvariate", "lognormal",
+    "expovariate", "exponential", "standard_exponential", "vonmisesvariate", "vonmises",
+    "gammavariate", "gamma", "standard_gamma", "betavariate", "beta", "paretovariate", "pareto",
+    "weibullvariate", "weibull", "binomialvariate", "binomial", "poisson", "laplace", "logistic",
+    "rayleigh", "triangular", "chisquare", "standard_t", "standard_cauchy", "wald",
+})  # fmt: skip
+
+
+def _int_literal(node: ast.AST) -> int | None:
+    if isinstance(node, ast.Constant) and type(node.value) is int:
+        return node.value
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        inner = _int_literal(node.operand)
+        return None if inner is None else -inner
+    return None
+
+
+def _exact_power(node: ast.BinOp) -> bool:
+    """``**`` the machine can't round: whole numbers to a power 0 or more, or 2 to a whole power (exact)."""
+    base, power = _int_literal(node.left), _int_literal(node.right)
+    if power is None:
+        return False
+    if base is not None and power >= 0:
+        return True
+    return (
+        isinstance(node.left, ast.Constant)
+        and node.left.value in (2, 2.0)
+        and type(node.left.value) in (int, float)
+    )
+
+
+def numeric_sites(source: str) -> list[str]:
+    """Where ``source`` computes a number another machine may round otherwise ("line: what"), forge_numeric's to compute instead."""
+    found: list[str] = []
+    for node in ast.walk(ast.parse(source)):
+        line = getattr(node, "lineno", 0)
+        if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+            if node.value.id == "math" and node.attr in _MATH_FUNCTIONS:
+                found.append(f"{line}: math.{node.attr}")
+            if node.value.id in ("np", "numpy") and node.attr in _NUMPY_FUNCTIONS:
+                found.append(f"{line}: np.{node.attr}")
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                top, _, rest = alias.name.partition(".")
+                if top in ("cmath", "statistics") or (
+                    top == "numpy" and rest.split(".")[0] in _NUMPY_FUNCTIONS
+                ):
+                    found.append(f"{line}: import {alias.name}")
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            top, _, rest = node.module.partition(".")
+            names = {alias.name for alias in node.names}
+            if (
+                top in ("cmath", "statistics")
+                or (top == "math" and names & _MATH_FUNCTIONS)
+                or (
+                    top == "numpy"
+                    and (
+                        rest.split(".")[0] in _NUMPY_FUNCTIONS
+                        or (not rest and names & _NUMPY_FUNCTIONS)
+                    )
+                )
+            ):
+                found.append(f"{line}: from {node.module} import ...")
+        elif isinstance(node, ast.BinOp | ast.AugAssign) and isinstance(
+            node.op, ast.MatMult
+        ):
+            found.append(f"{line}: @")
+        elif (
+            isinstance(node, ast.BinOp)
+            and isinstance(node.op, ast.Pow)
+            and not _exact_power(node)
+        ):
+            found.append(f"{line}: **")
+        elif isinstance(node, ast.AugAssign) and isinstance(node.op, ast.Pow):
+            found.append(f"{line}: **=")
+        elif isinstance(node, ast.Call):
+            f = node.func
+            if isinstance(f, ast.Name) and f.id == "pow":
+                found.append(f"{line}: pow()")
+            ours = (
+                isinstance(f, ast.Attribute)
+                and isinstance(f.value, ast.Name)
+                and f.value.id in ("fs", "fv")
+            )
+            if (
+                isinstance(f, ast.Attribute)
+                and not ours
+                and (f.attr == "dot" or f.attr in _RANDOM_LAWS)
+            ):
+                found.append(f"{line}: .{f.attr}()")
+        elif isinstance(node, ast.Constant) and isinstance(node.value, complex):
+            found.append(f"{line}: a complex number")
+    return found
+
+
+def _numeric_scope() -> list[Path]:
+    files = [path for package in present(V2_PACKAGES - {"forge_numeric"})
+             for path in sorted((PACKAGES / package).rglob("*.py"))]  # fmt: skip
+    return files + [PACKAGES / module for module in V2_MODULES]
+
+
+class EveryNumberIsTheSameOnEveryMachine(unittest.TestCase):
+    """V2 computes nothing a machine may round its own way: elementary functions, products and linear algebra through forge_numeric (ADR-0037)."""
+
+    def test_no_v2_code_computes_what_forge_numeric_computes(self) -> None:
+        for path in _numeric_scope():
+            with self.subTest(path=str(path.relative_to(PACKAGES))):
+                self.assertEqual(numeric_sites(path.read_text(encoding="utf-8")), [])
+
+    def test_the_rule_finds_each_form(self) -> None:
+        caught = """
+import cmath
+from math import atan2
+from numpy.linalg import solve
+x = math.sin(a) + np.arctan2(b, c) + np.linalg.norm(d) + np.einsum("ij,ij->i", e, e)
+y = a @ b
+y @= b
+z = w ** 0.5 + w ** 2 + 10 ** -3 + w ** n
+q = pow(w, 3) + v.dot(u) + rng.normal(size=3) + random.gauss(0, 1) + 1j
+f = math.log10
+"""
+        self.assertEqual(len(numeric_sites(caught)), 19, numeric_sites(caught))
+        fine = """
+from numpy.typing import NDArray
+x = math.sqrt(a) + math.hypot(a, b) + math.fsum(c) + np.sqrt(d) + np.sum(e) + np.cross(f, g)
+y = fs.sin(a) + fv.dot(b, c) + fv.matmul(b, c) + fv.normal(rng, size=3) + rng.uniform(0, 1)
+z = 2 ** 10 + 2.0 ** -53 + 3 ** 2 + w * w
+"""
+        self.assertEqual(numeric_sites(fine), [])
+
+    def test_the_scalar_side_needs_no_numpy(self) -> None:
+        """Packages of the standard library alone may use ``forge_numeric.scalar``: it (and what it imports) imports no NumPy."""
+        for module in ("__init__.py", "scalar.py", "_bits.py"):
+            names = {
+                m.split(".")[0]
+                for m in dotted_imports(PACKAGES / "forge_numeric" / module)
+            }
+            self.assertEqual(
+                names - set(sys.stdlib_module_names) - {"forge_numeric"}, set(), module
+            )
+        for package in present(V2_PACKAGES & L0_STDLIB):
+            for path in sorted((PACKAGES / package).rglob("*.py")):
+                for name in dotted_imports(path):
+                    if name.split(".")[0] == "forge_numeric":
+                        self.assertIn(
+                            name, {"forge_numeric", "forge_numeric.scalar"}, path
+                        )
+
+
 if __name__ == "__main__":
     unittest.main()

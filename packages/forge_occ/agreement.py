@@ -45,6 +45,7 @@ from forge_ir.v2 import DocumentV2
 from forge_kernel import Compiler, compile_products
 from forge_kernel.agreement import TAU, Entry, Faces, entries
 from forge_kernel.implicit_view import ImplicitView
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
@@ -240,9 +241,9 @@ def _measured(
             source = exact.products.get(step.inputs[0])
             if isinstance(source, ProfileProduct):
                 pts = _outline_points(source, 1e-2)
-                out[f"{step.id}#reach"] = float(np.linalg.norm(pts, axis=1).max())
+                out[f"{step.id}#reach"] = float(fv.norm(pts, axis=1).max())
                 circle = by_id[step.inputs[0]].op == "profile_circle"
-                radii = np.linalg.norm(pts, axis=1)
+                radii = fv.norm(pts, axis=1)
                 out[f"{step.id}#off_centre"] = (
                     0.0 if circle and float(np.ptp(radii)) <= 1e-9 else 1.0
                 )
@@ -257,7 +258,7 @@ def _measured(
                     if isinstance(s, ProfileProduct)
                 ]
                 concentric = all(
-                    float(np.ptp(np.linalg.norm(p, axis=1))) <= 1e-9 for p in outlines
+                    float(np.ptp(fv.norm(p, axis=1))) <= 1e-9 for p in outlines
                 )
             out[f"{step.id}#concentric_circles"] = 1.0 if concentric else 0.0
     return out
@@ -427,7 +428,7 @@ def agree(document: DocumentV2, component: str, *, exact: BuildResult | None = N
     grid = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1).reshape(-1, 3)
     points = np.concatenate([cover_points + step_a, cover_points - step_a, surface_points + step_b,
                              surface_points - step_b, grid])  # fmt: skip
-    points = points + rng.normal(scale=_JITTER * delta, size=points.shape)
+    points = points + fv.normal(rng, scale=_JITTER * delta, size=points.shape)
     source = np.array(["exact surface"] * (2 * len(cover_points)) + ["implicit surface"] * (2 * len(surface_points))
                       + ["grid"] * len(grid))  # fmt: skip
     tau = np.concatenate([tau_a, tau_a, tau_b, tau_b, tau_at(grid)])
@@ -512,14 +513,10 @@ def agree(document: DocumentV2, component: str, *, exact: BuildResult | None = N
             radius = facts.surface[6]
             axis = np.asarray(facts.surface[3:6])
             theirs_axis = np.asarray(entity.frame.z_axis, dtype=np.float64)
-            tilt = float(
-                np.linalg.norm(
-                    np.cross(axis, theirs_axis / np.linalg.norm(theirs_axis))
-                )
-            )
+            tilt = float(fv.norm(np.cross(axis, theirs_axis / fv.norm(theirs_axis))))
             foot = np.asarray(facts.surface[:3])
             rel = np.asarray(entity.frame.origin, dtype=np.float64) - foot
-            apart = float(np.linalg.norm(rel - (rel @ axis) * axis))
+            apart = float(fv.norm(rel - (fv.matmul(rel, axis)) * axis))
             if (
                 abs(radius - float(entity.dimensions["radius"])) > reach + 1e-9
                 or apart > reach + 1e-9
@@ -613,7 +610,7 @@ def _cell(made: ImplicitView) -> float:
     """About how far apart the implicit mesh's grid points are: the median length of its triangles' edges (each joins two cells' vertices)."""
     mesh = made.mesh_view.mesh
     corners = mesh.vertices[mesh.faces]
-    edges = np.linalg.norm(corners - np.roll(corners, 1, axis=1), axis=2)
+    edges = fv.norm(corners - np.roll(corners, 1, axis=1), axis=2)
     return float(np.median(edges)) if edges.size else 0.0
 
 
@@ -634,7 +631,7 @@ def _thinnest(view: BrepView, cell: float) -> float:
     found = math.inf
     for way in (-1.0, 1.0):  # inward: a wall; outward: a gap
         far, there = view.first_hits(points + way * off * normals, way * normals)
-        back = np.einsum("pj,pj->p", np.nan_to_num(there), normals) < -_ACROSS
+        back = fv.dot(np.nan_to_num(there), normals) < -_ACROSS
         if back.any():
             found = min(found, float(far[back].min()) + off)
     return found

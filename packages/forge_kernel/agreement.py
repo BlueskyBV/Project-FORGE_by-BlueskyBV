@@ -46,6 +46,8 @@ from typing import Any
 
 import numpy as np
 from forge_ir.v2 import DocumentV2, Step
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 
 from .compiler import compile_products, resolve_feature_parameters
 
@@ -124,16 +126,16 @@ def path_tau(
         return 0.0
     for i in range(1, len(pts) - 1):
         a, b = pts[i - 1] - pts[i], pts[i + 1] - pts[i]
-        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        la, lb = float(fv.norm(a)), float(fv.norm(b))
         if la < 1e-9 or lb < 1e-9:
             continue
-        angle = math.acos(float(np.clip((a / la) @ (b / lb), -1.0, 1.0)))
+        angle = fs.acos(float(np.clip(fv.matmul(a / la, b / lb), -1.0, 1.0)))
         if angle < 1e-6 or angle > math.pi - 1e-6:
             continue
-        cut = min(bend_radius / math.tan(angle / 2.0), la / 2.0, lb / 2.0)
-        r = cut * math.tan(angle / 2.0)
+        cut = min(bend_radius / fs.tan(angle / 2.0), la / 2.0, lb / 2.0)
+        r = cut * fs.tan(angle / 2.0)
         step = (math.pi - angle) / PATH_STEPS
-        worst = max(worst, (r + reach) * (1.0 - math.cos(step / 2.0)))
+        worst = max(worst, (r + reach) * (1.0 - fs.cos(step / 2.0)))
     return worst
 
 
@@ -141,7 +143,7 @@ def coil_tau(radius: float, wire: float, turns: float) -> tuple[float, float]:
     """V1's polyline coil against the true helix: (along the coil, more within 2rho of each end)."""
     count = max(COIL_LEAST, math.ceil(turns * COIL_PER_TURN))
     half = math.pi * turns / count
-    return radius * (1.0 - math.cos(half)), wire * math.tan(half)
+    return radius * (1.0 - fs.cos(half)), wire * fs.tan(half)
 
 
 def through_hole_tau(
@@ -151,8 +153,8 @@ def through_hole_tau(
     corners = np.array([[x, y, z] for x in (envelope_lo[0], envelope_hi[0]) for y in (envelope_lo[1], envelope_hi[1])
                         for z in (envelope_lo[2], envelope_hi[2])])  # fmt: skip
     d = np.asarray(axis, dtype=np.float64)
-    d = d / np.linalg.norm(d)
-    along = corners @ d
+    d = d / fv.norm(d)
+    along = fv.matmul(corners, d)
     return float(along.max() - along.min()) / (HOLE_SAMPLES - 1) / 2.0
 
 
@@ -320,7 +322,7 @@ def _extrude(step: Step, params: Mapping[str, Any], by_id: Mapping[str, Step],
                          Faces.of(step.id, "round", "bevel"), zone=2.0 * size))  # fmt: skip
     draft = float(params.get("draft_angle") or 0.0)
     if draft < 0.0 or (draft > 0.0 and not convex):
-        offset = abs(float(params["distance"]) * math.tan(draft))
+        offset = abs(float(params["distance"]) * fs.tan(draft))
         out.append(Entry(step.id, "extrude", "drafted outward, or inward on a profile that isn't convex",
                          Faces.of(step.id, "side"), zone=offset + TAU))  # fmt: skip
     return out
@@ -374,7 +376,7 @@ def _hole(step: Step, params: Mapping[str, Any], v1: Mapping[str, Any]) -> list[
         from .implicit_backend import _depth_through_the_first_wall
 
         direction = np.asarray(axis, dtype=np.float64)
-        direction = direction / np.linalg.norm(direction)
+        direction = direction / fv.norm(direction)
         start, end = _depth_through_the_first_wall(solid, np.asarray(params["position"], dtype=np.float64), direction,
                                                    envelope, float(params["diameter"]) / 2.0, step.id)  # fmt: skip
         return [Entry(step.id, "hole", "a first-wall hole's counterbore: V1's step finding the wall's faces", faces,

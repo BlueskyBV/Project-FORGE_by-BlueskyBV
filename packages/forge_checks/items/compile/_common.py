@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Counterbore, Countersink, Item, Place
 from forge_spec.values import Value
 from numpy.typing import NDArray
@@ -142,7 +143,7 @@ def box_round_copy(
     middle = (_v(copy.lo) + _v(copy.hi)) / 2
     w = _v(unit("+" + side.axis))
     off = middle - _v(side.start)
-    reach = float(np.linalg.norm(off - (off @ w) * w))
+    reach = float(fv.norm(off - (fv.matmul(off, w)) * w))
     return Middle(*sides), float(copy.hi[k] - copy.lo[k]), reach
 
 

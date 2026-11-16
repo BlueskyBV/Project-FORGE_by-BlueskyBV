@@ -51,6 +51,8 @@ from forge_checks.view import (
     Topology,
     held,
 )
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 from OCP.Bnd import Bnd_Box
@@ -151,7 +153,7 @@ _ACCELERATE = 256
 #: cube diagonal, nor in a plane of two axes, so that a ray seldom runs along a face of a part or through
 #: one of its edges.
 _RAYS = tuple(
-    np.asarray(v, dtype=np.float64) / np.linalg.norm(v)
+    np.asarray(v, dtype=np.float64) / fv.norm(v)
     for v in (
         (0.2672, 0.5345, 0.8018),
         (-0.6213, 0.1706, 0.7648),
@@ -354,8 +356,10 @@ class BrepView:
             face = TopoDS.Face(meter.SupportOnShape2(i))
             u, v = meter.ParOnFaceS2(i)
             along = float(
-                (p - _xyz(meter.PointOnShape2(i)))
-                @ _outward(face, BRepAdaptor_Surface(face, False), u, v)
+                fv.matmul(
+                    p - _xyz(meter.PointOnShape2(i)),
+                    _outward(face, BRepAdaptor_Surface(face, False), u, v),
+                )
             )
             if abs(along) < 0.5 * gap:
                 return None
@@ -481,7 +485,7 @@ class BrepView:
         if found is None:
             return out
         feet, u, v = found
-        d = np.linalg.norm(points - feet, axis=1)
+        d = fv.norm(points - feet, axis=1)
         close = np.flatnonzero(d <= within)
         if not len(close):
             return out
@@ -598,7 +602,7 @@ class BrepView:
                         hits.UParameter(i),
                         hits.VParameter(i),
                     )
-                    along = float(way @ normal)
+                    along = float(fv.matmul(way, normal))
                     transition = hits.Transition(i)
                     told = transition in (IntCurveSurface_In, IntCurveSurface_Out)
                     if hits.State(i) == TopAbs_ON or abs(along) <= 1e-9 or not told \
@@ -733,32 +737,30 @@ def _feet(surface: Any, points: Array) -> tuple[Array, Array, Array] | None:
     if kind == GeomAbs_Plane:
         o, x, y, z = _frame_of(surface.Plane().Position())
         d = points - o
-        u, v = d @ x, d @ y
+        u, v = fv.matmul(d, x), fv.matmul(d, y)
         return o + u[:, None] * x + v[:, None] * y, u, v
     if kind == GeomAbs_Cylinder:
         cyl = surface.Cylinder()
         o, x, y, z = _frame_of(cyl.Position())
         r = cyl.Radius()
         d = points - o
-        u = np.mod(np.arctan2(d @ y, d @ x), 2 * math.pi)
-        v = d @ z
-        radial = np.cos(u)[:, None] * x + np.sin(u)[:, None] * y
+        u = np.mod(fv.arctan2(fv.matmul(d, y), fv.matmul(d, x)), 2 * math.pi)
+        v = fv.matmul(d, z)
+        radial = fv.cos(u)[:, None] * x + fv.sin(u)[:, None] * y
         return o + v[:, None] * z + r * radial, u, v
     if kind == GeomAbs_Cone:
         cone = surface.Cone()
         o, x, y, z = _frame_of(cone.Position())
         r, a = cone.RefRadius(), cone.SemiAngle()
         d = points - o
-        u = np.mod(np.arctan2(d @ y, d @ x), 2 * math.pi)
-        rho = np.hypot(d @ x, d @ y)
-        h = d @ z
+        u = np.mod(fv.arctan2(fv.matmul(d, y), fv.matmul(d, x)), 2 * math.pi)
+        rho = fv.hypot(fv.matmul(d, x), fv.matmul(d, y))
+        h = fv.matmul(d, z)
         # In the half-plane at angle u, the generator is (r + v sin a, v cos a): the foot on that line.
-        v = (rho - r) * math.sin(a) + h * math.cos(a)
-        radial = np.cos(u)[:, None] * x + np.sin(u)[:, None] * y
+        v = (rho - r) * fs.sin(a) + h * fs.cos(a)
+        radial = fv.cos(u)[:, None] * x + fv.sin(u)[:, None] * y
         return (
-            o
-            + (r + v * math.sin(a))[:, None] * radial
-            + (v * math.cos(a))[:, None] * z,
+            o + (r + v * fs.sin(a))[:, None] * radial + (v * fs.cos(a))[:, None] * z,
             u,
             v,
         )
@@ -767,18 +769,22 @@ def _feet(surface: Any, points: Array) -> tuple[Array, Array, Array] | None:
         o, x, y, z = _frame_of(sphere.Position())
         r = sphere.Radius()
         d = points - o
-        u = np.mod(np.arctan2(d @ y, d @ x), 2 * math.pi)
-        length = np.linalg.norm(d, axis=1)
-        v = np.arcsin(
+        u = np.mod(fv.arctan2(fv.matmul(d, y), fv.matmul(d, x)), 2 * math.pi)
+        length = fv.norm(d, axis=1)
+        v = fv.arcsin(
             np.clip(
-                np.where(length > 0, (d @ z) / np.where(length > 0, length, 1.0), 0.0),
+                np.where(
+                    length > 0,
+                    (fv.matmul(d, z)) / np.where(length > 0, length, 1.0),
+                    0.0,
+                ),
                 -1.0,
                 1.0,
             )
         )
         way = (
-            np.cos(v)[:, None] * (np.cos(u)[:, None] * x + np.sin(u)[:, None] * y)
-            + np.sin(v)[:, None] * z
+            fv.cos(v)[:, None] * (fv.cos(u)[:, None] * x + fv.sin(u)[:, None] * y)
+            + fv.sin(v)[:, None] * z
         )
         return o + r * way, u, v
     if kind == GeomAbs_Torus:
@@ -786,11 +792,11 @@ def _feet(surface: Any, points: Array) -> tuple[Array, Array, Array] | None:
         o, x, y, z = _frame_of(torus.Position())
         big, small = torus.MajorRadius(), torus.MinorRadius()
         d = points - o
-        u = np.mod(np.arctan2(d @ y, d @ x), 2 * math.pi)
-        radial = np.cos(u)[:, None] * x + np.sin(u)[:, None] * y
-        rho = np.hypot(d @ x, d @ y)
-        v = np.mod(np.arctan2(d @ z, rho - big), 2 * math.pi)
-        way = np.cos(v)[:, None] * radial + np.sin(v)[:, None] * z
+        u = np.mod(fv.arctan2(fv.matmul(d, y), fv.matmul(d, x)), 2 * math.pi)
+        radial = fv.cos(u)[:, None] * x + fv.sin(u)[:, None] * y
+        rho = fv.hypot(fv.matmul(d, x), fv.matmul(d, y))
+        v = np.mod(fv.arctan2(fv.matmul(d, z), rho - big), 2 * math.pi)
+        way = fv.cos(v)[:, None] * radial + fv.sin(v)[:, None] * z
         return o + big * radial + small * way, u, v
     if kind == GeomAbs_SurfaceOfExtrusion:
         return _extrusion_feet(surface, points)
@@ -843,29 +849,25 @@ def _extrusion_feet(surface: Any, points: Array) -> tuple[Array, Array, Array] |
         poles = np.array([poles[0], (poles[0] + poles[1]) / 2.0, poles[1]])
 
     def square(x: Array) -> Array:
-        found: Array = x - (x @ direction)[..., None] * direction
+        found: Array = x - (fv.matmul(x, direction))[..., None] * direction
         return found
 
     p0, p1, p2 = poles
     a, b = square(p0 - 2.0 * p1 + p2), square(p1 - p0)
     d = square(p0 - points)
-    c3 = float(a @ a)
-    c2 = 3.0 * float(a @ b)
-    c1 = 2.0 * float(b @ b) + d @ a
-    c0 = d @ b
+    c3 = float(fv.matmul(a, a))
+    c2 = 3.0 * float(fv.matmul(a, b))
+    c1 = 2.0 * float(fv.matmul(b, b)) + fv.matmul(d, a)
+    c0 = fv.matmul(d, b)
     n = len(points)
-    if c3 > 1e-30 * max(1.0, float(b @ b)) ** 2:
-        companion = np.zeros((n, 3, 3))
-        companion[:, 0, 0], companion[:, 0, 1], companion[:, 0, 2] = (
-            -c2 / c3,
-            -c1 / c3,
-            -c0 / c3,
-        )
-        companion[:, 1, 0] = companion[:, 2, 1] = 1.0
-        roots = np.linalg.eigvals(companion).real
+    if c3 > 1e-30 * fv.sq(max(1.0, float(fv.matmul(b, b)))):
+        # The cubic's real roots (the distance's turning points); NaN where it has one.
+        monic = np.stack([np.ones(n), np.full(n, c2 / c3), c1 / c3, c0 / c3], axis=1)
+        roots = fv.real_roots(monic)
     else:  # straight and evenly paced: the root of c1 u + c0
         roots = np.where(c1 != 0.0, -c0 / np.where(c1 != 0.0, c1, 1.0), 0.0)[:, None]
     lo, hi = (first - start) / span, (last - start) / span
+    roots = np.where(np.isnan(roots), lo, roots)  # (the ends are tried anyway)
     tries = np.concatenate(
         [np.clip(roots, lo, hi), np.full((n, 1), lo), np.full((n, 1), hi)], axis=1
     )
@@ -884,10 +886,10 @@ def _extrusion_feet(surface: Any, points: Array) -> tuple[Array, Array, Array] |
         )
         return found
 
-    gaps = np.linalg.norm(square(at(tries) - points[:, None, :]), axis=2)
+    gaps = fv.norm(square(at(tries) - points[:, None, :]), axis=2)
     t = tries[np.arange(n), np.argmin(gaps, axis=1)]
     on_curve = at(t)
-    v = (points - on_curve) @ direction
+    v = fv.matmul(points - on_curve, direction)
     return on_curve + v[:, None] * direction, start + span * t, v
 
 
@@ -929,7 +931,7 @@ def _outward(
             u0, u1, v0, v1 = BRepTools.UVBounds_s(face)
             centre = ((u0 + u1) / 2.0, (v0 + v1) / 2.0)
         found = _at_singular(surface, u, v, centre)
-    found = found / np.linalg.norm(found)
+    found = np.asarray(found / fv.norm(found))
     return -found if face.Orientation() == TopAbs_REVERSED else found
 
 
@@ -961,7 +963,11 @@ def _at_singular(
     props = BRepLProp_SLProps(surface, u, v, 2, 1e-9)
     if props.IsNormalDefined():
         found = _xyz(props.Normal())
-        return -found if inside is not None and float(found @ inside) < 0.0 else found
+        return (
+            -found
+            if inside is not None and float(fv.matmul(found, inside)) < 0.0
+            else found
+        )
     if inside is None:
         raise RuntimeError("a face has no normal near a point of it")
     return inside
@@ -1133,9 +1139,9 @@ def _points_on(face: Any, surface: Any, centre: tuple[float, float], face_tol: f
     if found is not None:
         at, du, dv = found
         cross = np.cross(du, dv)
-        size = np.linalg.norm(cross, axis=1)
+        size = fv.norm(cross, axis=1)
         regular = size > _SINGULAR * np.maximum(
-            1.0, np.linalg.norm(du, axis=1) * np.linalg.norm(dv, axis=1)
+            1.0, fv.norm(du, axis=1) * fv.norm(dv, axis=1)
         )
         unit_normals = cross / np.where(regular, size, 1.0)[:, None]
         if face.Orientation() == TopAbs_REVERSED:
@@ -1232,9 +1238,7 @@ def _pieces_near(surface: Any, pieces: Pieces, box: Box, enough: float) -> Array
         middle = _points_at(
             surface, (left[:, 0] + left[:, 1]) / 2.0, (left[:, 2] + left[:, 3]) / 2.0
         )
-        gap = np.linalg.norm(
-            np.maximum(np.maximum(lo - middle, middle - hi), 0.0), axis=1
-        )
+        gap = fv.norm(np.maximum(np.maximum(lo - middle, middle - hi), 0.0), axis=1)
         meets = gap <= reach * (1.0 + 1e-9) + 1e-9
         left, reach, run_u, run_v = (
             left[meets],
@@ -1329,7 +1333,7 @@ def _analytic(surface: Any, u: Array, v: Array) -> tuple[Array, Array, Array] | 
     frame = geometry.Position()
     o, x, y, z = (_xyz(frame.Location()), _xyz(frame.XDirection()), _xyz(frame.YDirection()),
                   _xyz(frame.Direction()))  # fmt: skip
-    cu, su = np.cos(u)[:, None], np.sin(u)[:, None]
+    cu, su = fv.cos(u)[:, None], fv.sin(u)[:, None]
     radial, around = cu * x + su * y, -su * x + cu * y
     if kind == GeomAbs_Plane:
         return (
@@ -1342,13 +1346,13 @@ def _analytic(surface: Any, u: Array, v: Array) -> tuple[Array, Array, Array] | 
         return o + r * radial + v[:, None] * z, r * around, np.tile(z, (len(u), 1))
     if kind == GeomAbs_Cone:
         r, a = geometry.RefRadius(), geometry.SemiAngle()
-        reach = (r + v * math.sin(a))[:, None]
+        reach = (r + v * fs.sin(a))[:, None]
         return (
-            o + reach * radial + (v * math.cos(a))[:, None] * z,
+            o + reach * radial + (v * fs.cos(a))[:, None] * z,
             reach * around,
-            math.sin(a) * radial + math.cos(a) * z,
+            fs.sin(a) * radial + fs.cos(a) * z,
         )
-    cv, sv = np.cos(v)[:, None], np.sin(v)[:, None]
+    cv, sv = fv.cos(v)[:, None], fv.sin(v)[:, None]
     if kind == GeomAbs_Sphere:
         r = geometry.Radius()
         return (
@@ -1660,7 +1664,7 @@ def face_facts(face: Any) -> FaceFacts:
         found = plane_of(face)
         assert found is not None
         n = np.array(found[1])
-        name, params = "plane", (*n, float(n @ np.array(found[0])))
+        name, params = "plane", (*n, float(fv.matmul(n, np.array(found[0]))))
     elif kind == GeomAbs_Cylinder:
         cylinder = surface.Cylinder()
         axis, origin = (
@@ -1669,7 +1673,7 @@ def face_facts(face: Any) -> FaceFacts:
         )
         name, params = (
             "cylinder",
-            (*(origin - (origin @ axis) * axis), *axis, cylinder.Radius()),
+            (*(origin - (fv.matmul(origin, axis)) * axis), *axis, cylinder.Radius()),
         )
     elif kind == GeomAbs_Cone:
         cone = surface.Cone()
@@ -1701,7 +1705,7 @@ def edge_facts(edge: Any) -> EdgeFacts:
     if kind == GeomAbs_Line:
         line = curve.Line()
         d, o = _canonical(_xyz(line.Direction())), _xyz(line.Location())
-        name, params = "line", (*(o - (o @ d) * d), *d)
+        name, params = "line", (*(o - (fv.matmul(o, d)) * d), *d)
     elif kind == GeomAbs_Circle:
         circle = curve.Circle()
         name, params = "circle", (*_xyz(circle.Location()), *_canonical(_xyz(circle.Axis().Direction())),

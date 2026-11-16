@@ -33,6 +33,8 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from ..classes import Tolerance, bracket_mutants, general
@@ -88,7 +90,7 @@ def _cone(target: Cone, tolerance: Tolerance, probe: Probe) -> Measurement:
     slant = math.hypot(r1 - r0, s1 - s0)
     # The band, as how far the cone's far end moves square to it.
     width = (
-        2 * slant * math.tan(math.radians(min(tolerance.band, 60.0)))
+        2 * slant * fs.tan(math.radians(min(tolerance.band, 60.0)))
         + 2 * deflection
         + 1e-3
     )
@@ -96,7 +98,7 @@ def _cone(target: Cone, tolerance: Tolerance, probe: Probe) -> Measurement:
     if isinstance(cone, str):
         return Measurement(None, 0, cone, missing=cone.startswith("no built"))
     b = cone.fit.b
-    angle = math.degrees(2 * math.atan(abs(b)))
+    angle = math.degrees(2 * fs.atan(abs(b)))
     u = math.degrees(2 * cone.fit.u_b / (1 + b * b))
     return Measurement.of(
         angle, u, cone.found, f"a cone fitted to {cone.found} built points"
@@ -123,13 +125,13 @@ def mesh_deflection(target: Cone, tolerance: Tolerance) -> float:
     if s1 == s0:
         return math.inf
     slant = math.hypot(r1 - r0, s1 - s0)
-    width = 2 * slant * math.tan(math.radians(min(tolerance.band, 60.0))) + 1e-3
+    width = 2 * slant * fs.tan(math.radians(min(tolerance.band, 60.0))) + 1e-3
     margin = _margin(width, s1 - s0)
     slope = (r1 - r0) / (s1 - s0)
     s = np.repeat(np.linspace(s0 + margin, s1 - margin, _ALONG), _ROUND)
     turn = np.tile(np.linspace(0.0, 2 * math.pi, _ROUND, endpoint=False), _ALONG)
     r = r0 + slope * (s - s0)
-    across = np.stack([r * np.cos(turn), r * np.sin(turn)], axis=1)
+    across = np.stack([r * fv.cos(turn), r * fv.sin(turn)], axis=1)
     unit = 1e-6  # small enough that the second-order term is nothing beside the first
     fit = fit_cone(across, s, np.full(len(s), unit), r0 - slope * s0, slope)
     if fit is None:
@@ -146,8 +148,8 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
     deflection = float(probe.deflection.max(initial=0.0))
     w, _, _ = basis(target.axis)
     zero = np.asarray(target.zero, dtype=np.float64)
-    zero = zero - (zero @ w) * w
-    zero /= float(np.linalg.norm(zero))
+    zero = zero - (fv.matmul(zero, w)) * w
+    zero /= float(fv.norm(zero))
     quarter = np.asarray(np.cross(w, zero), dtype=np.float64)
     centre = np.asarray(target.centre, dtype=np.float64)
     # How far a copy moves at the tolerance's angles, from its place.
@@ -159,12 +161,9 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
     ]
     farthest = max(
         [target.reach]
-        + [
-            float(np.linalg.norm(np.cross(np.asarray(c.centre) - centre, w)))
-            for c in rounds
-        ]
+        + [float(fv.norm(np.cross(np.asarray(c.centre) - centre, w))) for c in rounds]
     )
-    moved = farthest * math.tan(math.radians(min(tolerance.band, 60.0)))
+    moved = farthest * fs.tan(math.radians(min(tolerance.band, 60.0)))
     width = width_for(Tolerance(moved, moved), deflection)
     width += min((c.radius for c in rounds), default=0.0) / 4
 
@@ -191,7 +190,9 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
     )
     if isinstance(hub, str):
         return _missing(f"the side: {hub}", 0)
-    line = np.array([float(hub.centre @ zero), float(hub.centre @ quarter)])
+    line = np.array(
+        [float(fv.matmul(hub.centre, zero)), float(fv.matmul(hub.centre, quarter))]
+    )
     u_line = np.array([hub.uncertainty_along(zero), hub.uncertainty_along(quarter)])
     found = hub.found
     angles: list[tuple[float, float]] = []
@@ -200,20 +201,25 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
         if isinstance(copy, Middle):
             # A post's middle, how far across the way round from the line, seen from its reach out.
             turn = math.radians(expected)
-            way = math.cos(turn) * quarter - math.sin(turn) * zero
+            way = fs.cos(turn) * quarter - fs.sin(turn) * zero
             located = locate(copy, way, width, probe)
             if isinstance(located, str):
                 return _missing(f"copy {k}: {located}", found)
             at, u_at, count = located
             across = at - float(
-                line @ np.array([float(zero @ way), float(quarter @ way)])
+                fv.matmul(
+                    line,
+                    np.array(
+                        [float(fv.matmul(zero, way)), float(fv.matmul(quarter, way))]
+                    ),
+                )
             )
             u_across = (
                 u_at
-                + abs(float(zero @ way)) * float(u_line[0])
-                + abs(float(quarter @ way)) * float(u_line[1])
+                + abs(float(fv.matmul(zero, way))) * float(u_line[0])
+                + abs(float(fv.matmul(quarter, way))) * float(u_line[1])
             )
-            angles.append((expected + math.degrees(math.atan2(across, target.reach)),
+            angles.append((expected + math.degrees(fs.atan2(across, target.reach)),
                            math.degrees(u_across / target.reach)))  # fmt: skip
             found += count
             continue
@@ -227,8 +233,8 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
         if isinstance(fit, str):
             return _missing(f"copy {k}: {fit}", found)
         found += fit.found
-        x = float(fit.centre @ zero) - float(line[0])
-        y = float(fit.centre @ quarter) - float(line[1])
+        x = float(fv.matmul(fit.centre, zero)) - float(line[0])
+        y = float(fv.matmul(fit.centre, quarter)) - float(line[1])
         ux = fit.uncertainty_along(zero) + float(u_line[0])
         uy = fit.uncertainty_along(quarter) + float(u_line[1])
         reach = math.hypot(x, y)
@@ -239,7 +245,7 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
                 f"copy {k} is on the line: it has no angle round it",
                 missing=False,
             )
-        angle = _near(math.degrees(math.atan2(y, x)), expected)
+        angle = _near(math.degrees(fs.atan2(y, x)), expected)
         angles.append(
             (angle, math.degrees((abs(y) * ux + abs(x) * uy) / (reach * reach)))
         )
@@ -257,7 +263,7 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
 def _values(target: Turns, points: Array) -> Array | None:
     """The start's estimates (each told copy's angle less its steps) or the steps, round the circle through ``points``; None if they fix no circle."""
     guess = points.mean(axis=0)
-    radius = float(np.linalg.norm(points - guess, axis=1).mean())
+    radius = float(fv.norm(points - guess, axis=1).mean())
     circle = fit_circle(
         points, np.zeros(len(points)), (float(guess[0]), float(guess[1])), radius
     )
@@ -266,7 +272,7 @@ def _values(target: Turns, points: Array) -> Array | None:
     d = points - np.asarray(circle.centre)
     angles = [
         _near(
-            math.degrees(math.atan2(float(y), float(x))),
+            math.degrees(fs.atan2(float(y), float(x))),
             target.first + k * target.spacing,
         )
         for k, (x, y) in enumerate(d)

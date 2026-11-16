@@ -14,6 +14,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Choice, Item
 from forge_spec.values import Value
 from numpy.typing import NDArray
@@ -122,7 +123,7 @@ def _standing_prism(
     first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
     frame = _frame(copy.point, first, second)
     sign = float(
-        np.asarray(frame.w) @ u
+        fv.matmul(np.asarray(frame.w), u)
     )  # +1 or -1: the frame's third axis is the way it grows, or back
     if isinstance(face, RoundSide):
         bottom = -face.radius if face.outward else 0.0
@@ -212,7 +213,7 @@ def _box_edge(
     bounds = []
     for f in (f1, f2):
         n = np.asarray(unit(f), dtype=float) * (-1.0 if f in inward else 1.0)
-        bounds.append(rounds.Line2((float(n @ u), float(n @ v))))
+        bounds.append(rounds.Line2((float(fv.matmul(n, u)), float(fv.matmul(n, v)))))
     along = np.eye(3)[k]
     return rounds.StraightEdge(
         _vec(origin), _vec(along), hi[k] - lo[k], _vec(u), _vec(v), bounds[0], bounds[1]
@@ -308,7 +309,10 @@ def _outline_boundary(outline: Outline, side: OutlineSegment | OutlineArc, corne
         if not material:
             normal = (-normal[0], -normal[1])
         if axes is not None:
-            normal = (float(axes[0] @ normal), float(axes[1] @ normal))
+            normal = (
+                float(fv.matmul(axes[0], normal)),
+                float(fv.matmul(axes[1], normal)),
+            )
         return rounds.Line2(normal)
     middle = side.at(side.start + side.sweep / 2)
     towards = _unit2(side.centre[0] - middle[0], side.centre[1] - middle[1])
@@ -321,7 +325,7 @@ def _outline_boundary(outline: Outline, side: OutlineSegment | OutlineArc, corne
     )
     centre = (side.centre[0] - at[0], side.centre[1] - at[1])
     if axes is not None:
-        centre = (float(axes[0] @ centre), float(axes[1] @ centre))
+        centre = (float(fv.matmul(axes[0], centre)), float(fv.matmul(axes[1], centre)))
     return rounds.Circle2(centre, side.radius, inside == material)
 
 
@@ -374,7 +378,7 @@ def _outline_chain(
             wall = wall_way * out
             edges.append(rounds.StraightEdge(_vec(origin), _vec(along), length, _vec(su), _vec(sv),
                                              rounds.Line2((face_way, 0.0)),
-                                             rounds.Line2((float(wall @ su), float(wall @ sv)))))  # fmt: skip
+                                             rounds.Line2((float(fv.matmul(wall, su)), float(fv.matmul(wall, sv))))))  # fmt: skip
         else:
             cx, cy, r, start_, sweep = data
             centre = frame.world(np.array([cx]), np.array([cy]), np.array([z]))[0]
@@ -433,7 +437,7 @@ def _face_loop(
     middle = [(lo[i] + hi[i]) / 2 for i in range(3)]
     middle[k] = hi[k] if face[0] == "+" else lo[k]
     frame = _frame(middle, _axis(a1), _axis(a2))
-    sign = float(np.asarray(frame.w) @ np.asarray(unit(face)))
+    sign = float(fv.matmul(np.asarray(frame.w), np.asarray(unit(face))))
     quadrant = [
         frozenset({s1 + a1, s2 + a2})
         for s1, s2 in (("+", "+"), ("-", "+"), ("-", "-"), ("+", "-"))
@@ -463,7 +467,7 @@ def _rim_band(
     ) / 2
     # The rim's curve on the side falls back from the mouth's point, along the
     # way the cut goes, by at most the side's sagitta over the mouth.
-    sag = face.radius - math.sqrt(max(face.radius**2 - radius**2, 0.0))
+    sag = face.radius - math.sqrt(max(face.radius * face.radius - radius * radius, 0.0))
     radius += reach
     u = np.asarray(copy.direction, dtype=float)
     axis = Frame.along(face.start, unit("+" + face.axis))
@@ -515,7 +519,7 @@ def flat_cut_node(
     assert isinstance(face, FlatFace) and copy.axes is not None
     first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
     flat = _frame(copy.point, first, second)
-    sign = float(np.asarray(flat.w) @ inward)
+    sign = float(fv.matmul(np.asarray(flat.w), inward))
     t0, t1 = sorted((sign * start, sign * depth))
     return Prism(flat, entry.outline(item, copy.axes), t0, t1)
 
@@ -544,7 +548,7 @@ def flat_cut_chains(
     n_f = np.asarray(copy.direction, dtype=float)
     assert copy.axes is not None
     flat = _frame(copy.point, _axis(copy.axes[0]), _axis(copy.axes[1]))
-    sign = float(np.asarray(flat.w) @ n_f)
+    sign = float(fv.matmul(np.asarray(flat.w), n_f))
     depth = copy.span[1]
     z = -depth * sign if fill else 0.0
     return (

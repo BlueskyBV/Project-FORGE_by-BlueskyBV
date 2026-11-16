@@ -27,6 +27,8 @@ from typing import Any
 import numpy as np
 from forge_checks.view import FaceFacts
 from forge_ir.v2 import DocumentV2, Mate
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_units import parse_unit
 from numpy.typing import NDArray
 from OCP.TopoDS import TopoDS
@@ -163,7 +165,7 @@ def surface_of(face_list: Sequence[Any], motion: Motion, where: str) -> Surface:
         return Surface(
             "cylinder",
             point,
-            axis / np.linalg.norm(axis),
+            axis / fv.norm(axis),
             float(first[6]),
             _placed(face_list, motion),
         )
@@ -182,7 +184,7 @@ def surface_of(face_list: Sequence[Any], motion: Motion, where: str) -> Surface:
         return Surface(
             "plane",
             motion.point(point),
-            n / np.linalg.norm(n),
+            n / fv.norm(n),
             None,
             _placed(face_list, motion),
         )
@@ -196,21 +198,21 @@ def _placed(face_list: Sequence[Any], motion: Motion) -> tuple[Any, ...]:
 
 
 def _parallel(a: Array, b: Array, *, same_way: bool = False) -> bool:
-    a, b = np.asarray(a) / np.linalg.norm(a), np.asarray(b) / np.linalg.norm(b)
-    angle = math.atan2(float(np.linalg.norm(np.cross(a, b))), float(a @ b))
+    a, b = np.asarray(a) / fv.norm(a), np.asarray(b) / fv.norm(b)
+    angle = fs.atan2(float(fv.norm(np.cross(a, b))), float(fv.matmul(a, b)))
     return angle <= ANGLE if same_way else min(angle, math.pi - angle) <= ANGLE
 
 
 def _line_gap(point: Array, direction: Array, other: Array) -> float:
     """How far ``other`` is from the line through ``point`` along ``direction``."""
-    d = np.asarray(direction) / np.linalg.norm(direction)
+    d = np.asarray(direction) / fv.norm(direction)
     rel = np.asarray(other) - np.asarray(point)
-    return float(np.linalg.norm(rel - (rel @ d) * d))
+    return float(fv.norm(rel - (fv.matmul(rel, d)) * d))
 
 
 def _angle(a: Array, b: Array) -> float:
-    return math.atan2(
-        float(np.linalg.norm(np.cross(a, b))), float(np.asarray(a) @ np.asarray(b))
+    return fs.atan2(
+        float(fv.norm(np.cross(a, b))), float(fv.matmul(np.asarray(a), np.asarray(b)))
     )
 
 
@@ -248,7 +250,7 @@ def check_mate(mate: Mate, a: Surface, b: Surface) -> MateCheck:
         else 0.0
     )
     facing = math.pi - _angle(a.direction, b.direction)
-    found_gap = float((b.point - a.point) @ a.direction)
+    found_gap = float(fv.matmul(b.point - a.point, a.direction))
     overlap = _overlap(a, b, found_gap)
     holds = facing <= ANGLE and abs(found_gap - gap) <= DISTANCE and overlap > 0.0
     found = {"facing": facing, "gap": found_gap, "overlap": overlap}
@@ -312,7 +314,7 @@ def found_again(
         candidates = [(f, face_facts(TopoDS.Face(f))) for f in faces(shape)]
         size = (
             max(
-                float(np.linalg.norm(np.subtract(c.bounds.hi, c.bounds.lo)))
+                float(fv.norm(np.subtract(c.bounds.hi, c.bounds.lo)))
                 for _, c in candidates
             )
             or 1.0

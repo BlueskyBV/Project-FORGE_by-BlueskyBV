@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Item
 
 from forge_checks.csg import Inter, Node
@@ -44,7 +45,7 @@ def _extrusion_node(item: Item, copy: Copy, face: FlatFace | RoundSide | None) -
     first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
     u = np.asarray(copy.direction, dtype=float)
     frame = _frame(copy.point, first, second)
-    t0, t1 = sorted((0.0, float(np.asarray(frame.w) @ u) * length))
+    t0, t1 = sorted((0.0, float(fv.matmul(np.asarray(frame.w), u)) * length))
     origin = np.asarray(copy.point, dtype=float)
 
     def world(p: tuple[float, float]) -> Array:

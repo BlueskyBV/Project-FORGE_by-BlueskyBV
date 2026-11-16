@@ -55,6 +55,7 @@ from dataclasses import dataclass, replace
 from functools import cached_property
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 
@@ -111,7 +112,7 @@ def _directions(count: int) -> Array:
     z = 1.0 - 2.0 * (0.05 + 0.9 * ((u + 0.137) % 1.0))
     r = np.sqrt(1.0 - z * z)
     angle = 2.0 * math.pi * v + 0.3
-    return np.stack([r * np.cos(angle), r * np.sin(angle), z], axis=1)
+    return np.stack([r * fv.cos(angle), r * fv.sin(angle), z], axis=1)
 
 
 _DIRECTIONS = _directions(_RAYS * _TRIES)
@@ -135,7 +136,7 @@ def _components(size: int, a: Index, b: Index) -> Index:
 
 
 def _norms(points: Array) -> Array:
-    return np.asarray(np.sqrt(np.einsum("ij,ij->i", points, points)), dtype=np.float64)
+    return np.asarray(np.sqrt(fv.dot(points, points)), dtype=np.float64)
 
 
 @dataclass(frozen=True, eq=False)
@@ -358,7 +359,7 @@ class MeshShape:
             u, w = nxt - here, prv - here
             with np.errstate(invalid="ignore", over="ignore"):
                 cross = np.asarray(np.cross(u, w), dtype=np.float64)
-                angle = np.arctan2(_norms(cross), np.einsum("ij,ij->i", u, w))
+                angle = fv.arctan2(_norms(cross), fv.dot(u, w))
             weight = np.where(good, angle, 0.0)
             for axis in range(3):
                 vertex[:, axis] += np.bincount(
@@ -522,7 +523,7 @@ class MeshShape:
             np.maximum.at(hi, shell, corner)
         centre = ((lo + hi) * 0.5)[shell]
         u, v, w = a - centre, b - centre, c - centre
-        signed = np.einsum("ij,ij->i", u, np.cross(v, w))
+        signed = fv.dot(u, np.cross(v, w))
         sizes = _norms(u) * _norms(v) * _norms(w)
         volume = np.bincount(shell, weights=signed, minlength=count)
         faces = np.bincount(shell, minlength=count)
@@ -675,7 +676,7 @@ class MeshShape:
         for who, entry in tree.within(points, reach):
             here = points[who]
             # A triangle's plane is no farther than the triangle: a cheap cut.
-            height = np.abs(np.einsum("ij,ij->i", here - a[entry], normals[entry]))
+            height = np.abs(fv.dot(here - a[entry], normals[entry]))
             close = height <= reach[who] + error[who]
             who, entry, here = who[close], entry[close], here[close]
             at, d, valid = features(here, a[entry], b[entry], c[entry], normals[entry])
@@ -684,7 +685,7 @@ class MeshShape:
             who, face = who[pair], rows[entry[pair]]
             gap = here[pair] - at[pair, region]
             normal, ok = self._feature_normal(face, region.astype(np.int8))
-            lean = np.einsum("ij,ij->i", gap, normal)
+            lean = fv.dot(gap, normal)
             margin = error[who] + d[pair, region] * _FEATURE_TILT
             sign = np.where(
                 ok & (lean > margin), 1, np.where(ok & (lean < -margin), -1, 0)
@@ -764,7 +765,7 @@ class MeshShape:
         lo, hi = self._bounds_arrays
         centre = (lo + hi) * 0.5
         a, b, c = a - centre, b - centre, c - centre
-        six = np.einsum("ij,ij->i", a, np.cross(b, c))
+        six = fv.dot(a, np.cross(b, c))
         sizes = _norms(a) * _norms(b) * _norms(c)
         value = math.fsum(six.tolist()) / 6.0
         # Each determinant's rounding, and moving the corners to the centre,
@@ -1000,14 +1001,14 @@ def _cover(
                 shares[begin : begin + _PIECES],
             )
             a, b, c = (
-                np.einsum("nj,njk->nk", share[:, k], _stacked(corners, batch))
+                fv.matmul(share[:, k][:, None, :], _stacked(corners, batch))[:, 0]
                 for k in range(3)
             )
             on_pieces, reached_here = _rows_of(a, b, c, gap, spacing)
             if on_pieces is not None:
                 w, piece = on_pieces
                 # Weights on the piece's corners, as weights on its triangle's: exact zeros stay zeros.
-                weights.append(np.einsum("nk,nkj->nj", w, share[piece]))
+                weights.append(fv.matmul(w[:, None, :], share[piece])[:, 0])
                 owners.append(batch[piece])
             reached = max(reached, reached_here)
     weight = np.concatenate(weights)
@@ -1057,12 +1058,12 @@ def _clipped(
     for _ in range(_SPLITS):
         if not len(whose):
             break
-        at = np.einsum("nij,njk->nik", shares, _stacked(corners, whose))
+        at = fv.matmul(shares, _stacked(corners, whose))
         meets = np.all(at.min(axis=1) <= hi, axis=1) & np.all(
             at.max(axis=1) >= lo, axis=1
         )
         whose, shares, at = whose[meets], shares[meets], at[meets]
-        sides = np.linalg.norm(at - np.roll(at, 1, axis=1), axis=2).max(axis=1)
+        sides = fv.norm(at - np.roll(at, 1, axis=1), axis=2).max(axis=1)
         small = sides <= enough
         done.append((whose[small], shares[small]))
         whose, shares = whose[~small], shares[~small]
@@ -1108,7 +1109,9 @@ def _rows_of(
     )
     width = length[tri] * (1.0 - up)
     count = np.maximum(np.ceil(width / spacing).astype(np.int64), 1)
-    reach_rows = np.sqrt(np.minimum(gap, height[tri]) ** 2 + (width / (2 * count)) ** 2)
+    reach_rows = np.sqrt(
+        fv.sq(np.minimum(gap, height[tri])) + fv.sq(width / (2 * count))
+    )
     reached = float(reach_rows.max(initial=0.0))
     row = np.repeat(np.arange(len(tri)), count + 1)
     along = (

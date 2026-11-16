@@ -21,6 +21,8 @@ from typing import Any, cast
 import numpy as np
 from numpy.typing import NDArray
 
+from . import _native
+
 Array = NDArray[np.float64]
 
 __all__ = [
@@ -40,6 +42,13 @@ __all__ = [
 
 #: Up to this many terms a sum is added left to right; beyond, by NumPy's pairwise ``add.reduce``.
 SHORT = 8
+#: A matrix of up to this many rows times a short vector is worked row by row in Python floats (cheaper than NumPy's set-up).
+_ROWS = 16
+#: The compiled twin's matrix products (``native/forge_numeric_native``), where this machine has it: the
+#: same sums, for a short contracted axis and at least :data:`_MANY` of them (fewer cost more to hand over
+#: than to add in NumPy). :mod:`.vector` switches it with its own.
+_use: Any = _native.LIB
+_MANY = 160
 
 
 def _f(x: Any) -> Array:
@@ -59,37 +68,55 @@ def sum_last(p: Array) -> Array:
     return out
 
 
-def dot(a: Any, b: Any) -> Array | float:
+def dot(a: Any, b: Any) -> Any:
     """The sum over the last axes of ``a * b`` (broadcast): a vector's dot product, or rows' with rows.
 
-    A float where both are vectors, as ``numpy.dot`` of two vectors.
+    A NumPy float where both are vectors, as ``numpy.dot`` of two vectors.
     """
     a, b = _f(a), _f(b)
-    out = sum_last(a * b)
-    return float(out) if out.ndim == 0 else out
+    if a.ndim == 1 and b.ndim == 1 and 0 < a.shape[0] <= SHORT and a.shape == b.shape:
+        return _vector_dot(a.tolist(), b.tolist())
+    out: Array = sum_last(a * b)[()]
+    return out
 
 
-def norm(a: Any, axis: int | None = None) -> Array | float:
-    """The Euclidean length: of a vector (``axis`` None and ``a`` 1-D), or along ``axis`` (by default the last)."""
+def _vector_dot(a: list[float], b: list[float]) -> np.float64:
+    """Two short vectors' dot product in Python floats: the same operations, in the same order, as :func:`sum_last` of ``a * b``."""
+    s = a[0] * b[0]
+    for j in range(1, len(a)):
+        s = s + a[j] * b[j]
+    return np.float64(s)
+
+
+def norm(a: Any, axis: int | None = None, keepdims: bool = False) -> Any:
+    """The Euclidean length: of everything in ``a`` (``axis`` None: a vector's length), or along ``axis``.
+
+    As ``numpy.linalg.norm`` with no ``ord``: a NumPy float, or an array
+    without that axis (or with it, of length 1, with ``keepdims``).
+    """
     a = _f(a)
+    if axis is None and not keepdims and 0 < a.size <= SHORT:
+        v = a.reshape(-1).tolist()
+        return np.float64(math.sqrt(_vector_dot(v, v)))
     if axis is None:
-        if a.ndim <= 1:
-            return (
-                math.sqrt(float(sum_last((a * a).reshape(-1))))
-                if a.ndim
-                else abs(float(a))
-            )
-        a = a.reshape(-1)
-        return math.sqrt(float(sum_last(a * a)))
+        flat = a.reshape(-1)
+        out = np.sqrt(sum_last(flat * flat))
+        return cast(Array, out.reshape((1,) * a.ndim) if keepdims else out[()])
     moved = np.moveaxis(a, axis, -1)
-    return np.sqrt(sum_last(moved * moved))
+    out = np.sqrt(sum_last(moved * moved))
+    return cast(Array, (np.expand_dims(out, axis) if keepdims else out)[()])
 
 
 def unit(a: Any) -> Array:
     """``a`` divided by its length (along the last axis); a ValueError where a length is zero or not finite."""
     a = _f(a)
     if a.ndim == 1:
-        length = float(np.sqrt(sum_last(a * a)))
+        v = a.tolist()
+        length = (
+            math.sqrt(float(_vector_dot(v, v)))
+            if 0 < len(v) <= SHORT
+            else float(np.sqrt(sum_last(a * a)))
+        )
         if not math.isfinite(length) or length == 0.0:
             raise ValueError(f"not a direction: {a}")
         return cast(Array, a / length)
@@ -99,9 +126,38 @@ def unit(a: Any) -> Array:
     return cast(Array, a / lengths[..., None])
 
 
-def matmul(a: Any, b: Any) -> Array | float:
-    """``a @ b`` with NumPy's rules for 1-D and stacked operands, its sums in this module's order."""
+def matmul(a: Any, b: Any) -> Any:
+    """``a @ b`` with NumPy's rules for 1-D and stacked operands, its sums in this module's order (a NumPy float for two vectors)."""
     a, b = _f(a), _f(b)
+    # The common cases with a short vector, by the same operations in the same order, with less set-up.
+    if (
+        b.ndim == 1
+        and 0 < b.shape[0] <= SHORT
+        and a.ndim >= 1
+        and a.shape[-1] == b.shape[0]
+    ):
+        if a.ndim == 1:
+            return _vector_dot(a.tolist(), b.tolist())
+        bv = b.tolist()
+        if a.ndim == 2 and a.shape[0] <= _ROWS:
+            return np.array(
+                [_vector_dot(row, bv) for row in a.tolist()], dtype=np.float64
+            )
+        column: Array = a[..., 0] * bv[0]
+        for j in range(1, len(bv)):
+            column = column + a[..., j] * bv[j]
+        return column
+    if (
+        a.ndim == 1
+        and 0 < a.shape[0] <= SHORT
+        and b.ndim >= 2
+        and b.shape[-2] == a.shape[0]
+    ):
+        av = a.tolist()
+        row: Array = av[0] * b[..., 0, :]
+        for j in range(1, len(av)):
+            row = row + av[j] * b[..., j, :]
+        return row
     if a.ndim == 0 or b.ndim == 0:
         raise ValueError("matmul: an operand is a scalar")
     va, vb = a.ndim == 1, b.ndim == 1
@@ -112,7 +168,18 @@ def matmul(a: Any, b: Any) -> Array | float:
     if a.shape[-1] != b.shape[-2]:
         raise ValueError(f"matmul: shapes {a.shape} and {b.shape} don't fit")
     k = a.shape[-1]
-    if k <= SHORT:
+    if (
+        _use is not None
+        and a.ndim == 2
+        and b.ndim == 2
+        and 0 < k <= SHORT
+        and a.shape[0] * b.shape[1] >= _MANY
+    ):
+        out = _native.matmul(np.ascontiguousarray(a), np.ascontiguousarray(b))
+    elif k == 0:
+        stack = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+        out = np.zeros((*stack, a.shape[-2], b.shape[-1]))
+    elif k <= SHORT:
         out = a[..., :, 0:1] * b[..., 0:1, :]
         for j in range(1, k):
             out = out + a[..., :, j : j + 1] * b[..., j : j + 1, :]
@@ -127,7 +194,7 @@ def matmul(a: Any, b: Any) -> Array | float:
         out = out[..., 0, :]
     if vb:
         out = out[..., 0]
-    return float(out) if np.ndim(out) == 0 else out
+    return cast(Array, out[()])
 
 
 # ----------------------------------------------------------------------
@@ -170,22 +237,20 @@ def solve(a: Any, b: Any) -> Array:
         raise np.linalg.LinAlgError("Singular matrix")
     x = np.empty_like(y)
     for k in range(n - 1, -1, -1):
-        acc = y[k].copy() if y.ndim > 1 else float(y[k])
-        for j in range(k + 1, n):
-            acc = acc - u[k, j] * x[j]
-        x[k] = acc / u[k, k]
+        rest = matmul(u[k, k + 1 :], x[k + 1 :]) if k + 1 < n else 0.0
+        x[k] = (y[k] - rest) / u[k, k]
     return x
 
 
-def det(a: Any) -> float:
-    """The determinant, by the elimination :func:`solve` uses."""
+def det(a: Any) -> np.float64:
+    """The determinant, by the elimination :func:`solve` uses (a NumPy float, as ``numpy.linalg.det``)."""
     a = _f(a)
     n = a.shape[0]
     u, _, swaps, _ = _eliminate(a, np.zeros(n))
     out = -1.0 if swaps % 2 else 1.0
     for k in range(n):
         out = out * float(u[k, k])
-    return out
+    return np.float64(out)
 
 
 def inv(a: Any) -> Array:
@@ -253,11 +318,11 @@ def eigh(s: Any) -> tuple[Array, Array]:
     return values, v
 
 
-def cond_symmetric(s: Any) -> float:
+def cond_symmetric(s: Any) -> np.float64:
     """The 2-norm condition number of a symmetric matrix: its largest |eigenvalue| over its smallest."""
     values = np.abs(eigh(s)[0])
     small = float(values.min())
-    return math.inf if small == 0.0 else float(values.max()) / small
+    return np.float64(math.inf if small == 0.0 else float(values.max()) / small)
 
 
 # ----------------------------------------------------------------------

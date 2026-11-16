@@ -35,7 +35,7 @@
 use std::slice;
 
 /// The interface's version: the loader refuses any other.
-const ABI: u64 = 2;
+const ABI: u64 = 3;
 
 #[inline(always)]
 fn from_high(h: u32) -> f64 {
@@ -715,4 +715,30 @@ pub unsafe extern "C" fn fnum_hypot(
         }
     }
     count
+}
+
+/// `a` (rows by k) times `b` (k by cols) into `out` (rows by cols), each sum from its first product,
+/// left to right: the order forge_numeric's NumPy twin adds in for k <= 8 (`linear.matmul`).
+#[no_mangle]
+pub unsafe extern "C" fn fnum_matmul(
+    a: *const f64,
+    b: *const f64,
+    out: *mut f64,
+    rows: usize,
+    k: usize,
+    cols: usize,
+) {
+    let a = slice::from_raw_parts(a, rows * k);
+    let b = slice::from_raw_parts(b, k * cols);
+    let out = slice::from_raw_parts_mut(out, rows * cols);
+    for r in 0..rows {
+        let ar = &a[r * k..(r + 1) * k];
+        for c in 0..cols {
+            let mut s = ar[0] * b[c];
+            for t in 1..k {
+                s = s + ar[t] * b[t * cols + c];
+            }
+            out[r * cols + c] = s;
+        }
+    }
 }

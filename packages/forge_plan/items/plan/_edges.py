@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Choice, Item, Profile
 from forge_spec.placement import Instance
 
@@ -99,8 +100,8 @@ def _arc_box(a: tuple[float, float], b: tuple[float, float], centre: tuple[float
              clockwise: bool) -> tuple[tuple[float, float], tuple[float, float]]:  # fmt: skip
     """The box round an arc from ``a`` to ``b`` about ``centre``: its ends, and its circle's points furthest along each axis that it passes."""
     r = math.dist(a, centre)
-    a0 = math.atan2(a[1] - centre[1], a[0] - centre[0])
-    a1 = math.atan2(b[1] - centre[1], b[0] - centre[0])
+    a0 = fs.atan2(a[1] - centre[1], a[0] - centre[0])
+    a1 = fs.atan2(b[1] - centre[1], b[0] - centre[0])
     sweep = ((a0 - a1) if clockwise else (a1 - a0)) % (2 * math.pi)
     points = [a, b]
     for k in range(4):
@@ -108,7 +109,7 @@ def _arc_box(a: tuple[float, float], b: tuple[float, float], centre: tuple[float
         along = ((a0 - angle) if clockwise else (angle - a0)) % (2 * math.pi)
         if along <= sweep:
             points.append(
-                (centre[0] + r * math.cos(angle), centre[1] + r * math.sin(angle))
+                (centre[0] + r * fs.cos(angle), centre[1] + r * fs.sin(angle))
             )
     return (min(p[0] for p in points), min(p[1] for p in points)), (
         max(p[0] for p in points),

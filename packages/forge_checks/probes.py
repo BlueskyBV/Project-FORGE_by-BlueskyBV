@@ -32,6 +32,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .checks import Evidence
@@ -180,9 +181,9 @@ def _spread(points: Array, keep: int) -> Array:
     if len(points) <= keep:
         return points
     chosen = [0]
-    gap = np.linalg.norm(points - points[0], axis=1)
+    gap = fv.norm(points - points[0], axis=1)
     for _ in range(keep - 1):
         k = int(np.argmax(gap))
         chosen.append(k)
-        gap = np.minimum(gap, np.linalg.norm(points - points[k], axis=1))
+        gap = np.minimum(gap, fv.norm(points - points[k], axis=1))
     return np.asarray(points[np.asarray(chosen)], dtype=np.float64)

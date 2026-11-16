@@ -33,6 +33,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from ..classes import Tolerance, bracket_mutants
@@ -156,7 +157,7 @@ class Ring:
         """Where the circle's centre is along a direction (from the frame's origin), and how far that may be off; None without a circle."""
         if self.circle is None:
             return None
-        x, y = float(self.e1 @ along), float(self.e2 @ along)
+        x, y = float(fv.matmul(self.e1, along)), float(fv.matmul(self.e2, along))
         c = self.circle.centre
         return c[0] * x + c[1] * y, self.circle.uncertainty(x, y, 0.0)
 
@@ -180,7 +181,9 @@ def ring(
             fit = fitted_round(spot.first.round, width, probe)
             if isinstance(fit, str):
                 return f"copy {k}: {fit}"
-            points.append((float(fit.centre @ e1), float(fit.centre @ e2)))
+            points.append(
+                (float(fv.matmul(fit.centre, e1)), float(fv.matmul(fit.centre, e2)))
+            )
             spread.append((fit.uncertainty_along(e1), fit.uncertainty_along(e2)))
             found += fit.found
             continue
@@ -197,7 +200,7 @@ def ring(
     circle = None
     if len(spots) >= 3:
         guess = at.mean(axis=0)
-        radius = float(np.linalg.norm(at - guess, axis=1).mean())
+        radius = float(fv.norm(at - guess, axis=1).mean())
         circle = fit_circle(
             at, off.sum(axis=1), (float(guess[0]), float(guess[1])), radius
         )
@@ -223,9 +226,9 @@ def locate(
         if len(window) < FEWEST:
             return f"no built face within {width:.3g} mm of the spec's plane through {ref.point}"
         normal = np.asarray(ref.normal, dtype=np.float64)
-        normal /= float(np.linalg.norm(normal))
-        at = float(np.dot(ref.point, along)) + offset * float(normal @ along)
-        return at, u * abs(float(normal @ along)), len(window)
+        normal /= float(fv.norm(normal))
+        at = float(fv.dot(ref.point, along)) + offset * float(fv.matmul(normal, along))
+        return at, u * abs(float(fv.matmul(normal, along))), len(window)
     if isinstance(ref, Middle):
         a = locate(ref.a, along, width, probe)
         b = locate(ref.b, along, width, probe)
@@ -262,13 +265,16 @@ def locate(
         axis_point = np.asarray(ref.cone.centre, dtype=np.float64) + (
             cone.fit.centre[0] * e1 + cone.fit.centre[1] * e2
         )
-        at = float(axis_point @ along)
+        at = float(fv.matmul(axis_point, along))
         # The rim on that side: the axis and the radius there, as far across as ``along`` allows.
-        across = float(np.sqrt(max(0.0, 1.0 - float(w @ along) ** 2)))
+        across = float(np.sqrt(max(0.0, 1.0 - fv.sq(float(fv.matmul(w, along))))))
         if ref.sign:
             at += ref.sign * cone.fit.radius_at(ref.at)[0] * across
         u_cone = cone.fit.uncertainty(
-            float(e1 @ along), float(e2 @ along), ref.sign * across, ref.at
+            float(fv.matmul(e1, along)),
+            float(fv.matmul(e2, along)),
+            ref.sign * across,
+            ref.at,
         )
         return at, u_cone, cone.found
     if isinstance(ref, BallCentre) or (
@@ -279,7 +285,7 @@ def locate(
         ball = fitted_ball(ball_target, width, probe)
         if isinstance(ball, str):
             return ball
-        at = float(np.dot(ball.fit.centre, along))
+        at = float(fv.dot(ball.fit.centre, along))
         sign = ref.sign if isinstance(ref, RoundEdge) else 0.0
         at += sign * ball.fit.radius
         return at, ball.fit.uncertainty(along.tolist(), sign), ball.found
@@ -287,12 +293,14 @@ def locate(
     found = fitted_round(ref.round, width, probe)
     if isinstance(found, str):
         return found
-    at = float(found.centre @ along)
+    at = float(fv.matmul(found.centre, along))
     if not isinstance(ref, RoundEdge):
         return at, found.uncertainty_along(along), found.found
     # The edge on that side: the axis and the radius, as far across as ``along`` allows,
     # bounded as one (on a short arc the axis and the radius move together).
-    across = ref.sign * float(np.sqrt(max(0.0, 1.0 - float(found.axis @ along) ** 2)))
+    across = ref.sign * float(
+        np.sqrt(max(0.0, 1.0 - fv.sq(float(fv.matmul(found.axis, along)))))
+    )
     at += found.fit.radius * across
     return at, found.uncertainty_along(along, across), found.found
 
@@ -302,7 +310,7 @@ def measure(
 ) -> Measurement:
     width = tolerance.band + 2 * float(probe.deflection.max(initial=0.0)) + 1e-3
     along = np.asarray(target.along, dtype=np.float64)
-    along /= float(np.linalg.norm(along))
+    along /= float(fv.norm(along))
     # Both located before either is judged missing, so a measurement taken again finer
     # where it looked looks at both (as size's two planes, generated part 2010).
     reference = locate(target.reference, along, width, probe)

@@ -19,6 +19,8 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.BRep import BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Surface
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
@@ -203,8 +205,8 @@ def blend_section(alpha: float, size: float, *, bevel: bool) -> float:
     """
     alpha = min(max(alpha, 1e-3), math.pi - 1e-9)
     if bevel:
-        return size * size * math.sin(alpha) / 2.0
-    return size * size * (1.0 / math.tan(alpha / 2.0) - (math.pi - alpha) / 2.0)
+        return size * size * fs.sin(alpha) / 2.0
+    return size * size * (1.0 / fs.tan(alpha / 2.0) - (math.pi - alpha) / 2.0)
 
 
 def blend_bounds(
@@ -274,8 +276,8 @@ def blend_bounds(
                 kinds |= {"ridge", "crease"}
                 least = min(least, 1e-3)
                 continue
-            c = float(np.clip(normals[0] @ normals[1], -1.0, 1.0))
-            alpha = math.pi - math.acos(c)
+            c = float(np.clip(fv.matmul(normals[0], normals[1]), -1.0, 1.0))
+            alpha = math.pi - fs.acos(c)
             least = min(least, alpha)
             # Probe a point outside the first face's plane and inside the second's, a fiftieth of the size
             # off each: air at a ridge, material in a crease.
@@ -295,7 +297,7 @@ def blend_bounds(
                 if state == TopAbs_IN
                 else {"ridge", "crease"}
             )
-        reach = size if bevel else size / math.tan(max(least, 1e-3) / 2.0)
+        reach = size if bevel else size / fs.tan(max(least, 1e-3) / 2.0)
         moved = blend_section(least, size, bevel=bevel) * length * (1.0 + bend * reach)
         if "ridge" in kinds:
             removed += moved
@@ -306,7 +308,7 @@ def blend_bounds(
             widest, sides = corners.get(j, (0.0, set()))
             corners[j] = (max(widest, reach), sides | kinds)
     for widest, sides in corners.values():
-        cube = (4.0 * widest) ** 3
+        cube = fv.cube(4.0 * widest)
         removed += cube if "ridge" in sides else 0.0
         added += cube if "crease" in sides else 0.0
     return removed, added
@@ -349,13 +351,15 @@ def check_step(op: str, params: Any, inputs: Sequence[Any], product: Any) -> Non
     elif op == "sphere":
         r = float(p["diameter"]) / 2.0
         check_volume(
-            shape, (4.0 / 3.0 * math.pi * r**3,) * 2, "a sphere's volume is 4πr³/3"
+            shape,
+            (4.0 / 3.0 * math.pi * (r * r * r),) * 2,
+            "a sphere's volume is 4πr³/3",
         )
     elif op == "torus":
         big, small = float(p["diameter"]) / 2.0, float(p["tube_diameter"]) / 2.0
         check_volume(
             shape,
-            (2.0 * math.pi**2 * big * small * small,) * 2,
+            (2.0 * (math.pi * math.pi) * big * small * small,) * 2,
             "a ring's volume is 2π²Rr²",
         )
     elif op == "box":
