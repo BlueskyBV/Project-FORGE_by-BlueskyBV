@@ -20,7 +20,15 @@ held against theirs. Once:
    ```
 
 3. If an older Python has Forge installed, take it out there, so `forge`
-   is 3.14's: `py -3.12 -m pip uninstall -y forge`.
+   is 3.14's: `py -3.12 -m pip uninstall -y forge`. If pip warned that
+   3.14's `Scripts` folder is not on PATH (the Python install manager
+   doesn't add it), add it once, then open a new PowerShell:
+
+   ```powershell
+   PS> $s = py -3.14 -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+   PS> [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + $s, 'User')
+   ```
+
 4. Check: `py -3.14 -m forge_cli doctor` (the exact kernel's pins, a probe
    part, STEP, STL and 3MF), and the blind set's lock, which only this
    machine can run (`eval/` is never pushed):
