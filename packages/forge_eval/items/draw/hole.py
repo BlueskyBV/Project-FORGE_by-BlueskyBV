@@ -114,7 +114,7 @@ class Hole(DrawKind):
         made = []
         for k, a in enumerate(angles):
             radial = fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter
-            p = side.start + along * w + side.radius * radial
+            p = side.frame_at(radial, along).origin
             copy_index = index + k
             made.append(Copy(f.id, copy_index, side.key, _t(p), _t(radial), None))
             depth = 2 * side.radius if deep is None else deep

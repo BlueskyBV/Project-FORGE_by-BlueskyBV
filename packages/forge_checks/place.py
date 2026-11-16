@@ -452,6 +452,11 @@ class FlatFace:
         """Its centre, its first and second axes and its outward normal."""
         return FaceFrame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
 
+    def frame_at(self, at: Point) -> FaceFrame:
+        """The face's frame at the point of its plane at ``at`` (item 3a's placeable face)."""
+        frame = self.frame
+        return FaceFrame(frame.point(*at), frame.u, frame.v, frame.n)
+
 
 @dataclass(frozen=True)
 class RoundSide:
@@ -475,6 +480,27 @@ class RoundSide:
         """The centre of its end at the smaller coordinate; the ways out at 0 and 90 degrees round it; its axis."""
         u, v = TURN_AXES[self.axis]
         return FaceFrame.of_names(self.start, u, v, self.axis)
+
+    def frame_at(self, turn: Point, along: float) -> FaceFrame:
+        """The side's frame at a point on it (item 3a): ``turn`` its angle's cosine and sine, ``along`` from its middle.
+
+        Its origin is on the side; ``n`` the way out of the material (out of a
+        rod, into a bore), ``v`` the axis and ``u`` round it.
+        """
+        frame = self.frame
+        c, s = turn
+        radial = _add(_add((0.0, 0.0, 0.0), frame.u, c), frame.v, s)
+        middle = frame.level(self.start) + self.length / 2 + along
+        point = _add(frame.at_level(self.start, middle), radial, self.radius)
+        direction = (
+            radial
+            if self.outward
+            else (-radial[0] + 0.0, -radial[1] + 0.0, -radial[2] + 0.0)
+        )
+        around = _add(_add((0.0, 0.0, 0.0), frame.u, -s), frame.v, c)
+        if not self.outward:
+            around = (-around[0] + 0.0, -around[1] + 0.0, -around[2] + 0.0)
+        return FaceFrame(point, around, frame.n, direction)
 
     @property
     def material(self) -> float:
@@ -1198,16 +1224,29 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
                 item.id, f"{on.item}'s {on.face} can't take anything: {why}"
             )
         host = (on.item, host_copy.index, on.face)
-        if isinstance(face, RoundSide):
-            made += _round_copies(item, face, host, layout, len(made))
-        else:
-            made += _flat_copies(item, face, host, len(hosts), layout, len(made))
+        made += _HOSTS[type(face)](item, face, host, len(hosts), layout, len(made))
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
         raise PlaceError(
             item.id, f"its count is {count.n}, but it is placed {len(made)} times"
         )
     return tuple(made)
+
+
+def _on_flat(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
+             first: int) -> list[Copy]:  # fmt: skip
+    assert isinstance(face, FlatFace)
+    return _flat_copies(item, face, host, host_copies, layout, first)
+
+
+def _on_round(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
+              first: int) -> list[Copy]:  # fmt: skip
+    assert isinstance(face, RoundSide)
+    return _round_copies(item, face, host, layout, first)
+
+
+#: Each kind of face an item can be put on (item 3a's placeable faces), by its class: how its copies are placed.
+_HOSTS = {FlatFace: _on_flat, RoundSide: _on_round}
 
 
 def _lies_on(item: Item, face: FlatFace, at: Point, layout: _Layout) -> None:
@@ -1248,7 +1287,7 @@ def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_co
     taken = _entry(item.kind).taken
     made: list[Copy] = []
     for n, (p1, p2) in enumerate(positions):
-        point = face.frame.point(p1, p2)
+        point = face.frame_at((p1, p2)).origin
         assert face.frame.level(point) == face.frame.level(face.centre)
         _lies_on(item, face, (p1, p2), layout)
         index = first + n
@@ -1399,8 +1438,7 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
                 item.id,
                 f"{along:g} mm along the side from its middle, it runs past the side's end",
             )
-        middle = side.frame.level(side.start) + side.length / 2 + along
-        point = _add(side.frame.at_level(side.start, middle), radial, side.radius)
+        point = side.frame_at((c, s), along).origin
         index = first + n
         made.append(
             entry.round_copy(

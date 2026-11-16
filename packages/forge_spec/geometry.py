@@ -214,6 +214,11 @@ class FlatFace:
         """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`)."""
         return Frame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
 
+    def frame_at(self, position: tuple[float, float]) -> Frame:
+        """The face's frame at a point on it, given in its own coordinates (``u``, ``v``) from its centre (item 3a)."""
+        frame = self.frame
+        return Frame(frame.at(*position), frame.u, frame.v, frame.n)
+
     @property
     def symmetric(self) -> bool:
         """Centrally symmetric and convex: a shape that fits anywhere fits at the centre."""
@@ -262,11 +267,37 @@ class SideFace:
         u, v = self.reference
         return Frame.of_names(self.start, u, v, self.axis)
 
+    def frame_at(self, turn: tuple[float, float], along: float) -> Frame:
+        """The side's frame at a point on it (item 3a): ``turn`` the cosine and sine of its angle round the axis, ``along``
+        how far from the middle along it.
+
+        Its origin is on the side; ``n`` the way out of the material (out of a
+        rod, into a bore), ``v`` the axis and ``u`` round it, ``u x v = n``
+        on the outside of a rod.
+        """
+        frame = self.frame
+        r = frame.radial(*turn)
+        centre = _plus(frame.origin, frame.n, self.length / 2 + along)
+        origin = _plus(centre, r, self.radius)
+        outward = r if self.outward else (-r[0], -r[1], -r[2])
+        around = frame.radial(-turn[1], turn[0])
+        return Frame(
+            origin,
+            around if self.outward else (-around[0], -around[1], -around[2]),
+            frame.n,
+            outward,
+        )
+
 
 Face = FlatFace | SideFace
 
 #: Round each axis, the axes at 0 and 90 degrees.
 _REFERENCE = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}
+
+
+def _plus(a: Vec, b: Vec, scale: float) -> Vec:
+    """``a + scale b``, coordinate by coordinate (the solver's ``_add``)."""
+    return (a[0] + b[0] * scale, a[1] + b[1] * scale, a[2] + b[2] * scale)
 
 
 @dataclass(frozen=True)

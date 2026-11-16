@@ -90,7 +90,6 @@ from .items.solve._common import (
     _RESTS_ON_AN_ASSUMPTION,
     Face,
     Hollowing,
-    _add,
     _choice_of,
     _dir,
     _direction_of,
@@ -906,7 +905,9 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     footprint: Footprint = footing if footing is not None else parts
     out = []
     for p1, p2 in positions:
-        instance = Instance(item.id, 0, face.frame.at(p1, p2), normal, host, face.axes)
+        instance = Instance(
+            item.id, 0, face.frame_at((p1, p2)).origin, normal, host, face.axes
+        )
         material = least_material_under(face, footprint, p1, p2)
         out.append(
             _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
@@ -1041,7 +1042,8 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         tuple[float, float, float, float]
     ] = []  # angle, along, half around, half along
     for angle in angles:
-        r = face.frame.radial(*_turn(angle))
+        turn = _turn(angle)
+        r = face.frame.radial(*turn)
         outward = r if face.outward else (-r[0], -r[1], -r[2])
         face_axes: tuple[str, str] | None = None
         if entry.adds:
@@ -1081,8 +1083,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 f"{item.id} runs past the end of {host[0]}",
                 along_values,
             )
-        centre = _add(face.frame.origin, face.frame.n, half + along)
-        origin = _add(centre, r, face.radius)
+        origin = face.frame_at(turn, along).origin
         footprints.append((angle, along, across_size, along_size))
         out.append(
             _Copy(
@@ -1598,12 +1599,8 @@ def _place_on_hosts(item: Item, on: On, hosts: list[tuple[int, Face]], layout: L
     copies: list[_Copy] = []
     for host_index, face in hosts:
         host = (on.item, host_index, on.face)
-        if isinstance(face, SideFace):
-            found = _side_instances(item, face, host, layout, at, len(copies))
-        else:
-            found = _flat_instances(
-                item, face, host, len(hosts), layout, at, len(copies)
-            )
+        kind = _HOSTS[type(face)]
+        found = kind.copies(item, face, host, len(hosts), layout, at, len(copies))
         if len(copies) + len(found) > MAX_COPIES:
             layout.issue("unable", at, f"more than {MAX_COPIES:,} copies of {item.id} on every "
                          f"copy of {on.item}: Forge places at most {MAX_COPIES:,} of one item")  # fmt: skip
@@ -1612,12 +1609,7 @@ def _place_on_hosts(item: Item, on: On, hosts: list[tuple[int, Face]], layout: L
             index = len(copies)
             placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal,
                               copy.instance.host, copy.instance.face_axes)  # fmt: skip
-            if isinstance(face, FlatFace) and not SOLVE[item.kind].lettered:
-                _check_over_openings(item, placed, face, host, layout, at)
-            if isinstance(face, FlatFace):
-                SOLVE[item.kind].floor(
-                    item, placed, face, copy.material, (item.id, index), layout
-                )
+            kind.numbered(item, placed, face, host, copy, layout, at)
             copies.append(
                 _Copy(
                     placed,
@@ -1651,6 +1643,54 @@ def _place_on_hosts(item: Item, on: On, hosts: list[tuple[int, Face]], layout: L
             _round_footed(item, layout, (item.id, placed.index), up)
         standing.append(placed)
     return standing
+
+
+@dataclass(frozen=True)
+class _Host:
+    """A kind of face items are put on (item 3a's placeable face): how an item's copies are placed on one, and what is
+    checked of each copy once it is numbered. Today's two: a flat face and a round side."""
+
+    copies: Callable[
+        [Item, Face, tuple[str, int, str], int, Layout, str, int], list[_Copy]
+    ]
+    numbered: Callable[
+        [Item, Instance, Face, tuple[str, int, str], _Copy, Layout, str], None
+    ]
+
+
+def _flat_copies(item: Item, face: Face, host: tuple[str, int, str], host_count: int, layout: Layout, at: str,
+                 first: int) -> list[_Copy]:  # fmt: skip
+    assert isinstance(face, FlatFace)
+    return _flat_instances(item, face, host, host_count, layout, at, first)
+
+
+def _flat_numbered(item: Item, placed: Instance, face: Face, host: tuple[str, int, str], copy: _Copy, layout: Layout,
+                   at: str) -> None:  # fmt: skip
+    """What stands over an opening, and a pocket's floor."""
+    assert isinstance(face, FlatFace)
+    if not SOLVE[item.kind].lettered:
+        _check_over_openings(item, placed, face, host, layout, at)
+    SOLVE[item.kind].floor(
+        item, placed, face, copy.material, (item.id, placed.index), layout
+    )
+
+
+def _side_copies(item: Item, face: Face, host: tuple[str, int, str], host_count: int, layout: Layout, at: str,
+                 first: int) -> list[_Copy]:  # fmt: skip
+    assert isinstance(face, SideFace)
+    return _side_instances(item, face, host, layout, at, first)
+
+
+def _nothing_more(item: Item, placed: Instance, face: Face, host: tuple[str, int, str], copy: _Copy, layout: Layout,
+                  at: str) -> None:  # fmt: skip
+    return None
+
+
+#: Each kind of face an item can be put on, by its class.
+_HOSTS: Mapping[type, _Host] = {
+    FlatFace: _Host(_flat_copies, _flat_numbered),
+    SideFace: _Host(_side_copies, _nothing_more),
+}
 
 
 def _host_face(inst: Instance, layout: Layout) -> Face | None:

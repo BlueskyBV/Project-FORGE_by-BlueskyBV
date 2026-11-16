@@ -373,6 +373,16 @@ today's two kinds behind it, byte-identical:
   overlaps and edge distances are decided on;
 - `material(position, direction)`: until 2b, today's material model.
 
+Status of 3a: its first part is built in the solver, the judge and the
+generator, byte-identical (the fingerprints of 40 sample seeds): each
+program's flat face and round side give their `frame_at` a point (a flat
+face's at its `(u, v)`; a round side's at its angle and the distance from
+its middle, `n` out of the material, `v` its axis), every copy is placed
+at its host's frame there, and the solver and the judge place through one
+registry of host kinds (`_HOSTS`: how a kind's copies are placed, and what
+is checked of each once numbered). Its second part moves `outline`, `foot`
+and `material` behind the same protocol.
+
 **3b, the ability:** analytic hosts: planes in any orientation (1b), a
 cone's side, a sphere, a dome, a torus (a round's face, a toroidal
 fillet), a round-ended tab's end (a half cylinder), and a round side at any

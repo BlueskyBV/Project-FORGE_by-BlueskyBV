@@ -106,5 +106,38 @@ class TheFacesFramesAreFrameMds(unittest.TestCase):
             self.assertEqual(side.frame.origin, side.start)
 
 
+class AFacesFrameAtAPoint(unittest.TestCase):
+    """Item 3a: a placeable face's frame at a point given in its own coordinates."""
+
+    def test_on_a_flat_face(self) -> None:
+        face = FlatFace("+z", (1.0, 2.0, 3.0), "+z", ("x", "y"), "rect", (5.0, 4.0))
+        here = face.frame_at((1.5, -2.0))
+        self.assertEqual(here.origin, (2.5, 0.0, 3.0))
+        self.assertEqual(
+            (here.u, here.v, here.n), (face.frame.u, face.frame.v, face.frame.n)
+        )
+
+    def test_round_a_side(self) -> None:
+        def cross(
+            a: tuple[float, float, float], b: tuple[float, float, float]
+        ) -> tuple[float, float, float]:
+            return (
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            )
+
+        rod = SideFace("side", "z", (0.0, 0.0, 0.0), 10.0, 3.0)
+        here = rod.frame_at((0.0, 1.0), 2.0)  # 90 degrees round, 2 mm past the middle
+        self.assertEqual(here.origin, (0.0, 3.0, 7.0))
+        self.assertEqual(here.n, (0.0, 1.0, 0.0))
+        self.assertEqual(here.v, (0.0, 0.0, 1.0))
+        self.assertEqual(cross(here.u, here.v), here.n)
+        bore = SideFace("bore", "x", (1.0, 0.0, 0.0), 4.0, 2.0, outward=False)
+        inside = bore.frame_at((1.0, 0.0), 0.0)
+        self.assertEqual(inside.origin, (3.0, 2.0, 0.0))
+        self.assertEqual(inside.n, (-0.0, -1.0, -0.0))
+
+
 if __name__ == "__main__":
     unittest.main()

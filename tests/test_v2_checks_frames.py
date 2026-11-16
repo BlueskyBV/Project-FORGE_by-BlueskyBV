@@ -76,5 +76,28 @@ class TheFacesFramesAreTheDefinitions(unittest.TestCase):
                              (unit("+" + u), unit("+" + v), unit("+" + axis)))  # fmt: skip
 
 
+class AFacesFrameAtAPoint(unittest.TestCase):
+    """Item 3a: a placeable face's frame at a point given in its own coordinates."""
+
+    def test_flat_and_round(self) -> None:
+        face = FlatFace(
+            "+z",
+            (0.0, 0.0, 2.0),
+            "+z",
+            FLAT_AXES["z"],
+            Outline.rect(5.0, 4.0, (0.0, 0.0)),
+            Solid(2.0),
+        )
+        here = face.frame_at((1.0, -3.0))
+        self.assertEqual(here.origin, (1.0, -3.0, 2.0))
+        self.assertEqual(here.n, unit("+z"))
+        rod = RoundSide("side", "z", (0.0, 0.0, 0.0), 10.0, 3.0, True, 0.0)
+        at = rod.frame_at((0.0, 1.0), 2.0)
+        self.assertEqual(at.origin, (0.0, 3.0, 7.0))
+        self.assertEqual((at.n, at.v), (unit("+y"), unit("+z")))
+        bore = RoundSide("bore", "z", (0.0, 0.0, 0.0), 10.0, 1.0, False, 3.0)
+        self.assertEqual(bore.frame_at((1.0, 0.0), 0.0).n, (-1.0, 0.0, 0.0))
+
+
 if __name__ == "__main__":
     unittest.main()

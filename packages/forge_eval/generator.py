@@ -360,6 +360,11 @@ class _Flat:
     def coords(self) -> tuple[float, float]:
         return self.frame.plane(self.centre)
 
+    def frame_at(self, at: tuple[float, float]) -> _FaceFrame:
+        """The face's frame at the point of its plane at ``at`` (item 3a's placeable face)."""
+        frame = self.frame
+        return _FaceFrame(frame.point(at), frame._u, frame._v, frame._n)
+
     def holds(
         self,
         foot: _Foot,
@@ -486,6 +491,12 @@ class _Round:
         """Its start; the ways out at 0 and 90 degrees round it; its axis."""
         u, v = TURN_AXES[self.axis]
         return _FaceFrame.of_names(self.start, u, v, self.axis)
+
+    def frame_at(self, out: Array, along: float) -> _FaceFrame:
+        """The side's frame at a point on it (item 3a): ``out`` the way out there (a unit radial), ``along`` from its start."""
+        w = self.frame.n
+        p = self.start + along * w + self.radius * out
+        return _FaceFrame(p, _t(np.cross(w, out)), _t(w), _t(out))
 
 
 def _v(a: Any) -> Array:
@@ -681,7 +692,7 @@ def _flat_spots(f: Feature, face: _Flat) -> list[tuple[float, float]]:
 
 
 def _point(face: _Flat, at: tuple[float, float]) -> Array:
-    return face.frame.point(at)
+    return face.frame_at(at).origin
 
 
 def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes: tuple[str, str],
@@ -1383,7 +1394,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
         )
         third = "xyz"[int(np.argmax(np.abs(np.cross(u, w))))]
         e = _v(unit_of("+" + third))
-        p = side.start + along * w + side.radius * u
+        p = side.frame_at(u, along).origin
         copy_index = index + k
         if entry.round_foot:
             solid: Prism = Prism(
