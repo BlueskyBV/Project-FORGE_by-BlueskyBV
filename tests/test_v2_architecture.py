@@ -30,7 +30,7 @@ PACKAGES = Path(__file__).resolve().parent.parent / "packages"
 
 L0_STDLIB = {"forge_units", "forge_expr", "forge_ir", "forge_evidence",
              "forge_analysis", "forge_plan", "forge_registry"}  # fmt: skip
-L0_NUMPY = {"forge_geom", "forge_kernel", "forge_spec", "forge_checks"}
+L0_NUMPY = {"forge_geom", "forge_kernel", "forge_spec", "forge_checks", "forge_numeric"}
 L1 = {
     "forge_occ",
     "forge_print",
@@ -48,7 +48,7 @@ LAYER = {**dict.fromkeys(L0_STDLIB | L0_NUMPY, 0), **dict.fromkeys(L1, 1),
 #: and are brought under these rules as V2 replaces them.
 V2_PACKAGES = {"forge_spec", "forge_checks", "forge_plan", "forge_occ", "forge_print",
                "forge_fonts", "forge_sandbox", "forge_designer", "forge_memory",
-               "forge_eval", "forge_registry", "forge_solvers"}  # fmt: skip
+               "forge_eval", "forge_registry", "forge_solvers", "forge_numeric"}  # fmt: skip
 
 FORBIDDEN = {
     "forge_checks": {"forge_plan", "forge_kernel", "forge_occ", "forge_designer"},

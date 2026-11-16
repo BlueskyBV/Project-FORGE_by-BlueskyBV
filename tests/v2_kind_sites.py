@@ -38,7 +38,8 @@ PACKAGES = ROOT / "packages"
 
 #: The packages whose modules can see items, and V2's modules in V1 packages.
 SCOPE_PACKAGES = ("forge_spec", "forge_plan", "forge_checks", "forge_eval", "forge_designer",
-                  "forge_memory", "forge_print", "forge_fonts", "forge_sandbox", "forge_solvers")  # fmt: skip
+                  "forge_memory", "forge_print", "forge_fonts", "forge_sandbox", "forge_solvers",
+                  "forge_numeric")  # fmt: skip
 SCOPE_FILES = ("forge_cli/spec.py", "forge_roles/spec_writer.py")
 #: The draft and wire layer: where a kind is read to parse or write an item.
 EXEMPT = ("forge_spec/schema.py", "forge_spec/draft.py", "forge_spec/wire.py")

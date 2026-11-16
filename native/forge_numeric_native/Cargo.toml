@@ -1,0 +1,18 @@
+[package]
+name = "forge_numeric_native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Forge's elementary functions, compiled: forge_numeric.vector's twin, bit for bit (ADR-0037)"
+build = "build.rs"
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

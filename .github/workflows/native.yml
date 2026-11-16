@@ -1,0 +1,76 @@
+# Forge's compiled numeric kernels (native/forge_numeric_native; ADR-0037), built on each platform and tested there
+# against forge_numeric's NumPy twin and golden digests (tests/test_v2_numeric.py). The libraries are uploaded as one
+# artifact, "native", laid out as packages/forge_numeric/_native/ holds them, to be committed with the source they
+# were built from (the loader refuses a library whose source digest isn't the source's).
+name: native
+
+on:
+  push:
+    branches: [main]
+    paths: [native/**, .github/workflows/native.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: ubuntu-22.04, dir: linux-x86_64, file: libforge_numeric_native.so}
+          - {runner: ubuntu-22.04-arm, dir: linux-aarch64, file: libforge_numeric_native.so}
+          - {runner: windows-2025, dir: windows-x86_64, file: forge_numeric_native.dll}
+          - {runner: macos-15, dir: macos-arm64, file: libforge_numeric_native.dylib}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Line endings as committed
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          rustup toolchain install stable --profile minimal
+          cd native/forge_numeric_native
+          cargo +stable build --release --locked
+          mkdir -p "$GITHUB_WORKSPACE/out/${{ matrix.dir }}"
+          cp "target/release/${{ matrix.file }}" "$GITHUB_WORKSPACE/out/${{ matrix.dir }}/"
+          cp "target/release/${{ matrix.file }}" "$GITHUB_WORKSPACE/packages/forge_numeric/_native/${{ matrix.dir }}/" 2>/dev/null || {
+            mkdir -p "$GITHUB_WORKSPACE/packages/forge_numeric/_native/${{ matrix.dir }}"
+            cp "target/release/${{ matrix.file }}" "$GITHUB_WORKSPACE/packages/forge_numeric/_native/${{ matrix.dir }}/"
+          }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14.10"
+      - name: Test it here, against the NumPy twin and the golden digests
+        env:
+          PYTHONPATH: packages
+          PYTHONHASHSEED: "0"
+        run: |
+          python -m pip install --disable-pip-version-check -q numpy==2.5.3 pytest==9.1.1
+          python -c "from forge_numeric import _native, vector; print('compiled twin:', _native.LIB is not None, _native.WHY_NOT, '| in use:', vector._use is not None)"
+          python -c "from forge_numeric import vector, _native; import sys; sys.exit(0 if vector._use is not None else 1)"
+          python -m pytest -q -p no:cacheprovider tests/test_v2_numeric.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.dir }}
+          path: out
+
+  gather:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          merge-multiple: true
+          path: native
+      - run: find native -type f | sort | xargs ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native
+          path: native

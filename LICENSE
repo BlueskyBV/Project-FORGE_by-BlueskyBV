@@ -11,3 +11,7 @@ repositories on GitHub; no other right is granted.
 Third-party files keep their own licences: packages/forge_cli/viewer/three.min.js
 and OrbitControls.js (three.js, MIT, as their headers state) and the font in
 packages/forge_fonts/fonts (DejaVu, see LICENSE-DejaVu.txt there).
+packages/forge_numeric and native/forge_numeric_native port FreeBSD's msun,
+from Sun's fdlibm (Copyright (C) 1993, 2004 by Sun Microsystems, Inc.;
+use, copying, modification and distribution freely granted provided the
+notice is preserved), whose notice their sources keep.

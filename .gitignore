@@ -86,3 +86,6 @@ htmlcov/
 *~
 Thumbs.db
 desktop.ini
+
+# The compiled kernels' build trees (the libraries Forge loads are committed under packages/forge_numeric/_native/).
+native/*/target/
