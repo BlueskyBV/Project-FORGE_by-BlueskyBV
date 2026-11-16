@@ -293,6 +293,25 @@ refactoring fault moves a value by far more than an ulp) and the same
 fingerprints in every section that holds no computed length. The ability
 (1b) is switched on only when every program has it.
 
+**Revised in revision 3 (building the solver's):** a box is kept **in its
+own frame**: a copy's frame (its item's axes in the part) and its box's
+corners in that frame's coordinates. An aligned copy's frame is the part's
+own, so its corners are today's numbers, and the faces made from them
+are; only a turned copy's (1b) map through its frame. So 1a moves no bit
+after all, and each program's step is proven as 3a and 2a are: the
+fingerprints byte-identical. In each program, every place a face's
+two coordinates become the part's three, or a direction is read off a
+face, goes through the face's `Frame` (origin, `u`, `v`, `n`), applied by
+choosing coordinates where it is aligned; the faces' frames are computed
+from what they hold, so no record gains a field until 1b.
+
+| Program | 1a | Proof |
+|---|---|---|
+| The solver (`forge_spec.frames`; its faces, round sides, positions, pockets' floors, letters) | done | the fingerprints of 40 sample seeds byte-identical |
+| The judge's placement, oracle and check compiler | next | |
+| The generator and its truth | | |
+| The planner and the second kernel's view | | |
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block

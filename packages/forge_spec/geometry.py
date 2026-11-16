@@ -32,10 +32,12 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
+from functools import cached_property
 from itertools import pairwise
 
 from forge_numeric import scalar as fs
 
+from .frames import Frame
 from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
@@ -207,6 +209,11 @@ class FlatFace:
             s for s in self.axis_sources[1] if s not in self.axis_sources[0]
         )
 
+    @cached_property
+    def frame(self) -> Frame:
+        """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`)."""
+        return Frame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+
     @property
     def symmetric(self) -> bool:
         """Centrally symmetric and convex: a shape that fits anywhere fits at the centre."""
@@ -244,8 +251,22 @@ class SideFace:
             s for s in self.length_sources if s not in self.radius_sources
         )
 
+    @property
+    def reference(self) -> tuple[str, str]:
+        """The axes 0 and 90 degrees round it point along (frame.md: round z, x then y; round x, y then z; round y, z then x)."""
+        return _REFERENCE[self.axis]
+
+    @cached_property
+    def frame(self) -> Frame:
+        """The centre of the end its axis starts from; ``u`` and ``v`` the ways out at 0 and 90 degrees round it, ``n`` its axis."""
+        u, v = self.reference
+        return Frame.of_names(self.start, u, v, self.axis)
+
 
 Face = FlatFace | SideFace
+
+#: Round each axis, the axes at 0 and 90 degrees.
+_REFERENCE = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}
 
 
 @dataclass(frozen=True)

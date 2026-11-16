@@ -413,11 +413,7 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
         if isinstance(host_face, FlatFace):
             # Faces facing the same way share their axes (FACE_AXES), so a footprint on one is one on the other.
             assert host_face.axes == top_face.axes, (host_face.axes, top_face.axes)
-            i1, i2 = (_INDEX[a] for a in top_face.axes)
-            on_host = (
-                top_face.centre[i1] - host_face.centre[i1],
-                top_face.centre[i2] - host_face.centre[i2],
-            )
+            on_host = host_face.frame.on(top_face.centre)
             # Wholly over a host with the same material under all of it: that, under all of it too.
             if uniform(host_face) and footprint_on_face(
                 host_face, face_footprint(top_face), *on_host
@@ -851,8 +847,7 @@ def _concentric_positions(item: Item, place: Place, face: FlatFace, host: tuple[
         layout.issue("fault", here,
                      f"{partner_id} has {len(others)} copies and {host[0]} {host_count}: say which goes with which")  # fmt: skip
         return None
-    normal = _dir(face.normal)
-    a1, a2 = face.axes
+    normal = face.frame.n
     positions = []
     for other in partners:
         if (
@@ -862,8 +857,7 @@ def _concentric_positions(item: Item, place: Place, face: FlatFace, host: tuple[
             layout.issue("fault", here,
                          f"{partner_id}'s axis doesn't run through face {face.name}: it can't be concentric there")  # fmt: skip
             return None
-        d = [other.origin[k] - face.centre[k] for k in range(3)]
-        positions.append((d[_INDEX[a1]], d[_INDEX[a2]]))
+        positions.append(face.frame.on(other.origin))
     return positions
 
 
@@ -907,17 +901,12 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if not entry.body:
         values = [*_item_values(item, *_outline_fields(item)), *_place_values(item)]
         _check_overlaps(item, parts, positions, layout, at, first, values)
-    normal = _dir(face.normal)
+    normal = face.frame.n
     footing = _footing(item)
     footprint: Footprint = footing if footing is not None else parts
     out = []
     for p1, p2 in positions:
-        origin = list(face.centre)
-        origin[_INDEX[a1]] += p1
-        origin[_INDEX[a2]] += p2
-        instance = Instance(
-            item.id, 0, (origin[0], origin[1], origin[2]), normal, host, face.axes
-        )
+        instance = Instance(item.id, 0, face.frame.at(p1, p2), normal, host, face.axes)
         material = least_material_under(face, footprint, p1, p2)
         out.append(
             _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
@@ -1038,7 +1027,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         step_value = place.pattern.values.get("step")
         step = degrees(step_value) if step_value is not None else 360.0 / count.n
         angles = [angles[0] + step * k for k in range(count.n)]
-    reference = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}[axis]
+    reference = face.reference
     half = face.length / 2
     # Blame only what binds: the item's size across and the side's radius for
     # "as wide as"; its size along, its place and the side's length for the rest.
@@ -1052,9 +1041,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         tuple[float, float, float, float]
     ] = []  # angle, along, half around, half along
     for angle in angles:
-        radial = [0.0, 0.0, 0.0]
-        radial[_INDEX[reference[0]]], radial[_INDEX[reference[1]]] = _turn(angle)
-        r = (radial[0], radial[1], radial[2])
+        r = face.frame.radial(*_turn(angle))
         outward = r if face.outward else (-r[0], -r[1], -r[2])
         face_axes: tuple[str, str] | None = None
         if entry.adds:
@@ -1094,7 +1081,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 f"{item.id} runs past the end of {host[0]}",
                 along_values,
             )
-        centre = _add(face.start, _dir("+" + axis), half + along)
+        centre = _add(face.frame.origin, face.frame.n, half + along)
         origin = _add(centre, r, face.radius)
         footprints.append((angle, along, across_size, along_size))
         out.append(
@@ -1449,7 +1436,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                 continue
             # It comes out on the far face only where the material under its face is the body's whole thickness
             # (into a hollowed body it comes out into the hollow, short of it).
-            normal = _dir(near_face.normal)
+            normal = near_face.frame.n
             across = abs(
                 sum(
                     (a - b) * d
@@ -1583,10 +1570,8 @@ def _check_over_openings(item: Item, copy: Instance, face: FlatFace, host: tuple
     (docs/definitions/frame.md): asked about, with the values that put them
     there. Letters are left out: their box isn't their shape.
     """
-    i1, i2 = (_INDEX[a] for a in face.axes)
     parts = _outline(item, layout, face.axes)
-    here = _Print(item.id, copy.index, parts, (copy.origin[i1] - face.centre[i1], copy.origin[i2] - face.centre[i2]),
-                  bbox(parts))  # fmt: skip
+    here = _Print(item.id, copy.index, parts, face.frame.on(copy.origin), bbox(parts))
     cuts = SOLVE[item.kind].cut
     found = layout.footprints.setdefault(host, _Footprints(face))
     for other in found.standing_in(here) if cuts else found.cuts_round(here):

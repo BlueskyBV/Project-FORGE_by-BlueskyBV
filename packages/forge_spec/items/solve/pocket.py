@@ -14,11 +14,9 @@ from forge_spec.geometry import (
     rounded_rect,
 )
 from forge_spec.items.solve._common import (
-    _INDEX,
     _RESTS_ON_AN_ASSUMPTION,
     _add,
     _choice_of,
-    _dir,
     _item_values,
     _length_of,
     _size,
@@ -86,21 +84,14 @@ class Pocket(SolveKind):
                          "it has no bottom" + (_RESTS_ON_AN_ASSUMPTION if kind != "question" else ""))  # fmt: skip
             return
         if face.shape == "annulus":
-            i1, i2 = (_INDEX[a] for a in face.axes)
-            p1, p2 = (
-                copy.origin[i1] - face.centre[i1],
-                copy.origin[i2] - face.centre[i2],
-            )
+            p1, p2 = face.frame.on(copy.origin)
             if not outline_on_face(face, _outline(item, layout, face.axes), p1, p2):
                 # It covers the ring's opening: the bore runs on through its floor.
                 layout.close(key, "bottom", "unable",
                              f"{item.id}'s floor has the bore through it: Forge doesn't place on that yet")  # fmt: skip
                 return
-        centre = _add(copy.origin, _dir(face.normal), -deep)
-        i1, i2 = (_INDEX[a] for a in face.axes)
-        less = Less(
-            face, (centre[i1] - face.centre[i1], centre[i2] - face.centre[i2]), deep
-        )
+        centre = _add(copy.origin, face.frame.n, -deep)
+        less = Less(face, face.frame.on(centre), deep)
         sizes = tuple(
             (item.id, n) for n in ("length", "width", "diameter", "corner_radius")
         )
