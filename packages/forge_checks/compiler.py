@@ -120,7 +120,6 @@ from .oracle import Oracle, Rounded
 from .outlines import Arc as OutlineArc
 from .outlines import Segment
 from .place import (
-    TURN_AXES,
     Copy,
     FlatFace,
     Placed,
@@ -354,8 +353,8 @@ class _Compiler:
         a grid over the face, inset by the disc's reach; at each, points over
         both discs, the part's surface where the oracle has them on it.
         """
-        n = _v(unit(face.normal))
-        e1, e2 = (_v(unit("+" + a)) for a in face.axes)
+        n = _v(face.frame.n)
+        e1, e2 = (_v(face.frame.u), _v(face.frame.v))
         centre = _v(face.centre)
         r = _WALL_REACH
         ring = np.array([(0.0, 0.0)] + [(f * r * fs.cos(t), f * r * fs.sin(t))
@@ -383,14 +382,14 @@ class _Compiler:
         return best
 
     def face_plane(self, face: FlatFace, reach: float = math.inf) -> Plane:
-        return Plane(face.centre, unit(face.normal), reach)
+        return Plane(face.centre, face.frame.n, reach)
 
     def face_rect(self, face: FlatFace) -> Plane:
         """A face's plane within its own rectangle (its outline's half sizes along its axes): a fit of it takes no point of another face beside it that is near its plane (a body's bottom 0.66 mm under a post's, within the window a pattern's pitch is fitted in)."""
         return Plane(
             face.centre,
-            unit(face.normal),
-            first=unit("+" + face.axes[0]),
+            face.frame.n,
+            first=face.frame.u,
             half=face.half,
         )
 
@@ -413,7 +412,7 @@ class _Compiler:
         self, face: FlatFace, at: Array, a: Array, sign: float, span: float
     ) -> Plane:
         """The wall at the face's edge through ``at``, square to ``a`` on the ``sign`` side: facing out of the material (air beyond: a body's side) or back across the face (material beyond: a recess's wall), as the oracle says."""
-        n = _v(unit(face.normal))
+        n = _v(face.frame.n)
         held = self.part.held(at - 1e-3 * n, (sign * a)[None, :], finished=False)
         if held is not None:
             air = not bool(held[1][0])
@@ -429,7 +428,7 @@ class _Compiler:
         """An outline face's edge on the ``sign`` side along ``axis`` (extrusion.md: where its box ends): the wall along a straight side there, or the round side of an arc reaching it; a reason where only a corner does."""
         k = 0 if face.axes[0] == axis else 1
         a = _v(unit("+" + axis))
-        n = _v(unit(face.normal))
+        n = _v(face.frame.n)
         extreme = face.outline.centre[k] + sign * face.outline.half[k]
         first, second = ("xyz".index(x) for x in face.axes)
 
@@ -491,8 +490,8 @@ class _Compiler:
                 None  # a short edge between square corners: its plane is all there is
             )
         a = _v(unit("+" + axis))
-        b = _v(unit("+" + face.axes[1 - k]))
-        n = _v(unit(face.normal))
+        b = _v((face.frame.u, face.frame.v)[1 - k])
+        n = _v(face.frame.n)
         centre = _v(face.centre) + sign * (h - r) * a + side * (other - r) * b
         # Just past the middle of the corner's quarter-circle, just under the face: air beyond
         # a body's side, the wall's material beyond a recess's floor (its ends may lie on
@@ -566,7 +565,7 @@ class _Compiler:
         face = self.placed.face(copy.host)
         if not isinstance(face, FlatFace):
             return None
-        return Plane(copy.point, unit(face.normal), reach)
+        return Plane(copy.point, face.frame.n, reach)
 
     def _height(self, item: Item, name: str, copy: Copy, top: Plane, bottom: Plane | None, value: float,
                 footprint: float) -> None:  # fmt: skip
@@ -578,7 +577,7 @@ class _Compiler:
                 # outside it grows away from the axis, inside a bore towards it (place.md).
                 side = Round(
                     host_face.start,
-                    unit("+" + host_face.axis),
+                    host_face.frame.n,
                     host_face.radius,
                     0.0,
                     host_face.length,
@@ -813,7 +812,7 @@ class _Compiler:
         if isinstance(host_face, RoundSide):
             # From the side's surface at its centre: from the side's fitted axis, less its radius
             # (out from a rod's outside the floor is nearer the axis; out from a bore, farther).
-            side = Round(host_face.start, unit("+" + host_face.axis), host_face.radius, 0.0, host_face.length,
+            side = Round(host_face.start, host_face.frame.n, host_face.radius, 0.0, host_face.length,
                          not host_face.outward)  # fmt: skip
             if not self.seen(floor):
                 self.skip(item, name, "its floor isn't on the part's surface")
@@ -1154,7 +1153,7 @@ class _Compiler:
             return rim_refs(
                 Round(
                     inside.start,
-                    unit("+" + inside.axis),
+                    inside.frame.n,
                     inside.radius,
                     0.0,
                     inside.length,
@@ -1319,7 +1318,7 @@ class _Compiler:
             spots = self._spots(item, group, face)
             if isinstance(spots, str):
                 return spots
-            plane = tuple(unit("+" + a) for a in face.axes)
+            plane = (face.frame.u, face.frame.v)
             return Hub(spots, (plane[0], plane[1]))
         centres = [self._centre_ref(item, copy, axis) for copy in group]
         if any(c is None for c in centres):
@@ -1368,8 +1367,8 @@ class _Compiler:
             assert host is not None
             face = self.placed.face(host)
             assert isinstance(face, RoundSide)
-            axis = unit("+" + face.axis)
-            zero = unit("+" + TURN_AXES[face.axis][0])
+            axis = face.frame.n
+            zero = face.frame.u
             quarter = np.cross(_v(axis), _v(zero))
             found = [self._round_copy(item, copy, face) for copy in group]
             names = ["place.angle"] + (
@@ -1448,7 +1447,7 @@ class _Compiler:
         self, host: tuple[str, int, str], side: RoundSide
     ) -> dict[float, Plane]:
         """A round side's two ends, by which way along its axis they are (+1, -1): the faces there (a hollow's inside, its inner ends), or where there is none, the face a standing body is joined to round its foot, or the rim of the walls a shell leaves open."""
-        a = _v(unit("+" + side.axis))
+        a = _v(side.frame.n)
         middle = _v(side.start) + side.length / 2 * a
         inner = side.name.startswith("inner")
         faces = self.faces(host[0], host[1])
@@ -1476,7 +1475,7 @@ class _Compiler:
         self, item: Item, name: str, position: AxisPosition, side: RoundSide
     ) -> None:
         """A place along a round side's axis: from its built ends (the end faces of what it is the side of)."""
-        a = _v(unit("+" + side.axis))
+        a = _v(side.frame.n)
         for copy in self.copies(item):
             host = copy.host
             assert host is not None
@@ -1571,7 +1570,7 @@ class _Compiler:
         if isinstance(spots, str):
             self.skip(item, at, spots)
             return
-        plane = (unit("+" + face.axes[0]), unit("+" + face.axes[1]))
+        plane = (face.frame.u, face.frame.v)
         if name == "diameter":
             assert value is not None
             self.check(
@@ -1594,7 +1593,7 @@ class _Compiler:
         start = _deg(pattern.values["start"]) if "start" in pattern.values else 0.0
         count = pattern.counts["count"].n if "count" in pattern.counts else len(group)
         spacing = PATTERN_COMPILE[pattern.kind].round_step(pattern, count)
-        a1, a2 = (_v(unit("+" + axis)) for axis in face.axes)
+        a1, a2 = (_v(face.frame.u), _v(face.frame.v))
         turn = math.radians(start)
         centre = _v(group[0].point) - radius * (fs.cos(turn) * a1 + fs.sin(turn) * a2)
         told = PATTERN_COMPILE[pattern.kind].told(len(group))

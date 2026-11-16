@@ -108,7 +108,6 @@ from .place import (
     body_edges,
     direction_of,
     section_of,
-    unit,
 )
 from .shapes import (
     INSIDE,
@@ -1386,7 +1385,7 @@ def _joint_band(item: Item, copy: Copy, face: RoundSide, size: float) -> Node:
     assert copy.lo is not None and copy.hi is not None
     lo = np.asarray(copy.lo) - reach
     hi = np.asarray(copy.hi) + reach
-    axis = Frame.along(face.start, unit("+" + face.axis))
+    axis = Frame.along(face.start, face.frame.n)
     near = Prism.box(_vec(lo), _vec(hi))
     band = Inter(
         (

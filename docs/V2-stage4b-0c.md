@@ -308,8 +308,8 @@ from what they hold, so no record gains a field until 1b.
 | Program | 1a | Proof |
 |---|---|---|
 | The solver (`forge_spec.frames`; its faces, round sides, positions, pockets' floors, letters) | done | the fingerprints of 40 sample seeds byte-identical |
-| The judge's placement, oracle and check compiler | next | |
-| The generator and its truth | | |
+| The judge's placement, oracle and check compiler (`forge_checks.place.FaceFrame`; its faces and round sides, positions, cuts and pockets' floors, the way round a side, the layouts' comparison; the compiler's and the oracle's face directions) | done | the fingerprints of 40 sample seeds byte-identical |
+| The generator and its truth | next | |
 | The planner and the second kernel's view | | |
 
 **1b, the ability:**

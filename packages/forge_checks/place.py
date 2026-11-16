@@ -30,6 +30,7 @@ Lengths are in millimetres in the frame, angles in degrees.
 
 from __future__ import annotations
 
+import functools
 import heapq
 import math
 from collections.abc import Iterable, Mapping, Sequence
@@ -189,6 +190,83 @@ def _on_axis(point: Vec, axis: str, value: float) -> Vec:
 
 def _in_plane(point: Vec, axes: tuple[str, str]) -> Point:
     return (point[_INDEX[axes[0]]], point[_INDEX[axes[1]]])
+
+
+def _aligned(vector: Vec) -> tuple[int, bool] | None:
+    """(which coordinate, whether the + way) of a vector that is exactly one of +-x, +-y, +-z; else None."""
+    for k in range(3):
+        if abs(vector[k]) == 1.0 and all(vector[j] == 0.0 for j in range(3) if j != k):
+            return k, vector[k] > 0.0
+    return None
+
+
+@dataclass(frozen=True)
+class FaceFrame:
+    """A face's frame as the judge's placement reads it (4b.0c item 1a; V2-stage4b-0c.md, 3.3).
+
+    ``origin`` is on the face; ``u`` and ``v`` its first and second axes
+    (frame.md's table; round a side, the ways out at 0 and 90 degrees) and
+    ``n`` its normal (round a side, its axis). Coordinates in its plane are
+    measured along ``u`` and ``v`` from the part's origin, as the judge's
+    outlines are, so a face's outline is centred on its centre's own; a
+    point placed in the plane keeps the face's level along ``n``. An aligned
+    frame is applied by choosing coordinates and their signs, never a product
+    with 0 or 1, so its numbers are those the axis names gave; any other by
+    its products (item 1b). The judge's own, made from the definitions (R2).
+    """
+
+    origin: Vec
+    u: Vec
+    v: Vec
+    n: Vec
+
+    @staticmethod
+    def of_names(origin: Vec, u: str, v: str, n: str) -> FaceFrame:
+        return FaceFrame(
+            origin,
+            unit(u if u[0] in "+-" else "+" + u),
+            unit(v if v[0] in "+-" else "+" + v),
+            unit(n if n[0] in "+-" else "+" + n),
+        )
+
+    @functools.cached_property
+    def _axes(self) -> tuple[tuple[int, bool], ...] | None:
+        found = (_aligned(self.u), _aligned(self.v), _aligned(self.n))
+        return None if None in found else found  # type: ignore[return-value]
+
+    def _along(self, point: Vec, j: int) -> float:
+        axes = self._axes
+        if axes is not None:
+            k, plus = axes[j]
+            return point[k] if plus else -point[k]
+        d = (self.u, self.v, self.n)[j]
+        return point[0] * d[0] + point[1] * d[1] + point[2] * d[2]
+
+    def plane(self, point: Vec) -> Point:
+        """Where ``point`` is in the face's plane: along ``u`` and ``v``, from the part's origin."""
+        return (self._along(point, 0), self._along(point, 1))
+
+    def level(self, point: Vec) -> float:
+        """How far along ``n`` ``point`` is, from the part's origin."""
+        return self._along(point, 2)
+
+    def _set(self, point: Vec, j: int, value: float) -> Vec:
+        axes = self._axes
+        if axes is not None:
+            k, plus = axes[j]
+            found = list(point)
+            found[k] = value if plus else -value
+            return (found[0], found[1], found[2])
+        d = (self.u, self.v, self.n)[j]
+        return _add(point, d, value - self._along(point, j))
+
+    def point(self, p1: float, p2: float) -> Vec:
+        """The point of the face's plane at ``(p1, p2)`` in it (:meth:`plane`'s inverse there)."""
+        return self._set(self._set(self.origin, 0, p1), 1, p2)
+
+    def at_level(self, point: Vec, level: float) -> Vec:
+        """``point`` moved along ``n`` to ``level``."""
+        return self._set(point, 2, level)
 
 
 # ----------------------------------------------------------------------
@@ -369,6 +447,11 @@ class FlatFace:
     def half(self) -> Point:
         return self.outline.half
 
+    @functools.cached_property
+    def frame(self) -> FaceFrame:
+        """Its centre, its first and second axes and its outward normal."""
+        return FaceFrame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+
 
 @dataclass(frozen=True)
 class RoundSide:
@@ -386,6 +469,12 @@ class RoundSide:
     radius: float
     outward: bool
     other: float
+
+    @functools.cached_property
+    def frame(self) -> FaceFrame:
+        """The centre of its end at the smaller coordinate; the ways out at 0 and 90 degrees round it; its axis."""
+        u, v = TURN_AXES[self.axis]
+        return FaceFrame.of_names(self.start, u, v, self.axis)
 
     @property
     def material(self) -> float:
@@ -980,7 +1069,7 @@ def _flat_positions(item: Item, face: FlatFace, layout: _Layout) -> list[Point]:
             raise PlaceError(
                 item.id, f"a position along {axis}, which face {face.name} doesn't have"
             )
-    centre = _in_plane(face.centre, face.axes)
+    centre = face.frame.plane(face.centre)
     foot = _footprint(item, layout.diameters, face.axes)
     reach = _extent(item, foot)
     half = face.half
@@ -1072,7 +1161,7 @@ def _concentric(item: Item, face: FlatFace, host: tuple[str, int, str], host_cop
     else:
         raise PlaceError(item.id, f"{partner} has {len(others)} copies and {host[0]} {host_copies}: "
                          "the spec must say which goes with which")  # fmt: skip
-    normal = unit(face.normal)
+    normal = face.frame.n
     found = []
     for other in chosen:
         if (
@@ -1085,7 +1174,7 @@ def _concentric(item: Item, face: FlatFace, host: tuple[str, int, str], host_cop
             raise PlaceError(
                 item.id, f"{partner}'s axis isn't at right angles to face {face.name}"
             )
-        found.append(_in_plane(other.point, face.axes))
+        found.append(face.frame.plane(other.point))
     return found
 
 
@@ -1157,11 +1246,10 @@ def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_co
     else:
         positions = _flat_positions(item, face, layout)
     taken = _entry(item.kind).taken
-    k = _INDEX[face.normal[1]]
     made: list[Copy] = []
     for n, (p1, p2) in enumerate(positions):
-        point = _on_axis(_on_axis(face.centre, face.axes[0], p1), face.axes[1], p2)
-        assert point[k] == face.centre[k]
+        point = face.frame.point(p1, p2)
+        assert face.frame.level(point) == face.frame.level(face.centre)
         _lies_on(item, face, (p1, p2), layout)
         index = first + n
         if taken:
@@ -1185,7 +1273,7 @@ def _mouth(item: Item, layout: _Layout, face: FlatFace, at: Point) -> Outline:
 
 def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int, point: Vec,
               layout: _Layout) -> Copy:  # fmt: skip
-    at = _in_plane(point, face.axes)
+    at = face.frame.plane(point)
     mouth = _mouth(item, layout, face, at)
     entry = _entry(item.kind)
     embossed = entry.embossed(item)
@@ -1198,7 +1286,7 @@ def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int
             )
     else:
         depth = _mm(item, "depth")
-    copy = Copy(item.id, index, host, point, unit(face.normal), face.axes,
+    copy = Copy(item.id, index, host, point, face.frame.n, face.axes,
                 span=(-depth, 0.0) if embossed else (0.0, depth))  # fmt: skip
     entry.after_cut(item, face, index, point, mouth, depth, layout)
     return copy
@@ -1224,7 +1312,7 @@ def _pocket_floor(item: Item, face: FlatFace, index: int, point: Vec, mouth: Out
             "it covers the ring's opening: its floor has the bore through it",
         )
         return
-    centre = _add(point, unit(face.normal), -depth)
+    centre = _add(point, face.frame.n, -depth)
     layout.faces[key]["bottom"] = FlatFace(
         "bottom", centre, face.normal, face.axes, mouth, Less(face.material, depth)
     )
@@ -1292,7 +1380,7 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
         )
         step = _pattern_entry(pattern.kind).round_step(values, counts)
         angles = [start + k * step for k in range(counts["count"])]
-    zero, quarter = (unit("+" + a) for a in TURN_AXES[axis])
+    zero, quarter = side.frame.u, side.frame.v
     made = []
     for n, angle in enumerate(angles):
         c, s = turn(angle)
@@ -1311,8 +1399,8 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
                 item.id,
                 f"{along:g} mm along the side from its middle, it runs past the side's end",
             )
-        middle = side.start[_INDEX[axis]] + side.length / 2 + along
-        point = _add(_on_axis(side.start, axis, middle), radial, side.radius)
+        middle = side.frame.level(side.start) + side.length / 2 + along
+        point = _add(side.frame.at_level(side.start, middle), radial, side.radius)
         index = first + n
         made.append(
             entry.round_copy(
@@ -1825,8 +1913,7 @@ def _profile_gap(face: FlatFace, other: object) -> float:
     profile, centre = getattr(other, "profile", None), getattr(other, "centre", None)
     if profile is None or centre is None:
         return math.inf
-    k1, k2 = (_INDEX[a] for a in face.axes)
-    o1, o2 = centre[k1], centre[k2]
+    o1, o2 = face.frame.plane(centre)
     (c1, c2), (h1, h2) = face.outline.centre, face.outline.half
     points = [p for q in face.outline.pieces() for p in q.ends()]
     points += [

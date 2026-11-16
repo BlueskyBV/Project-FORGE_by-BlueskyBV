@@ -17,7 +17,7 @@ from numpy.typing import NDArray
 
 from forge_checks.kinds.position import BallCentre, Centre, Middle, Ref, RoundEdge
 from forge_checks.kinds.surfaces import Ball, Plane, Round
-from forge_checks.place import Copy, FlatFace, RoundSide, unit
+from forge_checks.place import Copy, FlatFace, RoundSide
 from forge_checks.view import Capability
 
 if TYPE_CHECKING:
@@ -141,7 +141,7 @@ def box_round_copy(
     assert copy.lo is not None and copy.hi is not None
     k = "xyz".index(copy.axes[0])
     middle = (_v(copy.lo) + _v(copy.hi)) / 2
-    w = _v(unit("+" + side.axis))
+    w = _v(side.frame.n)
     off = middle - _v(side.start)
     reach = float(fv.norm(off - (fv.matmul(off, w)) * w))
     return Middle(*sides), float(copy.hi[k] - copy.lo[k]), reach
