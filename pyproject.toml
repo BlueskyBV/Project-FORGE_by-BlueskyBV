@@ -35,6 +35,8 @@ where = ["packages"]
 # The 3D viewer the live page shows the finished part in (three.js, MIT),
 # copied beside each run so the page works offline.
 forge_cli = ["viewer/*"]
+# forge_numeric's compiled twin, one library per platform, built by CI (native.yml; ADR-0037).
+forge_numeric = ["_native/*/*"]
 
 [tool.ruff]
 line-length = 88
