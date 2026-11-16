@@ -47,7 +47,7 @@ on:
         description: "Build and judge each part (true or false)"
         default: "false"
       base:
-        description: "The branch the pair and tests modes hold this commit against"
+        description: "The branch the pair and tests modes hold this commit against (none: this commit alone)"
         default: "proof/base-4b0b"
       tests:
         description: "Test files for the tests mode, space separated, or all"
@@ -95,7 +95,7 @@ jobs:
         with:
           path: fin
       - uses: actions/checkout@v4
-        if: inputs.mode != 'fingerprint' && inputs.base != ''
+        if: inputs.mode != 'fingerprint' && inputs.base != '' && inputs.base != 'none'
         with:
           ref: ${{ inputs.base }}
           path: base
@@ -191,7 +191,7 @@ jobs:
           N=$SHARDS; [ "$N" -gt 20 ] && N=20; [ "$N" -lt 1 ] && N=1  # as the plan job caps them
           MINE=""; i=0
           for f in $TESTS; do [ $((i % N)) -eq "$SHARD" ] && MINE="$MINE $f"; i=$((i + 1)); done
-          SIDES="fin"; [ -n "$BASE" ] && SIDES="base fin"
+          SIDES="fin"; [ -n "$BASE" ] && [ "$BASE" != "none" ] && SIDES="base fin"
           for side in $SIDES; do
             for f in $MINE; do
               [ -f "$side/$f" ] || { echo "$side $f absent" >> out/tests.txt; continue; }
