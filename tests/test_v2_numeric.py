@@ -261,7 +261,7 @@ class GoldenDigests(unittest.TestCase):
         "log": "df87048d0d9006a1",
         "cbrt": "86a1c07c9b8fb9bb",
         "arctan2": "5ebd578a4621818d",
-        "hypot": "b836f71740c281a8",
+        "hypot": "8bf7ff5e17f5c16a",
         "dot": "7b603503f92c8236",
         "matmul": "19149feff4259fb3",
         "norm": "37032df40cd6ebef",
@@ -274,7 +274,7 @@ class GoldenDigests(unittest.TestCase):
         "interp": "3dbf840b9a61d032",
         "normal": "5754b61e72364619",
         "roots": "c61ed0aa6e688edf",
-        "hypot, scaled": "1bf645fc4065494e",
+        "hypot, scaled": "dfc28d8e1d107218",
         "draws": "30f181b92ac2cdb8",
     }
 

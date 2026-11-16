@@ -20,7 +20,7 @@ from typing import Any
 
 import numpy as np
 
-ABI = 4
+ABI = 5
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent.parent / "native" / "forge_numeric_native" / "src" / "lib.rs"
 

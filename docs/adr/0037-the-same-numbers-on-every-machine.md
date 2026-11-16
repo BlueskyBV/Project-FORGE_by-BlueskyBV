@@ -45,9 +45,13 @@ NumPy):
   `sq` and `cube` for `**`. It imports no NumPy, so the standard-library
   packages use it too.
 - `forge_numeric.vector`: the same on NumPy arrays, bit for bit the scalar
-  ones; `hypot` as `sqrt(x*x + y*y)` (scaled by a power of two first past
-  1e150 or below 1e-150), and on numbers `hypot` and `dist` of any number
-  of coordinates; and products and small linear algebra in a fixed
+  ones; `hypot` by CPython's own algorithm (the coordinates scaled by a
+  power of two, the squares summed exactly in two parts, the root
+  corrected once: correctly rounded but in rare cases), with Dekker's exact
+  products for its fused ones, and on numbers `hypot` and `dist` of any
+  number of coordinates (the same bits as CPython's on Linux); random draws
+  through `Draws` (NumPy's PCG64, its uniform draws unfused); and products
+  and small linear algebra in a fixed
   order: `dot`, `norm`, `unit`, `matmul`, `solve` (Gaussian elimination
   with partial pivoting), `det`, `inv`, `eigh` (cyclic Jacobi),
   `cond_symmetric`, `real_roots` (isolated between the derivative's roots,
@@ -71,8 +75,8 @@ NumPy):
   calls `math`'s or NumPy's elementary functions, `@`, `dot`, `einsum`,
   `linalg`, `fft`, `hypot` (NumPy's or CPython's), `math.dist`, `interp`,
   `roots`, `**` other than whole numbers' or two's whole powers, `pow`,
-  `cmath`, `statistics`, complex numbers, or a
-  random draw other than uniform ones
+  `cmath`, `statistics`, complex numbers, `np.random` (only `Draws`), or a
+  random draw by another law than the uniform one
   (`tests/test_v2_architecture.py`, `EveryNumberIsTheSameOnEveryMachine`).
 - **The proof:** golden digests in `tests/test_v2_numeric.py` that every
   machine must reproduce bit for bit, run by `trust-core.yml` on Linux

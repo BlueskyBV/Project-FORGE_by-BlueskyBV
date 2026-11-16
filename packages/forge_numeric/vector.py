@@ -8,8 +8,8 @@ and exponent operations, so no BLAS, SIMD library or C ``libm``). The two are
 held to each other bit for bit by the tests. As NumPy's ufuncs, they return
 NaN or infinity outside the domain rather than raising.
 
-``hypot`` is ``sqrt(x*x + y*y)`` (under one ulp), rescaled exactly where
-that would overflow or underflow.
+``hypot`` is CPython's own algorithm, correctly rounded but in rare cases,
+every operation rounded on its own (:func:`.scalar.hypot`).
 """
 
 from __future__ import annotations
@@ -546,27 +546,54 @@ def _np_cbrt(x: Any) -> Array:
     return cast(Array, out.reshape(x.shape))
 
 
-_HYPOT_SAFE = (sc.HYPOT_SMALL, sc.HYPOT_LARGE)
+def _np_two_square(x: Array) -> tuple[Array, Array]:
+    """:func:`.scalar._two_square`, elementwise."""
+    hi = x * x
+    t = sc._SPLIT * x
+    xh = t - (t - x)
+    xl = x - xh
+    return hi, ((xh * xh - hi) + 2.0 * xh * xl) + xl * xl
 
 
 def _np_hypot(x: Any, y: Any) -> Array:
-    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, both scaled by a power of two first (exact): :func:`.scalar.hypot`."""
+    """:func:`.scalar.hypot` of two coordinates, elementwise, operation for operation."""
     x, y = np.broadcast_arrays(_in(x), _in(y))
     shape = x.shape
     x, y = x.ravel(), y.ravel()
-    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
-        out = np.sqrt(x * x + y * y)
+    with np.errstate(all="ignore"):
         big = np.maximum(np.abs(x), np.abs(y))
-        odd = (
-            (big > _HYPOT_SAFE[1]) | ((big < _HYPOT_SAFE[0]) & (big > 0.0))
-        ) & np.isfinite(big)
-    if odd.any():
-        e = np.frexp(big[odd])[1]
-        xs, ys = np.ldexp(x[odd], -e), np.ldexp(y[odd], -e)
-        with np.errstate(over="ignore", under="ignore"):
-            out[odd] = np.ldexp(np.sqrt(xs * xs + ys * ys), e)
-    inf = np.isinf(x) | np.isinf(y)
-    out[inf] = np.inf
+        inf = np.isinf(x) | np.isinf(y)
+        nan = (np.isnan(x) | np.isnan(y)) & ~inf
+        zero = big == 0.0
+        sub = (big < sc._TINY) & ~zero  # every coordinate subnormal: made normal first
+        x = np.where(sub, x / sc._TINY, x)
+        y = np.where(sub, y / sc._TINY, y)
+        big = np.where(sub, big / sc._TINY, big)
+        e = np.frexp(np.where(np.isfinite(big) & ~zero, big, 1.0))[1]
+        scale = np.ldexp(np.ones_like(big), -e)
+        hx, lx = _np_two_square(x * scale)
+        hy, ly = _np_two_square(y * scale)
+        total = 1.0 + hx
+        frac2 = 0.0 + ((1.0 - total) + hx)
+        csum = total
+        frac1 = 0.0 + lx
+        total = csum + hy
+        frac2 = frac2 + ((csum - total) + hy)
+        csum = total
+        frac1 = frac1 + ly
+        h = np.sqrt(csum - 1.0 + (frac1 + frac2))
+        hh, lh = _np_two_square(h)
+        total = csum - hh
+        frac2 = frac2 + ((csum - total) - hh)
+        csum = total
+        frac1 = frac1 - lh
+        r = csum - 1.0 + (frac1 + frac2)
+        h = h + r / (2.0 * h)
+        out = h / scale
+        out = np.where(sub, sc._TINY * out, out)
+        out = np.where(zero, big, out)
+        out = np.where(nan, np.nan, out)
+        out = np.where(inf, np.inf, out)
     return cast(Array, out.reshape(shape))
 
 
@@ -683,7 +710,7 @@ def arctan2(y: Any, x: Any) -> Array:
 
 
 def hypot(x: Any, y: Any) -> Array:
-    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, both scaled by a power of two first (:func:`.scalar.hypot`)."""
+    """sqrt(x*x + y*y), correctly rounded but in rare cases: :func:`.scalar.hypot` (CPython's algorithm, every operation rounded on its own)."""
     if _number(x) and _number(y):
         return cast(Array, np.float64(_hypot1(float(x), float(y))))
     if _use is None:

@@ -770,43 +770,66 @@ def decade(x: float) -> int:
     return Decimal(repr(float(x))).adjusted()
 
 
-#: Below and above these, squares lose bits to underflow or overflow: the coordinates are scaled first.
-HYPOT_SMALL, HYPOT_LARGE = 1e-150, 1e150
+#: Veltkamp's splitting constant, 2^27 + 1.
+_SPLIT = 134217729.0
+#: The least normal float, 2^-1022.
+_TINY = 2.2250738585072014e-308
+
+
+def _two_square(x: float) -> tuple[float, float]:
+    """(hi, lo) with hi = x*x rounded and hi + lo = x*x exactly: Dekker's product, by Veltkamp's split."""
+    hi = x * x
+    t = _SPLIT * x
+    xh = t - (t - x)
+    xl = x - xh
+    return hi, ((xh * xh - hi) + 2.0 * xh * xl) + xl * xl
 
 
 def hypot(*coordinates: float) -> float:
-    """The length of a vector, sqrt(x*x + y*y + ...), squares summed left to right (``math.hypot``'s place).
+    """The length of a vector, sqrt(x*x + y*y + ...), correctly rounded but in rare cases (``math.hypot``'s place).
 
-    CPython's own ``math.hypot`` and ``math.dist`` multiply and add in C,
-    which Clang and Microsoft's ARM compiler fuse into one rounding: another
-    last bit on a Mac or an ARM PC. Here every operation rounds on its own.
-    Where the largest coordinate is past :data:`HYPOT_LARGE` or below
-    :data:`HYPOT_SMALL` (not zero), all are scaled by a power of two first
-    and back after (exact); infinity wins over NaN, as there.
+    CPython's own ``math.hypot`` and ``math.dist`` compute this in C, where
+    Clang and Microsoft's ARM compiler fuse a multiply and an add into one
+    rounding: another last bit on a Mac or an ARM PC. This is CPython's
+    algorithm (Raymond Hettinger's: the coordinates scaled by a power of two,
+    their squares summed exactly in two parts, the root corrected once),
+    with Dekker's exact products for its fused ones and every operation
+    rounded on its own: the same bits as CPython's on Linux, everywhere.
+    Infinity wins over NaN, as there.
     """
     values = [float(c) for c in coordinates]
     if any(math.isinf(c) for c in values):
         return _INF
+    if any(c != c for c in values):
+        return math.nan
     big = 0.0
     for c in values:
         if abs(c) > big:
             big = abs(c)
-    nan = any(
-        c != c for c in values
-    )  # (then NaN, by the plain sum, as the arrays give it)
-    if not nan and (big > HYPOT_LARGE or 0.0 < big < HYPOT_SMALL):
-        e = math.frexp(big)[1]
-        return math.ldexp(_sum_of_squares([math.ldexp(c, -e) for c in values]), e)
-    return _sum_of_squares(values)
-
-
-def _sum_of_squares(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    total = values[0] * values[0]
-    for c in values[1:]:
-        total = total + c * c
-    return math.sqrt(total)
+    if big == 0.0 or len(values) <= 1:
+        return big
+    e = math.frexp(big)[1]
+    if (
+        e < -1023
+    ):  # every coordinate subnormal: made normal first (exactly), as CPython does
+        return _TINY * hypot(*(c / _TINY for c in values))
+    scale = math.ldexp(1.0, -e)
+    csum, frac1, frac2 = 1.0, 0.0, 0.0
+    for c in values:
+        hi, lo = _two_square(c * scale)
+        total = csum + hi
+        frac2 += (csum - total) + hi
+        csum = total
+        frac1 += lo
+    h = math.sqrt(csum - 1.0 + (frac1 + frac2))
+    hi, lo = _two_square(h)
+    total = csum - hi
+    frac2 += (csum - total) - hi
+    csum = total
+    frac1 -= lo
+    x = csum - 1.0 + (frac1 + frac2)
+    h += x / (2.0 * h)
+    return h / scale
 
 
 def dist(p: Any, q: Any) -> float:

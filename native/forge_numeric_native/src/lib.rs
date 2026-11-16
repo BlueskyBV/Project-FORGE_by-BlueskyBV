@@ -35,7 +35,7 @@
 use std::slice;
 
 /// The interface's version: the loader refuses any other.
-const ABI: u64 = 4;
+const ABI: u64 = 5;
 
 #[inline(always)]
 fn from_high(h: u32) -> f64 {
@@ -687,9 +687,60 @@ pub unsafe extern "C" fn fnum_atan2(y: *const f64, x: *const f64, out: *mut f64,
     }
 }
 
-/// sqrt(x*x + y*y); where the larger magnitude is finite and past 1e150, or below 1e-150 but not zero, both
-/// scaled by a power of two first and back after (exact). Returns 0: nothing is deferred (the count is kept
-/// for the interface).
+const SPLIT: f64 = 134217729.0; // 2^27 + 1
+const TINY: f64 = 2.2250738585072014e-308; // 2^-1022
+
+/// (hi, lo) with hi = x*x rounded and hi + lo = x*x exactly: Dekker's product, by Veltkamp's split.
+#[inline(always)]
+fn two_square(x: f64) -> (f64, f64) {
+    let hi = x * x;
+    let t = SPLIT * x;
+    let xh = t - (t - x);
+    let xl = x - xh;
+    (hi, ((xh * xh - hi) + 2.0 * xh * xl) + xl * xl)
+}
+
+/// CPython's hypot of two coordinates, every operation rounded on its own (`scalar.hypot`).
+fn hypot2(a: f64, b: f64) -> f64 {
+    if a.is_infinite() || b.is_infinite() {
+        return f64::INFINITY;
+    }
+    if a.is_nan() || b.is_nan() {
+        return f64::NAN;
+    }
+    let big = if a.abs() > b.abs() { a.abs() } else { b.abs() };
+    if big == 0.0 {
+        return big;
+    }
+    let e = frexp_exp(big);
+    if e < -1023 {
+        return TINY * hypot2(a / TINY, b / TINY);
+    }
+    let scale = ldexp(1.0, -e);
+    let (hx, lx) = two_square(a * scale);
+    let (hy, ly) = two_square(b * scale);
+    let (mut csum, mut frac1, mut frac2) = (1.0f64, 0.0f64, 0.0f64);
+    let total = csum + hx;
+    frac2 += (csum - total) + hx;
+    csum = total;
+    frac1 += lx;
+    let total = csum + hy;
+    frac2 += (csum - total) + hy;
+    csum = total;
+    frac1 += ly;
+    let mut h = (csum - 1.0 + (frac1 + frac2)).sqrt();
+    let (hh, lh) = two_square(h);
+    let total = csum - hh;
+    frac2 += (csum - total) - hh;
+    csum = total;
+    frac1 -= lh;
+    let r = csum - 1.0 + (frac1 + frac2);
+    h += r / (2.0 * h);
+    h / scale
+}
+
+/// The length of each (x, y): CPython's hypot, every operation rounded on its own. Returns 0 (nothing is
+/// deferred; the count is kept for the interface).
 #[no_mangle]
 pub unsafe extern "C" fn fnum_hypot(
     x: *const f64,
@@ -700,23 +751,10 @@ pub unsafe extern "C" fn fnum_hypot(
     let x = slice::from_raw_parts(x, n);
     let y = slice::from_raw_parts(y, n);
     let out = slice::from_raw_parts_mut(out, n);
-    let count = 0usize;
     for i in 0..n {
-        let (a, b) = (x[i], y[i]);
-        if a.is_infinite() || b.is_infinite() {
-            out[i] = f64::INFINITY;
-            continue;
-        }
-        let big = if a.abs() >= b.abs() { a.abs() } else { b.abs() };
-        if !a.is_nan() && !b.is_nan() && (big > 1e150 || (big < 1e-150 && big > 0.0)) {
-            let e = frexp_exp(big);
-            let (xs, ys) = (ldexp(a, -e), ldexp(b, -e));
-            out[i] = ldexp((xs * xs + ys * ys).sqrt(), e);
-        } else {
-            out[i] = (a * a + b * b).sqrt();
-        }
+        out[i] = hypot2(x[i], y[i]);
     }
-    count
+    0
 }
 
 /// `a` (rows by k) times `b` (k by cols) into `out` (rows by cols), each sum from its first product,
