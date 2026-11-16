@@ -17,6 +17,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -24,6 +25,7 @@ from .checks import SpecReport, check_draft
 from .draft import PartSpec
 from .placement import Assumption, Layout
 from .problems import Problem
+from .versions import CURRENT, Version, version_of
 from .wire import to_wire
 from .words import NumberedBrief, number_words
 
@@ -34,6 +36,7 @@ __all__ = [
     "lock",
     "spec_digest",
     "unlock",
+    "wire_digest",
 ]
 
 Confirmer = Literal["person", "draft"]
@@ -67,7 +70,12 @@ def _normal(data: Any) -> Any:
 
 
 def spec_digest(
-    spec: PartSpec, brief: NumberedBrief, by: Confirmer, *, strict: bool = False
+    spec: PartSpec,
+    brief: NumberedBrief,
+    by: Confirmer,
+    *,
+    strict: bool = False,
+    version: Version = CURRENT,
 ) -> str:
     """The SHA-256 of the brief, the spec, who confirmed it and how strictly it was checked.
 
@@ -76,13 +84,27 @@ def spec_digest(
     can't be passed off as checked under the person's rules, or the reverse.
     The spec is hashed as it was shown, in its order: the same items listed
     in another order make another digest, never a false match. Where the
-    person's answers begin is hashed with the brief, when it has any.
+    person's answers begin is hashed with the brief, when it has any. The
+    spec is written in the schema version it is locked in (``version``: the
+    current one, or the one a spec confirmed before it was confirmed in), so
+    its version is hashed too and a lock is never re-hashed (ADR-0026).
     """
+    return wire_digest(to_wire(spec, version), brief, by, strict=strict)
+
+
+def wire_digest(
+    wire: Mapping[str, Any],
+    brief: NumberedBrief,
+    by: Confirmer,
+    *,
+    strict: bool = False,
+) -> str:
+    """:func:`spec_digest` of a spec's wire form, as written."""
     content: dict[str, Any] = {
         "brief": brief.text,
         "by": by,
         "strict": strict,
-        "spec": to_wire(spec),
+        "spec": dict(wire),
     }
     if brief.answers_from is not None:
         content["answers_from"] = brief.answers_from
@@ -118,6 +140,8 @@ class ConfirmedSpec:
     strict: bool = False
     #: What the person was asked to give a second look.
     caveats: tuple[Problem, ...] = ()
+    #: The schema version it was confirmed in, whose form its hash is of (ADR-0026).
+    version: Version = CURRENT
 
     @property
     def layout(self) -> Layout:
@@ -143,9 +167,16 @@ class ConfirmedSpec:
         if self.by not in _CONFIRMERS:
             raise LockError("a spec is confirmed by a person, or stays a draft")
         brief = _renumbered(self.brief)
-        if spec_digest(self.spec, brief, self.by, strict=self.strict) != self.digest:
+        if (
+            spec_digest(
+                self.spec, brief, self.by, strict=self.strict, version=self.version
+            )
+            != self.digest
+        ):
             raise LockError("the confirmed spec was changed after it was locked")
-        report = check_draft(brief, to_wire(self.spec), strict=self.strict)
+        report = check_draft(
+            brief, to_wire(self.spec, self.version), strict=self.strict
+        )
         if report.problems:
             raise LockError(
                 f"the checks now find {len(report.problems)} problem(s) in the locked spec"
@@ -213,7 +244,9 @@ def unlock(data: dict[str, Any], brief: NumberedBrief, digest: str, *, by: Confi
 
     Refuses it if the hash differs, or if this version of Forge's checks find
     a problem the version that locked it didn't: a locked spec is never used
-    on trust.
+    on trust. A spec locked in an earlier schema version is checked against
+    its hash in the form it was confirmed in, then read as this version reads
+    it (ADR-0026).
     """
     if by not in _CONFIRMERS:
         raise LockError("a spec is confirmed by a person, or stays a draft")
@@ -221,11 +254,12 @@ def unlock(data: dict[str, Any], brief: NumberedBrief, digest: str, *, by: Confi
     report = check_draft(brief, data, strict=strict)
     if report.spec is None or report.layout is None or report.needs_redraft:
         raise LockError("the locked spec no longer reads")
-    if spec_digest(report.spec, brief, by, strict=strict) != digest:
+    version = version_of(data)
+    if spec_digest(report.spec, brief, by, strict=strict, version=version) != digest:
         raise LockError("the locked spec was changed")
     if report.problems:
         raise LockError(
             f"the checks now find {len(report.problems)} problem(s) in the locked spec"
         )
     return ConfirmedSpec(report.spec, report.layout, brief, digest, by, report.assumptions, strict,
-                         report.caveats)  # fmt: skip
+                         report.caveats, version)  # fmt: skip

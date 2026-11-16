@@ -46,7 +46,6 @@ from .draft import (
     PATTERN_ANGLES,
     PATTERN_FIELDS,
     PATTERN_REQUIRED,
-    SPEC_FORMAT,
 )
 from .items.words.pattern import PATTERN_WORDS
 from .problems import MAX_NAME, MAX_REASON
@@ -64,6 +63,7 @@ from .schema import (
     KindSpec,
 )
 from .values import MAX_COUNT
+from .versions import CURRENT, written
 from .words import NumberedBrief, number_words
 
 __all__ = [
@@ -87,7 +87,7 @@ EXAMPLE_BRIEF = (
     "60 mm apart along its length. Its vertical edges are rounded to 3 mm. It holds a small sensor."
 )
 EXAMPLE_DRAFT: Mapping[str, Any] = {
-    "spec_format": 1,
+    "schema_version": written(CURRENT),
     "name": "bracket plate",
     "items": [
         {"id": "plate", "kind": "block", "words": [2, 3],
@@ -442,7 +442,7 @@ def _all_edges() -> list[str]:
 @functools.cache
 def _draft_schema_text() -> str:
     body = _obj({
-        "spec_format": {"const": SPEC_FORMAT},
+        "schema_version": {"const": written(CURRENT)},
         "name": {"type": "string", "minLength": 1, "maxLength": MAX_NAME, "description": "a short name for the part"},
         "items": {"type": "array", "minItems": 1, "items": {"oneOf": [_item_schema(s) for s in KINDS.values()]}},
         "not_modelled": {"type": "array", "items": _obj(
@@ -453,7 +453,7 @@ def _draft_schema_text() -> str:
              "reason": {"type": "string", "minLength": 1, "maxLength": MAX_REASON}},
             ("sentence", "reason"), "a sentence that says nothing about the shape, and why")},
         "requirements": _obj({"material": _ref("text")}, (), "what the part must be beyond its shape"),
-    }, ("spec_format", "name", "items"), "a part spec drafted from a brief")  # fmt: skip
+    }, ("schema_version", "name", "items"), "a part spec drafted from a brief")  # fmt: skip
     document = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         **body,
@@ -562,7 +562,7 @@ def instructions(*, strict: bool = False) -> str:
         frame=_frame(), kinds=_kinds(), patterns=_patterns(), edges=edges, tables=_TABLE_FORMS,
         max_reason=MAX_REASON, length_units=", ".join(_length_units()), angle_units=", ".join(_ANGLE_UNITS),
         example_brief=number_words(EXAMPLE_BRIEF).for_the_model(),
-        example_draft=json.dumps(EXAMPLE_DRAFT, ensure_ascii=False),
+        example_draft=json.dumps(EXAMPLE_DRAFT, ensure_ascii=False), version=written(CURRENT),
     )  # fmt: skip
     if strict:
         text += _AUTOMATIC.format(
@@ -699,7 +699,7 @@ from, and its fields; nothing else.
 - Every number and sentence of the brief is used, not modelled, or silent.
 - Every value cites the words of its own number, or is assumed with a reason.
 - Every count matches what its pattern places.
-Answer with the whole spec, "spec_format": 1.
+Answer with the whole spec, "schema_version": "{version}".
 """
 
 _AUTOMATIC = """

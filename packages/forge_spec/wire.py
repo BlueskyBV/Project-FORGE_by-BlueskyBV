@@ -28,6 +28,7 @@ from .draft import (
     Through,
 )
 from .values import Count, Provenance, Source, Value
+from .versions import CURRENT, Version, written
 
 __all__ = ["provenance_to_wire", "to_wire", "value_to_wire"]
 
@@ -160,8 +161,13 @@ def _field(value: Any) -> Any:
     raise TypeError(f"no wire form for {type(value).__name__}")  # pragma: no cover
 
 
-def to_wire(spec: PartSpec) -> dict[str, Any]:
-    """The spec as the JSON a draft is written in."""
+def to_wire(spec: PartSpec, version: Version = CURRENT) -> dict[str, Any]:
+    """The spec as the JSON a draft is written in: in the current schema version, or in ``version``.
+
+    An earlier version's form is written for a spec locked in it, whose hash
+    is of the form it was confirmed in (:mod:`.lock`); 1.0 differs from 1.1
+    only in naming its version (``"spec_format": 1``).
+    """
     items = []
     for item in spec.items:
         out: dict[str, Any] = {
@@ -173,7 +179,11 @@ def to_wire(spec: PartSpec) -> dict[str, Any]:
             out[name] = _field(value)
         items.append(out)
     return {
-        "spec_format": SPEC_FORMAT,
+        **(
+            {"spec_format": SPEC_FORMAT}
+            if version == (1, 0)
+            else {"schema_version": written(version)}
+        ),
         "name": spec.name,
         "items": items,
         "not_modelled": [

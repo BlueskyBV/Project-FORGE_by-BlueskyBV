@@ -20,6 +20,9 @@
 # mode exitpair:    stage 4's exit harness on a contiguous seed range (seeds "A-B"), split over the shards, on
 #                   the branch named by base and on this commit, one after the other on the same runner, under
 #                   the Python named by python: old code against new (its records held by compare).
+# mode migrations:  a schema migration's proof (tests/v2_migrations.py; V2-stage4b-0c.md, 3.2): every draft Forge
+#                   holds, collected on the branch named by base (the suite's and the regressions' on shard 0, and
+#                   each of this shard's seeds' three), read and judged there and on this commit, and compared.
 # mode compare:     a finished pair run's records (run_id) merged and held against each other here, so
 #                   only the summary has to be fetched.
 # mode coverage_report: a finished coverage run's data (run_id) combined here, and the step-0 inventory's
@@ -32,7 +35,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "fingerprint, pair, pypair, pyexit, exitpair, tests, coverage, coverage_report or compare"
+        description: "fingerprint, pair, pypair, pyexit, exitpair, migrations, tests, coverage, coverage_report or compare"
         default: "fingerprint"
       seeds:
         description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
@@ -178,6 +181,26 @@ jobs:
           for side in base fin; do
             (cd $side && python tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD") || true
           done
+      - name: Migrations
+        if: inputs.mode == 'migrations'
+        env:
+          PYTHONHASHSEED: ${{ inputs.hash_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          SHARDS: ${{ inputs.shards }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          MINE=$(cd fin && python .github/shard.py "$SEEDS" "$SHARDS" "$SHARD")
+          FIXED="--no-fixed"; [ "$SHARD" = "0" ] && FIXED=""
+          mkdir -p out
+          (cd base && python tests/v2_migrations.py collect --seeds "$MINE" $FIXED --out "$GITHUB_WORKSPACE/out/drafts.jsonl")
+          for side in base fin; do
+            for k in 0 1 2 3; do
+              (cd $side && python tests/v2_migrations.py record --drafts "$GITHUB_WORKSPACE/out/drafts.jsonl" \
+                --part "$k/4" --out "$GITHUB_WORKSPACE/out/$side/p$k") &
+            done
+            wait
+          done
+          python fin/tests/v2_migrations.py compare out/base out/fin | tee out/compare.txt || true
       - name: Tests
         if: inputs.mode == 'tests'
         env:

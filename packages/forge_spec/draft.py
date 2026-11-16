@@ -70,6 +70,7 @@ from .values import (
     read_provenance,
     read_value,
 )
+from .versions import VersionError, migrate
 from .words import WordRef
 
 __all__ = [
@@ -102,6 +103,7 @@ __all__ = [
     "read_draft",
 ]
 
+#: The legacy version field's one value: a draft that says ``"spec_format": 1`` is version 1.0 (:mod:`.versions`).
 SPEC_FORMAT = 1
 _ID = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 _ANGLE_UNITS = frozenset({"deg", "rad", "rev", "arcmin", "arcsec"})
@@ -1118,13 +1120,24 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
     if not isinstance(raw, Mapping):
         problems.fault("", "a draft is a JSON object")
         return None, problems
+    try:
+        raw, _version, _made = migrate(raw)
+    except VersionError as error:
+        problems.fault(pointer(error.field), str(error))
     unknown = unknown_keys(
-        raw, ("spec_format", "name", "items", "not_modelled", "silent", "requirements")
+        raw,
+        (
+            "schema_version",
+            "spec_format",
+            "name",
+            "items",
+            "not_modelled",
+            "silent",
+            "requirements",
+        ),
     )
     if unknown:
         problems.fault("", f"unknown field(s) {unknown}")
-    if type(raw.get("spec_format")) is not int or raw.get("spec_format") != SPEC_FORMAT:
-        problems.fault(pointer("spec_format"), f"spec_format is {SPEC_FORMAT}")
     name = one_line(raw.get("name"), MAX_NAME)
     if name is None:
         problems.fault(

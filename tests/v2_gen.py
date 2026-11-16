@@ -254,7 +254,7 @@ def random_draft(rng: random.Random) -> dict[str, Any]:
         )
         items.append(random_item(rng, f"item{k}", kind, body_kind))
     draft: dict[str, Any] = {
-        "spec_format": 1,
+        "schema_version": "1.1",
         "name": rng.choice(["part", "a bracket", "plate 2"]),
         "items": items,
     }

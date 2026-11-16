@@ -116,8 +116,11 @@ bits.
    outcome the same, every other difference listed and explained (last
    bits move once: ADR-0037).
 4. **The suite** (every test file) and every kept regression; and the cost
-   measured (the fingerprint: about 3% more time, from the per-call
-   overhead of a Python wrapper; 4b.0d1's compiled core removes it).
+   measured (the fingerprint of five seeds, on one machine: 70.0 s before
+   the adoption, 80.6 s adopted, 73.6 s with the speed commit, 2.4).
+5. **The speed commit, byte-identical:** the fingerprints of the sample
+   equal to the adopted code's (`forge-runs.yml`, mode `pair`), and the
+   numeric tests on every platform with its new library (`native.yml`).
 
 Before the call sites moved, the generator was compared by value on 60
 seeds: the same parts, every float within 2.3e-16 of the old one.
@@ -127,13 +130,48 @@ seeds: the same parts, every float within 2.3e-16 of the old one.
 | Step | State |
 |---|---|
 | forge_numeric, its tests and its compiled twin | done (`acf5a9f`, `aed942e`); golden digests reproduced on all four platforms (trust-core run 43880625574), each platform's library equal to the NumPy twin (native run 43880625544) |
-| The call sites and the rule | on `numeric/adopt` (`68819ff`), in proof |
-| The proof (2.3, 2 to 4) | running |
+| The call sites and the rule | on `numeric/adopt` (`ae9dfe5`), in proof |
+| The suite on it | every file passes but `test_v2_eval_keys` (it needs the corpus, which runners don't have: run 43926576936) |
+| The machines | run 43926561703: in proof |
+| Old code against new | exit pairs on seeds 0 to 5,000 and 5,000 to 10,000 (runs 43926589836, 43926602844): in proof |
+| The speed commit | on `numeric/speed` (`6f0ff6a`): the fingerprints of 40 sample seeds byte-identical to the adopted code's here; the libraries building (native run 43938379282) |
+
+What the machines found on the way (2.1's last cause): with every
+elementary function and product replaced, a Mac and an ARM PC still
+differed in the judge on 197 of 200 seeds. Replacing CPython's
+`math.hypot` and `math.dist` (whose multiply-adds Clang and Microsoft's
+ARM compiler fuse) was not enough; `tests/v2_values.py`, which writes
+every value the judge makes and walks two machines' files to the first
+that differs, found the next: NumPy's `Generator.uniform`, whose
+`low + range * u` is fused in C there. Draws now go through `fv.Draws`
+(NumPy's PCG64 bits, the arithmetic in ufuncs, unfused), and with it the
+judge's values on seeds 0 to 3 are identical on Linux x86, macOS ARM and
+Windows ARM (values run 43918882473). `fs.hypot` first computed
+`sqrt(x*x + y*y)` scaled, which moved two tests' 4.0 to
+3.9999999999999996; it is now CPython's own algorithm (the coordinates
+scaled by a power of two, the squares summed exactly in two parts, the
+root corrected once) with Dekker's exact products for its fused ones:
+the same bits as CPython's on Linux on 760,000 inputs, in all three twins.
+
+The cost, and the speed commit: the adopted code took 80.6 s for five
+seeds' fingerprints against 70.0 s before (+15%), mostly the hypot: the
+Python one on numbers, and the compiled one on arrays at 15 ns an element
+where NumPy's took 11. The speed commit hands numbers of two and three
+coordinates to the compiled twin (opened without NumPy, so the scalar side
+stays free of it), reads the array hypot's common case from its bits in
+two branch-free passes, four lanes at once where the processor has AVX2
+(2.7 ns an element), hands arrays over by the buffer protocol, and
+compiles every 2-D matrix product with a short contracted axis: 73.6 s
+(+5%), the rest the per-call cost of small Python wrappers, which
+4b.0d1's compiled core removes.
 
 ## 3. Items 1 to 3 and 14: how they are made, in what order
 
-Status: design, revision 1, 16 November 2026, for review before any of it
-is built.
+Status: design, revision 2, 16 November 2026 (revision 1 the same day;
+3.3 says what reading the solver changed). Item 14 is built (3.2, on
+`spec/versions`: 130 held drafts read and judged the same before and
+after, only the guide and the schema changed); the rest is built in 3.1's
+order.
 
 ### 3.1 The principle: refactor first, then the new ability
 
@@ -142,12 +180,15 @@ placement, the judge's placement and oracle, the check compiler, the
 planner and compiler, the generator, the second kernel's capability
 table), each its own way, as R2 requires. Each is made in **two moves**:
 
-- **(a) the substrate, byte-identical.** The program's representation
-  becomes the general one (a frame of vectors, a host protocol, an end
-  condition), carrying exactly today's cases. Proven as 4b.0b was: every
-  seed's fingerprint (everything a verdict consumes) byte-identical on the
-  sample under two hash seeds, the regressions, the suite. No semantics
-  move, so a fault is a refactoring fault, found at once.
+- **(a) the substrate.** The program's representation becomes the
+  general one (a frame of vectors, a host protocol, an end condition),
+  carrying exactly today's cases. Proven as 4b.0b was, every seed's
+  fingerprint (everything a verdict consumes) byte-identical on the sample
+  under two hash seeds, the regressions, the suite, where the
+  representation keeps today's arithmetic (3a, 2a); for frames (1a), whose
+  oriented boxes compute a centre otherwise than an axis-aligned box's,
+  every value within a few ulps of the old (3.3). No semantics move, so a
+  fault is a refactoring fault, found at once.
 - **(b) the new ability, old against new.** The general cases are let in:
   rotated items, tilted and curved hosts, end conditions. Proven by stage
   4's exit harness on its 10,000 seeds, old code against new on one runner
@@ -168,33 +209,43 @@ before the next starts). 2b last because it retires the solver's
 requires and `to_wire` writes, so it is in every confirmed spec's hash
 (`lock.spec_digest`); nothing reads a minor version or migrates.
 
-**Made:**
+**Made** (`forge_spec/versions.py`, `forge_spec/migrations/`,
+`tests/v2_migrations.py`):
 
 - `schema_version` ("major.minor") replaces `spec_format` in what Forge
-  writes (`to_wire`, the guide's schema, the generator's and the tests'
-  drafts). A draft that says `"spec_format": 1` is version 1.0, read and
-  migrated; one that says neither is refused, as today.
-- **A confirmed spec stays confirmed.** `unlock` checks a lock's hash on
-  the spec's wire form **at the version it was confirmed in** (each
-  version's `to_wire` kept, as its migrations are), then migrates it; a
-  lock is never re-hashed silently. A migrated spec whose shown content
-  differs is confirmed again (ADR-0026's re-confirmation rule).
+  writes (`to_wire`, the guide's schema, example and instructions, the
+  generator's and the tests' drafts). A draft that says `"spec_format": 1`
+  is version 1.0, read and migrated; one that says neither, both, a
+  malformed version or one newer than this Forge reads is refused, at the
+  field at fault.
+- **A spec is read in the current version**, whatever version its draft
+  was written in: `PartSpec` carries no version, so every program sees one
+  schema.
+- **A confirmed spec stays confirmed.** The version lives with the lock:
+  `ConfirmedSpec.version` is the version it was confirmed in, and its hash
+  is of the spec written in that version's form (`to_wire(spec, version)`,
+  each version's form kept, as its migrations are). `unlock` checks a
+  lock's hash in the form it was confirmed in, then reads it as this
+  version reads it; a lock is never re-hashed silently. A migrated spec
+  whose shown content differs is confirmed again (ADR-0026's
+  re-confirmation rule: the first major step's to make).
 - `forge_spec/migrations/`: one module per major step, each a pure
-  function from a draft's JSON at one version to the next, kept forever,
-  registered in order; `migrate(raw) -> (raw, steps)`. A minor version only
+  function from a draft's JSON at one major version to the next, kept
+  forever, registered in order (`STEPS`); `versions.migrate(raw) -> (raw,
+  the version it was written in, the steps made)`. A minor version only
   adds optional fields and needs none.
-- The proof of a migration, `tests/v2_migrations.py`: every draft Forge
-  holds (the corpus drafts `v2_corpus`, `v2_suite_specs`, the stage tests'
-  drafts, the regressions' and 10,000 generated ones) is migrated, and the
-  migrated draft on the new code is held against the old draft on the old
-  code (a pair run, as `exitpair`): the same items, the same solved
-  layout, the same oracle (the judge's shape, the fingerprint's `judge`
-  section) and the same check suite, to the last bit where the step is a
-  substrate (a) and to the same endings where it is an ability (b). A
-  migration that changes a verdict without changing geometry lists each
-  changed verdict.
-- The hash: the confirmed spec's hash covers its `schema_version` (item
-  27's other inputs land with their items).
+- The proof of a migration, `tests/v2_migrations.py` (and
+  `forge-runs.yml`'s mode `migrations`): every draft Forge holds (the
+  suite's drafts, `v2_suite_specs`; the kept regressions' parts; and each
+  counted seed's part, mutant and impossible part) is collected **as
+  stored** on the code before the step, then read and judged on both
+  sides (the code after migrates it as it reads it), and the records held
+  against each other: the report plain and strict (spec, solved layout,
+  problems, accounting) and the judge (placement, oracle, check suite and
+  its lists), to the last bit where the step is a substrate (a) and with
+  each changed digest listed where it is an ability (b).
+- The hash: the confirmed spec's hash covers its version (item 27's other
+  inputs land with their items).
 - Item 14's own step makes the version 1.1: `schema_version` in place of
   `spec_format`, nothing else (a minor step, so 1.0 drafts read as they
   are). The first major migration, 1.x to 2.0, is items 1b's and 2b's:
@@ -212,9 +263,11 @@ vector frames (`forge_checks.shapes.Frame`), and ForgeIR v2 places by
 rigid motions.
 
 **1a, the substrate:** each program's face and copy carry a `Frame`
-(origin, and unit vectors `u`, `v`, `n`, right-handed: `n` the outward
-normal, `u` and `v` the face's first and second axes), and each copy its
-own frame (its item's axes in the world). The axis-name tables become one
+(origin, and unit vectors `u`, `v`, `n`: `n` the outward normal, `u` and
+`v` the face's first and second axes as `frame.md`'s table gives them, so
+`u × v` is `n` on three faces and `-n` on the others, kept so: positions
+keep their signs), and each copy its own frame (its item's axes in the
+world). The axis-name tables become one
 function per program that makes the frame for a named face of an aligned
 item. An aligned frame is applied by choosing a component and its sign,
 never by a product with 0 or 1 (a product would turn 0.0 into -0.0, which
@@ -223,6 +276,22 @@ refactor; a general rotation is applied only to a frame that isn't
 aligned. Each program keeps its own `Frame` (R2: the solver's in
 `forge_spec`, the judge's in `forge_checks`, the generator's in
 `forge_eval`), each built from the definitions, not from another's.
+
+**Decided in revision 2 (found reading the solver):** the solver's bodies
+are axis-aligned boxes (`Instance.lo`, `hi`) and their faces are made from
+them (`_box_faces(lo, hi)`: a face's centre is `(lo + hi) / 2`, its half
+sizes `(hi - lo) / 2`); the generator's and the judge's placement are the
+same. A frame-and-extents body (an oriented box) computes those numbers
+otherwise (`centre ± half · n`), so a byte-identical 1a would keep the
+boxes' arithmetic behind the frame only to drop it in 1b. Instead, 1a
+moves each program to frames and oriented boxes at once, **one program at
+a time** (the solver; the judge's placement, oracle and check compiler;
+the generator and its truth; the planner and the second kernel's view),
+and proves each by **every value of stage 4's parts within a few ulps of
+the old** (`tests/v2_values.py`, on the sample, aligned parts only: a
+refactoring fault moves a value by far more than an ulp) and the same
+fingerprints in every section that holds no computed length. The ability
+(1b) is switched on only when every program has it.
 
 **1b, the ability:**
 
@@ -323,7 +392,7 @@ which the proof holds oracle-equal.
 | Step | Proof | Runner time |
 |---|---|---|
 | 14 | migrations of every held draft oracle-equal; the suite | under an hour |
-| 1a, 3a, 2a | fingerprints byte-identical (sample, two hash seeds), regressions, suite | about an hour each |
+| 1a (per program), 3a, 2a | 3a and 2a: fingerprints byte-identical (sample, two hash seeds); 1a: every value within a few ulps (`v2_values.py`); regressions, suite | about an hour each |
 | 1b, 3b, 2b | exit pair on 10,000 seeds (same endings, classes, every change listed), corpus migrated oracle-equal, new tests with mutants and near-misses, generator draws | about 6 hours each |
 
 Each step is committed to a branch, proven there, and merged to `main`

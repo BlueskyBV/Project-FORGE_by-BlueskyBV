@@ -263,9 +263,15 @@ def grade_set(grades: Sequence[SpecGrade]) -> SetGrade:
 
 
 def draft_digest(spec: PartSpec) -> str:
-    """The SHA-256 of a draft's wire form: what a person's marks are tied to."""
+    """The SHA-256 of a draft's wire form: what a person's marks are tied to.
+
+    The form is schema version 1.0's (``"spec_format": 1``), the one marks
+    were first tied to: a later minor version names its version otherwise
+    and may add fields, and a draft without them keeps its digest, so its
+    marks still grade it (ADR-0026).
+    """
     body = json.dumps(
-        to_wire(spec), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        to_wire(spec, (1, 0)), sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
