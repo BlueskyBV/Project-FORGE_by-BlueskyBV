@@ -14,6 +14,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 from OCP.BRep import BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Curve
 from OCP.BRepLProp import BRepLProp_SLProps
@@ -101,7 +102,7 @@ def junction(operands: Sequence[SolidProduct], done: Boolean) -> list[Any]:
         curve = BRepAdaptor_Curve(edge)
         middle = curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0)
         na, nb = (_normal_at(f, middle) for f in adjacent)
-        if na is None or nb is None or abs(float(na @ nb)) > 1.0 - 1e-9:
+        if na is None or nb is None or abs(float(fv.matmul(na, nb))) > 1.0 - 1e-9:
             continue  # meeting smoothly (or flat): no crease to round
         found.append(edge)
     return found
@@ -301,7 +302,7 @@ def _webs(shape: Any, junction_edges: Sequence[Any], radius: float) -> list[Any]
         n, along, big, foot = plane.axis, cylinder.axis, cylinder.radius, plane.point
         if n is None or along is None or big is None or foot is None:
             return None
-        if abs(abs(float(along @ n)) - 1.0) > 1e-9:
+        if abs(abs(float(fv.matmul(along, n))) - 1.0) > 1e-9:
             return None
         curve = describe_edge(edge)
         if (
@@ -313,7 +314,7 @@ def _webs(shape: Any, junction_edges: Sequence[Any], radius: float) -> list[Any]
         cyl_face = adjacent[[f.kind for f in facts].index("cylinder")]
         # The boss stands on the face's outer side, and is convex (material inside its cylinder).
         middle = (cylinder.lo + cylinder.hi) / 2.0
-        if float((middle - foot) @ n) <= 0.0:
+        if float(fv.matmul(middle - foot, n)) <= 0.0:
             return None
         if TopoDS.Face(cyl_face).Orientation() == TopAbs_REVERSED:
             return None
@@ -338,7 +339,7 @@ def _webs(shape: Any, junction_edges: Sequence[Any], radius: float) -> list[Any]
             ]
         )
         axis = np.cross(x_dir, y_dir)
-        radial = x_dir * np.cos(t0) + y_dir * np.sin(t0)
+        radial = x_dir * fv.cos(t0) + y_dir * fv.sin(t0)
         r = radius
         frame = Frame.through(centre, radial, n, np.cross(radial, n))
         corner = (big + r - r / np.sqrt(2.0), r - r / np.sqrt(2.0))

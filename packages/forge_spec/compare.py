@@ -47,6 +47,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
+from forge_numeric import scalar as fs
+
 from .checks import SpecReport
 from .geometry import EPS, Vec
 from .items.compare import COMPARE
@@ -126,7 +128,7 @@ def _rotations() -> tuple[Rotation, ...]:
     for perm in itertools.permutations(range(3)):
         swaps = sum(1 for i in range(3) for j in range(i + 1, 3) if perm[i] > perm[j])
         for signs in itertools.product((1, -1), repeat=3):
-            if (-1) ** swaps * signs[0] * signs[1] * signs[2] == 1:
+            if (-1 if swaps % 2 else 1) * signs[0] * signs[1] * signs[2] == 1:
                 found.append(
                     ((perm[0], perm[1], perm[2]), (signs[0], signs[1], signs[2]))
                 )
@@ -474,7 +476,7 @@ def _apart(f: Feature, g: Feature) -> tuple[int, float]:
     if f.sizes is not None and g.sizes is not None:
         ways += int(sorted(_r(x) for x in f.sizes) != sorted(_r(x) for x in g.sizes))
     far = (
-        math.dist(f.point, g.point)
+        fs.dist(f.point, g.point)
         if f.point is not None and g.point is not None
         else 0.0
     )

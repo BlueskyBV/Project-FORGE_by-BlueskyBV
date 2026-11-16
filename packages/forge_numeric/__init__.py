@@ -9,19 +9,35 @@ path rounds its own way), nor about the order of a sum that BLAS adds (``@``,
 ``dot``, ``einsum``, ``linalg``). So Forge never calls those; it calls these:
 
 - :mod:`forge_numeric.scalar` (``fs``): ``sin``, ``cos``, ``sincos``, ``tan``,
-  ``atan``, ``atan2``, ``asin``, ``acos``, ``exp``, ``log``, ``cbrt`` on Python
-  floats, raising where ``math`` raises;
+  ``atan``, ``atan2``, ``asin``, ``acos``, ``exp``, ``expm1``, ``log``
+  (of any integer too, as ``math.log``), ``log1p``, ``cbrt``, ``hypot`` and
+  ``dist`` on Python floats,
+  raising where ``math`` raises; ``decade`` (``floor(log10(x))``, exactly);
+  ``sq`` and ``cube`` for ``x ** 2`` and ``x ** 3``. It imports no NumPy, so
+  the standard-library packages use it too;
 - :mod:`forge_numeric.vector` (``fv``): the same on NumPy arrays (``arctan2``,
-  ``arccos`` and so on, NaN and infinity where NumPy gives them), bit for bit
-  the scalar ones, with ``hypot``, ``dot``, ``norm``, ``unit``, ``matmul``,
-  ``solve``, ``det``, ``inv``, ``eigh``, ``cond_symmetric`` and ``real_roots``.
+  ``arccos`` and so on, NaN and infinity where NumPy gives them, a NumPy float
+  for a number), bit for bit the scalar ones, with ``hypot``; products and
+  linear algebra in a fixed order: ``dot``, ``norm``, ``unit``, ``matmul``,
+  ``solve``, ``det``, ``inv``, ``eigh``, ``cond_symmetric``; polynomial roots
+  (``real_roots``, batched; ``roots``, complex, as ``numpy.roots``);
+  ``interp`` (``numpy.interp``'s formula, unfused) and ``normal`` (normal
+  draws from uniform ones).
 
-``math.sqrt``, ``math.hypot`` (CPython's own), ``math.fsum``, NumPy's
-elementwise arithmetic, ``np.sqrt`` and its sums (``np.sum``, its own pairwise
-addition in scalar C) are the same everywhere and stay. The rule is held by
-``tests/test_v2_numeric.py`` (the functions: accuracy, the twins bit for bit,
-and golden digests every machine must reproduce) and
-``tests/test_v2_architecture.py`` (no V2 package calls what they replace).
+A compiled twin (``native/forge_numeric_native``, Rust behind a C interface)
+computes the array functions, the matrix products and the hypot of two or
+three numbers where this machine has it, the same bits faster; other
+numbers and short vectors take Python float shortcuts, the same bits again.
+
+``math.sqrt``, ``math.fsum``, NumPy's elementwise arithmetic, ``np.sqrt``
+and its sums (``np.sum``, its own pairwise addition in scalar C) are the
+same everywhere and stay. CPython's ``math.hypot`` and ``math.dist`` are not
+(their multiply-adds in C are fused by Clang and by Microsoft's ARM
+compiler): ``fs.hypot`` and ``fs.dist`` replace them. The rule is held by
+``tests/test_v2_numeric.py`` (the functions: accuracy, the twins and the
+shortcuts bit for bit, and golden digests every machine must reproduce) and
+``tests/test_v2_architecture.py`` (no V2 code calls what they replace:
+``EveryNumberIsTheSameOnEveryMachine``).
 """
 
 from __future__ import annotations

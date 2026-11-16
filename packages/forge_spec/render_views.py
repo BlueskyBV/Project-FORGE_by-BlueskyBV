@@ -44,6 +44,8 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
+from forge_numeric import scalar as fs
+
 from .checks import SpecReport
 from .draft import (
     AxisPosition,
@@ -910,7 +912,7 @@ class _Drawing:
             )
             halves = None if round_ else self._halves(copy)
             for canvas in self.canvases:
-                axial = math.hypot(n[canvas.u], n[canvas.v]) <= EPS
+                axial = fs.hypot(n[canvas.u], n[canvas.v]) <= EPS
                 if round_:
                     seen_in, seen_out = self._seen(canvas, copy, out, exits, (r, r))
                     _round(canvas, copy.origin, into, deep, r, r,
@@ -1007,7 +1009,7 @@ class _Drawing:
             rs, angle = mm(sink.diameter) / 2, degrees(sink.angle)
             if rs > r and 0 < angle < 180:
                 seen, _ = self._seen(canvas, copy, copy.origin, False, (rs, rs))
-                deep = (rs - r) / math.tan(math.radians(angle) / 2)
+                deep = (rs - r) / fs.tan(math.radians(angle) / 2)
                 _round(canvas, copy.origin, into, deep, rs, r, start_style=_style(seen), side_style="hidden",
                        end_style=end)  # fmt: skip
 
@@ -1242,7 +1244,7 @@ def render_views(report: SpecReport) -> Views:
     lo, hi = extent
     size = (hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])
     scale = max(size) if max(size) > EPS else 1.0
-    decimals = max(2, 4 - math.floor(math.log10(scale)))
+    decimals = max(2, 4 - fs.decade(scale))
     canvases = [_Canvas(frame, scale / _SPAN_PX, decimals) for frame in _FRAMES]
     solids: list[_Solid] = [((i.item, i.index), *box) for item in drawable
                             if VIEWS[item.kind].hides

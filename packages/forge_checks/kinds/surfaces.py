@@ -25,6 +25,7 @@ import math
 from dataclasses import dataclass, replace
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from ..classes import Tolerance
@@ -87,7 +88,7 @@ class Plane:
         if self.first is not None and self.half is not None:
             n = np.asarray(self.normal, dtype=np.float64)
             f = np.asarray(self.first, dtype=np.float64)
-            if abs(float(n @ f)) > 1e-9 * float(np.linalg.norm(n) * np.linalg.norm(f)):
+            if abs(float(fv.matmul(n, f))) > 1e-9 * float(fv.norm(n) * fv.norm(f)):
                 raise ValueError(
                     f"a plane's rectangle lies in it: {self.first} isn't square to {self.normal}"
                 )
@@ -190,7 +191,7 @@ class FittedRound:
     def uncertainty_along(self, along: Array, radius: float = 0.0) -> float:
         """How far the fitted axis may be off along a direction; with ``radius``, its place there plus that many times the fitted radius (an edge's: ``radius`` is how far across the axis ``along`` runs, signed)."""
         return self.fit.uncertainty(
-            float(self.e1 @ along), float(self.e2 @ along), radius
+            float(fv.matmul(self.e1, along)), float(fv.matmul(self.e2, along)), radius
         )
 
 
@@ -203,9 +204,11 @@ def _straight(points: Array, deflection: Array, most: float) -> bool:
     surface they are on isn't round, or rounds far more gently than asked.
     """
     centre = points.mean(axis=0)
-    _, _, axes = np.linalg.svd(points - centre)
-    along = (points - centre) @ axes[0]
-    off = (points - centre) @ axes[1]
+    rel = points - centre
+    # The directions they spread most and next most along (their signs don't matter here).
+    _, vectors = fv.eigh(fv.matmul(rel.T, rel))
+    along = fv.matmul(rel, vectors[:, -1])
+    off = fv.matmul(rel, vectors[:, -2])
     half = float(along.max() - along.min()) / 2
     if half <= 0:
         return False
@@ -235,7 +238,7 @@ def fitted_round(target: Round, width: float, probe: Probe) -> FittedRound | str
     w, e1, e2 = basis(target.axis)
     c = np.asarray(target.centre, dtype=np.float64)
     d = window.points - c
-    flat = np.stack([d @ e1, d @ e2], axis=1)
+    flat = np.stack([fv.matmul(d, e1), fv.matmul(d, e2)], axis=1)
     fit = fit_circle(flat, window.deflection, (0.0, 0.0), target.radius)
     if fit is None:
         if _straight(flat, window.deflection, target.radius + width):
@@ -298,8 +301,8 @@ def fitted_cone(target: Cone, width: float, probe: Probe) -> FittedCone | str:
     # Fitted about the middle of its stretch, where its points are (ConeFit.at).
     middle = (s0 + s1) / 2
     fit = fit_cone(
-        np.stack([d @ e1, d @ e2], axis=1),
-        d @ w - middle,
+        np.stack([fv.matmul(d, e1), fv.matmul(d, e2)], axis=1),
+        fv.matmul(d, w) - middle,
         window.deflection,
         r0 + slope * (middle - s0),
         slope,
@@ -332,9 +335,9 @@ def fitted_tube(target: Tube, width: float, probe: Probe) -> FittedTube | str:
         return f"no built rounding within {width:.3g} mm of the spec's"
     w, _, _ = basis(target.axis)
     d = window.points - np.asarray(target.centre, dtype=np.float64)
-    along = d @ w
+    along = fv.matmul(d, w)
     radial = d - along[:, None] * w
-    rho = np.sqrt(np.einsum("ij,ij->i", radial, radial))
+    rho = np.sqrt(fv.dot(radial, radial))
     section = np.stack([rho, along], axis=1)
     fit = fit_circle(section, window.deflection, (target.big, 0.0), target.radius)
     if fit is None:

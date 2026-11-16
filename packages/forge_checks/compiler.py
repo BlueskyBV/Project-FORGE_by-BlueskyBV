@@ -49,6 +49,8 @@ from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field, replace
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_spec.draft import (
     AxisPosition,
     Choice,
@@ -118,7 +120,6 @@ from .oracle import Oracle, Rounded
 from .outlines import Arc as OutlineArc
 from .outlines import Segment
 from .place import (
-    TURN_AXES,
     Copy,
     FlatFace,
     Placed,
@@ -280,10 +281,10 @@ class _Compiler:
 
     def _looked_at(self, plane: Plane, half: tuple[float, float] | None) -> bool:
         n = _v(plane.normal)
-        n /= float(np.linalg.norm(n))
+        n /= float(fv.norm(n))
         k = int(np.argmax(np.abs(n)))
         if plane.first is not None and plane.half is not None and half is None:
-            e1 = _v(plane.first) / float(np.linalg.norm(plane.first))
+            e1 = _v(plane.first) / float(fv.norm(plane.first))
             e2 = np.asarray(np.cross(n, e1), dtype=np.float64)
             half = plane.half
         elif abs(abs(float(n[k])) - 1.0) < 1e-12:
@@ -300,12 +301,10 @@ class _Compiler:
         )
         points = _v(plane.point) + a.reshape(-1, 1) * e1 + b.reshape(-1, 1) * e2
         if math.isfinite(plane.reach):
-            points = points[
-                np.linalg.norm(points - _v(plane.point), axis=1) <= plane.reach
-            ]
+            points = points[fv.norm(points - _v(plane.point), axis=1) <= plane.reach]
         # A batch at a time, in an order spread over the plane (a fixed one): the answer is
         # whether any point is on the part's surface, found as soon as one is.
-        spread = points[np.random.default_rng(len(points)).permutation(len(points))]
+        spread = points[fv.Draws(len(points)).permutation(len(points))]
         for start in range(0, len(spread), _LOOKED_AT):
             batch = spread[start : start + _LOOKED_AT]
             on = batch[self.part.classify(batch) == Side.ON]
@@ -327,17 +326,17 @@ class _Compiler:
             _v(surface.centre)
             + a.reshape(-1, 1) * w
             + surface.radius
-            * (np.cos(t).reshape(-1, 1) * e1 + np.sin(t).reshape(-1, 1) * e2)
+            * (fv.cos(t).reshape(-1, 1) * e1 + fv.sin(t).reshape(-1, 1) * e2)
         )
         return bool(np.any(self.part.classify(points) == Side.ON))
 
     def seen_ball(self, ball: Ball) -> bool:
         """Whether any of the spec's ball is on the part's surface: tried at 400 points spread over it."""
         k = np.arange(400) + 0.5
-        polar = np.arccos(1 - 2 * k / 400)
+        polar = fv.arccos(1 - 2 * k / 400)
         turn = math.pi * (1 + math.sqrt(5)) * k
         way = np.stack(
-            [np.cos(turn) * np.sin(polar), np.sin(turn) * np.sin(polar), np.cos(polar)],
+            [fv.cos(turn) * fv.sin(polar), fv.sin(turn) * fv.sin(polar), fv.cos(polar)],
             axis=1,
         )
         points = _v(ball.centre) + ball.radius * way
@@ -354,11 +353,11 @@ class _Compiler:
         a grid over the face, inset by the disc's reach; at each, points over
         both discs, the part's surface where the oracle has them on it.
         """
-        n = _v(unit(face.normal))
-        e1, e2 = (_v(unit("+" + a)) for a in face.axes)
+        n = _v(face.frame.n)
+        e1, e2 = (_v(face.frame.u), _v(face.frame.v))
         centre = _v(face.centre)
         r = _WALL_REACH
-        ring = np.array([(0.0, 0.0)] + [(f * r * math.cos(t), f * r * math.sin(t))
+        ring = np.array([(0.0, 0.0)] + [(f * r * fs.cos(t), f * r * fs.sin(t))
                                         for f in (0.5, 0.95) for t in np.linspace(0, 2 * math.pi, 12, endpoint=False)])  # fmt: skip
 
         def share(at: Array) -> float:
@@ -377,20 +376,20 @@ class _Compiler:
         for a in steps[0]:
             for b in steps[1]:
                 at = centre + a * e1 + b * e2
-                key = (share(at), -math.hypot(a, b))
+                key = (share(at), -fs.hypot(a, b))
                 if key > best_key:
                     best, best_key = at, key
         return best
 
     def face_plane(self, face: FlatFace, reach: float = math.inf) -> Plane:
-        return Plane(face.centre, unit(face.normal), reach)
+        return Plane(face.centre, face.frame.n, reach)
 
     def face_rect(self, face: FlatFace) -> Plane:
         """A face's plane within its own rectangle (its outline's half sizes along its axes): a fit of it takes no point of another face beside it that is near its plane (a body's bottom 0.66 mm under a post's, within the window a pattern's pitch is fitted in)."""
         return Plane(
             face.centre,
-            unit(face.normal),
-            first=unit("+" + face.axes[0]),
+            face.frame.n,
+            first=face.frame.u,
             half=face.half,
         )
 
@@ -413,7 +412,7 @@ class _Compiler:
         self, face: FlatFace, at: Array, a: Array, sign: float, span: float
     ) -> Plane:
         """The wall at the face's edge through ``at``, square to ``a`` on the ``sign`` side: facing out of the material (air beyond: a body's side) or back across the face (material beyond: a recess's wall), as the oracle says."""
-        n = _v(unit(face.normal))
+        n = _v(face.frame.n)
         held = self.part.held(at - 1e-3 * n, (sign * a)[None, :], finished=False)
         if held is not None:
             air = not bool(held[1][0])
@@ -429,7 +428,7 @@ class _Compiler:
         """An outline face's edge on the ``sign`` side along ``axis`` (extrusion.md: where its box ends): the wall along a straight side there, or the round side of an arc reaching it; a reason where only a corner does."""
         k = 0 if face.axes[0] == axis else 1
         a = _v(unit("+" + axis))
-        n = _v(unit(face.normal))
+        n = _v(face.frame.n)
         extreme = face.outline.centre[k] + sign * face.outline.half[k]
         first, second = ("xyz".index(x) for x in face.axes)
 
@@ -441,10 +440,10 @@ class _Compiler:
         lines = [q for q in face.outline.pieces() if isinstance(q, Segment)
                  and abs(q.a[k] - extreme) <= 1e-9 and abs(q.b[k] - extreme) <= 1e-9]  # fmt: skip
         if lines:
-            line = max(lines, key=lambda q: math.dist(q.a, q.b))
+            line = max(lines, key=lambda q: fs.dist(q.a, q.b))
             middle = ((line.a[0] + line.b[0]) / 2, (line.a[1] + line.b[1]) / 2)
             return self.wall_at(
-                face, placed(middle), a, sign, min(math.dist(line.a, line.b) / 2, 4.0)
+                face, placed(middle), a, sign, min(fs.dist(line.a, line.b) / 2, 4.0)
             )
         quadrant = (0.0 if k == 0 else math.pi / 2) + (0.0 if sign > 0 else math.pi)
         arcs = [q for q in face.outline.pieces() if isinstance(q, OutlineArc) and q.holds(quadrant)
@@ -491,8 +490,8 @@ class _Compiler:
                 None  # a short edge between square corners: its plane is all there is
             )
         a = _v(unit("+" + axis))
-        b = _v(unit("+" + face.axes[1 - k]))
-        n = _v(unit(face.normal))
+        b = _v((face.frame.u, face.frame.v)[1 - k])
+        n = _v(face.frame.n)
         centre = _v(face.centre) + sign * (h - r) * a + side * (other - r) * b
         # Just past the middle of the corner's quarter-circle, just under the face: air beyond
         # a body's side, the wall's material beyond a recess's floor (its ends may lie on
@@ -554,7 +553,7 @@ class _Compiler:
             if isinstance(side, OutlineArc):
                 self.size(item, min(side.radius, side.radius * side.sweep))
             else:
-                self.size(item, math.dist(side.a, side.b))
+                self.size(item, fs.dist(side.a, side.b))
         self.skip(item, "profile", "an outline has no single size: face accounting holds every point of the "
                   "built faces to it", held_by="face accounting")  # fmt: skip
 
@@ -566,7 +565,7 @@ class _Compiler:
         face = self.placed.face(copy.host)
         if not isinstance(face, FlatFace):
             return None
-        return Plane(copy.point, unit(face.normal), reach)
+        return Plane(copy.point, face.frame.n, reach)
 
     def _height(self, item: Item, name: str, copy: Copy, top: Plane, bottom: Plane | None, value: float,
                 footprint: float) -> None:  # fmt: skip
@@ -578,7 +577,7 @@ class _Compiler:
                 # outside it grows away from the axis, inside a bore towards it (place.md).
                 side = Round(
                     host_face.start,
-                    unit("+" + host_face.axis),
+                    host_face.frame.n,
                     host_face.radius,
                     0.0,
                     host_face.length,
@@ -813,7 +812,7 @@ class _Compiler:
         if isinstance(host_face, RoundSide):
             # From the side's surface at its centre: from the side's fitted axis, less its radius
             # (out from a rod's outside the floor is nearer the axis; out from a bore, farther).
-            side = Round(host_face.start, unit("+" + host_face.axis), host_face.radius, 0.0, host_face.length,
+            side = Round(host_face.start, host_face.frame.n, host_face.radius, 0.0, host_face.length,
                          not host_face.outward)  # fmt: skip
             if not self.seen(floor):
                 self.skip(item, name, "its floor isn't on the part's surface")
@@ -907,7 +906,7 @@ class _Compiler:
             )
         if pieces:
             (r0, h0), (r1, h1) = max(
-                pieces, key=lambda p: (p[0][0] + p[1][0]) * math.dist(*p)
+                pieces, key=lambda p: (p[0][0] + p[1][0]) * fs.dist(*p)
             )
             cone = Cone(
                 copy.point,
@@ -950,7 +949,7 @@ class _Compiler:
         if isinstance(bore, Counterbore):
             return _mm(bore.depth)
         if isinstance(sink, Countersink):
-            return (_mm(sink.diameter) / 2 - radius) / math.tan(
+            return (_mm(sink.diameter) / 2 - radius) / fs.tan(
                 math.radians(_deg(sink.angle) / 2)
             )
         return 0.0
@@ -1078,7 +1077,7 @@ class _Compiler:
             return "it has no flat end there"
         rim = max(flat[0].a, flat[0].b, key=lambda p: p[0])
         beside = [q for q in section.pieces() if q is not flat[0]
-                  and any(math.dist(p, rim) <= 1e-9 for p in q.ends())]  # fmt: skip
+                  and any(fs.dist(p, rim) <= 1e-9 for p in q.ends())]  # fmt: skip
         q = beside[0] if len(beside) == 1 else None
         if isinstance(q, Segment):
             (r0, h0), (r1, h1) = sorted((q.a, q.b), key=lambda p: p[1])
@@ -1154,7 +1153,7 @@ class _Compiler:
             return rim_refs(
                 Round(
                     inside.start,
-                    unit("+" + inside.axis),
+                    inside.frame.n,
                     inside.radius,
                     0.0,
                     inside.length,
@@ -1248,7 +1247,7 @@ class _Compiler:
                     copy = group[0]
                 else:
                     copy = sorted(
-                        group, key=lambda c: -sign * float(np.dot(c.point, a))
+                        group, key=lambda c: -sign * float(fv.dot(c.point, a))
                     )[0]
                     ref = (
                         self._edge_ref(item, copy, axis, sign)
@@ -1319,7 +1318,7 @@ class _Compiler:
             spots = self._spots(item, group, face)
             if isinstance(spots, str):
                 return spots
-            plane = tuple(unit("+" + a) for a in face.axes)
+            plane = (face.frame.u, face.frame.v)
             return Hub(spots, (plane[0], plane[1]))
         centres = [self._centre_ref(item, copy, axis) for copy in group]
         if any(c is None for c in centres):
@@ -1368,8 +1367,8 @@ class _Compiler:
             assert host is not None
             face = self.placed.face(host)
             assert isinstance(face, RoundSide)
-            axis = unit("+" + face.axis)
-            zero = unit("+" + TURN_AXES[face.axis][0])
+            axis = face.frame.n
+            zero = face.frame.u
             quarter = np.cross(_v(axis), _v(zero))
             found = [self._round_copy(item, copy, face) for copy in group]
             names = ["place.angle"] + (
@@ -1391,7 +1390,10 @@ class _Compiler:
             reach = min(f[2] for f in found if f is not None)
             radial = _v(group[0].direction) * (1.0 if face.outward else -1.0)
             first = math.degrees(
-                math.atan2(float(radial @ quarter), float(radial @ _v(zero)))
+                fs.atan2(
+                    float(fv.matmul(radial, quarter)),
+                    float(fv.matmul(radial, _v(zero))),
+                )
             )
             told: tuple[int, ...]
             if pattern is None:
@@ -1445,7 +1447,7 @@ class _Compiler:
         self, host: tuple[str, int, str], side: RoundSide
     ) -> dict[float, Plane]:
         """A round side's two ends, by which way along its axis they are (+1, -1): the faces there (a hollow's inside, its inner ends), or where there is none, the face a standing body is joined to round its foot, or the rim of the walls a shell leaves open."""
-        a = _v(unit("+" + side.axis))
+        a = _v(side.frame.n)
         middle = _v(side.start) + side.length / 2 * a
         inner = side.name.startswith("inner")
         faces = self.faces(host[0], host[1])
@@ -1453,7 +1455,7 @@ class _Compiler:
         for end_name in ("+end", "-end"):
             f = faces.get(f"inner {end_name}" if inner else end_name)
             if isinstance(f, FlatFace):
-                sign = 1.0 if float((_v(f.centre) - middle) @ a) > 0 else -1.0
+                sign = 1.0 if float(fv.matmul(_v(f.centre) - middle, a)) > 0 else -1.0
                 planes[sign] = self.face_plane(f, f.outline.half[0])
         body = self.spec.item(host[0])
         body_copy = self.copies(body)[host[1]] if body is not None else None
@@ -1463,7 +1465,7 @@ class _Compiler:
                 continue
             at = middle + sign * side.length / 2 * a
             base = self._base(body_copy, reach + 4.0) if body_copy is not None else None
-            if base is not None and float(np.linalg.norm(_v(base.point) - at)) < 1e-6:
+            if base is not None and float(fv.norm(_v(base.point) - at)) < 1e-6:
                 planes[sign] = base
             else:
                 planes[sign] = Plane(_t(at), _t(sign * a), reach)
@@ -1473,7 +1475,7 @@ class _Compiler:
         self, item: Item, name: str, position: AxisPosition, side: RoundSide
     ) -> None:
         """A place along a round side's axis: from its built ends (the end faces of what it is the side of)."""
-        a = _v(unit("+" + side.axis))
+        a = _v(side.frame.n)
         for copy in self.copies(item):
             host = copy.host
             assert host is not None
@@ -1568,7 +1570,7 @@ class _Compiler:
         if isinstance(spots, str):
             self.skip(item, at, spots)
             return
-        plane = (unit("+" + face.axes[0]), unit("+" + face.axes[1]))
+        plane = (face.frame.u, face.frame.v)
         if name == "diameter":
             assert value is not None
             self.check(
@@ -1591,11 +1593,9 @@ class _Compiler:
         start = _deg(pattern.values["start"]) if "start" in pattern.values else 0.0
         count = pattern.counts["count"].n if "count" in pattern.counts else len(group)
         spacing = PATTERN_COMPILE[pattern.kind].round_step(pattern, count)
-        a1, a2 = (_v(unit("+" + axis)) for axis in face.axes)
+        a1, a2 = (_v(face.frame.u), _v(face.frame.v))
         turn = math.radians(start)
-        centre = _v(group[0].point) - radius * (
-            math.cos(turn) * a1 + math.sin(turn) * a2
-        )
+        centre = _v(group[0].point) - radius * (fs.cos(turn) * a1 + fs.sin(turn) * a2)
         told = PATTERN_COMPILE[pattern.kind].told(len(group))
         step = name == "step"
         tolerance = (
@@ -1635,7 +1635,7 @@ class _Compiler:
                 a = _v(unit("+" + axis))
                 sign = (
                     1.0
-                    if float(np.dot(_v(copy.point) - _v(face.centre), a)) > 0
+                    if float(fv.dot(_v(copy.point) - _v(face.centre), a)) > 0
                     else -1.0
                 )
                 edge = self.edge_plane(face, axis, sign)
@@ -1777,7 +1777,7 @@ class _Compiler:
             centre, radius = sec.circle
             c = _v(centre)
             out = (_v(t1) - c) + (_v(t2) - c)
-            middle = c + radius * out / float(np.linalg.norm(out))
+            middle = c + radius * out / float(fv.norm(out))
         else:
             middle = (_v(t1) + _v(t2)) / 2
         o, u, v, along = (_v(x) for x in (edge.origin, edge.u, edge.v, edge.along))
@@ -1929,8 +1929,8 @@ def _rounding_target(stretch: Rounded) -> object | None:
                 _t(at(centre)), _t(along), radius, stretch.a, stretch.b, stretch.fill
             )
         chord = _v((t2[0] - t1[0], t2[1] - t1[1]))
-        normal2 = _v((-chord[1], chord[0])) / float(np.linalg.norm(chord))
-        towards_corner = float(np.dot(_v(k) - _v(t1), normal2)) > 0
+        normal2 = _v((-chord[1], chord[0])) / float(fv.norm(chord))
+        towards_corner = float(fv.dot(_v(k) - _v(t1), normal2)) > 0
         if towards_corner == stretch.fill:
             normal2 = -normal2
         m = normal2[0] * u + normal2[1] * v
@@ -1939,7 +1939,7 @@ def _rounding_target(stretch: Rounded) -> object | None:
         legs = tuple(
             _t(
                 ((p[0] - k[0]) * u + (p[1] - k[1]) * v)
-                / math.hypot(p[0] - k[0], p[1] - k[1])
+                / fs.hypot(p[0] - k[0], p[1] - k[1])
             )
             for p in (t1, t2)
         )
@@ -1950,7 +1950,7 @@ def _rounding_target(stretch: Rounded) -> object | None:
     if stretch.fillet:
         assert sec.circle is not None
         (c_rho, c_z), radius = sec.circle
-        angles = [math.atan2(t[1] - c_z, t[0] - c_rho) for t in (t1, t2)]
+        angles = [fs.atan2(t[1] - c_z, t[0] - c_rho) for t in (t1, t2)]
         start, end = (
             (angles[0], angles[1])
             if (angles[1] - angles[0]) % (2 * math.pi) <= math.pi
@@ -1963,15 +1963,15 @@ def _rounding_target(stretch: Rounded) -> object | None:
     if z2 - z1 < 1e-9:
         return None  # a bevel square to the axis: a flat ring, not a cone
     chord = _v((r2 - r1, z2 - z1))
-    normal2 = _v((-chord[1], chord[0])) / float(np.linalg.norm(chord))
-    towards_corner = float(np.dot(_v(k) - _v((r1, z1)), normal2)) > 0
+    normal2 = _v((-chord[1], chord[0])) / float(fv.norm(chord))
+    towards_corner = float(fv.dot(_v(k) - _v((r1, z1)), normal2)) > 0
     if towards_corner == stretch.fill:
         normal2 = -normal2
     inside = bool(normal2[0] < 0)  # facing the axis: the material is outside the cone
     legs2 = tuple(
         (
-            float((p[0] - k[0]) / math.hypot(p[0] - k[0], p[1] - k[1])),
-            float((p[1] - k[1]) / math.hypot(p[0] - k[0], p[1] - k[1])),
+            float((p[0] - k[0]) / fs.hypot(p[0] - k[0], p[1] - k[1])),
+            float((p[1] - k[1]) / fs.hypot(p[0] - k[0], p[1] - k[1])),
         )
         for p in (t1, t2)
     )

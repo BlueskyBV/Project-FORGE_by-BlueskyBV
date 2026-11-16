@@ -16,6 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.collections import Array1_double as TColStd_Array1OfReal
 from OCP.collections import Array1_gp_Pnt as TColgp_Array1OfPnt
@@ -100,11 +101,11 @@ def fit_curve(
         t = _grid(lo, hi, n)
         points = np.array([curve(float(x)) for x in t])
         knots = _knots(t)
-        poles = np.linalg.solve(_basis(knots, t), points)
+        poles = fv.solve(_basis(knots, t), points)
         mid = (t[:-1] + t[1:]) / 2.0
-        fitted = _basis(knots, mid) @ poles
+        fitted = fv.matmul(_basis(knots, mid), poles)
         truth = np.array([curve(float(x)) for x in mid])
-        error = float(np.max(np.linalg.norm(fitted - truth, axis=1)))
+        error = float(np.max(fv.norm(fitted - truth, axis=1)))
         if error <= tolerance:
             break
         if n >= MOST:
@@ -147,19 +148,22 @@ def fit_surface(
         # P = Bu⁻¹ Q Bv⁻ᵀ, coordinate by coordinate.
         poles = np.empty_like(points)
         for c in range(3):
-            poles[:, :, c] = np.linalg.solve(
-                bv, np.linalg.solve(bu, points[:, :, c]).T
+            poles[:, :, c] = fv.solve(
+                bv, fv.solve(bu, points[:, :, c]).T
             ).T
         mu, mv = (tu[:-1] + tu[1:]) / 2.0, (tv[:-1] + tv[1:]) / 2.0
         worst_u, worst_v = 0.0, 0.0
         for tests_u, tests_v, which in ((mu, tv, "u"), (tu, mv, "v"), (mu, mv, "both")):
             au, av = _basis(ku, tests_u), _basis(kv, tests_v)
-            fitted = np.stack([au @ poles[:, :, c] @ av.T for c in range(3)], axis=-1)
+            fitted = np.stack(
+                [fv.matmul(fv.matmul(au, poles[:, :, c]), av.T) for c in range(3)],
+                axis=-1,
+            )
             gu, gv = np.meshgrid(tests_u, tests_v, indexing="ij")
             truth = surface(gu.ravel(), gv.ravel()).reshape(
                 len(tests_u), len(tests_v), 3
             )
-            error = float(np.max(np.linalg.norm(fitted - truth, axis=2)))
+            error = float(np.max(fv.norm(fitted - truth, axis=2)))
             if which in ("u", "both"):
                 worst_u = max(worst_u, error)
             if which in ("v", "both"):

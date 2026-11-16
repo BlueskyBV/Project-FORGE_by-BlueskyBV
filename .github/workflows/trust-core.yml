@@ -52,7 +52,7 @@ jobs:
           PYTHON_GIL: ${{ endsWith(matrix.python, 't') && '0' || '' }}
           FILES: ${{ matrix.files }}
         run: |
-          python -c "from forge_numeric import _native, vector; print('compiled twin:', vector._use is not None, _native.WHY_NOT)"
+          python -c "from forge_numeric import _native, scalar, vector; print('compiled twin:', vector._use is not None, _native.WHY_NOT, '| numbers:', scalar._two is not None, scalar.WHY_NOT)"
           if [ "$FILES" = "all" ]; then python .github/trust_core_tests.py > trust-core-tests.txt; else echo tests/test_v2_numeric.py > trust-core-tests.txt; fi
           echo "$(wc -l < trust-core-tests.txt) files"
           python -m pytest -q -p no:cacheprovider $(cat trust-core-tests.txt)

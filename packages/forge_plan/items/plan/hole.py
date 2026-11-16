@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
 from forge_spec.geometry import FlatFace, SideFace, disc, side_most_material
 from forge_spec.placement import Instance
@@ -88,7 +89,7 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace
     if isinstance(countersink, Countersink):
         wide = countersink.diameter.made_in("mm")
         angle = countersink.angle.made_in("deg")
-        deep = (wide - diameter) / 2 / math.tan(math.radians(angle) / 2)
+        deep = (wide - diameter) / 2 / fs.tan(math.radians(angle) / 2)
         cone = chain.cone(
             _id(item.id, k, "countersink"), w, d, wide, diameter, deep, item=item.id
         )

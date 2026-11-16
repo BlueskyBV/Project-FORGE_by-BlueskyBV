@@ -45,6 +45,8 @@ import numpy as np
 from forge_checks.mesh import Mesh, MeshView
 from forge_checks.readers import MeshFileError, read_3mf, read_stl
 from forge_checks.view import Box
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.BRep import BRep_Builder, BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Surface
@@ -370,7 +372,7 @@ _WEIGHTS = np.array([
 
 def _samples(corners: Array) -> Array:
     """Each triangle's points measured from the surface: (n, 10, 3)."""
-    found: Array = np.einsum("kc,ncd->nkd", _WEIGHTS, corners)
+    found: Array = fv.matmul(_WEIGHTS, corners)
     return found
 
 
@@ -398,7 +400,7 @@ def _face_deviation(face: Any, samples: Array, uv: Array, enough: float) -> Arra
     p = gp_Pnt()
     for k, (a, b) in enumerate(uv.tolist()):
         surface.D0(a, b, p)
-        out[k] = math.dist(samples[k], (p.X(), p.Y(), p.Z()))
+        out[k] = fs.dist(samples[k], (p.X(), p.Y(), p.Z()))
     far = np.flatnonzero(out > enough)
     if far.size:
         search = Extrema_GenLocateExtPS(surface, 1e-12, 1e-12)
@@ -473,7 +475,7 @@ def deviations(shape: Any, triangles: Array, owner: NDArray[np.int64], uv: Array
         count = len(triangles) * len(_WEIGHTS)
     else:
         samples = _samples(triangles)
-        params = np.einsum("kc,ncd->nkd", _WEIGHTS, uv)
+        params = fv.matmul(_WEIGHTS, uv)
         for k in np.unique(owner):
             mine = owner == k
             found = _face_deviation(TopoDS.Face(shape_faces[int(k)]), samples[mine].reshape(-1, 3),
@@ -579,7 +581,7 @@ def refine_each(shape: Any, mesh: Mesh, owner: NDArray[np.int64], uv: Array, eno
     def measure(which: NDArray[np.int64]) -> Array:
         out = np.zeros(len(which))
         samples = _samples(vertices[corners[which]])
-        params = np.einsum("kc,ncd->nkd", _WEIGHTS, uv[which])
+        params = fv.matmul(_WEIGHTS, uv[which])
         for k in np.unique(owner[which]):
             mine = owner[which] == k
             found = _face_deviation(
@@ -773,7 +775,7 @@ def _children(corner: list[tuple[int, Array]], split: list[bool], mids: list[tup
     if k == 1:
         return [(a, m0, c), (m0, b, c)]
     # Two: the corner between them cut off, and the rest by the shorter diagonal.
-    if np.linalg.norm(vertices[a[0]] - vertices[m1[0]]) <= np.linalg.norm(
+    if fv.norm(vertices[a[0]] - vertices[m1[0]]) <= fv.norm(
         vertices[m0[0]] - vertices[c[0]]
     ):
         return [(m0, b, m1), (a, m0, m1), (a, m1, c)]
@@ -826,7 +828,7 @@ def stl_bytes(mesh: Mesh, name: str = "forge part") -> bytes:
     """A binary STL of the mesh, in millimetres."""
     corners = mesh.vertices[mesh.faces]
     normals = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
-    lengths = np.linalg.norm(normals, axis=1)
+    lengths = fv.norm(normals, axis=1)
     normals = np.where(
         lengths[:, None] > 0.0,
         normals / np.where(lengths > 0.0, lengths, 1.0)[:, None],
@@ -1155,9 +1157,7 @@ def _clearance(shape: Any) -> float:
         )
     for start in range(0, len(corners) - 1, 128):
         block = corners[start : start + 128]
-        apart = np.linalg.norm(
-            block[:, None, :] - corners[None, start + 1 :, :], axis=2
-        )
+        apart = fv.norm(block[:, None, :] - corners[None, start + 1 :, :], axis=2)
         # Each corner against the ones after it only (itself and those before are measured already).
         later = (
             np.arange(start + 1, len(corners))[None, :]

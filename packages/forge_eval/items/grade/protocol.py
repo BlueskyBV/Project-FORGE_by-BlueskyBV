@@ -7,10 +7,10 @@ moves each kind's branch into its module, where it overrides the method.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.placement import Instance, mm
 from forge_spec.schema import KINDS, Category
 from forge_spec.values import Value
@@ -53,7 +53,7 @@ class GradeKind:
             if isinstance(v := item.get(n), Value)
         }
         if "length" in size and "width" in size:
-            return math.hypot(size["length"], size["width"]) / 2
+            return fs.hypot(size["length"], size["width"]) / 2
         return None
 
     def through_diameter(self, item: Item, layout: Layout) -> float | None:

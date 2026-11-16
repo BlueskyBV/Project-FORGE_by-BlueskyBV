@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
@@ -35,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from forge_numeric import scalar as fs
 from forge_spec.checks import SpecReport
 from forge_spec.draft import (
     Choice,
@@ -263,9 +263,15 @@ def grade_set(grades: Sequence[SpecGrade]) -> SetGrade:
 
 
 def draft_digest(spec: PartSpec) -> str:
-    """The SHA-256 of a draft's wire form: what a person's marks are tied to."""
+    """The SHA-256 of a draft's wire form: what a person's marks are tied to.
+
+    The form is schema version 1.0's (``"spec_format": 1``), the one marks
+    were first tied to: a later minor version names its version otherwise
+    and may add fields, and a draft without them keeps its digest, so its
+    marks still grade it (ADR-0026).
+    """
     body = json.dumps(
-        to_wire(spec), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        to_wire(spec, (1, 0)), sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
@@ -453,7 +459,7 @@ def _at_edge(face: FlatFace, p1: float, p2: float, reach: float) -> bool:
             abs(p1) + reach >= face.half[0] - EPS
             or abs(p2) + reach >= face.half[1] - EPS
         )
-    return math.hypot(p1, p2) + reach >= face.half[0] - EPS
+    return fs.hypot(p1, p2) + reach >= face.half[0] - EPS
 
 
 def _through_at(item: Item, copy: Instance, face: FlatFace, reach: float) -> bool:

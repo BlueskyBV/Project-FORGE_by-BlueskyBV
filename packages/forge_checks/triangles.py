@@ -39,6 +39,7 @@ import math
 from fractions import Fraction
 
 import numpy as np
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 __all__ = [
@@ -84,7 +85,7 @@ Array = NDArray[np.float64]
 
 
 def _dot(u: Array, v: Array) -> Array:
-    return np.asarray(np.einsum("ij,ij->i", u, v), dtype=np.float64)
+    return np.asarray(fv.dot(u, v), dtype=np.float64)
 
 
 def _exact_normal(a: Array, b: Array, c: Array) -> tuple[float, float, float]:
@@ -144,7 +145,7 @@ def _wide_normal(a: Array, b: Array, c: Array) -> Array:
     biggest = np.max(np.abs(n), axis=1, keepdims=True)
     with np.errstate(divide="ignore", invalid="ignore"):
         scaled = n / biggest
-        return np.asarray(scaled / np.linalg.norm(scaled, axis=1, keepdims=True))
+        return np.asarray(scaled / fv.norm(scaled, axis=1, keepdims=True))
 
 
 def unit_normals(a: Array, b: Array, c: Array) -> Array:
@@ -160,8 +161,8 @@ def unit_normals(a: Array, b: Array, c: Array) -> Array:
     if np.any(odd):
         shift = np.where(odd, -np.frexp(far)[1], 0)[:, None]
         a, b, c = np.ldexp(a, shift), np.ldexp(b, shift), np.ldexp(c, shift)
-    sides = np.stack([np.linalg.norm(b - a, axis=1), np.linalg.norm(c - b, axis=1),
-                      np.linalg.norm(a - c, axis=1)], axis=1)  # fmt: skip
+    sides = np.stack([fv.norm(b - a, axis=1), fv.norm(c - b, axis=1),
+                      fv.norm(a - c, axis=1)], axis=1)  # fmt: skip
     longest = np.argmax(sides, axis=1)
     # The corner opposite the longest side: its two sides are the shortest.
     corner = np.where(longest[:, None] == 1, a, np.where(longest[:, None] == 2, b, c))
@@ -169,9 +170,9 @@ def unit_normals(a: Array, b: Array, c: Array) -> Array:
     before = np.where(longest[:, None] == 1, c, np.where(longest[:, None] == 2, a, b))
     u, w = after - corner, before - corner
     cross = np.cross(u, w)
-    size = np.linalg.norm(cross, axis=1)
+    size = fv.norm(cross, axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
-        sine = size / (np.linalg.norm(u, axis=1) * np.linalg.norm(w, axis=1))
+        sine = size / (fv.norm(u, axis=1) * fv.norm(w, axis=1))
         unit = cross / size[:, None]
     thin = ~(np.isfinite(unit).all(axis=1) & (sine >= _THIN))
     if thin.any():
@@ -275,7 +276,7 @@ def features(
         inside &= _dot(side_, normal) >= -slack
     valid[:, 6] = inside
     gap = p[:, None, :] - points
-    distance = np.sqrt(np.einsum("ijk,ijk->ij", gap, gap))
+    distance = np.sqrt(fv.dot(gap, gap))
     return points, distance, valid
 
 

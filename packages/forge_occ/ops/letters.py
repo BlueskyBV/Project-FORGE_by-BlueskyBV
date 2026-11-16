@@ -30,6 +30,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.font import ADVANCES, CAP_HEIGHT
 from forge_spec.glyphs import CONTOURS
 from forge_spec.letters import pieces
@@ -200,8 +201,8 @@ def _text(ctx: Context) -> Product:
             DesignError("letters have a height and a depth", height=height, depth=depth)
         )
     up, right = (np.asarray(ctx.vector(n), dtype=float) for n in ("up", "right"))
-    up, right = up / np.linalg.norm(up), right / np.linalg.norm(right)
-    if abs(float(up @ right)) > 1e-9:
+    up, right = up / fv.norm(up), right / fv.norm(right)
+    if abs(float(fv.matmul(up, right))) > 1e-9:
         raise ctx.fail(DesignError("letters' up and right are square to each other"))
     out = np.cross(right, up)
     mode = ctx.option("mode", "engrave")
@@ -216,9 +217,9 @@ def _text(ctx: Context) -> Product:
 
     def role(face: Any) -> tuple[Name, ...]:
         found = plane_of(face)
-        if found is not None and abs(abs(float(np.dot(found[1], out))) - 1.0) <= 1e-9:
+        if found is not None and abs(abs(float(fv.dot(found[1], out))) - 1.0) <= 1e-9:
             gone = float(
-                np.dot(np.asarray(found[0]) - np.asarray(ctx.vector("origin")), out)
+                fv.dot(np.asarray(found[0]) - np.asarray(ctx.vector("origin")), out)
             )
             return (Name(step, far if abs(gone) > depth / 2 else "letter_mouth"),)
         return (Name(step, "letter_wall"),)

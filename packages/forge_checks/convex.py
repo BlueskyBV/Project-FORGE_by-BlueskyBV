@@ -36,6 +36,8 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from forge_numeric import scalar as fs
+
 from .outlines import Arc, Outline, Segment, crossings
 
 __all__ = ["Bulge", "ConvexError", "Pieces", "Side", "convex_pieces", "sides_in_turn"]
@@ -65,7 +67,7 @@ class Bulge:
     def outward(self) -> Point:
         """The unit normal of the chord toward the arc."""
         (ax, ay), (bx, by) = self.a, self.b
-        length = math.hypot(bx - ax, by - ay)
+        length = fs.hypot(bx - ax, by - ay)
         nx, ny = -(by - ay) / length, (bx - ax) / length
         mid = self.arc.at(self.arc.start + self.arc.sweep / 2)
         if (mid[0] - ax) * nx + (mid[1] - ay) * ny < 0:
@@ -74,7 +76,7 @@ class Bulge:
 
     def area(self) -> float:
         r, sweep = self.arc.radius, self.arc.sweep
-        return r * r * (sweep - math.sin(sweep)) / 2
+        return r * r * (sweep - fs.sin(sweep)) / 2
 
 
 @dataclass(frozen=True)
@@ -235,7 +237,7 @@ def _split(path: list[Side]) -> list[Side]:
 # The polygon of chords, in convex pieces
 # ----------------------------------------------------------------------
 def _dist(p: Point, q: Point) -> float:
-    return math.hypot(p[0] - q[0], p[1] - q[1])
+    return fs.hypot(p[0] - q[0], p[1] - q[1])
 
 
 def _turn(a: Point, b: Point, c: Point) -> float:

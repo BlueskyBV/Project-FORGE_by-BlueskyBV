@@ -34,6 +34,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from forge_numeric import vector as fv
+
 __all__ = [
     "ENDINGS",
     "EXIT_CANT",
@@ -233,7 +235,7 @@ def _own_surface(target: Any) -> Any:
     else:
         return None
     axis = np.asarray(target.axis, dtype=np.float64)
-    axis = axis / np.linalg.norm(axis)
+    axis = axis / fv.norm(axis)
     # A circle of radius r square to the axis reaches r·√(1 - a_k²) along each frame axis k.
     across = np.sqrt(np.maximum(1.0 - axis * axis, 0.0))
     rims = [np.asarray(target.centre) + s * axis for s in ends]

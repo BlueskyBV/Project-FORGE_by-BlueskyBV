@@ -37,6 +37,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from forge_numeric import scalar as fs
 from forge_units.dimension import DIMENSIONLESS, LENGTH
 
 from .problems import (
@@ -69,6 +70,7 @@ from .values import (
     read_provenance,
     read_value,
 )
+from .versions import VersionError, migrate
 from .words import WordRef
 
 __all__ = [
@@ -101,6 +103,7 @@ __all__ = [
     "read_draft",
 ]
 
+#: The legacy version field's one value: a draft that says ``"spec_format": 1`` is version 1.0 (:mod:`.versions`).
 SPEC_FORMAT = 1
 _ID = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 _ANGLE_UNITS = frozenset({"deg", "rad", "rev", "arcmin", "arcsec"})
@@ -590,7 +593,7 @@ def _profile(raw: Any, at: str, problems: Problems) -> Profile | None:
     )
     if len(problems.faults) > before or start is None or provenance is None:
         return None
-    if math.dist(start, segments[-1].to) > 1e-6:
+    if fs.dist(start, segments[-1].to) > 1e-6:
         problems.fault(
             at + pointer("segments"),
             "an outline is closed: the last segment ends at the start",
@@ -598,14 +601,14 @@ def _profile(raw: Any, at: str, problems: Problems) -> Profile | None:
         return None
     point = start
     for n, seg in enumerate(segments):
-        if math.dist(point, seg.to) <= 1e-6:
+        if fs.dist(point, seg.to) <= 1e-6:
             problems.fault(
                 at + pointer("segments", n),
                 "a segment goes somewhere: it ends where it starts",
             )
             return None
         if seg.centre is not None:
-            off = abs(math.dist(point, seg.centre) - math.dist(seg.to, seg.centre))
+            off = abs(fs.dist(point, seg.centre) - fs.dist(seg.to, seg.centre))
             if off > 1e-3:
                 problems.fault(at + pointer("segments", n),
                                "an arc ends on its circle: its end is not as far from its centre as its start is")  # fmt: skip
@@ -640,11 +643,11 @@ def outline_turns_back(profile: Profile) -> int | None:
     def tangent(n: int, at_end: bool) -> tuple[float, float]:
         seg, a, b = profile.segments[n], ends[n], ends[n + 1]
         if seg.centre is None:
-            length = math.dist(a, b)
+            length = fs.dist(a, b)
             return ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
         x = b if at_end else a
         dx, dy = x[0] - seg.centre[0], x[1] - seg.centre[1]
-        r = math.hypot(dx, dy)
+        r = fs.hypot(dx, dy)
         return (dy / r, -dx / r) if seg.clockwise else (-dy / r, dx / r)
 
     count = len(profile.segments)
@@ -683,18 +686,18 @@ def outline_points(
     for n, seg in enumerate(profile.segments):
         if seg.centre is not None:
             cx, cy = seg.centre
-            a0 = math.atan2(here[1] - cy, here[0] - cx)
-            a1 = math.atan2(seg.to[1] - cy, seg.to[0] - cx)
+            a0 = fs.atan2(here[1] - cy, here[0] - cx)
+            a1 = fs.atan2(seg.to[1] - cy, seg.to[0] - cx)
             sweep = (a0 - a1) if seg.clockwise else (a1 - a0)
             sweep %= 2 * math.pi
             if sweep <= 1e-12:
                 sweep = 2 * math.pi  # an arc back to where it starts is a full turn
             steps = max(1, math.ceil(math.degrees(sweep) / step_degrees))
-            radius = math.dist(here, seg.centre)
+            radius = fs.dist(here, seg.centre)
             sign = -1.0 if seg.clockwise else 1.0
             for k in range(1, steps):
                 t = a0 + sign * sweep * k / steps
-                points.append((cx + radius * math.cos(t), cy + radius * math.sin(t), n))
+                points.append((cx + radius * fs.cos(t), cy + radius * fs.sin(t), n))
         points.append((seg.to[0], seg.to[1], n))
         here = seg.to
     return points
@@ -1117,13 +1120,24 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
     if not isinstance(raw, Mapping):
         problems.fault("", "a draft is a JSON object")
         return None, problems
+    try:
+        raw, _version, _made = migrate(raw)
+    except VersionError as error:
+        problems.fault(pointer(error.field), str(error))
     unknown = unknown_keys(
-        raw, ("spec_format", "name", "items", "not_modelled", "silent", "requirements")
+        raw,
+        (
+            "schema_version",
+            "spec_format",
+            "name",
+            "items",
+            "not_modelled",
+            "silent",
+            "requirements",
+        ),
     )
     if unknown:
         problems.fault("", f"unknown field(s) {unknown}")
-    if type(raw.get("spec_format")) is not int or raw.get("spec_format") != SPEC_FORMAT:
-        problems.fault(pointer("spec_format"), f"spec_format is {SPEC_FORMAT}")
     name = one_line(raw.get("name"), MAX_NAME)
     if name is None:
         problems.fault(

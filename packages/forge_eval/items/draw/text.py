@@ -47,7 +47,7 @@ class Text(DrawKind):
         if box is None:
             raise DoesNotFitError(f"{f.id}: letters with no ink")
         (x0, y0), (x1, y1) = box
-        sign = float(_right(face)["xyz".index(face.axes[0])])
+        sign = face.frame.components(_right(face))[0]
         middle = (
             sign * ((x0 + x1) / 2 - _line_length(f) / 2),
             (y0 + y1) / 2 - f.sizes["height"] / 2,

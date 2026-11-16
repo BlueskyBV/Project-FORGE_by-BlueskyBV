@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 
 from ..classes import Tolerance, bracket_mutants
 from ..measure import Measurement, Probe
@@ -96,7 +97,7 @@ def measure(
         / 4
     )
     way = np.asarray(target.along, dtype=np.float64)
-    way /= float(np.linalg.norm(way))
+    way /= float(fv.norm(way))
     located: list[tuple[float, float, int]] = []
     for k, copy in enumerate(target.copies):
         at = locate(copy, way, width, probe)

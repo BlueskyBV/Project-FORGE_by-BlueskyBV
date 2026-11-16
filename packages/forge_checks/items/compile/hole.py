@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Fit, Item
 from forge_spec.values import Value
 
@@ -34,7 +35,7 @@ class Hole(CompileKind):
         if isinstance(bore, Counterbore):
             recess = _mm(bore.depth)
         elif isinstance(sink, Countersink):
-            recess = (_mm(sink.diameter) / 2 - radius) / math.tan(
+            recess = (_mm(sink.diameter) / 2 - radius) / fs.tan(
                 math.radians(_deg(sink.angle) / 2)
             )
         for copy in c.copies(item):
@@ -74,7 +75,7 @@ class Hole(CompileKind):
                     cone,
                     copy.index,
                 )
-                slant = math.hypot(r - radius, recess)
+                slant = fs.hypot(r - radius, recess)
                 angle = sink.angle
                 assert isinstance(angle, Value)
                 tolerance_angle = tolerance_of(angle, shorter_side=slant)

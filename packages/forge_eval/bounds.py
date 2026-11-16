@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import math
 
+from forge_numeric import scalar as fs
+
 __all__ = ["binomial_cdf", "trials_needed", "upper_bound"]
 
 
@@ -38,14 +40,12 @@ def binomial_cdf(k: int, n: int, p: float) -> float:
         return 1.0
     if p >= 1.0:
         return 0.0
-    log_p, log_q = math.log(p), math.log1p(-p)
+    log_p, log_q = fs.log(p), fs.log1p(-p)
     terms = [
-        math.lgamma(n + 1) - math.lgamma(i + 1) - math.lgamma(n - i + 1)
-        + i * log_p + (n - i) * log_q
-        for i in range(k + 1)
-    ]  # fmt: skip
+        fs.log(math.comb(n, i)) + i * log_p + (n - i) * log_q for i in range(k + 1)
+    ]
     peak = max(terms)
-    return min(1.0, math.exp(peak) * math.fsum(math.exp(t - peak) for t in terms))
+    return min(1.0, fs.exp(peak) * math.fsum(fs.exp(t - peak) for t in terms))
 
 
 def _check(failures: int, trials: int, confidence: float) -> None:
@@ -71,7 +71,7 @@ def upper_bound(failures: int, trials: int, confidence: float = 0.95) -> float:
         return 1.0
     alpha = 1.0 - confidence
     if failures == 0:
-        return -math.expm1(math.log(alpha) / trials)
+        return -fs.expm1(fs.log(alpha) / trials)
     low, high = 0.0, 1.0
     for _ in range(200):  # bisection: the CDF falls as p rises
         mid = (low + high) / 2
@@ -97,7 +97,7 @@ def trials_needed(rate: float, failures: int = 0, confidence: float = 0.95) -> i
     if isinstance(failures, bool) or not isinstance(failures, int) or failures < 0:
         raise ValueError("failures must be a whole number, 0 or more")
     if failures == 0:
-        guess = math.ceil(math.log(1.0 - confidence) / math.log1p(-rate))
+        guess = math.ceil(fs.log(1.0 - confidence) / fs.log1p(-rate))
         n = max(1, guess - 2)
     else:
         n = failures + 1

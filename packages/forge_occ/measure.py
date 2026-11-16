@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 from OCP.Bnd import Bnd_Box
@@ -76,12 +77,11 @@ class Properties:
 
     def differences(self, other: Properties) -> dict[str, float]:
         """How far ``other`` is from this, each relative to this part's size (volume to volume, area to area, lengths to the box's diagonal)."""
-        size = float(np.linalg.norm(np.subtract(self.hi, self.lo))) or 1.0
+        size = float(fv.norm(np.subtract(self.hi, self.lo))) or 1.0
         return {
             "volume": abs(other.volume - self.volume) / max(abs(self.volume), 1e-300),
             "area": abs(other.area - self.area) / max(abs(self.area), 1e-300),
-            "centre": float(np.linalg.norm(np.subtract(other.centre, self.centre)))
-            / size,
+            "centre": float(fv.norm(np.subtract(other.centre, self.centre))) / size,
             "box": float(
                 max(
                     np.abs(np.subtract(other.lo, self.lo)).max(),
@@ -118,8 +118,8 @@ def _xyz(p: Any) -> Array:
 def _axial(points: Array, origin: Array, axis: Array) -> tuple[Array, Array]:
     """Each point's height along the axis and its distance from it."""
     rel = points - origin
-    height = rel @ axis
-    radial = np.linalg.norm(rel - np.outer(height, axis), axis=1)
+    height = fv.matmul(rel, axis)
+    radial = fv.norm(rel - np.outer(height, axis), axis=1)
     return height, radial
 
 
@@ -131,7 +131,7 @@ def surface_distance(face: Any, points: Array) -> Array:
     if kind == GeomAbs_Plane:
         plane = surface.Plane()
         n = _xyz(plane.Axis().Direction())
-        return np.asarray(np.abs((points - _xyz(plane.Location())) @ n))
+        return np.asarray(np.abs(fv.matmul(points - _xyz(plane.Location()), n)))
     if kind == GeomAbs_Cylinder:
         cylinder = surface.Cylinder()
         _, radial = _axial(
@@ -141,10 +141,7 @@ def surface_distance(face: Any, points: Array) -> Array:
     if kind == GeomAbs_Sphere:
         sphere = surface.Sphere()
         return np.asarray(
-            np.abs(
-                np.linalg.norm(points - _xyz(sphere.Location()), axis=1)
-                - sphere.Radius()
-            )
+            np.abs(fv.norm(points - _xyz(sphere.Location()), axis=1) - sphere.Radius())
         )
     if kind == GeomAbs_Torus:
         torus = surface.Torus()
@@ -152,7 +149,7 @@ def surface_distance(face: Any, points: Array) -> Array:
             points, _xyz(torus.Location()), _xyz(torus.Axis().Direction())
         )
         return np.asarray(
-            np.abs(np.hypot(radial - torus.MajorRadius(), height) - torus.MinorRadius())
+            np.abs(fv.hypot(radial - torus.MajorRadius(), height) - torus.MinorRadius())
         )
     if kind == GeomAbs_Cone:
         cone = surface.Cone()
@@ -163,18 +160,16 @@ def surface_distance(face: Any, points: Array) -> Array:
         height, radial = _axial(points, apex, axis)
         a = cone.SemiAngle()
         q = np.stack([height, radial], axis=1)
-        to_apex = np.linalg.norm(q, axis=1)
+        to_apex = fv.norm(q, axis=1)
         best = to_apex
         for line in (
-            np.array([np.cos(a), abs(np.sin(a))]),
-            np.array([-np.cos(a), abs(np.sin(a))]),
+            np.array([fv.cos(a), abs(fv.sin(a))]),
+            np.array([-fv.cos(a), abs(fv.sin(a))]),
         ):
-            t = q @ line
+            t = fv.matmul(q, line)
             best = np.minimum(
                 best,
-                np.where(
-                    t >= 0.0, np.linalg.norm(q - np.outer(t, line), axis=1), to_apex
-                ),
+                np.where(t >= 0.0, fv.norm(q - np.outer(t, line), axis=1), to_apex),
             )
         return np.asarray(best)
     geometry = BRep_Tool.Surface_s(face)

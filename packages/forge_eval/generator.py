@@ -35,6 +35,7 @@ meet in one plane by chance.
 
 from __future__ import annotations
 
+import functools
 import math
 import random
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -43,6 +44,8 @@ from functools import cache
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .brief import Mark, Writer, number
@@ -210,7 +213,7 @@ class _Foot:
         """Whether the two are at least ``gap`` apart (their boxes, or their circles when both are discs)."""
         du, dv = abs(self.at[0] - other.at[0]), abs(self.at[1] - other.at[1])
         if self._disc() and other._disc():
-            return math.hypot(du, dv) >= self.half[0] + other.half[0] + gap
+            return fs.hypot(du, dv) >= self.half[0] + other.half[0] + gap
         return (
             du >= self.half[0] + other.half[0] + gap
             or dv >= self.half[1] + other.half[1] + gap
@@ -218,6 +221,87 @@ class _Foot:
 
     def _disc(self) -> bool:
         return self.half[0] == self.half[1] == self.corner
+
+
+class _FaceFrame:
+    """A face's frame as the generator reads it (4b.0c item 1a; V2-stage4b-0c.md, 3.3): its origin, its first and second axes and its normal.
+
+    Round a side, ``u`` and ``v`` are the ways out at 0 and 90 degrees and
+    ``n`` its axis. Coordinates in its plane are measured along ``u`` and
+    ``v`` from the part's origin, as the generator's footprints are. An
+    aligned frame (each axis one of the part's) is applied by choosing
+    coordinates and their signs, never a product with 0 or 1, so the numbers
+    are those the axis names gave; any other by its products (item 1b). The
+    generator's own, made from the definitions (R2). Its axes are handed out
+    as fresh arrays.
+    """
+
+    def __init__(self, origin: Array, u: Vec, v: Vec, n: Vec) -> None:
+        self.origin = origin
+        self._u, self._v, self._n = u, v, n
+        self._axes = tuple(_aligned_axis(d) for d in (u, v, n))
+
+    @staticmethod
+    def of_names(origin: Array, u: str, v: str, n: str) -> _FaceFrame:
+        return _FaceFrame(
+            origin, *(unit_of(a if a[0] in "+-" else "+" + a) for a in (u, v, n))
+        )
+
+    @property
+    def u(self) -> Array:
+        return _v(self._u)
+
+    @property
+    def v(self) -> Array:
+        return _v(self._v)
+
+    @property
+    def n(self) -> Array:
+        return _v(self._n)
+
+    def plane(self, p: Array) -> tuple[float, float]:
+        """Where ``p`` is in the face's plane, along ``u`` and ``v`` from the part's origin."""
+        found = []
+        for j, d in ((0, self._u), (1, self._v)):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                found.append(float(p[k]) if plus else -float(p[k]))
+            else:
+                found.append(float(p[0] * d[0] + p[1] * d[1] + p[2] * d[2]))
+        return found[0], found[1]
+
+    def components(self, d: Array) -> tuple[float, float, float]:
+        """A direction's parts along ``u``, ``v`` and ``n``."""
+        found = []
+        for j, e in enumerate((self._u, self._v, self._n)):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                found.append(float(d[k]) if plus else -float(d[k]))
+            else:
+                found.append(float(d[0] * e[0] + d[1] * e[1] + d[2] * e[2]))
+        return found[0], found[1], found[2]
+
+    def point(self, at: tuple[float, float]) -> Array:
+        """The point of the face's plane at ``at`` in it (:meth:`plane`'s inverse there)."""
+        p = self.origin.copy()
+        for j, (d, value) in enumerate(((self._u, at[0]), (self._v, at[1]))):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                p[k] = value if plus else -value
+            else:
+                p = p + (value - float(p[0] * d[0] + p[1] * d[1] + p[2] * d[2])) * _v(d)
+        return p
+
+
+def _aligned_axis(d: Vec) -> tuple[int, bool] | None:
+    """(which coordinate, whether the + way) of a vector that is exactly one of +-x, +-y, +-z; else None."""
+    for k in range(3):
+        if abs(d[k]) == 1.0 and all(d[j] == 0.0 for j in range(3) if j != k):
+            return k, d[k] > 0.0
+    return None
 
 
 @dataclass
@@ -263,8 +347,18 @@ class _Flat:
     #: How much further than the gap things keep in from a disc's or a ring's rim: a rounding of it.
     rim: float = 0.0
 
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its centre, its first and second axes and its outward normal."""
+        return _FaceFrame(
+            self.centre,
+            unit_of("+" + self.axes[0]),
+            unit_of("+" + self.axes[1]),
+            _t(self.normal),
+        )
+
     def coords(self) -> tuple[float, float]:
-        return tuple(float(self.centre["xyz".index(a)]) for a in self.axes)  # type: ignore[return-value]
+        return self.frame.plane(self.centre)
 
     def holds(
         self,
@@ -293,7 +387,7 @@ class _Flat:
             return _within_outline(self.outline, foot, gap)
         if self.shape == "ring":
             near = _rounded_rect_distance(foot, (cu, cv))
-            far = max(math.hypot(foot.at[0] - cu + su * (foot.half[0] - r), foot.at[1] - cv + sv * (foot.half[1] - r))
+            far = max(fs.hypot(foot.at[0] - cu + su * (foot.half[0] - r), foot.at[1] - cv + sv * (foot.half[1] - r))
                       for su, sv in QUADRANTS) + r  # fmt: skip
             return near >= self.inner + gap and far <= self.half[0] - gap - self.rim
         shrink = gap + r + (self.rim if self.shape == "disc" else 0.0)
@@ -325,7 +419,7 @@ class _Flat:
                     radius > most
                     and du > 0
                     and dv > 0
-                    and math.hypot(du, dv) > radius - most
+                    and fs.hypot(du, dv) > radius - most
                 ):
                     return False
         return True
@@ -336,7 +430,7 @@ def _rounded_rect_distance(foot: _Foot, p: tuple[float, float]) -> float:
     r = foot.corner
     qu = abs(p[0] - foot.at[0]) - (foot.half[0] - r)
     qv = abs(p[1] - foot.at[1]) - (foot.half[1] - r)
-    return math.hypot(max(qu, 0.0), max(qv, 0.0)) + min(max(qu, qv), 0.0) - r
+    return fs.hypot(max(qu, 0.0), max(qv, 0.0)) + min(max(qu, qv), 0.0) - r
 
 
 #: How far apart the points an outline is followed by are, to see that a footprint keeps clear of it (mm).
@@ -359,7 +453,7 @@ def _within_outline(outline: Outline2, foot: _Foot, gap: float) -> bool:
     qu = np.abs(points[:, 0] - foot.at[0]) - (foot.half[0] - r)
     qv = np.abs(points[:, 1] - foot.at[1]) - (foot.half[1] - r)
     distance = (
-        np.hypot(np.maximum(qu, 0.0), np.maximum(qv, 0.0))
+        fv.hypot(np.maximum(qu, 0.0), np.maximum(qv, 0.0))
         + np.minimum(np.maximum(qu, qv), 0.0)
         - r
     )
@@ -386,6 +480,12 @@ class _Round:
     #: The stretches along it items standing round it take (from its start): a rounding of its rim or a thread
     #: made after keeps clear of them.
     standing: list[tuple[float, float]] = field(default_factory=list)
+
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its start; the ways out at 0 and 90 degrees round it; its axis."""
+        u, v = TURN_AXES[self.axis]
+        return _FaceFrame.of_names(self.start, u, v, self.axis)
 
 
 def _v(a: Any) -> Array:
@@ -470,9 +570,7 @@ def _line_length(f: Feature) -> float:
 
 def _right(face: _Flat) -> Array:
     """The way letters on a flat face run: its up (the face's second axis) across its outward normal (text.md)."""
-    return np.asarray(
-        np.cross(_v(unit_of("+" + face.axes[1])), face.normal), dtype=np.float64
-    )
+    return np.asarray(np.cross(face.frame.v, face.normal), dtype=np.float64)
 
 
 def _foot_of(f: Feature, face: _Flat, at: tuple[float, float]) -> _Foot:
@@ -488,7 +586,7 @@ def _under(face: _Flat, foot: _Foot) -> float:
     if face.dome <= 0 and face.flare[1] <= 0:
         return face.material
     cu, cv = face.coords()
-    widest = math.hypot(
+    widest = fs.hypot(
         abs(foot.at[0] - cu) + foot.half[0], abs(foot.at[1] - cv) + foot.half[1]
     )
     if face.flare[1] > 0:
@@ -497,7 +595,7 @@ def _under(face: _Flat, foot: _Foot) -> float:
             return face.material
         top = face.half[0]
         return length * max(top - widest, 0.0) / (top - base)
-    return math.sqrt(max(face.dome**2 - widest**2, 0.0))
+    return math.sqrt(max(face.dome * face.dome - widest * widest, 0.0))
 
 
 def _pattern_draw(mode: str) -> PatternDraw:
@@ -583,10 +681,7 @@ def _flat_spots(f: Feature, face: _Flat) -> list[tuple[float, float]]:
 
 
 def _point(face: _Flat, at: tuple[float, float]) -> Array:
-    p = face.centre.copy()
-    for a, value in zip(face.axes, at, strict=True):
-        p["xyz".index(a)] = value
-    return p
+    return face.frame.point(at)
 
 
 def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes: tuple[str, str],
@@ -749,7 +844,7 @@ def _widest(shape: Outline2) -> float:
         return 0.0
     sides = shape.followed(0.5)
     gaps = np.min(
-        np.hypot(
+        fv.hypot(
             u[inside, None] - sides[None, :, 0], v[inside, None] - sides[None, :, 1]
         ),
         axis=1,
@@ -850,7 +945,7 @@ def _on_flat(
         _stays_in_room(f, face, feet, rise, part)
     before = set(part.flats)
     n = face.normal
-    e1, e2 = (_v(unit_of(a)) for a in face.axes)
+    e1, e2 = face.frame.u, face.frame.v
     made = []
     first = len(part.steps)
     for k, at in enumerate(spots):
@@ -935,7 +1030,7 @@ def _on_flat(
                     part.steps.append(Step(f.id, copy_index, False,
                                            Prism(_t(p), _t(e1), _t(e2), _t(n), (d / 2, d / 2), d / 2, -third, 0.0), (0.0, REACH)))  # fmt: skip
                 else:
-                    recess = (d / 2 - radius) / math.tan(math.radians(third / 2))
+                    recess = (d / 2 - radius) / fs.tan(math.radians(third / 2))
                     # Carried on into the hole (air), and out of its mouth only as far
                     # as it widens within the gap round it: out there may be the wall
                     # of what its face stands beside.
@@ -1037,7 +1132,7 @@ def _overhanging(f: Feature, index: int, p: Array, frame: tuple[Array, Array, Ar
     e1, e2, n = frame
     block = Prism(_t(p), _t(e1), _t(e2), _t(n), half, 0.0, 0.0, height)
     part.steps.append(Step(f.id, index, True, block))
-    centre, at = face.coords(), tuple(float(p["xyz".index(a)]) for a in face.axes)
+    centre, at = face.coords(), face.frame.plane(p)
     lo = [max(at[k] - half[k], centre[k] - face.half[k]) for k in (0, 1)]
     hi = [min(at[k] + half[k], centre[k] + face.half[k]) for k in (0, 1)]
     middle = p + ((lo[0] + hi[0]) / 2 - at[0]) * e1 + ((lo[1] + hi[1]) / 2 - at[1]) * e2
@@ -1143,14 +1238,14 @@ def _stands_in_air(
         ]
         grid = np.stack(np.meshgrid(*cells, indexing="ij"), axis=-1).reshape(-1, 3)
         point, up = _v(copy.point), _v(copy.direction)
-        above = grid[(grid - point) @ up > REACH + 1e-3]
+        above = grid[fv.matmul(grid - point, up) > REACH + 1e-3]
         within = above[Truth({}, mine).inside(above)]
         if len(within) and np.any(made_before.inside(within)):
             raise DoesNotFitError(f"{f.id} runs into something made before it")
         corners = np.array(
             [[(lo, hi)[(k >> j) & 1][j] for j in range(3)] for k in range(8)]
         )
-        if float(np.min((corners - point) @ up)) >= -(REACH + 1e-3):
+        if float(np.min(fv.matmul(corners - point, up))) >= -(REACH + 1e-3):
             continue  # nothing of it under its face but its foot
         # Over the whole box, and finer over where each cut made before meets it: a hole's air is
         # looked at by points a tenth of its box apart, however large what is sunk over it.
@@ -1163,7 +1258,7 @@ def _stands_in_air(
             if np.all(b > a):
                 regions.append((a, b, min(_SUNK_STEP, float(np.min(b - a)) / 10)))
         under = np.concatenate([_grid(a, b, h) for a, b, h in regions])
-        under = under[(under - point) @ up < -(REACH + 1e-3)]
+        under = under[fv.matmul(under - point, up) < -(REACH + 1e-3)]
         within = under[Truth({}, mine).inside(under)]
         if len(within) and not np.all(made_before.inside(within)):
             raise DoesNotFitError(
@@ -1196,8 +1291,10 @@ def _in_room(face: _Flat, before: set[tuple[str, int, str]], part: _Part) -> Non
     for key in set(part.flats) - before:
         new = part.flats[key]
         new.hollow = face.hollow
-        if float(new.normal @ face.normal) > 0.5:
-            new.room = face.room - float((new.centre - face.centre) @ face.normal)
+        if float(fv.matmul(new.normal, face.normal)) > 0.5:
+            new.room = face.room - float(
+                fv.matmul(new.centre - face.centre, face.normal)
+            )
         else:
             new.room = 0.0 if face.hollow is not None else math.inf
 
@@ -1246,7 +1343,9 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     n = f.pattern.counts["count"] if f.pattern is not None else 1
     angles = [start + k * 360.0 / n for k in range(n)]
     along = _along(f.place.get(side.axis, Position("none")), side, wide)
-    sag = side.radius - math.sqrt(max(side.radius**2 - rounded**2, 0.0))
+    sag = side.radius - math.sqrt(
+        max(side.radius * side.radius - rounded * rounded, 0.0)
+    )
     carry = sag + REACH
     if strict:
         if any(abs(a / 90.0 - round(a / 90.0)) > 1e-9 for a in angles):
@@ -1264,13 +1363,13 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             raise DoesNotFitError(f"{f.id} is too wide for the rod, here")
         if side.bore > 0 and carry + REACH > side.radius - side.bore - GAP:
             raise DoesNotFitError(f"{f.id}'s foot would reach the tube's bore")
-        mine = [(along, a, math.hypot(rounded, wide), carry) for a in angles]
+        mine = [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
         for k, here in enumerate(mine):
             for other in side.taken + mine[:k]:
                 if not _holes_apart(here, other, side.radius):
                     raise DoesNotFitError(f"{f.id} meets something else round the side")
-    w = _v(unit_of("+" + side.axis))
-    zero, quarter = (_v(unit_of("+" + a)) for a in TURN_AXES[side.axis])
+    w = side.frame.n
+    zero, quarter = side.frame.u, side.frame.v
     # What else is on this side is kept apart above; the rod itself is what it stands on.
     beside = {
         c.item for copies in part.copies.values() for c in copies if c.host == side.key
@@ -1279,9 +1378,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     made = []
     for k, a in enumerate(angles):
         u = (
-            np.round(
-                math.cos(math.radians(a)) * zero + math.sin(math.radians(a)) * quarter
-            )
+            np.round(fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter)
             + 0.0
         )
         third = "xyz"[int(np.argmax(np.abs(np.cross(u, w))))]
@@ -1328,7 +1425,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             half = {third: rounded, side.axis: wide}
             part.flats[far] = _Flat(far, p + height * u, u.copy(), fa, "rect", (half[fa[0]], half[fa[1]]), height,
                                     None)  # fmt: skip
-    side.taken += [(along, a, math.hypot(rounded, wide), carry) for a in angles]
+    side.taken += [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
     side.standing.append((along - wide, along + wide))
     return made
 
@@ -1354,8 +1451,8 @@ def _foot_in_material(
     depth = np.linspace(solid.low, 0.0, 8)
     points = (across[:, None, :] + depth[None, :, None] * n).reshape(-1, 3)
     d = points - side.start
-    off = d - np.outer(d @ w, w)
-    within = points[np.einsum("ij,ij->i", off, off) < (side.radius - 1e-3) ** 2]
+    off = d - np.outer(fv.matmul(d, w), w)
+    within = points[fv.dot(off, off) < fv.sq(side.radius - 1e-3)]
     if len(within) and not np.all(Truth({}, (*part.steps, *part.late)).inside(within)):
         raise DoesNotFitError(
             f"{f.id}'s foot would fill what is cut into {side.key[0]}"
@@ -1372,7 +1469,7 @@ def _ball(f: Feature) -> Outline2:
     """
     r = f.sizes["diameter"] / 2
     if f.choices["portion"] == "whole":
-        split = (r * math.cos(0.3), -r * math.sin(0.3))
+        split = (r * fs.cos(0.3), -r * fs.sin(0.3))
         return Outline2(
             (0.0, -r),
             (
@@ -1556,7 +1653,7 @@ def _holes_apart(
         return True
 
     def chord(x: float, y: float) -> float:
-        return 2 * radius * abs(math.sin(math.radians((x - y) / 2)))
+        return 2 * radius * abs(fs.sin(math.radians((x - y) / 2)))
 
     mouths1 = [a1] if d1 is not None else [a1, a1 + 180.0]
     mouths2 = [a2] if d2 is not None else [a2, a2 + 180.0]
@@ -1566,15 +1663,14 @@ def _holes_apart(
     if d1 is not None and d2 is not None:
         inner = max(radius - d1, radius - d2)
         return (
-            2 * inner * abs(math.sin(turn / 2)) >= reach
-            or abs(math.cos(turn / 2)) < 1e-9
+            2 * inner * abs(fs.sin(turn / 2)) >= reach or abs(fs.cos(turn / 2)) < 1e-9
         )
     if (
         d1 is not None or d2 is not None
     ):  # a blind one beside one through: its end from the other's line
         depth = d1 if d1 is not None else d2
         assert depth is not None
-        return (radius - depth) * abs(math.sin(turn)) >= reach
+        return (radius - depth) * abs(fs.sin(turn)) >= reach
     return True
 
 
@@ -1782,7 +1878,7 @@ def _recess_depth(f: Feature) -> float:
     what, d, third = f.recess
     if what == "counterbore":
         return third
-    return (d - f.sizes["diameter"]) / 2 / math.tan(math.radians(third / 2))
+    return (d - f.sizes["diameter"]) / 2 / fs.tan(math.radians(third / 2))
 
 
 def _build(plan: Plan, strict: bool) -> _Part:
@@ -2060,7 +2156,7 @@ def _drop_covered(
             np.asarray(v, dtype=float)
             for v in (piece.start, piece.along, piece.a, piece.b)
         )
-        out = -(a + b) / np.linalg.norm(a + b)
+        out = -(a + b) / fv.norm(a + b)
         covered = so_far.inside(
             start + np.outer(at * piece.length, along) + _COVER * out
         )
@@ -2200,7 +2296,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
                     _margin(face, up[1], (1.0 if up[0] == "+" else -1.0) * (-b), size)
     if which == "joint":
         assert host is not None
-        at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+        at = host.frame.plane(p)
         old = _foot_of(target, host, (at[0], at[1]))
         if _flush(target, host) or _overhang(target, host, [old], False):
             # A side flush with the face's edge has no corner along it, and under an overhang the corner is
@@ -2311,7 +2407,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
             )
     if which == "joint":
         assert host is not None
-        at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+        at = host.frame.plane(p)
         old = _foot_of(target, host, (at[0], at[1]))
         _keep_clear(f, host, old, _Foot(old.at, (r + size, r + size), r + size), strict)
         part.late.append(
@@ -2326,7 +2422,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
 
 def _quarter(n: Array, e1: Array, d: Array) -> tuple[float, float]:
     """The quarter turn about ``n`` round the way ``d``, as angles from ``e1`` anticlockwise about ``n``."""
-    angle = math.atan2(float(d @ np.cross(n, e1)), float(d @ e1))
+    angle = fs.atan2(float(fv.matmul(d, np.cross(n, e1))), float(fv.matmul(d, e1)))
     return angle - math.pi / 4, angle + math.pi / 4
 
 
@@ -2338,7 +2434,7 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     depth = host.material if target.depth is None else target.depth
     if strict and size > depth / 2:
         raise DoesNotFitError(f"{f.id} is too big for the cut it rounds")
-    at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+    at = host.frame.plane(p)
     circle = _draw(target.kind).round_mouth(target)
     if which == "bottom" and target.depth is None:
         raise DoesNotFitError(f"{f.id}: a pocket through has no floor")
@@ -2469,12 +2565,12 @@ def _threaded_clear(f: Feature, rod: Feature, copy: Copy, rho: float, stretch: t
     """Nothing but the rod copy's own solid is where its thread's groove goes: points round it ``rho`` from its axis, along the threaded stretch (generated part 886: a boss on one of a row of blocks ran through the next, and the groove would have cut that too); and nothing cut into the rod there, from a wall's width in from the thread's root out."""
     w = _v(copy.direction)
     e1 = _v(unit_of("+" + "xyz"[int(np.argmin(np.abs(w)))]))
-    e1 = e1 - (e1 @ w) * w
-    e1 /= np.linalg.norm(e1)
+    e1 = e1 - (fv.matmul(e1, w)) * w
+    e1 /= fv.norm(e1)
     e2 = np.cross(w, e1)
     angles = 2 * math.pi * np.arange(36) / 36
     along = np.linspace(stretch[0] + 0.1 * pitch, stretch[1] - 0.1 * pitch, 24)
-    ring = rho * (np.cos(angles)[:, None] * e1 + np.sin(angles)[:, None] * e2)
+    ring = rho * (fv.cos(angles)[:, None] * e1 + fv.sin(angles)[:, None] * e2)
     points = (_v(copy.point) + along[:, None, None] * w + ring[None, :, :]).reshape(
         -1, 3
     )
@@ -2526,22 +2622,26 @@ def _cross_cleanly(steps: list[Step]) -> None:
             if item1 == item2:
                 continue
             across = np.cross(w1, w2)
-            size = float(np.linalg.norm(across))
+            size = float(fv.norm(across))
             gap = p2 - p1
             if size < 1e-9:  # parallel: how far apart the axes are
-                d = float(np.linalg.norm(gap - (gap @ w1) * w1))
+                d = float(fv.norm(gap - (fv.matmul(gap, w1)) * w1))
                 s1, s2 = (
                     (lo1, hi1),
                     (
-                        float(gap @ w1) + lo2 * float(w1 @ w2),
-                        float(gap @ w1) + hi2 * float(w1 @ w2),
+                        float(fv.matmul(gap, w1)) + lo2 * float(fv.matmul(w1, w2)),
+                        float(fv.matmul(gap, w1)) + hi2 * float(fv.matmul(w1, w2)),
                     ),
                 )
                 overlap = min(max(s1), max(s2)) > max(min(s1), min(s2))
             else:  # crossing: where the axes come nearest
-                d = abs(float(gap @ across)) / size
-                m = np.array([[1.0, -float(w1 @ w2)], [float(w1 @ w2), -1.0]])
-                t1, t2 = np.linalg.solve(m, [float(gap @ w1), float(gap @ w2)])
+                d = abs(float(fv.matmul(gap, across))) / size
+                m = np.array(
+                    [[1.0, -float(fv.matmul(w1, w2))], [float(fv.matmul(w1, w2)), -1.0]]
+                )
+                t1, t2 = fv.solve(
+                    m, [float(fv.matmul(gap, w1)), float(fv.matmul(gap, w2))]
+                )
                 overlap = lo1 - r2 <= t1 <= hi1 + r2 and lo2 - r1 <= t2 <= hi2 + r1
             if not overlap:
                 continue
@@ -2583,11 +2683,11 @@ def _walls_crossed(plan: Plan, steps: list[Step]) -> None:
             t = np.linspace(lo, hi, 64)
             for a, at, (b1, l1, u1), (b2, l2, u2) in walls:
                 # From the wall's plane to the rod's axis:
-                away = abs(float((p - c) @ a) - at)
-                if abs(float(w @ a)) > 1e-9 or abs(away - r) >= _TOUCHING:
+                away = abs(float(fv.matmul(p - c, a)) - at)
+                if abs(float(fv.matmul(w, a))) > 1e-9 or abs(away - r) >= _TOUCHING:
                     continue
-                x1 = float((p - c) @ b1) + t * float(w @ b1)
-                x2 = float((p - c) @ b2) + t * float(w @ b2)
+                x1 = float(fv.matmul(p - c, b1)) + t * float(fv.matmul(w, b1))
+                x2 = float(fv.matmul(p - c, b2)) + t * float(fv.matmul(w, b2))
                 if np.any((x1 > l1) & (x1 < u1) & (x2 > l2) & (x2 < u2)):
                     where = f"{step.item}'s wall"
                     raise DoesNotFitError(f"{item} touches {where} along a line")
@@ -2710,16 +2810,16 @@ def _past_side(s: Prism) -> Array:
         centre = np.array([q1 * (h1 - cr), q2 * (h2 - cr)])
         a = k * math.pi / 2 + np.linspace(0.0, math.pi / 2, 9)
         pieces.append(
-            centre + (cr + _SIDE_OFF) * np.stack([np.cos(a), np.sin(a)], axis=1)
+            centre + (cr + _SIDE_OFF) * np.stack([fv.cos(a), fv.sin(a)], axis=1)
         )
     ring = np.concatenate(pieces)
     # Even spacing along the closed polygon.
     closed = np.vstack([ring, ring[:1]])
-    lengths = np.linalg.norm(np.diff(closed, axis=0), axis=1)
+    lengths = fv.norm(np.diff(closed, axis=0), axis=1)
     at = np.concatenate([[0.0], np.cumsum(lengths)])
     want = np.linspace(0.0, at[-1], _SIDE_ROUND, endpoint=False)
-    u = np.interp(want, at, closed[:, 0])
-    v = np.interp(want, at, closed[:, 1])
+    u = fv.interp(want, at, closed[:, 0])
+    v = fv.interp(want, at, closed[:, 1])
     t = s.low + (np.arange(_SIDE_LAYERS) + 0.5) / _SIDE_LAYERS * (s.high - s.low)
     first, second, normal = (
         np.asarray(w, dtype=np.float64) for w in (s.first, s.second, s.normal)
@@ -2971,7 +3071,7 @@ def _pattern(rng: random.Random, face: _Flat, size: float) -> Pattern | None:
             {},
         )
     n = rng.randint(3, 6)
-    d = _q(max(size / math.sin(math.pi / n) + 2, rng.uniform(10, 40)))
+    d = _q(max(size / fs.sin(math.pi / n) + 2, rng.uniform(10, 40)))
     values: dict[str, float] = {"diameter": d}
     if rng.random() < 0.6:
         values["start"] = _q(rng.uniform(0, 90), 0.5)
@@ -3007,7 +3107,7 @@ def _feature(
                 least += (
                     (recess[1] - sizes["diameter"])
                     / 2
-                    / math.tan(math.radians(recess[2] / 2))
+                    / fs.tan(math.radians(recess[2] / 2))
                 )
             depth = _q(rng.uniform(least, max(least + 0.1, face.material - GAP - 0.1)))
     f = Feature(f"i{k}", kind, sizes, (host, face.key[2]), depth, choices, recess)

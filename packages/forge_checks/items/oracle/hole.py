@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
 
 from forge_checks import rounds
@@ -35,7 +36,7 @@ class Hole(OracleKind):
         if isinstance(sink, Countersink):
             wide = _mm(sink.diameter) / 2
             angle = sink.angle.made_in("deg")
-            deep = (wide - radius) / math.tan(math.radians(angle) / 2)
+            deep = (wide - radius) / fs.tan(math.radians(angle) / 2)
             parts.append(Frustum(frame, 0.0, deep, wide, radius))
             if (
                 start < 0
@@ -57,7 +58,7 @@ class Hole(OracleKind):
             radius = _mm(bore.diameter) / 2
         if isinstance(sink, Countersink):
             wide = _mm(sink.diameter) / 2
-            deep = (wide - placed.diameters[item.id] / 2) / math.tan(
+            deep = (wide - placed.diameters[item.id] / 2) / fs.tan(
                 math.radians(sink.angle.made_in("deg")) / 2
             )
             wall = rounds.Line2(_unit2(-deep, wide - placed.diameters[item.id] / 2))

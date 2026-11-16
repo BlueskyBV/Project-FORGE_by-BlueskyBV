@@ -11,7 +11,10 @@ functions on NumPy arrays, step for step, so the two agree bit for bit.
 The algorithms are FreeBSD's msun, derived from Sun's fdlibm (their notice
 below), each with its proven bound: under one unit in the last place
 (ulp) for ``sin``, ``cos``, ``atan``, ``atan2``, ``asin``, ``acos``, ``exp``,
-``log``, ``cbrt`` and ``hypot``; ``tan`` is ``sin / cos`` (under two ulps).
+``expm1``, ``log``, ``log1p``, ``cbrt`` and ``hypot``; ``tan`` is
+``sin / cos`` (under two ulps). ``decade`` is ``floor(log10(x))``, exactly;
+``sq`` and ``cube`` are products, for ``x ** 2`` and ``x ** 3`` (which call
+the C library's ``pow``).
 Arguments too large for the argument reduction's three-part pi/2
 (|x| >= 2^20 pi/2) are reduced exactly with integers.
 
@@ -30,8 +33,12 @@ rounded everywhere.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
+from typing import Any, cast
 
 from ._bits import bits, from_bits, from_high, high, with_low_zero
 
@@ -42,10 +49,18 @@ __all__ = [
     "atan2",
     "cbrt",
     "cos",
+    "cube",
+    "decade",
+    "dist",
     "exp",
+    "expm1",
+    "hypot",
     "log",
+    "log1p",
+    "long_way",
     "sin",
     "sincos",
+    "sq",
     "tan",
 ]
 
@@ -497,6 +512,8 @@ def exp(x: float) -> float:
     return math.ldexp(y, k)
 
 
+#: Integers above this are taken apart before converting (float() of them would overflow).
+_LARGEST_INT = 1 << 1000
 LG1 = 6.666666666666735130e-01
 LG2 = 3.999999999940941908e-01
 LG3 = 2.857142874366239149e-01
@@ -507,6 +524,12 @@ LG7 = 1.479819860511658591e-01
 
 
 def log(x: float) -> float:
+    if (
+        isinstance(x, int) and x > _LARGEST_INT
+    ):  # past a float's range, as math.log takes it
+        e = x.bit_length() - 64  # x = m 2^(e + 63), m in [1, 2) to 64 bits
+        de = float(e + 63)
+        return de * LN2HI + (log(math.ldexp(float(x >> e), -63)) + de * LN2LO)
     if x != x:
         return x + x
     if x <= 0.0:
@@ -580,3 +603,327 @@ def cbrt(x: float) -> float:
 def _round_23(t: float) -> float:
     """``t`` rounded away from zero to 23 significant bits, as s_cbrt.c does with its words."""
     return from_bits((bits(t) + 0x80000000) & ~0x3FFFFFFF)
+
+
+# ----------------------------------------------------------------------
+# log1p and expm1: msun's s_log1p.c and s_expm1.c
+# ----------------------------------------------------------------------
+_TWO54 = 1.80143985094819840000e16
+LP1 = 6.666666666666735130e-01
+LP2 = 3.999999999940941908e-01
+LP3 = 2.857142874366239149e-01
+LP4 = 2.222219843214978396e-01
+LP5 = 1.818357216161805012e-01
+LP6 = 1.531383769920937332e-01
+LP7 = 1.479819860511658591e-01
+
+
+def _with_high(x: float, h: int) -> float:
+    """``x`` with its high word set to ``h`` (its low word kept)."""
+    word = (h & 0xFFFFFFFF) << 32 | (bits(x) & 0xFFFFFFFF)
+    return from_bits(word - (1 << 64) if word >= 1 << 63 else word)
+
+
+def log1p(x: float) -> float:
+    """log(1 + x), accurate for small ``x`` (ValueError at and below -1, as ``math.log1p``)."""
+    hx = high(x)
+    ax = hx & 0x7FFFFFFF
+    k = 1
+    f = c = 0.0
+    hu = 0
+    if hx < 0x3FDA827A:  # 1 + x < sqrt(2)+
+        if ax >= 0x3FF00000:  # x <= -1.0 (or a NaN with its sign bit set)
+            return _domain(x)
+        if ax < 0x3E200000:  # |x| < 2^-29
+            if ax < 0x3C900000:  # |x| < 2^-54
+                return x
+            return x - x * x * 0.5
+        if (
+            hx > 0 or hx <= -0x402D413C
+        ):  # (int32) 0xbfd2bec4: sqrt(2)/2- <= 1 + x < sqrt(2)+
+            k, f, hu = 0, x, 1
+    if hx >= 0x7FF00000:
+        return x + x
+    if k != 0:
+        if hx < 0x43400000:
+            u = 1.0 + x
+            hu = high(u)
+            k = (hu >> 20) - 1023
+            c = 1.0 - (u - x) if k > 0 else x - (u - 1.0)  # the correction term
+            c /= u
+        else:
+            u = x
+            hu = high(u)
+            k = (hu >> 20) - 1023
+            c = 0.0
+        hu &= 0x000FFFFF
+        if hu < 0x6A09E:  # u ~< sqrt(2)
+            u = _with_high(u, hu | 0x3FF00000)  # u normalised
+        else:
+            k += 1
+            u = _with_high(u, hu | 0x3FE00000)  # u / 2 normalised
+            hu = (0x00100000 - hu) >> 2
+        f = u - 1.0
+    hfsq = 0.5 * f * f
+    dk = float(k)
+    if hu == 0:  # |f| < 2^-20
+        if f == 0.0:
+            if k == 0:
+                return 0.0
+            c += dk * LN2LO
+            return dk * LN2HI + c
+        r = hfsq * (1.0 - 0.66666666666666666 * f)
+        if k == 0:
+            return f - r
+        return dk * LN2HI - ((r - (dk * LN2LO + c)) - f)
+    s = f / (2.0 + f)
+    z = s * s
+    r = z * (LP1 + z * (LP2 + z * (LP3 + z * (LP4 + z * (LP5 + z * (LP6 + z * LP7))))))
+    if k == 0:
+        return f - (hfsq - s * (hfsq + r))
+    return dk * LN2HI - ((hfsq - (s * (hfsq + r) + (dk * LN2LO + c))) - f)
+
+
+Q1 = -3.33333333333331316428e-02
+Q2 = 1.58730158725481460165e-03
+Q3 = -7.93650757867487942473e-05
+Q4 = 4.00821782732936239552e-06
+Q5 = -2.01099218183624371326e-07
+
+
+def expm1(x: float) -> float:
+    """exp(x) - 1, accurate for small ``x`` (OverflowError past exp's range, as ``math.expm1``)."""
+    hx = high(x)
+    xsb = hx & 0x80000000
+    hx &= 0x7FFFFFFF
+    if hx >= 0x4043687A:  # |x| >= 56 ln 2
+        if hx >= 0x40862E42:  # |x| >= 709.78...
+            if hx >= 0x7FF00000:
+                if x != x:
+                    return x + x
+                return x if xsb == 0 else -1.0
+            if x > O_THRESHOLD:
+                raise OverflowError("math range error")
+        if xsb != 0:  # x < -56 ln 2: -1 to the last bit
+            return -1.0
+    c = 0.0
+    if hx > 0x3FD62E42:  # |x| > 0.5 ln 2
+        if hx < 0x3FF0A2B2:  # and |x| < 1.5 ln 2
+            if xsb == 0:
+                hi, lo, k = x - LN2HI, LN2LO, 1
+            else:
+                hi, lo, k = x + LN2HI, -LN2LO, -1
+        else:
+            k = int(
+                INVLN2 * x + (0.5 if xsb == 0 else -0.5)
+            )  # towards zero, as C's (int)
+            t = float(k)
+            hi = x - t * LN2HI  # exact here
+            lo = t * LN2LO
+        x = hi - lo
+        c = (hi - x) - lo
+    elif hx < 0x3C900000:  # |x| < 2^-54
+        return x
+    else:
+        k = 0
+    hfx = 0.5 * x
+    hxs = x * hfx
+    r1 = 1.0 + hxs * (Q1 + hxs * (Q2 + hxs * (Q3 + hxs * (Q4 + hxs * Q5))))
+    t = 3.0 - r1 * hfx
+    e = hxs * ((r1 - t) / (6.0 - x * t))
+    if k == 0:
+        return x - (x * e - hxs)  # c is 0
+    e = x * (e - c) - c
+    e -= hxs
+    if k == -1:
+        return 0.5 * (x - e) - 0.5
+    if k == 1:
+        if x < -0.25:
+            return -2.0 * (e - (x + 0.5))
+        return 1.0 + 2.0 * (x - e)
+    if k <= -2 or k > 56:  # exp(x) - 1 is enough
+        y = 1.0 - (e - x)
+        if k == 1024:
+            return y * 2.0 * 8.98846567431157953865e307 - 1.0  # 2^1023
+        return y * math.ldexp(1.0, k) - 1.0
+    if k < 20:
+        t = from_high(0x3FF00000 - (0x200000 >> k))  # 1 - 2^-k
+        y = t - (e - x)
+    else:
+        t = from_high((0x3FF - k) << 20)  # 2^-k
+        y = x - (e + t)
+        y += 1.0
+    return y * math.ldexp(1.0, k)
+
+
+# ----------------------------------------------------------------------
+# Exact helpers
+# ----------------------------------------------------------------------
+def decade(x: float) -> int:
+    """The power of ten of x > 0 as written (the exponent of its shortest decimal, ``repr``): ``floor(log10(x))``, computed exactly.
+
+    1e-299 is 10^-299 here, as it reads, though the float is a little below
+    it; ``math.log10`` rounds its way to the same place for powers of ten on
+    one C library and may not on another.
+    """
+    if x != x or x <= 0.0:
+        raise ValueError("math domain error")
+    if math.isinf(x):
+        raise OverflowError("cannot convert float infinity to integer")
+    return Decimal(repr(float(x))).adjusted()
+
+
+#: Veltkamp's splitting constant, 2^27 + 1.
+_SPLIT = 134217729.0
+#: The least normal float, 2^-1022.
+_TINY = 2.2250738585072014e-308
+
+
+def _two_square(x: float) -> tuple[float, float]:
+    """(hi, lo) with hi = x*x rounded and hi + lo = x*x exactly: Dekker's product, by Veltkamp's split."""
+    hi = x * x
+    t = _SPLIT * x
+    xh = t - (t - x)
+    xl = x - xh
+    return hi, ((xh * xh - hi) + 2.0 * xh * xl) + xl * xl
+
+
+def hypot(*coordinates: float) -> float:
+    """The length of a vector, sqrt(x*x + y*y + ...), correctly rounded but in rare cases (``math.hypot``'s place).
+
+    CPython's own ``math.hypot`` and ``math.dist`` compute this in C, where
+    Clang and Microsoft's ARM compiler fuse a multiply and an add into one
+    rounding: another last bit on a Mac or an ARM PC. This is CPython's
+    algorithm (Raymond Hettinger's: the coordinates scaled by a power of two,
+    their squares summed exactly in two parts, the root corrected once),
+    with Dekker's exact products for its fused ones and every operation
+    rounded on its own: the same bits as CPython's on Linux, everywhere.
+    Infinity wins over NaN, as there. Two and three coordinates go to the
+    compiled twin where this machine has it (the same operations, so the
+    same bits; tested against this at load), the rest are computed here.
+    """
+    n = len(coordinates)
+    if n == 2 and _two is not None:
+        return _two(float(coordinates[0]), float(coordinates[1]))
+    if n == 3 and _three is not None:
+        return _three(
+            float(coordinates[0]), float(coordinates[1]), float(coordinates[2])
+        )
+    return _hypot([float(c) for c in coordinates])
+
+
+def _hypot(values: list[float]) -> float:
+    """:func:`hypot`, computed here."""
+    if any(math.isinf(c) for c in values):
+        return _INF
+    if any(c != c for c in values):
+        return math.nan
+    big = 0.0
+    for c in values:
+        if abs(c) > big:
+            big = abs(c)
+    if big == 0.0 or len(values) <= 1:
+        return big
+    e = math.frexp(big)[1]
+    if (
+        e < -1023
+    ):  # every coordinate subnormal: made normal first (exactly), as CPython does
+        return _TINY * _hypot([c / _TINY for c in values])
+    scale = math.ldexp(1.0, -e)
+    csum, frac1, frac2 = 1.0, 0.0, 0.0
+    for c in values:
+        hi, lo = _two_square(c * scale)
+        total = csum + hi
+        frac2 += (csum - total) + hi
+        csum = total
+        frac1 += lo
+    h = math.sqrt(csum - 1.0 + (frac1 + frac2))
+    hi, lo = _two_square(h)
+    total = csum - hi
+    frac2 += (csum - total) - hi
+    csum = total
+    frac1 -= lo
+    x = csum - 1.0 + (frac1 + frac2)
+    h += x / (2.0 * h)
+    return h / scale
+
+
+def dist(p: Any, q: Any) -> float:
+    """The distance between two points of as many coordinates (``math.dist``'s place, by :func:`hypot`)."""
+    a, b = tuple(p), tuple(q)
+    if len(a) != len(b):
+        raise ValueError("both points must have the same number of dimensions")
+    return hypot(*(float(x) - float(y) for x, y in zip(a, b, strict=True)))
+
+
+def sq[T](x: T) -> T:
+    """``x * x``: a number's or an array's square (``x ** 2`` of a float calls the C library's ``pow``)."""
+    return cast(T, x * x)  # type: ignore[operator]
+
+
+def cube[T](x: T) -> T:
+    """``(x * x) * x``."""
+    return cast(T, x * x * x)  # type: ignore[operator]
+
+
+# ----------------------------------------------------------------------
+# The compiled twin's one-number entry points
+# ----------------------------------------------------------------------
+def _hypot_cases() -> list[tuple[float, ...]]:
+    """Fixed coordinates the compiled hypot must reproduce at load: the special values, pairwise, and a spread of others."""
+    special = [0.0, -0.0, 1.0, -1.0, 0.5, 3.0, 4.0, _INF, -_INF, math.nan, 5e-324,
+               _TINY, 1e-300, 1e300, 1.7976931348623157e308]  # fmt: skip
+    cases: list[tuple[float, ...]] = [(a, b) for a in special for b in special]
+    cases += [(a, b, c) for a in special[:8] for b in special[7:] for c in special[::3]]
+    state = 0x2545F4914F6CDD1D
+    for k in range(600):
+        draws = []
+        for _ in range(3):
+            state = (state * 6364136223846793005 + 1442695040888963407) % (1 << 64)
+            significand = 1.0 + (state >> 12) / (1 << 52)
+            sign = -1.0 if state & 1 else 1.0
+            spread = (-1070, 1020) if k % 10 == 0 else (-60, 60)
+            low, high_ = spread
+            power = low + (state >> 3) % (high_ - low)
+            draws.append(sign * math.ldexp(significand, power))
+        cases.append(tuple(draws[: 2 + k % 2]))
+    return cases
+
+
+def _compiled() -> tuple[Any, Any, str]:
+    """(the compiled hypot of two coordinates, of three, or None and None; why not, where None)."""
+    from . import _core
+
+    lib = _core.LIB
+    if lib is None:
+        return None, None, _core.WHY_NOT
+    two, three = lib.fnum_hypot2_one, lib.fnum_hypot3_one
+    for case in _hypot_cases():
+        a = (two if len(case) == 2 else three)(*case)
+        b = _hypot(list(case))
+        if bits(a) != bits(b) and not (a != a and b != b):
+            return (
+                None,
+                None,
+                f"its hypot differed from this module's at load, on {case}",
+            )
+    return two, three, ""
+
+
+_two: Callable[[float, float], float] | None
+_three: Callable[[float, float, float], float] | None
+#: Why the compiled twin's numbers are not used, where they are not.
+WHY_NOT: str
+_two, _three, WHY_NOT = _compiled()
+
+
+@contextmanager
+def long_way() -> Iterator[None]:
+    """Everything computed here while this is held (the compiled twin set aside): the tests hold the two to each other."""
+    global _two, _three
+    saved = _two, _three
+    _two = _three = None
+    try:
+        yield
+    finally:
+        _two, _three = saved

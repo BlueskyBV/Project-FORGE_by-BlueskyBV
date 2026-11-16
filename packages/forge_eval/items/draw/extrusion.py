@@ -24,12 +24,11 @@ from forge_eval.generator import (
     _standing_profile,
     _t,
     _under,
-    _v,
     _widest,
     outline_of,
 )
 from forge_eval.items.draw.protocol import DrawKind
-from forge_eval.truth import Pushed, Step, unit_of
+from forge_eval.truth import Pushed, Step
 
 
 class Extrusion(DrawKind):
@@ -78,11 +77,11 @@ class Extrusion(DrawKind):
         name, values = f.outline[0], dict(f.outline[1])
         shape = outline_of(name, values)
         up = _named(n)
-        e1, e2 = (_v(unit_of("+" + a)) for a in face.axes)
+        e1, e2 = face.frame.u, face.frame.v
         length = f.sizes["length"]
         part.steps.append(Step(f.id, index, True, Pushed(_t(base), _t(e1), _t(e2), _t(n), shape, 0.0, length),
                                (REACH, 0.0)))  # fmt: skip
-        point = tuple(float(base["xyz".index(a)]) for a in face.axes)
+        point = face.frame.plane(base)
         moved = _moved(shape, point[0], point[1])
         (l1, l2), (h1, h2) = moved.box()
         middle = _point(face, ((l1 + h1) / 2, (l2 + h2) / 2)) + length * n

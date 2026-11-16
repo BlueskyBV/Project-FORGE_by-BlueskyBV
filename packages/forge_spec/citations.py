@@ -58,6 +58,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 
+from forge_numeric import scalar as fs
 from forge_units import ForgeUnitsError, Q, Quantity, Unit, parse_unit
 from forge_units.dimension import DIMENSIONLESS
 
@@ -914,7 +915,7 @@ def _matches(expected: float, actual: float, *, converted: bool) -> bool:
         return False
     if abs(expected - actual) > 5e-4 * abs(expected):
         return False
-    magnitude = math.floor(math.log10(abs(expected)))
+    magnitude = fs.decade(abs(expected))
     return any(
         abs(round(expected, figures - 1 - magnitude) - actual) <= 1e-9 * scale
         for figures in range(3, 16)

@@ -28,6 +28,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 
 from ..classes import Tolerance, bracket_mutants
 from ..measure import FEWEST, Measurement, Probe
@@ -89,14 +90,14 @@ def measure(
                 None, len(window), f"no built bevel within {width:.3g} mm of the spec's"
             )
         m = np.asarray(target.plane.normal, dtype=np.float64)
-        m /= float(np.linalg.norm(m))
+        m /= float(fv.norm(m))
         legs = []
         for way in target.legs:
             v = np.asarray(way, dtype=np.float64)
-            v /= float(np.linalg.norm(v))
+            v /= float(fv.norm(v))
             # How far the bevel's offset moves along the face, per unit: one way on an outside edge, the other
             # on an inside one (its plane faces into the corner's air); how far a leg may be off, either way.
-            slope = -float(v @ m)
+            slope = -float(fv.matmul(v, m))
             legs.append((nominal - offset / slope, u / abs(slope)))
         return _both(legs, len(window), "the bevel's plane fitted")
     cone = fitted_cone(target.cone, width, probe)

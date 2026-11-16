@@ -62,6 +62,8 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 
@@ -177,7 +179,7 @@ def _t3(a: Array) -> tuple[float, float, float]:
 
 def _unit(v: Vec | Array) -> Array:
     a = np.asarray(v, dtype=np.float64)
-    return np.asarray(a / float(np.linalg.norm(a)))
+    return np.asarray(a / float(fv.norm(a)))
 
 
 class Probe:
@@ -215,7 +217,7 @@ class Probe:
         self.patch = np.concatenate(
             [c.patch for c in covers] or [np.zeros(0, dtype=np.int64)]
         )
-        self._facing = math.cos(math.radians(FACING))
+        self._facing = fs.cos(math.radians(FACING))
         self._watching: list[list[Box]] = []
 
     @functools.cached_property
@@ -277,7 +279,7 @@ class Probe:
             radius = self.resolution.within(wide) / factor
             if radius >= FINEST:
                 grown.append(wide)
-                squares += math.prod(sorted(wide.size)[1:]) / radius**2
+                squares += math.prod(sorted(wide.size)[1:]) / (radius * radius)
         if not grown or squares > MOST:
             return None
         inside = np.zeros(len(self.points), dtype=bool)
@@ -333,7 +335,7 @@ class Probe:
             on = self.part.classify(feet) == Side.ON
             kept, kept_feet = rows[on], feet[on]
         else:
-            order = np.random.default_rng(len(rows)).permutation(len(rows))
+            order = fv.Draws(len(rows)).permutation(len(rows))
             found: list[NDArray[np.int64]] = []
             have = 0
             for start in range(0, len(order), enough):
@@ -361,7 +363,7 @@ class Probe:
         shouldn't be: it is kept, and measured.
         """
         reach = self.deflection[rows] + OWN
-        gap = np.linalg.norm(self.points[rows] - feet, axis=1)
+        gap = fv.norm(self.points[rows] - feet, axis=1)
         far = np.flatnonzero(gap > reach)
         owned = np.ones(len(rows), dtype=bool)
         if len(far):
@@ -413,17 +415,15 @@ class Probe:
         searched = _line_box(c + s0 * w, c + s1 * w, max(r0, r1) + width / k)
         near_rows = self._near(np.asarray(searched.lo), np.asarray(searched.hi))
         d = self.points[near_rows] - c
-        along = d @ w
+        along = fv.matmul(d, w)
         radial = d - along[:, None] * w
-        rho = np.sqrt(np.einsum("ij,ij->i", radial, radial))
+        rho = np.sqrt(fv.dot(radial, radial))
         gap = (rho - (r0 + slope * (along - s0))) * k
         near = (np.abs(gap) <= width) & (along >= s0) & (along <= s1) & (rho > 0)
         rows = np.flatnonzero(near)
         out = radial[rows] / rho[rows, None]
         normal = (out - slope * w) * k
-        facing = np.einsum(
-            "ij,ij->i", self.normals[near_rows[rows]], -normal if inside else normal
-        )
+        facing = fv.dot(self.normals[near_rows[rows]], -normal if inside else normal)
         keep = facing >= self._facing
         rows, out, normal = rows[keep], out[keep], normal[keep]
         feet = self.points[near_rows[rows]] - gap[rows, None] * normal
@@ -451,20 +451,18 @@ class Probe:
         searched = _line_box(c, c, abs(big) + radius + width)
         near_rows = self._near(np.asarray(searched.lo), np.asarray(searched.hi))
         d = self.points[near_rows] - c
-        along = d @ w
+        along = fv.matmul(d, w)
         radial = d - along[:, None] * w
-        rho = np.sqrt(np.einsum("ij,ij->i", radial, radial))
+        rho = np.sqrt(fv.dot(radial, radial))
         u, v = rho - big, along
         r = np.sqrt(u * u + v * v)
-        angle = np.arctan2(v, u)
+        angle = fv.arctan2(v, u)
         near = (np.abs(r - radius) <= width) & (rho > 0) & (r > 0)
         near &= _within_arc(angle, arc)
         rows = np.flatnonzero(near)
         out = radial[rows] / rho[rows, None]
         normal = (u[rows, None] * out + v[rows, None] * w) / r[rows, None]
-        facing = np.einsum(
-            "ij,ij->i", self.normals[near_rows[rows]], -normal if inside else normal
-        )
+        facing = fv.dot(self.normals[near_rows[rows]], -normal if inside else normal)
         keep = facing >= self._facing
         rows, out, normal = rows[keep], out[keep], normal[keep]
         feet = c + big * out + radius * normal
@@ -478,14 +476,11 @@ class Probe:
         searched = _line_box(c, c, radius + width)
         near_rows = self._near(np.asarray(searched.lo), np.asarray(searched.hi))
         d = self.points[near_rows] - c
-        r = np.sqrt(np.einsum("ij,ij->i", d, d))
+        r = np.sqrt(fv.dot(d, d))
         rows = np.flatnonzero((np.abs(r - radius) <= width) & (r > 0))
         out = d[rows] / r[rows, None]
         way = -1.0 if inside else 1.0
-        rows = rows[
-            way * np.einsum("ij,ij->i", self.normals[near_rows[rows]], out)
-            >= self._facing
-        ]
+        rows = rows[way * fv.dot(self.normals[near_rows[rows]], out) >= self._facing]
         feet = c + radius * d[rows] / r[rows, None]
         return self._window(near_rows[rows], feet, searched=searched)
 
@@ -507,9 +502,9 @@ class Probe:
         searched = _line_box(c + ends[0] * w, c + ends[1] * w, max(radii))
         near_rows = self._near(np.asarray(searched.lo), np.asarray(searched.hi))
         d = self.points[near_rows] - c
-        along = d @ w
+        along = fv.matmul(d, w)
         radial = d - along[:, None] * w
-        rho = np.sqrt(np.einsum("ij,ij->i", radial, radial))
+        rho = np.sqrt(fv.dot(radial, radial))
         rows = near_rows[
             np.flatnonzero(
                 (rho >= radii[0])
@@ -554,15 +549,15 @@ class Probe:
             if searched is not None
             else np.arange(len(self.points))
         )
-        offset_all = (self.points[near_rows] - q) @ n
+        offset_all = fv.matmul(self.points[near_rows] - q, n)
         local = np.flatnonzero(np.abs(offset_all) <= width)
         rows = near_rows[local]
-        keep = self.normals[rows] @ n >= self._facing
+        keep = fv.matmul(self.normals[rows], n) >= self._facing
         rows, offset = rows[keep], offset_all[local[keep]]
         feet = self.points[rows] - offset[:, None] * n
         if math.isfinite(reach):
             gap = feet - q
-            near = np.einsum("ij,ij->i", gap, gap) <= reach * reach
+            near = fv.dot(gap, gap) <= reach * reach
             rows, feet = rows[near], feet[near]
         if box is not None:
             first = _unit(box[0])
@@ -570,8 +565,8 @@ class Probe:
             gap = feet - q
             # Strictly within: a point on the rectangle's edge may be another face's, beside it in its plane (a
             # host's side a standing item's is flush with), and says nothing of this one.
-            near = (np.abs(gap @ first) < box[1] - _WITHIN) & (
-                np.abs(gap @ second) < box[2] - _WITHIN
+            near = (np.abs(fv.matmul(gap, first)) < box[1] - _WITHIN) & (
+                np.abs(fv.matmul(gap, second)) < box[2] - _WITHIN
             )
             rows, feet = rows[near], feet[near]
         return self._window(rows, feet, searched=searched)
@@ -584,7 +579,7 @@ _WITHIN = 1e-6
 def fit_offset(window: Window, point: Vec, normal: Vec) -> tuple[float, float]:
     """How far the window's points lie from the plane through ``point`` along ``normal``, on average, and how far that may be off."""
     n = _unit(normal)
-    offset = (window.points - np.asarray(point, dtype=np.float64)) @ n
+    offset = fv.matmul(window.points - np.asarray(point, dtype=np.float64), n)
     return float(offset.mean()), float(window.deflection.mean())
 
 
@@ -630,15 +625,21 @@ class Errors:
         """From the fit's pseudo-inverse (unknowns by points), each point's deflection, each point's residual's second derivatives (points by unknowns by unknowns), and each unknown's share of the polygon's miss; None where the fit's second-order part would outgrow its first (its unknowns aren't fixed)."""
         d = np.asarray(deflection, dtype=np.float64)
         spread = weights * d[None, :]
-        bend = np.einsum("kn,nij->kij", weights, second)
+        bend = fv.matmul(weights, second.reshape(len(second), -1)).reshape(
+            len(weights), *second.shape[1:]
+        )
         # Along the directions the first-order errors spread most and least, which they do independently.
-        _, vectors = np.linalg.eigh(spread @ spread.T)
+        _, vectors = fv.eigh(fv.matmul(spread, spread.T))
         frame = np.ascontiguousarray(vectors.T)
-        first = np.abs(frame @ spread).sum(axis=1)
-        framed = np.abs(np.einsum("jk,kab,ca,db->jcd", frame, bend, frame, frame))
+        first = np.abs(fv.matmul(frame, spread)).sum(axis=1)
+        # |frame (frame bend_k frame^T)|: each bend in the frame, then mixed by it
+        rotated = fv.matmul(fv.matmul(frame, bend), frame.T)
+        framed = np.abs(
+            fv.matmul(frame, rotated.reshape(len(rotated), -1)).reshape(rotated.shape)
+        )
         reach = first
         for _ in range(_FED_BACK):
-            fed = first + 0.5 * np.einsum("jab,a,b->j", framed, reach, reach)
+            fed = first + 0.5 * fv.dot(fv.matmul(framed, reach), reach)
             if float((fed - first).max(initial=0.0)) > float(first.max(initial=0.0)):
                 return None
             moved = float(np.abs(fed - reach).max(initial=0.0))
@@ -650,11 +651,19 @@ class Errors:
     def bound(self, coefficients: Sequence[float] | Array) -> float:
         """How far the sum of the unknowns times these coefficients may be off."""
         a = np.asarray(coefficients, dtype=np.float64)
-        bent = self.frame @ np.einsum("k,kab->ab", a, self.bend) @ self.frame.T
+        bent = fv.matmul(
+            fv.matmul(
+                self.frame,
+                fv.matmul(a, self.bend.reshape(len(self.bend), -1)).reshape(
+                    self.bend.shape[1:]
+                ),
+            ),
+            self.frame.T,
+        )
         return float(
-            np.abs(a @ self.spread).sum()
-            + 0.5 * (self.reach @ np.abs(bent) @ self.reach)
-            + np.abs(a) @ self.miss
+            np.abs(fv.matmul(a, self.spread)).sum()
+            + 0.5 * (fv.matmul(fv.matmul(self.reach, np.abs(bent)), self.reach))
+            + fv.matmul(np.abs(a), self.miss)
         )
 
 
@@ -706,7 +715,7 @@ def fit_circle(
     scale = max(r, float(np.abs(p - c).max()), 1e-300)
     for _ in range(100):
         d = p - c
-        rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+        rho = np.sqrt(fv.dot(d, d))
         if np.any(rho == 0):
             return None
         e = d / rho[:, None]
@@ -724,7 +733,7 @@ def fit_circle(
     if r <= 0:
         return None
     d = p - c
-    rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+    rho = np.sqrt(fv.dot(d, d))
     jacobian = np.column_stack([-(d / rho[:, None]), -np.ones(len(p))])
     weights = _pseudo_inverse(jacobian)
     if weights is None:
@@ -749,18 +758,18 @@ def fit_circle(
 
 def _solve(jacobian: Array, residual: Array) -> Array | None:
     """The least-squares step, or None if the normal equations can't be solved well."""
-    normal = jacobian.T @ jacobian
-    if not np.all(np.isfinite(normal)) or np.linalg.cond(normal) > _CONDITION:
+    normal = fv.matmul(jacobian.T, jacobian)
+    if not np.all(np.isfinite(normal)) or fv.cond_symmetric(normal) > _CONDITION:
         return None
-    return np.asarray(np.linalg.solve(normal, jacobian.T @ residual))
+    return np.asarray(fv.solve(normal, fv.matmul(jacobian.T, residual)))
 
 
 def _pseudo_inverse(jacobian: Array) -> Array | None:
     """(JᵀJ)⁻¹Jᵀ: each unknown's weight on each point's error; None if ill-fixed."""
-    normal = jacobian.T @ jacobian
-    if not np.all(np.isfinite(normal)) or np.linalg.cond(normal) > _CONDITION:
+    normal = fv.matmul(jacobian.T, jacobian)
+    if not np.all(np.isfinite(normal)) or fv.cond_symmetric(normal) > _CONDITION:
         return None
-    return np.asarray(np.linalg.solve(normal, jacobian.T))
+    return np.asarray(fv.solve(normal, jacobian.T))
 
 
 @dataclass(frozen=True)
@@ -812,12 +821,12 @@ def fit_cone(
     def model(theta: Array) -> tuple[Array, Array]:
         c, a_, b_ = theta[:2], theta[2], theta[3]
         d = q - c
-        rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+        rho = np.sqrt(fv.dot(d, d))
         k = 1.0 / math.sqrt(1.0 + b_ * b_)
         gap = rho - a_ - b_ * s
         e = d / np.where(rho > 0, rho, 1.0)[:, None]
         jacobian = np.column_stack(
-            [-e * k, -np.full(len(q), k), -s * k - gap * b_ * k**3]
+            [-e * k, -np.full(len(q), k), -s * k - gap * b_ * (k * k * k)]
         )
         return gap * k, jacobian
 
@@ -866,11 +875,12 @@ def _cone_second(across: Array, along: Array, theta: Array) -> Array:
     """
     c, a, b = theta[:2], float(theta[2]), float(theta[3])
     d = across - c
-    rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+    rho = np.sqrt(fv.dot(d, d))
     e = d / np.where(rho > 0, rho, 1.0)[:, None]
     gap = rho - a - b * along
     k = 1.0 / math.sqrt(1.0 + b * b)
-    dk, ddk = -b * k**3, (2 * b * b - 1) * k**5
+    k3 = k * k * k
+    dk, ddk = -b * k3, (2 * b * b - 1) * (k3 * k * k)
     second = k * _round_second(e, np.where(rho > 0, rho, np.inf), 2)
     second[:, :2, 3] = second[:, 3, :2] = -dk * e
     second[:, 2, 3] = second[:, 3, 2] = -dk
@@ -906,7 +916,7 @@ def fit_sphere(
     scale = max(r, float(np.abs(p - c).max()), 1e-300)
     for _ in range(100):
         d = p - c
-        rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+        rho = np.sqrt(fv.dot(d, d))
         if np.any(rho == 0):
             return None
         jacobian = np.column_stack([-(d / rho[:, None]), -np.ones(len(p))])
@@ -922,7 +932,7 @@ def fit_sphere(
     if r <= 0:
         return None
     d = p - c
-    rho = np.sqrt(np.einsum("ij,ij->i", d, d))
+    rho = np.sqrt(fv.dot(d, d))
     weights = _pseudo_inverse(np.column_stack([-(d / rho[:, None]), -np.ones(len(p))]))
     if weights is None:
         return None

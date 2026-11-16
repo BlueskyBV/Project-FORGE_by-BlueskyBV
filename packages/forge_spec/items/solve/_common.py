@@ -13,6 +13,8 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 from forge_spec.draft import (
     Choice,
     Counterbore,
@@ -22,6 +24,7 @@ from forge_spec.draft import (
     Profile,
     Through,
 )
+from forge_spec.frames import Frame
 from forge_spec.geometry import EPS, FlatFace, SideFace, Source, Taper, Vec
 from forge_spec.outline import Shape
 from forge_spec.schema import DIRECTIONS, FACE_AXES
@@ -307,18 +310,12 @@ def profiled(item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[s
     layout.faces[key] = {}
     if shape is None:
         return base, base
-    a1, a2 = axes
-    k1, k2, kz = _INDEX[a1], _INDEX[a2], _INDEX[up[1]]
-    sign = 1.0 if up[0] == "+" else -1.0
+    frame = Frame.of_names(base, axes[0], axes[1], up)
     down = _opposite(up)
     sources = ((item.id, "profile"),)
 
     def point(u: float, v: float, h: float) -> Vec:
-        found = list(base)
-        found[k1] += u
-        found[k2] += v
-        found[kz] += sign * h
-        return (found[0], found[1], found[2])
+        return frame.at(u, v, h)
 
     (l1, l2), (h1, h2) = shape.box()
     faces: dict[str, Face] = {}
@@ -348,4 +345,4 @@ def _turn(degrees: float) -> tuple[float, float]:
     if abs(quarters - round(quarters)) < 1e-12:
         return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
     t = math.radians(degrees)
-    return math.cos(t), math.sin(t)
+    return fs.cos(t), fs.sin(t)

@@ -8,9 +8,13 @@
 //! two to each other on every platform the library is built for.
 //!
 //! What the Python reduces with integers (sine and cosine arguments of
-//! 2^20 pi/2 or more) and what `hypot` hands to CPython's own (lengths beyond
-//! 1e150 or below 1e-150) is not done here: such an element is written NaN and
-//! marked in `defer`, and the caller computes it in Python.
+//! 2^20 pi/2 or more) is not done here: such an element is written NaN and
+//! counted, and the caller computes it in Python.
+//!
+//! Where an x86-64 processor has AVX2, `fnum_hypot` runs four elements at
+//! once rather than two: the same operations, each correctly rounded, so the
+//! same bits (AVX2 has no fused multiply-add, and Rust would not fuse one if
+//! it had).
 //!
 //! The algorithms are FreeBSD's msun, from Sun's fdlibm:
 //!
@@ -35,7 +39,7 @@
 use std::slice;
 
 /// The interface's version: the loader refuses any other.
-const ABI: u64 = 2;
+const ABI: u64 = 6;
 
 #[inline(always)]
 fn from_high(h: u32) -> f64 {
@@ -687,8 +691,123 @@ pub unsafe extern "C" fn fnum_atan2(y: *const f64, x: *const f64, out: *mut f64,
     }
 }
 
-/// sqrt(x*x + y*y); returns how many elements were deferred (the larger magnitude finite and past 1e150, or
-/// below 1e-150 but not zero: CPython's hypot computes those), written NaN for the caller.
+const SPLIT: f64 = 134217729.0; // 2^27 + 1
+const TINY: f64 = 2.2250738585072014e-308; // 2^-1022
+
+/// (hi, lo) with hi = x*x rounded and hi + lo = x*x exactly: Dekker's product, by Veltkamp's split.
+#[inline(always)]
+fn two_square(x: f64) -> (f64, f64) {
+    let hi = x * x;
+    let t = SPLIT * x;
+    let xh = t - (t - x);
+    let xl = x - xh;
+    (hi, ((xh * xh - hi) + 2.0 * xh * xl) + xl * xl)
+}
+
+/// CPython's hypot of any number of coordinates, every operation rounded on its own (`scalar.hypot`).
+fn hypot_n(values: &[f64]) -> f64 {
+    if values.iter().any(|c| c.is_infinite()) {
+        return f64::INFINITY;
+    }
+    if values.iter().any(|c| c.is_nan()) {
+        return f64::NAN;
+    }
+    let mut big = 0.0f64;
+    for c in values {
+        if c.abs() > big {
+            big = c.abs();
+        }
+    }
+    if big == 0.0 || values.len() <= 1 {
+        return big;
+    }
+    let e = frexp_exp(big);
+    if e < -1023 {
+        let mut scaled = [0.0f64; 8];
+        if values.len() <= 8 {
+            for (k, c) in values.iter().enumerate() {
+                scaled[k] = c / TINY;
+            }
+            return TINY * hypot_n(&scaled[..values.len()]);
+        }
+        let more: Vec<f64> = values.iter().map(|c| c / TINY).collect();
+        return TINY * hypot_n(&more);
+    }
+    hypot_scaled(values, ldexp(1.0, -e))
+}
+
+/// The heart of `hypot_n`: the coordinates scaled by `scale` (2^-e, e the largest one's exponent), their
+/// squares summed exactly in two parts, the root corrected once.
+#[inline(always)]
+fn hypot_scaled(values: &[f64], scale: f64) -> f64 {
+    let (mut csum, mut frac1, mut frac2) = (1.0f64, 0.0f64, 0.0f64);
+    for c in values {
+        let (hi, lo) = two_square(c * scale);
+        let total = csum + hi;
+        frac2 += (csum - total) + hi;
+        csum = total;
+        frac1 += lo;
+    }
+    let mut h = (csum - 1.0 + (frac1 + frac2)).sqrt();
+    let (hh, lh) = two_square(h);
+    let total = csum - hh;
+    frac2 += (csum - total) - hh;
+    csum = total;
+    frac1 -= lh;
+    let r = csum - 1.0 + (frac1 + frac2);
+    h += r / (2.0 * h);
+    h / scale
+}
+
+/// `hypot_n` of N coordinates, the common case read from the bits: where every coordinate is finite and
+/// the largest is a normal float below 2^1022, e is its biased exponent less 1022 and 2^-e a normal float
+/// (what `frexp_exp` and `ldexp` give there, exactly); anything else goes the long way.
+#[inline(always)]
+fn hypot_fixed<const N: usize>(values: [f64; N]) -> f64 {
+    let mut big = 0.0f64;
+    for c in values {
+        if c.abs() > big {
+            big = c.abs();
+        }
+    }
+    let biased = (big.to_bits() >> 52) as i64;
+    // Zero, subnormal, at least 2^1022 or infinite largest, or a NaN (no NaN is <= anything): the long way.
+    if (biased - 1) as u64 >= 2044 || !values.iter().all(|c| c.abs() <= big) {
+        return hypot_n(&values);
+    }
+    hypot_scaled(&values, f64::from_bits(((2045 - biased) as u64) << 52))
+}
+
+#[inline(always)]
+fn hypot2(a: f64, b: f64) -> f64 {
+    hypot_fixed([a, b])
+}
+
+/// One length of two coordinates, for a number (`scalar.hypot`'s fast path).
+#[no_mangle]
+pub extern "C" fn fnum_hypot2_one(a: f64, b: f64) -> f64 {
+    hypot2(a, b)
+}
+
+/// One length of three coordinates.
+#[no_mangle]
+pub extern "C" fn fnum_hypot3_one(a: f64, b: f64, c: f64) -> f64 {
+    hypot_fixed([a, b, c])
+}
+
+/// 2^1022: from here up, 2^-e is not a normal float.
+const BELOW: f64 = 4.4942328371557898e307;
+
+/// Whether two coordinates' length is `hypot_fixed`'s common case, from the larger's and the second's
+/// magnitudes: the larger a normal float below 2^1022, neither NaN. Without a branch.
+#[inline(always)]
+#[allow(clippy::manual_range_contains)]
+fn common2(big: f64, ay: f64) -> bool {
+    (big >= TINY) & (big < BELOW) & (ay <= big)
+}
+
+/// The length of each (x, y): CPython's hypot, every operation rounded on its own. Returns 0 (nothing is
+/// deferred; the count is kept for the interface).
 #[no_mangle]
 pub unsafe extern "C" fn fnum_hypot(
     x: *const f64,
@@ -699,20 +818,91 @@ pub unsafe extern "C" fn fnum_hypot(
     let x = slice::from_raw_parts(x, n);
     let y = slice::from_raw_parts(y, n);
     let out = slice::from_raw_parts_mut(out, n);
-    let mut count = 0usize;
-    for i in 0..n {
-        let (a, b) = (x[i], y[i]);
-        if a.is_infinite() || b.is_infinite() {
-            out[i] = f64::INFINITY;
-            continue;
-        }
-        let big = if a.abs() >= b.abs() { a.abs() } else { b.abs() };
-        if big.is_finite() && (big > 1e150 || (big < 1e-150 && big > 0.0)) {
-            out[i] = f64::NAN;
-            count += 1;
-        } else {
-            out[i] = (a * a + b * b).sqrt();
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::is_x86_feature_detected!("avx2") {
+            hypots_avx2(x, y, out);
+            return 0;
         }
     }
-    count
+    hypots(x, y, out);
+    0
+}
+
+/// `fnum_hypot` without AVX2 whatever the processor has: for the tests, which hold the two to each other.
+#[no_mangle]
+pub unsafe extern "C" fn fnum_hypot_narrow(
+    x: *const f64,
+    y: *const f64,
+    out: *mut f64,
+    n: usize,
+) -> usize {
+    hypots(
+        slice::from_raw_parts(x, n),
+        slice::from_raw_parts(y, n),
+        slice::from_raw_parts_mut(out, n),
+    );
+    0
+}
+
+/// `hypots`, compiled for AVX2: four lanes where SSE2 has two.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn hypots_avx2(x: &[f64], y: &[f64], out: &mut [f64]) {
+    hypots(x, y, out);
+}
+
+/// Each length, in two passes, for speed: the first computes every element as `hypot_fixed`'s common
+/// case does, without a branch (so the compiler can work several at once), and counts the elements
+/// outside it; the second, where there are any, computes those the long way over what the first wrote.
+#[inline(always)]
+fn hypots(x: &[f64], y: &[f64], out: &mut [f64]) {
+    let mut others = 0usize;
+    for ((o, &a), &b) in out.iter_mut().zip(x).zip(y) {
+        let (ax, ay) = (a.abs(), b.abs());
+        let big = if ay > ax { ay } else { ax };
+        let common = common2(big, ay);
+        let scale = f64::from_bits(2045u64.wrapping_sub(big.to_bits() >> 52) << 52);
+        *o = hypot_scaled(&[a, b], scale);
+        others += usize::from(!common);
+    }
+    if others > 0 {
+        for ((o, &a), &b) in out.iter_mut().zip(x).zip(y) {
+            let (ax, ay) = (a.abs(), b.abs());
+            let big = if ay > ax { ay } else { ax };
+            if !common2(big, ay) {
+                *o = hypot_n(&[a, b]);
+            }
+        }
+    }
+}
+
+/// `a` (rows by k) times `b` (k by cols) into `out` (rows by cols), each sum from its first product,
+/// left to right: the order forge_numeric's NumPy twin adds in for k <= 8 (`linear.matmul`).
+#[no_mangle]
+pub unsafe extern "C" fn fnum_matmul(
+    a: *const f64,
+    b: *const f64,
+    out: *mut f64,
+    rows: usize,
+    k: usize,
+    cols: usize,
+) {
+    let a = slice::from_raw_parts(a, rows * k);
+    let b = slice::from_raw_parts(b, k * cols);
+    let out = slice::from_raw_parts_mut(out, rows * cols);
+    if k == 0 {
+        out.fill(0.0);
+        return;
+    }
+    for r in 0..rows {
+        let ar = &a[r * k..(r + 1) * k];
+        for c in 0..cols {
+            let mut s = ar[0] * b[c];
+            for t in 1..k {
+                s = s + ar[t] * b[t * cols + c];
+            }
+            out[r * cols + c] = s;
+        }
+    }
 }

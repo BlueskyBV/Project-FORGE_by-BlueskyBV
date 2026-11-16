@@ -39,6 +39,8 @@ import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
+from forge_numeric import scalar as fs
+
 from .draft import (
     PATTERN_ANGLES,
     AxisPosition,
@@ -411,11 +413,7 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
         if isinstance(host_face, FlatFace):
             # Faces facing the same way share their axes (FACE_AXES), so a footprint on one is one on the other.
             assert host_face.axes == top_face.axes, (host_face.axes, top_face.axes)
-            i1, i2 = (_INDEX[a] for a in top_face.axes)
-            on_host = (
-                top_face.centre[i1] - host_face.centre[i1],
-                top_face.centre[i2] - host_face.centre[i2],
-            )
+            on_host = host_face.frame.on(top_face.centre)
             # Wholly over a host with the same material under all of it: that, under all of it too.
             if uniform(host_face) and footprint_on_face(
                 host_face, face_footprint(top_face), *on_host
@@ -674,7 +672,7 @@ def _check_overlaps(item: Item, parts: Sequence[Part], positions: Sequence[tuple
         return
     i, j = pair
     (u1, u2), (w1, w2) = positions[i], positions[j]
-    how = "land on each other" if math.hypot(u1 - w1, u2 - w2) <= EPS else "overlap"
+    how = "land on each other" if fs.hypot(u1 - w1, u2 - w2) <= EPS else "overlap"
     layout.problem(
         "question",
         at,
@@ -755,7 +753,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
         if not outline_on_face(face, parts, p1, p2, cut=cut):
             into_hole = (
                 face.shape == "annulus"
-                and reach(parts) + math.hypot(p1, p2) <= face.half[0] + EPS
+                and reach(parts) + fs.hypot(p1, p2) <= face.half[0] + EPS
             )
             where = f"breaks into the hole in the middle of face {face.name}" if into_hole else (
                 f"runs past the edge of face {face.name}")  # fmt: skip
@@ -791,7 +789,7 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
     depth = item.get("depth")
     far = reach(parts)
     for n, (p1, p2) in enumerate(positions):
-        nearest = max(math.hypot(p1, p2) - far, 0.0)
+        nearest = max(fs.hypot(p1, p2) - far, 0.0)
         if not (
             _is_through(item)
             or (
@@ -849,8 +847,7 @@ def _concentric_positions(item: Item, place: Place, face: FlatFace, host: tuple[
         layout.issue("fault", here,
                      f"{partner_id} has {len(others)} copies and {host[0]} {host_count}: say which goes with which")  # fmt: skip
         return None
-    normal = _dir(face.normal)
-    a1, a2 = face.axes
+    normal = face.frame.n
     positions = []
     for other in partners:
         if (
@@ -860,8 +857,7 @@ def _concentric_positions(item: Item, place: Place, face: FlatFace, host: tuple[
             layout.issue("fault", here,
                          f"{partner_id}'s axis doesn't run through face {face.name}: it can't be concentric there")  # fmt: skip
             return None
-        d = [other.origin[k] - face.centre[k] for k in range(3)]
-        positions.append((d[_INDEX[a1]], d[_INDEX[a2]]))
+        positions.append(face.frame.on(other.origin))
     return positions
 
 
@@ -905,17 +901,12 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if not entry.body:
         values = [*_item_values(item, *_outline_fields(item)), *_place_values(item)]
         _check_overlaps(item, parts, positions, layout, at, first, values)
-    normal = _dir(face.normal)
+    normal = face.frame.n
     footing = _footing(item)
     footprint: Footprint = footing if footing is not None else parts
     out = []
     for p1, p2 in positions:
-        origin = list(face.centre)
-        origin[_INDEX[a1]] += p1
-        origin[_INDEX[a2]] += p2
-        instance = Instance(
-            item.id, 0, (origin[0], origin[1], origin[2]), normal, host, face.axes
-        )
+        instance = Instance(item.id, 0, face.frame.at(p1, p2), normal, host, face.axes)
         material = least_material_under(face, footprint, p1, p2)
         out.append(
             _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
@@ -960,7 +951,7 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
         cone = (
             (mm(sink.diameter) - hole)
             / 2
-            / math.tan(math.radians(degrees(sink.angle)) / 2)
+            / fs.tan(math.radians(degrees(sink.angle)) / 2)
         )
         deep.append(
             (
@@ -1036,7 +1027,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         step_value = place.pattern.values.get("step")
         step = degrees(step_value) if step_value is not None else 360.0 / count.n
         angles = [angles[0] + step * k for k in range(count.n)]
-    reference = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}[axis]
+    reference = face.reference
     half = face.length / 2
     # Blame only what binds: the item's size across and the side's radius for
     # "as wide as"; its size along, its place and the side's length for the rest.
@@ -1050,9 +1041,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         tuple[float, float, float, float]
     ] = []  # angle, along, half around, half along
     for angle in angles:
-        radial = [0.0, 0.0, 0.0]
-        radial[_INDEX[reference[0]]], radial[_INDEX[reference[1]]] = _turn(angle)
-        r = (radial[0], radial[1], radial[2])
+        r = face.frame.radial(*_turn(angle))
         outward = r if face.outward else (-r[0], -r[1], -r[2])
         face_axes: tuple[str, str] | None = None
         if entry.adds:
@@ -1092,7 +1081,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 f"{item.id} runs past the end of {host[0]}",
                 along_values,
             )
-        centre = _add(face.start, _dir("+" + axis), half + along)
+        centre = _add(face.frame.origin, face.frame.n, half + along)
         origin = _add(centre, r, face.radius)
         footprints.append((angle, along, across_size, along_size))
         out.append(
@@ -1169,21 +1158,21 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
 
     def apart(j: int, i: int) -> tuple[float, float]:
         """How far apart two points are, round the side (the straight line) and along it."""
-        return 2 * radius * abs(math.sin((points[i][0] - points[j][0]) / 2)), abs(
+        return 2 * radius * abs(fs.sin((points[i][0] - points[j][0]) / 2)), abs(
             points[i][1] - points[j][1]
         )
 
     def close(j: int, i: int) -> bool:
         chord, gap_along = apart(j, i)
         if round_:
-            return math.hypot(chord, gap_along) < sizes[i][0] + sizes[j][0] - EPS
+            return fs.hypot(chord, gap_along) < sizes[i][0] + sizes[j][0] - EPS
         return (
             chord < sizes[i][0] + sizes[j][0] - EPS
             and gap_along < sizes[i][1] + sizes[j][1] - EPS
         )
 
     if radius > EPS and reach_ < 2 * radius:
-        turn_cell = 2 * math.asin(reach_ / (2 * radius))
+        turn_cell = 2 * fs.asin(reach_ / (2 * radius))
     else:
         turn_cell = 2 * math.pi
     pair = first_close_pair(
@@ -1447,7 +1436,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                 continue
             # It comes out on the far face only where the material under its face is the body's whole thickness
             # (into a hollowed body it comes out into the hollow, short of it).
-            normal = _dir(near_face.normal)
+            normal = near_face.frame.n
             across = abs(
                 sum(
                     (a - b) * d
@@ -1497,9 +1486,9 @@ def _inside_bore(mouth: list[tuple[Part, dict[str, float]]], axes: tuple[str, st
     for part, centre in mouth:
         c1, c2 = centre[first] - o1, centre[second] - o2
         reach = (
-            math.hypot(c1, c2) + part.half[0]
+            fs.hypot(c1, c2) + part.half[0]
             if part.disc
-            else math.hypot(abs(c1) + part.half[0], abs(c2) + part.half[1])
+            else fs.hypot(abs(c1) + part.half[0], abs(c2) + part.half[1])
         )
         if reach > r + EPS:
             return False
@@ -1581,10 +1570,8 @@ def _check_over_openings(item: Item, copy: Instance, face: FlatFace, host: tuple
     (docs/definitions/frame.md): asked about, with the values that put them
     there. Letters are left out: their box isn't their shape.
     """
-    i1, i2 = (_INDEX[a] for a in face.axes)
     parts = _outline(item, layout, face.axes)
-    here = _Print(item.id, copy.index, parts, (copy.origin[i1] - face.centre[i1], copy.origin[i2] - face.centre[i2]),
-                  bbox(parts))  # fmt: skip
+    here = _Print(item.id, copy.index, parts, face.frame.on(copy.origin), bbox(parts))
     cuts = SOLVE[item.kind].cut
     found = layout.footprints.setdefault(host, _Footprints(face))
     for other in found.standing_in(here) if cuts else found.cuts_round(here):

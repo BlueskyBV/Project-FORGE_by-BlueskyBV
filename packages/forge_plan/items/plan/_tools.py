@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Choice, Item, Profile, Through
 from forge_spec.geometry import FlatFace, Part, SideFace, most_material_under
 from forge_spec.placement import Instance
@@ -189,16 +190,16 @@ def outline_points(
         if seg.centre is None:
             rows.append(to)
         else:
-            (cx, cy), r = seg.centre, math.dist(here, seg.centre)
-            a0 = math.atan2(here[1] - cy, here[0] - cx)
-            a1 = math.atan2(seg.to[1] - cy, seg.to[0] - cx)
+            (cx, cy), r = seg.centre, fs.dist(here, seg.centre)
+            a0 = fs.atan2(here[1] - cy, here[0] - cx)
+            a1 = fs.atan2(seg.to[1] - cy, seg.to[0] - cx)
             sweep = ((a0 - a1) if seg.clockwise else (a1 - a0)) % (2 * math.pi)
             middle = a0 + (-sweep if seg.clockwise else sweep) / 2
             rows.append(
                 [
                     *to,
-                    num(cx + r * math.cos(middle) + ou),
-                    num(cy + r * math.sin(middle) + ov),
+                    num(cx + r * fs.cos(middle) + ou),
+                    num(cy + r * fs.sin(middle) + ov),
                 ]
             )
         here = seg.to

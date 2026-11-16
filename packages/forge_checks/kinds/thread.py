@@ -35,6 +35,8 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from ..classes import Tolerance, Verdict, bracket_mutants
@@ -57,7 +59,7 @@ Array = NDArray[np.float64]
 #: How many turns of the start are tried before narrowing down.
 _TRIES = 720
 #: A deflection square to a flank, along the radius.
-_FLANK = 1 / math.cos(math.radians(30))
+_FLANK = 1 / fs.cos(math.radians(30))
 
 
 @dataclass(frozen=True)
@@ -126,9 +128,9 @@ def _points(helix: Helix, probe: Probe, margin: float) -> _Points | None:
     if len(window) < FEWEST * 10:
         return None
     d = window.points - np.asarray(helix.centre, dtype=np.float64)
-    s = d @ w
-    theta = np.arctan2(d @ e2, d @ e1)
-    rho = np.sqrt((d @ e1) ** 2 + (d @ e2) ** 2)
+    s = fv.matmul(d, w)
+    theta = fv.arctan2(fv.matmul(d, e2), fv.matmul(d, e1))
+    rho = np.sqrt(fv.sq(fv.matmul(d, e1)) + fv.sq(fv.matmul(d, e2)))
     return _Points(s, theta, rho, float(window.deflection.max(initial=0.0)))
 
 
@@ -309,7 +311,7 @@ def _length(helix: Helix, nominal: float, probe: Probe) -> Measurement:
     lowest = max(whole - nominal - 2 * helix.pitch, -u)
     for turn in range(8):
         angles = 2 * math.pi * (np.arange(_LINES) + turn / 8) / _LINES
-        rings = middle * (np.cos(angles)[:, None] * e1 + np.sin(angles)[:, None] * e2)
+        rings = middle * (fv.cos(angles)[:, None] * e1 + fv.sin(angles)[:, None] * e2)
         origins = (
             np.asarray(helix.centre, dtype=np.float64) + (whole + above) * w + rings
         )

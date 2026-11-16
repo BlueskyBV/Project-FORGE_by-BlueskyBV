@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 from forge_spec.draft import Text as Words
 
@@ -39,7 +39,7 @@ class Text(CompileKind):
         c.size(item, height / 10)
         (x0, y0), (x1, y1) = ink
         middle = line_length(text.text, height) / 2
-        reach = math.hypot(
+        reach = fs.hypot(
             max(abs(x0 - middle), abs(x1 - middle)),
             max(abs(y0 - height / 2), abs(y1 - height / 2)),
         )

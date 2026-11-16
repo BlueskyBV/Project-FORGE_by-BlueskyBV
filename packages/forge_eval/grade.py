@@ -50,6 +50,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from forge_checks.view import Side, ViewProxy
+from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
 
@@ -131,7 +132,7 @@ def _spread(n: int) -> Array:
     z = 1.0 - 2.0 * k / n
     turn = np.pi * (3.0 - np.sqrt(5.0)) * k
     across = np.sqrt(1.0 - z * z)
-    return np.stack([across * np.cos(turn), across * np.sin(turn), z], axis=1)
+    return np.stack([across * fv.cos(turn), across * fv.sin(turn), z], axis=1)
 
 
 #: The ways looked along from a point for the truth's material, its segment shortened: the axes, the cube's
@@ -158,16 +159,16 @@ def _edge_ways(normals: Array) -> Array:
         np.array([[0.0, 1.0, 0.0]]),
     )
     t1 = np.cross(normals, helper)
-    t1 /= np.linalg.norm(t1, axis=1, keepdims=True)
+    t1 /= fv.norm(t1, axis=1, keepdims=True)
     t2 = np.cross(normals, t1)
     turn = 2.0 * np.pi * np.arange(_EDGEWAYS) / _EDGEWAYS
     flat = (
-        np.cos(turn)[None, :, None] * t1[:, None, :]
-        + np.sin(turn)[None, :, None] * t2[:, None, :]
+        fv.cos(turn)[None, :, None] * t1[:, None, :]
+        + fv.sin(turn)[None, :, None] * t2[:, None, :]
     )
     tilts = np.concatenate([_TILTS, -_TILTS])
-    ways = (np.cos(tilts)[None, :, None, None] * flat[:, None, :, :]
-            + np.sin(tilts)[None, :, None, None] * normals[:, None, None, :])  # fmt: skip
+    ways = (fv.cos(tilts)[None, :, None, None] * flat[:, None, :, :]
+            + fv.sin(tilts)[None, :, None, None] * normals[:, None, None, :])  # fmt: skip
     return np.asarray(ways.reshape(len(normals), -1, 3), dtype=np.float64)
 
 
@@ -199,7 +200,7 @@ def _crossed_nearer(truth: Truth, points: Array, normals: Array, reach: float) -
                 return crossed
             for some in np.array_split(left, -(-len(left) // _AT_ONCE)):
                 crossed[some] = _crossed_at(
-                    truth, points[some], normals[some], reach / 2**k, edgeways
+                    truth, points[some], normals[some], math.ldexp(reach, -k), edgeways
                 )
     return crossed
 
@@ -221,7 +222,7 @@ def _crossed_at(truth: Truth, p: Array, n: Array, size: float, edgeways: bool) -
     inside = truth.inside(both).reshape(len(p), 2, -1)
     sure = ~truth.unsure(both).reshape(len(p), 2, -1)
     material = sure[:, 0] & inside[:, 0]
-    along = np.einsum("pwj,pj->pw", ways, n)
+    along = fv.dot(ways, n[:, None, :])
     air_ahead = (sure[:, 0] & ~inside[:, 0] & (along > 0)).any(axis=1)
     material_behind = (material & (along < 0)).any(axis=1)
     leaves = (material & (along > 0) & sure[:, 1] & ~inside[:, 1]).any(axis=1)
@@ -290,7 +291,9 @@ def unsaid_volume(truth: Truth) -> float:
     for step in truth.steps:
         s = step.solid
         if isinstance(s, Threaded):
-            total += math.pi * (s.radius**2 - s.minor**2) * (s.end - s.start)
+            total += (
+                math.pi * (s.radius * s.radius - s.minor * s.minor) * (s.end - s.start)
+            )
     return total
 
 
@@ -335,7 +338,7 @@ def grade(truth: Truth, built: ViewProxy, *, exact: ViewProxy | None = None, spa
     failed["truth's surface"] = on[~built.near(on, np.full(len(on), reach))]
 
     # Points in every copy's box, clear of the truth's surface: on the same side of the built part.
-    rng = np.random.default_rng(seed)
+    rng = fv.Draws(seed)
     drawn = []
     for item, copies in truth.copies.items():
         for copy in copies:

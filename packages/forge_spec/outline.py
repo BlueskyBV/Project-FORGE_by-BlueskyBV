@@ -45,6 +45,8 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 if TYPE_CHECKING:
     from .draft import Profile
 
@@ -99,7 +101,7 @@ class Line:
             else min(max(((p[0] - ax) * dx + (p[1] - ay) * dy) / length2, 0.0), 1.0)
         )
         q = self.at(t)
-        return math.hypot(p[0] - q[0], p[1] - q[1])
+        return fs.hypot(p[0] - q[0], p[1] - q[1])
 
     def param(self, p: Point) -> float:
         """How far along the line a point of it is (0 at ``a``, 1 at ``b``)."""
@@ -131,8 +133,8 @@ class Arc:
     def at(self, t: float) -> Point:
         angle = self.start + t * self.sweep
         return (
-            self.centre[0] + self.radius * math.cos(angle),
-            self.centre[1] + self.radius * math.sin(angle),
+            self.centre[0] + self.radius * fs.cos(angle),
+            self.centre[1] + self.radius * fs.sin(angle),
         )
 
     def ends(self) -> tuple[Point, Point]:
@@ -157,15 +159,15 @@ class Arc:
 
     def distance(self, p: Point) -> float:
         dx, dy = p[0] - self.centre[0], p[1] - self.centre[1]
-        far = math.hypot(dx, dy)
-        if far > 0.0 and self.fraction(math.atan2(dy, dx)) is not None:
+        far = fs.hypot(dx, dy)
+        if far > 0.0 and self.fraction(fs.atan2(dy, dx)) is not None:
             return abs(far - self.radius)
         if far == 0.0:
             return self.radius
-        return min(math.hypot(p[0] - q[0], p[1] - q[1]) for q in self.ends())
+        return min(fs.hypot(p[0] - q[0], p[1] - q[1]) for q in self.ends())
 
     def param(self, p: Point) -> float:
-        found = self.fraction(math.atan2(p[1] - self.centre[1], p[0] - self.centre[0]))
+        found = self.fraction(fs.atan2(p[1] - self.centre[1], p[0] - self.centre[0]))
         return 0.0 if found is None else found
 
     def turning(self, angles: Iterable[float]) -> list[float]:
@@ -191,8 +193,8 @@ class Arc:
         r, a0, a1 = self.radius, self.start, self.start + self.sweep
         return 0.5 * (
             r * r * self.sweep
-            + cx * r * (math.sin(a1) - math.sin(a0))
-            - cy * r * (math.cos(a1) - math.cos(a0))
+            + cx * r * (fs.sin(a1) - fs.sin(a0))
+            - cy * r * (fs.cos(a1) - fs.cos(a0))
         )
 
 
@@ -208,12 +210,12 @@ def _pieces(
         if centre is None:
             found.append(Line(here, to))
         else:
-            a0 = math.atan2(here[1] - centre[1], here[0] - centre[0])
-            a1 = math.atan2(to[1] - centre[1], to[0] - centre[0])
+            a0 = fs.atan2(here[1] - centre[1], here[0] - centre[0])
+            a1 = fs.atan2(to[1] - centre[1], to[0] - centre[0])
             sweep = ((a0 - a1) if clockwise else (a1 - a0)) % _TURN
             if sweep <= 1e-12:
                 sweep = _TURN  # an arc back to where it starts is a whole circle
-            radius = math.hypot(here[0] - centre[0], here[1] - centre[1])
+            radius = fs.hypot(here[0] - centre[0], here[1] - centre[1])
             found.append(Arc(centre, radius, a0, -sweep if clockwise else sweep))
         here = to
     return tuple(found)
@@ -385,7 +387,7 @@ def _monotone(
     for t0, t1 in pairwise(cuts):
         p0, p1 = q.at(t0), q.at(t1)
         middle = q.start + (t0 + t1) / 2 * q.sweep
-        side = math.cos(middle) if axis == 1 else math.sin(middle)
+        side = fs.cos(middle) if axis == 1 else fs.sin(middle)
         sign = 1.0 if side >= 0 else -1.0
         cx, cy = q.centre
 
@@ -433,8 +435,8 @@ def _line_line(p: Line, q: Line) -> list[Point]:
         ]
     t = ((cx - ax) * sy - (cy - ay) * sx) / denom
     u = ((cx - ax) * ry - (cy - ay) * rx) / denom
-    slack_t = TOL / max(math.hypot(rx, ry), 1e-300)
-    slack_u = TOL / max(math.hypot(sx, sy), 1e-300)
+    slack_t = TOL / max(fs.hypot(rx, ry), 1e-300)
+    slack_u = TOL / max(fs.hypot(sx, sy), 1e-300)
     if -slack_t <= t <= 1 + slack_t and -slack_u <= u <= 1 + slack_u:
         return [p.at(min(max(t, 0.0), 1.0))]
     return []
@@ -453,7 +455,7 @@ def _line_arc(p: Line, q: Arc) -> list[Point]:
     # A line touching the circle (within the tolerance of its nearest point) meets it once there.
     t_near = -b / (2 * a)
     near = p.at(t_near)
-    gap = math.hypot(near[0] - q.centre[0], near[1] - q.centre[1]) - q.radius
+    gap = fs.hypot(near[0] - q.centre[0], near[1] - q.centre[1]) - q.radius
     if disc < 0 and gap > TOL:
         return []
     roots = [t_near] if disc <= 0 or abs(gap) <= TOL * 1e-3 else [(-b - math.sqrt(disc)) / (2 * a),
@@ -463,10 +465,7 @@ def _line_arc(p: Line, q: Arc) -> list[Point]:
     for t in roots:
         if -slack <= t <= 1 + slack:
             x = p.at(min(max(t, 0.0), 1.0))
-            if (
-                q.fraction(math.atan2(x[1] - q.centre[1], x[0] - q.centre[0]))
-                is not None
-            ):
+            if q.fraction(fs.atan2(x[1] - q.centre[1], x[0] - q.centre[0])) is not None:
                 found.append(x)
     return found
 
@@ -474,7 +473,7 @@ def _line_arc(p: Line, q: Arc) -> list[Point]:
 def _arc_arc(p: Arc, q: Arc) -> list[Point]:
     (x0, y0), r0 = p.centre, p.radius
     (x1, y1), r1 = q.centre, q.radius
-    d = math.hypot(x1 - x0, y1 - y0)
+    d = fs.hypot(x1 - x0, y1 - y0)
     if d <= TOL:
         if abs(r0 - r1) > TOL:
             return []
@@ -491,8 +490,8 @@ def _arc_arc(p: Arc, q: Arc) -> list[Point]:
     mx, my = x0 + a * (x1 - x0) / d, y0 + a * (y1 - y0) / d
     points = [(mx, my)] if h <= TOL else [(mx + h * (y1 - y0) / d, my - h * (x1 - x0) / d),
                                           (mx - h * (y1 - y0) / d, my + h * (x1 - x0) / d)]  # fmt: skip
-    return [x for x in points if p.fraction(math.atan2(x[1] - y0, x[0] - x0)) is not None
-            and q.fraction(math.atan2(x[1] - y1, x[0] - x1)) is not None]  # fmt: skip
+    return [x for x in points if p.fraction(fs.atan2(x[1] - y0, x[0] - x0)) is not None
+            and q.fraction(fs.atan2(x[1] - y1, x[0] - x1)) is not None]  # fmt: skip
 
 
 def boundary_within(
@@ -533,7 +532,7 @@ def _turned_end(shape: Shape, top: bool) -> int | None:
             continue
         for p in q.extremes():
             if abs(p[1] - height) <= TOL and not any(
-                math.hypot(p[0] - e[0], p[1] - e[1]) <= 1e-6 for e in end.ends()
+                fs.hypot(p[0] - e[0], p[1] - e[1]) <= 1e-6 for e in end.ends()
             ):
                 return None
     return flat[0]
@@ -559,11 +558,11 @@ def _direction(q: Piece, at_end: bool) -> Point:
     """The way a piece runs at its start or its end, as a unit vector."""
     if isinstance(q, Line):
         dx, dy = q.b[0] - q.a[0], q.b[1] - q.a[1]
-        length = math.hypot(dx, dy)
+        length = fs.hypot(dx, dy)
         return dx / length, dy / length
     angle = q.start + (q.sweep if at_end else 0.0)
     turn = 1.0 if q.sweep > 0 else -1.0
-    return -turn * math.sin(angle), turn * math.cos(angle)
+    return -turn * fs.sin(angle), turn * fs.cos(angle)
 
 
 def runs_on(before: Piece, after: Piece) -> bool:
@@ -609,21 +608,21 @@ def sizes(shape: Shape, *, turned: bool = False) -> tuple[list[float], set[int]]
     lines = [q for q in shape.pieces if isinstance(q, Line)]
     arcs = [q for q in shape.pieces if isinstance(q, Arc)]
     ends = [q.ends()[0] for q in shape.pieces]
-    found += [math.dist(q.a, q.b) for q in lines]
+    found += [fs.dist(q.a, q.b) for q in lines]
     found += [r for q in arcs for r in (q.radius, 2 * q.radius)]
     # An arc split in two (a circle's halves) has one centre: each is said once.
     points = [*ends, *dict.fromkeys(q.centre for q in arcs)]
     for n, p in enumerate(points):
         for q in points[n + 1 :]:
-            found += [math.dist(p, q), abs(p[0] - q[0]), abs(p[1] - q[1])]
+            found += [fs.dist(p, q), abs(p[0] - q[0]), abs(p[1] - q[1])]
     for n, one in enumerate(lines):
         dx, dy = one.b[0] - one.a[0], one.b[1] - one.a[1]
-        length = math.hypot(dx, dy)
+        length = fs.hypot(dx, dy)
         for other in lines[n + 1 :]:
             ex, ey = other.b[0] - other.a[0], other.b[1] - other.a[1]
             # Parallel to within a ten-thousandth of a radian (an outline written to a few figures): the
             # distance from the other's middle to the line through the one.
-            if length > 0 and abs(dx * ey - dy * ex) <= 1e-4 * length * math.hypot(
+            if length > 0 and abs(dx * ey - dy * ex) <= 1e-4 * length * fs.hypot(
                 ex, ey
             ):
                 mx, my = (other.a[0] + other.b[0]) / 2, (other.a[1] + other.b[1]) / 2

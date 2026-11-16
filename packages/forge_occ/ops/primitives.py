@@ -25,6 +25,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 from OCP.BRepOffset import BRepOffset_Skin
 from OCP.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
 from OCP.BRepPrimAPI import (
@@ -288,9 +289,9 @@ def _ends_role(base: Any, axis: Any, height: float) -> Callable[[Any], str]:
         origin, _ = found
         return (
             "base"
-            if abs(float((origin - base) @ axis)) < 1e-6
+            if abs(float(fv.matmul(origin - base, axis))) < 1e-6
             else "top"
-            if abs(float((origin - top) @ axis)) < 1e-6
+            if abs(float(fv.matmul(origin - top, axis))) < 1e-6
             else "lateral"
         )
 

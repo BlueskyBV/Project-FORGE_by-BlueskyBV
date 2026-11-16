@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+
 from forge_spec.draft import Item
 from forge_spec.geometry import Vec
 from forge_spec.items.views._common import _choice, _mid, _value, round_spans
@@ -52,7 +54,7 @@ class Sphere(ViewKind):
             b = canvas.at(copy.origin)
             du, dv = copy.normal[canvas.u], copy.normal[canvas.v]
             pu, pv = -dv, du
-            arc = [(b[0] + r * (math.cos(t) * pu + math.sin(t) * du), b[1] + r * (math.cos(t) * pv + math.sin(t) * dv))
+            arc = [(b[0] + r * (fs.cos(t) * pu + fs.sin(t) * du), b[1] + r * (fs.cos(t) * pv + fs.sin(t) * dv))
                    for t in (math.pi * s / 32 for s in range(33))]  # fmt: skip
             canvas.path(arc, style, closed=True)
 

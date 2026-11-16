@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.Bnd import Bnd_Box
 from OCP.BRepBndLib import BRepBndLib
 from OCP.BRepClass3d import BRepClass3d_SolidClassifier
@@ -52,7 +54,7 @@ class Envelope:
 
     @property
     def diagonal(self) -> float:
-        return math.dist(self.lo, self.hi)
+        return fs.dist(self.lo, self.hi)
 
     def corners(self) -> Any:
         return np.array([[x, y, z] for x in (self.lo[0], self.hi[0]) for y in (self.lo[1], self.hi[1])
@@ -201,8 +203,8 @@ def _hole(ctx: Context) -> Product:
     if wall is not None:
         start_at, end_at = wall_points
     elif depth is None:
-        corners = envelope.corners() @ axis
-        offset = float(position @ axis)
+        corners = fv.matmul(envelope.corners(), axis)
+        offset = float(fv.matmul(position, axis))
         t_lo, t_hi = float(corners.min()) - offset, float(corners.max()) - offset
         stretches = material_along(base.shape, position, axis, t_lo, t_hi)
         if stretches:
@@ -247,7 +249,7 @@ def _hole(ctx: Context) -> Product:
                 raise DesignError(
                     "a countersink's angle is between a few and 170 degrees"
                 )
-            slope = math.tan(half_angle)
+            slope = fs.tan(half_angle)
             outer = cs_radius + margin * slope
             sink = (cs_radius - radius) / slope
             with boundary("a countersink's tool"):

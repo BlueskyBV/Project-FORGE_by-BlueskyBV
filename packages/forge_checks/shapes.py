@@ -45,6 +45,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 __all__ = [
@@ -82,7 +84,7 @@ _INF = math.inf
 
 def _unit(v: Sequence[float] | NDArray[np.float64]) -> NDArray[np.float64]:
     a = np.asarray(v, dtype=np.float64)
-    length = float(np.linalg.norm(a))
+    length = float(fv.norm(a))
     if not math.isfinite(length) or length == 0.0:
         raise ValueError(f"not a direction: {v}")
     return a / length
@@ -133,7 +135,8 @@ class Frame:
 
     def local(self, points: Array) -> tuple[Array, Array, Array]:
         d = points - np.asarray(self.origin)
-        return d @ np.asarray(self.u), d @ np.asarray(self.v), d @ np.asarray(self.w)
+        abc = fv.matmul(d, np.array([self.u, self.v, self.w]).T)
+        return abc[..., 0], abc[..., 1], abc[..., 2]
 
     def world(self, a: Array, b: Array, c: Array) -> Array:
         return np.asarray(
@@ -187,16 +190,16 @@ class Shape2D:
                 ma, mb = np.full_like(a, dy / length), np.full_like(a, -dx / length)
             else:
                 cx, cy, r, start, sweep = data
-                angle = np.arctan2(b - cy, a - cx)
+                angle = fv.arctan2(b - cy, a - cx)
                 along = np.mod(angle - start, 2 * math.pi)
                 on_arc = along <= sweep
                 end = np.where(
                     along - sweep < 2 * math.pi - along, start + sweep, start
                 )
                 use = np.where(on_arc, angle, end)
-                ma, mb = np.cos(use), np.sin(use)
+                ma, mb = fv.cos(use), fv.sin(use)
                 pa, pb = cx + r * ma, cy + r * mb
-            d = np.hypot(a - pa, b - pb)
+            d = fv.hypot(a - pa, b - pb)
             nearer = d < best
             best = np.where(nearer, d, best)
             qa, qb = np.where(nearer, pa, qa), np.where(nearer, pb, qb)
@@ -213,16 +216,16 @@ class Shape2D:
                 t = np.clip(
                     ((a - x0) * dx + (b - y0) * dy) / (dx * dx + dy * dy), 0.0, 1.0
                 )
-                d = np.hypot(a - (x0 + t * dx), b - (y0 + t * dy))
+                d = fv.hypot(a - (x0 + t * dx), b - (y0 + t * dy))
             else:
                 cx, cy, r, start, sweep = data
-                angle = np.arctan2(b - cy, a - cx)
+                angle = fv.arctan2(b - cy, a - cx)
                 along = np.mod(angle - start, 2 * math.pi)
                 end = np.where(
                     along - sweep < 2 * math.pi - along, start + sweep, start
                 )
                 use = np.where(along <= sweep, angle, end)
-                d = np.hypot(a - (cx + r * np.cos(use)), b - (cy + r * np.sin(use)))
+                d = fv.hypot(a - (cx + r * fv.cos(use)), b - (cy + r * fv.sin(use)))
             np.minimum(best, d, out=best)
         return best
 
@@ -241,7 +244,7 @@ class Shape2D:
         inside = self.inside(a, b)
         out = ~inside & (d > 0)
         da, db = a - qa, b - qb
-        length = np.hypot(da, db)
+        length = fv.hypot(da, db)
         safe = out & (length > 0)
         na = np.where(safe, da / np.where(safe, length, 1.0), na)
         nb = np.where(safe, db / np.where(safe, length, 1.0), nb)
@@ -257,23 +260,23 @@ class Shape2D:
                 dx, dy = x1 - x0, y1 - y0
                 length2 = dx * dx + dy * dy
                 t = np.clip(((a - x0) * dx + (b - y0) * dy) / length2, 0.0, 1.0)
-                near = np.hypot(a - (x0 + t * dx), b - (y0 + t * dy)) <= eps
+                near = fv.hypot(a - (x0 + t * dx), b - (y0 + t * dy)) <= eps
                 length = math.sqrt(length2)
                 found[near, k, 0] = dy / length
                 found[near, k, 1] = -dx / length
             else:
                 cx, cy, r, start, sweep = data
-                angle = np.arctan2(b - cy, a - cx)
+                angle = fv.arctan2(b - cy, a - cx)
                 along = np.mod(angle - start, 2 * math.pi)
                 # The arc's nearest point: at the point's own angle, or the nearer end.
                 end = np.where(
                     along - sweep < 2 * math.pi - along, start + sweep, start
                 )
                 at = np.where(along <= sweep, angle, end)
-                qa, qb = cx + r * np.cos(at), cy + r * np.sin(at)
-                near = np.hypot(a - qa, b - qb) <= eps
-                found[near, k, 0] = np.cos(at[near])
-                found[near, k, 1] = np.sin(at[near])
+                qa, qb = cx + r * fv.cos(at), cy + r * fv.sin(at)
+                near = fv.hypot(a - qa, b - qb) <= eps
+                found[near, k, 0] = fv.cos(at[near])
+                found[near, k, 1] = fv.sin(at[near])
         return found
 
     def meets(self, a: Array, b: Array, da: Array, db: Array) -> Array:
@@ -352,16 +355,16 @@ class Disc(Shape2D):
         object.__setattr__(self, "hi", (self.r, self.r))
 
     def inside(self, a: Array, b: Array) -> NDArray[np.bool_]:
-        return np.hypot(a, b) <= self.r
+        return fv.hypot(a, b) <= self.r
 
     def pieces(self) -> list[tuple[str, tuple[float, ...]]]:
         return [("arc", (0.0, 0.0, self.r, 0.0, 2 * math.pi))]
 
     def sd(self, a: Array, b: Array) -> Array:
-        return np.hypot(a, b) - self.r
+        return fv.hypot(a, b) - self.r
 
     def edge(self, a: Array, b: Array) -> tuple[Array, Array, Array, Array, Array]:
-        rho = np.hypot(a, b)
+        rho = fv.hypot(a, b)
         safe = rho > 0
         na = np.where(safe, a / np.where(safe, rho, 1.0), 1.0)
         nb = np.where(safe, b / np.where(safe, rho, 1.0), 0.0)
@@ -413,7 +416,7 @@ class RoundRect(Shape2D):
             if r > 0:
                 cx, cy = self._centre(k)
                 corner = (s1 * a > self.h1 - r) & (s2 * b > self.h2 - r)
-                found &= ~corner | (np.hypot(a - cx, b - cy) <= r)
+                found &= ~corner | (fv.hypot(a - cx, b - cy) <= r)
         return found
 
     def pieces(self) -> list[tuple[str, tuple[float, ...]]]:
@@ -515,7 +518,7 @@ class Local:
             some = np.zeros(len(directions), dtype=bool)
             for n, k in zip(self.normals, groups, strict=True):
                 if k == g:
-                    some |= directions @ n < 0
+                    some |= fv.matmul(directions, n) < 0
             held &= some
         return ~held if self.inverted else held
 
@@ -690,7 +693,7 @@ class Solid:
             _, normal = self.nearest(
                 origins[rows] + tried[moving, None] * directions[rows]
             )
-            rate = np.einsum("ij,ij->i", normal, directions[rows])
+            rate = fv.dot(normal, directions[rows])
             steep = np.abs(rate) >= _STEEP
             moving, rows, rate = moving[steep], rows[steep], rate[steep]
             tried[moving] -= off[moving] / rate
@@ -733,26 +736,34 @@ class Solid:
         """
         centre, u, v = (np.asarray(x, dtype=np.float64) for x in (centre, u, v))
         angles = 2 * math.pi * np.arange(_ROUND) / _ROUND
-        points = centre + radius * (
-            np.cos(angles)[:, None] * u + np.sin(angles)[:, None] * v
-        )
+        sines, cosines = fv.sincos(angles)
+        points = centre + radius * (cosines[:, None] * u + sines[:, None] * v)
         values, degrees = self._implicit(points)
-        spectrum = np.fft.fft(values, axis=0) / _ROUND
+        # The discrete Fourier transform of the values, (1/N) sum_j v_j e^(-2 pi i j m / N),
+        # its real and imaginary parts as products with a table, in a fixed order.
+        steps = np.outer(np.arange(_ROUND), np.arange(_ROUND)) % _ROUND
+        table_sin, table_cos = fv.sincos(2 * math.pi * steps / _ROUND)
+        spectrum_re = fv.matmul(table_cos, values) / _ROUND
+        spectrum_im = -fv.matmul(table_sin, values) / _ROUND
         found: list[Array] = []
         for k, d in enumerate(degrees):
-            coeffs = spectrum[np.arange(d, -d - 1, -1) % _ROUND, k]
-            scale = float(np.max(np.abs(coeffs)))
+            which = np.arange(d, -d - 1, -1) % _ROUND
+            cr, ci = spectrum_re[which, k], spectrum_im[which, k]
+            scale = float(np.max(fv.hypot(cr, ci)))
             if scale == 0:
                 continue
-            coeffs = coeffs / scale
-            roots = np.roots(coeffs)
-            on = np.abs(np.abs(roots) - 1.0) <= _ROUND_NEAR
-            a = np.angle(roots[on])
-            powers = np.arange(d, -d - 1, -1)
+            cr, ci = cr / scale, ci / scale
+            coeffs = cr.astype(np.complex128)
+            coeffs.imag = ci
+            roots = fv.roots(coeffs)
+            on = np.abs(fv.hypot(roots.real, roots.imag) - 1.0) <= _ROUND_NEAR
+            a = fv.arctan2(roots.imag[on], roots.real[on])
+            powers = np.arange(d, -d - 1, -1, dtype=np.float64)
             for _ in range(3):
-                turn = np.exp(1j * np.outer(a, powers))
-                f = (turn @ coeffs).real
-                df = (turn @ (1j * powers * coeffs)).real
+                # f(a) = Re sum_p c_p e^(i p a), and its derivative, in real arithmetic.
+                s, c = fv.sincos(np.outer(a, powers))
+                f = fv.matmul(c, cr) - fv.matmul(s, ci)
+                df = -(fv.matmul(s, powers * cr) + fv.matmul(c, powers * ci))
                 with np.errstate(divide="ignore", invalid="ignore"):
                     better = a - f / df
                 a = np.where(np.isfinite(better), better, a)
@@ -760,7 +771,7 @@ class Solid:
         if not found:
             return np.zeros(0)
         a = np.mod(np.concatenate(found), 2 * math.pi)
-        at = centre + radius * (np.cos(a)[:, None] * u + np.sin(a)[:, None] * v)
+        at = centre + radius * (fv.cos(a)[:, None] * u + fv.sin(a)[:, None] * v)
         keep = np.abs(self.signed_distance(at)) <= _MEET
         return np.sort(a[keep])
 
@@ -849,7 +860,7 @@ class Prism(Solid):
     def signed_distance(self, points: Array) -> Array:
         _, _, _, d2, dz = self._parts(points)
         inside = np.minimum(np.maximum(d2, dz), 0.0)
-        return np.asarray(inside + np.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0)))
+        return np.asarray(inside + fv.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0)))
 
     def nearest(self, points: Array) -> tuple[Array, Array]:
         a, b, c, d2, dz = self._parts(points)
@@ -879,13 +890,13 @@ class Prism(Solid):
                 ),
             ),
         )
-        length = np.linalg.norm(normal, axis=1)
+        length = fv.norm(normal, axis=1)
         return q, normal / np.where(length > 0, length, 1.0)[:, None]
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         a, b, c = self.frame.local(origins)
         da, db, dc = (
-            directions @ np.asarray(x)
+            fv.matmul(directions, np.asarray(x))
             for x in (self.frame.u, self.frame.v, self.frame.w)
         )
         caps = np.stack([_plane(c - self.t0, dc), _plane(c - self.t1, dc)], axis=1)
@@ -901,14 +912,14 @@ class Prism(Solid):
                 degrees.append(1)
             else:
                 cx, cy, r, _, _ = data
-                found.append((a - cx) ** 2 + (b - cy) ** 2 - r * r)
+                found.append(fv.sq(a - cx) + fv.sq(b - cy) - r * r)
                 degrees.append(2)
         return np.stack(found, axis=1), tuple(degrees)
 
     def locals(self, points: Array, eps: float = ON) -> Locals:
         a, b, c, d2, dz = self._parts(points)
         inside = np.minimum(np.maximum(d2, dz), 0.0)
-        sd = inside + np.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0))
+        sd = inside + fv.hypot(np.maximum(d2, 0.0), np.maximum(dz, 0.0))
         side = self.shape.facet_normals(a, b, eps)
         side[(c < self.t0 - eps) | (c > self.t1 + eps)] = np.nan
         u, v, w = (np.asarray(x) for x in (self.frame.u, self.frame.v, self.frame.w))
@@ -955,7 +966,7 @@ class Frustum(Solid):
 
     def _polar(self, points: Array) -> tuple[Array, Array, Array, Array]:
         a, b, c = self.frame.local(points)
-        rho = np.hypot(a, b)
+        rho = fv.hypot(a, b)
         safe = rho > 0
         ca = np.where(safe, a / np.where(safe, rho, 1.0), 1.0)
         cb = np.where(safe, b / np.where(safe, rho, 1.0), 0.0)
@@ -970,12 +981,12 @@ class Frustum(Solid):
         _, qr, qc, nr, nc = self.section.nearest2d(rho, c)
         q = self.frame.world(qr * ca, qr * cb, qc)
         n = self.frame.turn(nr * ca, nr * cb, nc)
-        return q, n / np.linalg.norm(n, axis=1)[:, None]
+        return q, n / fv.norm(n, axis=1)[:, None]
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         a, b, c = self.frame.local(origins)
         da, db, dc = (
-            directions @ np.asarray(x)
+            fv.matmul(directions, np.asarray(x))
             for x in (self.frame.u, self.frame.v, self.frame.w)
         )
         caps = np.stack([_plane(c - self.t0, dc), _plane(c - self.t1, dc)], axis=1)
@@ -983,7 +994,7 @@ class Frustum(Solid):
         k = (self.r1 - self.r0) / (self.t1 - self.t0)
         r = self.r0 + (c - self.t0) * k
         side = _quadratic(
-            da * da + db * db - (k * dc) ** 2,
+            da * da + db * db - fv.sq(k * dc),
             2 * (a * da + b * db - r * k * dc),
             a * a + b * b - r * r,
         )
@@ -1012,7 +1023,7 @@ class Frustum(Solid):
         apex = np.zeros(len(points), dtype=bool)
         for r, t in ((self.r0, self.t0), (self.r1, self.t1)):
             if r == 0:
-                apex |= np.hypot(rho, c - t) <= eps
+                apex |= fv.hypot(rho, c - t) <= eps
         section = self.section.facet_normals(rho, c, eps)
         nr, nc = section[:, :, 0], section[:, :, 1]
         # The far half of the section is not a facet of the solid.
@@ -1021,7 +1032,7 @@ class Frustum(Solid):
         u, v, w = (np.asarray(x) for x in (self.frame.u, self.frame.v, self.frame.w))
         across = ca[:, None, None] * u + cb[:, None, None] * v
         normals = nr[:, :, None] * across + nc[:, :, None] * w
-        normals /= np.linalg.norm(normals, axis=2, keepdims=True)
+        normals /= fv.norm(normals, axis=2, keepdims=True)
         return _locals(sd, eps, normals, apex)
 
 
@@ -1040,13 +1051,11 @@ class Ball(Solid):
         object.__setattr__(self, "hi", (c[0] + self.r, c[1] + self.r, c[2] + self.r))
 
     def signed_distance(self, points: Array) -> Array:
-        return np.asarray(
-            np.linalg.norm(points - np.asarray(self.centre), axis=1) - self.r
-        )
+        return np.asarray(fv.norm(points - np.asarray(self.centre), axis=1) - self.r)
 
     def nearest(self, points: Array) -> tuple[Array, Array]:
         d = points - np.asarray(self.centre)
-        length = np.linalg.norm(d, axis=1)
+        length = fv.norm(d, axis=1)
         n = np.where(
             (length > 0)[:, None],
             d / np.where(length > 0, length, 1.0)[:, None],
@@ -1056,13 +1065,13 @@ class Ball(Solid):
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         d = origins - np.asarray(self.centre)
-        along = np.einsum("ij,ij->i", d, directions)
-        return _quadratic(np.einsum("ij,ij->i", directions, directions), 2 * along,
-                          np.einsum("ij,ij->i", d, d) - self.r * self.r)  # fmt: skip
+        along = fv.dot(d, directions)
+        return _quadratic(fv.dot(directions, directions), 2 * along,
+                          fv.dot(d, d) - self.r * self.r)  # fmt: skip
 
     def _implicit(self, points: Array) -> tuple[Array, tuple[int, ...]]:
         d = points - np.asarray(self.centre)
-        return (np.einsum("ij,ij->i", d, d) - self.r * self.r)[:, None], (2,)
+        return (fv.dot(d, d) - self.r * self.r)[:, None], (2,)
 
     def locals(self, points: Array, eps: float = ON) -> Locals:
         return self._smooth(points, eps)
@@ -1102,7 +1111,7 @@ class Torus(Solid):
 
     def _meridian(self, points: Array) -> tuple[Array, Array, Array, Array]:
         a, b, c = self.frame.local(points)
-        rho = np.hypot(a, b)
+        rho = fv.hypot(a, b)
         safe = rho > 0
         ca = np.where(safe, a / np.where(safe, rho, 1.0), 1.0)
         cb = np.where(safe, b / np.where(safe, rho, 1.0), 0.0)
@@ -1110,24 +1119,24 @@ class Torus(Solid):
 
     def signed_distance(self, points: Array) -> Array:
         rho, c, _, _ = self._meridian(points)
-        found = np.hypot(rho - self.big, c) - self.r
+        found = fv.hypot(rho - self.big, c) - self.r
         if 0 < self.big < self.r:
             # Where the tube's circle's nearest point is past the axis, the
             # surface's is where it meets the axis, above or below.
             dr, dc = rho - self.big, c
-            length = np.hypot(dr, dc)
+            length = fv.hypot(dr, dc)
             ur = np.where(length > 0, dr / np.where(length > 0, length, 1.0), 1.0)
             across = self.big + self.r * ur < 0
             if across.any():
                 h = math.sqrt(self.r * self.r - self.big * self.big)
-                pole = np.hypot(rho, np.abs(c) - h)
+                pole = fv.hypot(rho, np.abs(c) - h)
                 found = np.where(across, np.where(found < 0, -pole, pole), found)
         return np.asarray(found)
 
     def nearest(self, points: Array) -> tuple[Array, Array]:
         rho, c, ca, cb = self._meridian(points)
         dr, dc = rho - self.big, c
-        length = np.hypot(dr, dc)
+        length = fv.hypot(dr, dc)
         safe = length > 0
         ur = np.where(safe, dr / np.where(safe, length, 1.0), 1.0)
         uc = np.where(safe, dc / np.where(safe, length, 1.0), 0.0)
@@ -1145,11 +1154,12 @@ class Torus(Solid):
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         # From the point of each line nearest the centre, s along it: the
-        # torus's quartic (|p|^2 + R^2 - r^2)^2 = 4 R^2 (a^2 + b^2) in s, solved
-        # by its companion matrix and polished by Newton's method.
+        # torus's quartic (|p|^2 + R^2 - r^2)^2 = 4 R^2 (a^2 + b^2) in s: its real
+        # roots (forge_numeric's, a near-real pair a double root), polished by
+        # Newton's method.
         a, b, c = self.frame.local(origins)
         da, db, dc = (
-            directions @ np.asarray(x)
+            fv.matmul(directions, np.asarray(x))
             for x in (self.frame.u, self.frame.v, self.frame.w)
         )
         shift = a * da + b * db + c * dc
@@ -1167,12 +1177,11 @@ class Torus(Solid):
             axis=1,
         )  # s^4 + 0 s^3 + c2 s^2 + c1 s + c0
         n = len(a)
-        companion = np.zeros((n, 4, 4))
-        companion[:, 0, :] = -coeffs
-        companion[:, 1, 0] = companion[:, 2, 1] = companion[:, 3, 2] = 1.0
-        roots = np.linalg.eigvals(companion) if n else np.zeros((0, 4), dtype=complex)
-        real = np.abs(roots.imag) <= 1e-6 * (1.0 + np.abs(roots.real))
-        s_ = np.where(real, roots.real, np.nan)
+        s_ = (
+            fv.real_roots(np.concatenate([np.ones((n, 1)), coeffs], axis=1))
+            if n
+            else np.zeros((0, 4))
+        )
         c2, c1, c0 = coeffs[:, 1:2], coeffs[:, 2:3], coeffs[:, 3:4]
         with np.errstate(divide="ignore", invalid="ignore"):
             for _ in range(3):
@@ -1256,7 +1265,7 @@ class Revolved(Solid):
 
     def _polar(self, points: Array) -> tuple[Array, Array, Array, Array]:
         a, b, c = self.frame.local(points)
-        rho = np.hypot(a, b)
+        rho = fv.hypot(a, b)
         safe = rho > 0
         ca = np.where(safe, a / np.where(safe, rho, 1.0), 1.0)
         cb = np.where(safe, b / np.where(safe, rho, 1.0), 0.0)
@@ -1271,13 +1280,13 @@ class Revolved(Solid):
         _, qr, qc, nr, nc = self.meridian.nearest2d(rho, c)
         q = self.frame.world(qr * ca, qr * cb, qc)
         n = self.frame.turn(nr * ca, nr * cb, nc)
-        return q, n / np.linalg.norm(n, axis=1)[:, None]
+        return q, n / fv.norm(n, axis=1)[:, None]
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         # Each side's line, a rho + b z = k, met where a^2 (a0 + t da)^2 + ... = (k - b z(t))^2.
         a0, b0, z0 = self.frame.local(origins)
         da, db, dz = (
-            directions @ np.asarray(x)
+            fv.matmul(directions, np.asarray(x))
             for x in (self.frame.u, self.frame.v, self.frame.w)
         )
         across2 = da * da + db * db
@@ -1314,7 +1323,7 @@ class Revolved(Solid):
                 found.append(z - y0)
                 degrees.append(1)
             else:
-                found.append(a * a * (x * x + y * y) - (k - b * z) ** 2)
+                found.append(a * a * (x * x + y * y) - fv.sq(k - b * z))
                 degrees.append(2)
         return np.stack(found, axis=1), tuple(degrees)
 
@@ -1331,7 +1340,7 @@ class Revolved(Solid):
         normals = nr[:, :, None] * across + nc[:, :, None] * w
         apex = np.zeros(len(points), dtype=bool)
         for z in self.points:
-            apex |= np.hypot(rho, c - z) <= eps
+            apex |= fv.hypot(rho, c - z) <= eps
         return _locals(sd, eps, normals, apex)
 
 
@@ -1352,11 +1361,11 @@ class Round(Solid):
 
     def signed_distance(self, points: Array) -> Array:
         a, b, _ = self.frame.local(points)
-        return np.hypot(a, b) - self.r
+        return fv.hypot(a, b) - self.r
 
     def nearest(self, points: Array) -> tuple[Array, Array]:
         a, b, c = self.frame.local(points)
-        rho = np.hypot(a, b)
+        rho = fv.hypot(a, b)
         safe = rho > 0
         ca = np.where(safe, a / np.where(safe, rho, 1.0), 1.0)
         cb = np.where(safe, b / np.where(safe, rho, 1.0), 0.0)
@@ -1367,8 +1376,8 @@ class Round(Solid):
     def _candidates(self, origins: Array, directions: Array) -> Array:
         a, b, _ = self.frame.local(origins)
         da, db = (
-            directions @ np.asarray(self.frame.u),
-            directions @ np.asarray(self.frame.v),
+            fv.matmul(directions, np.asarray(self.frame.u)),
+            fv.matmul(directions, np.asarray(self.frame.v)),
         )
         return _quadratic(
             da * da + db * db, 2 * (a * da + b * db), a * a + b * b - self.r * self.r
@@ -1405,7 +1414,9 @@ class Halfspace(Solid):
         object.__setattr__(self, "hi", (hi[0], hi[1], hi[2]))
 
     def signed_distance(self, points: Array) -> Array:
-        return np.asarray((points - np.asarray(self.point)) @ np.asarray(self.normal))
+        return np.asarray(
+            fv.matmul(points - np.asarray(self.point), np.asarray(self.normal))
+        )
 
     def nearest(self, points: Array) -> tuple[Array, Array]:
         n = np.asarray(self.normal)
@@ -1414,7 +1425,9 @@ class Halfspace(Solid):
 
     def _candidates(self, origins: Array, directions: Array) -> Array:
         n = np.asarray(self.normal)
-        return _plane((origins - np.asarray(self.point)) @ n, directions @ n)[:, None]
+        return _plane(
+            fv.matmul(origins - np.asarray(self.point), n), fv.matmul(directions, n)
+        )[:, None]
 
     def _implicit(self, points: Array) -> tuple[Array, tuple[int, ...]]:
         return self.signed_distance(points)[:, None], (1,)
@@ -1532,7 +1545,10 @@ class FlatPatch(Patch):
 
     def foot(self, x: Array) -> Array:
         d = np.asarray(x, dtype=float) - np.asarray(self.origin)
-        a, b = np.array([d @ np.asarray(self.e1)]), np.array([d @ np.asarray(self.e2)])
+        a, b = (
+            np.array([fv.matmul(d, np.asarray(self.e1))]),
+            np.array([fv.matmul(d, np.asarray(self.e2))]),
+        )
         if not self.shape.inside(a, b)[0]:
             _, a, b, _, _ = self.shape.edge(a, b)
         return np.asarray(
@@ -1565,7 +1581,7 @@ class RoundPatch(Patch):
         object.__setattr__(self, "size", (self.r * self.sweep, self.t1 - self.t0))
 
     def _radial(self, theta: Array) -> Array:
-        cos, sin = np.cos(theta)[:, None], np.sin(theta)[:, None]
+        cos, sin = fv.cos(theta)[:, None], fv.sin(theta)[:, None]
         return np.asarray(cos * np.asarray(self.e1) + sin * np.asarray(self.e2))
 
     def at(self, u: Array, v: Array) -> tuple[Array, Array, NDArray[np.bool_]]:
@@ -1581,11 +1597,11 @@ class RoundPatch(Patch):
     def foot(self, x: Array) -> Array:
         d = np.asarray(x, dtype=float) - np.asarray(self.centre)
         a, b, c = (
-            d @ np.asarray(self.e1),
-            d @ np.asarray(self.e2),
-            d @ np.asarray(self.w),
+            fv.matmul(d, np.asarray(self.e1)),
+            fv.matmul(d, np.asarray(self.e2)),
+            fv.matmul(d, np.asarray(self.w)),
         )
-        theta = math.atan2(b, a)
+        theta = fs.atan2(b, a)
         along = (theta - self.start) % (2 * math.pi)
         if along > self.sweep:  # off the arc: its nearer end
             along = self.sweep if along - self.sweep < 2 * math.pi - along else 0.0
@@ -1611,7 +1627,7 @@ class ConePatch(Patch):
     size: tuple[float, float] = field(init=False)
 
     def __post_init__(self) -> None:
-        slant = math.hypot(self.r1 - self.r0, self.t1 - self.t0)
+        slant = fs.hypot(self.r1 - self.r0, self.t1 - self.t0)
         object.__setattr__(self, "size", (slant, 2 * math.pi * max(self.r0, self.r1)))
 
     def _section(self, s: Array) -> tuple[Array, Array]:
@@ -1622,7 +1638,7 @@ class ConePatch(Patch):
         s = u / slant
         rho, t = self._section(s)
         theta = v / max(self.r0, self.r1)
-        radial = np.cos(theta)[:, None] * np.asarray(self.e1) + np.sin(theta)[
+        radial = fv.cos(theta)[:, None] * np.asarray(self.e1) + fv.sin(theta)[
             :, None
         ] * np.asarray(self.e2)
         points = (
@@ -1638,17 +1654,17 @@ class ConePatch(Patch):
     def foot(self, x: Array) -> Array:
         d = np.asarray(x, dtype=float) - np.asarray(self.origin)
         a, b, c = (
-            d @ np.asarray(self.e1),
-            d @ np.asarray(self.e2),
-            d @ np.asarray(self.w),
+            fv.matmul(d, np.asarray(self.e1)),
+            fv.matmul(d, np.asarray(self.e2)),
+            fv.matmul(d, np.asarray(self.w)),
         )
-        rho = math.hypot(a, b)
+        rho = fs.hypot(a, b)
         dr, dt = self.r1 - self.r0, self.t1 - self.t0
         s = min(
             max(((rho - self.r0) * dr + (c - self.t0) * dt) / (dr * dr + dt * dt), 0.0),
             1.0,
         )
-        theta = math.atan2(b, a) % (2 * math.pi)
+        theta = fs.atan2(b, a) % (2 * math.pi)
         found = self.at(
             np.array([s * self.size[0]]), np.array([theta * max(self.r0, self.r1)])
         )
@@ -1673,15 +1689,15 @@ class SpherePatch(Patch):
     def at(self, u: Array, v: Array) -> tuple[Array, Array, NDArray[np.bool_]]:
         phi, theta = u / self.r, v / self.r
         n = (
-            (np.sin(phi) * np.cos(theta))[:, None] * np.asarray(self.e1)
-            + (np.sin(phi) * np.sin(theta))[:, None] * np.asarray(self.e2)
-            + np.cos(phi)[:, None] * np.asarray(self.w)
+            (fv.sin(phi) * fv.cos(theta))[:, None] * np.asarray(self.e1)
+            + (fv.sin(phi) * fv.sin(theta))[:, None] * np.asarray(self.e2)
+            + fv.cos(phi)[:, None] * np.asarray(self.w)
         )
         return np.asarray(self.centre) + self.r * n, n, np.ones(len(u), dtype=bool)
 
     def foot(self, x: Array) -> Array:
         d = np.asarray(x, dtype=float) - np.asarray(self.centre)
-        length = float(np.linalg.norm(d))
+        length = float(fv.norm(d))
         n = d / length if length > 0 else np.asarray(self.w)
         return np.asarray(np.asarray(self.centre) + self.r * n)
 
@@ -1705,7 +1721,7 @@ class TorusPatch(Patch):
     phi0: float = field(init=False)
 
     def __post_init__(self) -> None:
-        reach = math.pi if self.big >= self.r else math.acos(-self.big / self.r)
+        reach = math.pi if self.big >= self.r else fs.acos(-self.big / self.r)
         object.__setattr__(self, "phi0", -reach)
         object.__setattr__(
             self, "size", (2 * math.pi * (self.big + self.r), 2 * reach * self.r)
@@ -1713,10 +1729,10 @@ class TorusPatch(Patch):
 
     def at(self, u: Array, v: Array) -> tuple[Array, Array, NDArray[np.bool_]]:
         theta, phi = u / (self.big + self.r), self.phi0 + v / self.r
-        radial = np.cos(theta)[:, None] * np.asarray(self.e1) + np.sin(theta)[
+        radial = fv.cos(theta)[:, None] * np.asarray(self.e1) + fv.sin(theta)[
             :, None
         ] * np.asarray(self.e2)
-        n = np.cos(phi)[:, None] * radial + np.sin(phi)[:, None] * np.asarray(self.w)
+        n = fv.cos(phi)[:, None] * radial + fv.sin(phi)[:, None] * np.asarray(self.w)
         points = np.asarray(self.centre) + self.big * radial + self.r * n
         return points, n, np.ones(len(u), dtype=bool)
 
@@ -1771,7 +1787,7 @@ def _clip_polygon(
         ]
     )
     n = np.cross(e1, e2)
-    side = (corners - origin) @ n
+    side = fv.matmul(corners - origin, n)
     found = [corners[i] for i in range(8) if side[i] == 0]
     for i in range(8):
         for j in range(i + 1, 8):
@@ -1782,11 +1798,16 @@ def _clip_polygon(
                 found.append(corners[i] + (corners[j] - corners[i]) * (si / (si - sj)))
     if len(found) < 3:
         return None
-    pts = sorted({(float((q - origin) @ e1), float((q - origin) @ e2)) for q in found})
+    pts = sorted(
+        {
+            (float(fv.matmul(q - origin, e1)), float(fv.matmul(q - origin, e2)))
+            for q in found
+        }
+    )
     size = max(max(abs(x), abs(y)) for x, y in pts) + float(
         np.max(np.abs(corners - origin))
     )
-    least = (1e-12 * size) ** 2
+    least = fv.sq(1e-12 * size)
 
     def turn(
         o: tuple[float, float], a: tuple[float, float], b: tuple[float, float]
@@ -1822,7 +1843,7 @@ def patches(solid: Solid, lo: Vec, hi: Vec) -> list[Patch]:
         for kind, data in solid.shape.pieces():
             if kind == "seg":
                 x0, y0, x1, y1 = data
-                length = math.hypot(x1 - x0, y1 - y0)
+                length = fs.hypot(x1 - x0, y1 - y0)
                 d = ((x1 - x0) * u + (y1 - y0) * v) / length
                 n2 = ((y1 - y0) * u - (x1 - x0) * v) / length
                 start = o + x0 * u + y0 * v + solid.t0 * w
@@ -1917,7 +1938,7 @@ def patches(solid: Solid, lo: Vec, hi: Vec) -> list[Patch]:
                 for z in (lo[2], hi[2])
             ]
         )
-        along = (corners - o) @ w
+        along = fv.matmul(corners - o, w)
         return [
             RoundPatch(
                 solid,

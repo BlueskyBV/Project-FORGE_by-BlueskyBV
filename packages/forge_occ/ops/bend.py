@@ -32,6 +32,8 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.BRepAdaptor import BRepAdaptor_Surface
 from OCP.BRepPrimAPI import BRepPrimAPI_MakeRevol
 from OCP.GeomAbs import GeomAbs_Cylinder, GeomAbs_Plane, GeomAbs_SurfaceOfExtrusion
@@ -76,11 +78,11 @@ class BendSpec:
     def frame(self) -> tuple[Any, Any, Any]:
         e1 = unit(self.along, "a bend's `along`")
         e3 = np.asarray(self.toward, dtype=np.float64)
-        e3 = e3 - e1 * float(e3 @ e1)
-        if float(np.linalg.norm(e3)) < 1e-9:
+        e3 = e3 - e1 * float(fv.matmul(e3, e1))
+        if float(fv.norm(e3)) < 1e-9:
             raise DesignError("a bend's `toward` runs along `along`: it must point off the solid's "
                               "face, across the way the solid runs")  # fmt: skip
-        e3 = e3 / np.linalg.norm(e3)
+        e3 = e3 / fv.norm(e3)
         return e1, np.cross(e3, e1), e3
 
     @property
@@ -92,7 +94,7 @@ class BendSpec:
     def local(self, p: Any) -> Any:
         e1, e2, e3 = self.frame
         rel = np.asarray(p, dtype=np.float64) - np.asarray(self.position)
-        return np.array([rel @ e1, rel @ e2, rel @ e3])
+        return np.array([fv.matmul(rel, e1), fv.matmul(rel, e2), fv.matmul(rel, e3)])
 
     def world(self, x: float, y: float, z: float) -> Any:
         e1, e2, e3 = self.frame
@@ -101,10 +103,10 @@ class BendSpec:
     def rotation_by(self, turn: float) -> Any:
         """V1's rotation through ``turn`` about the bend axis (as V1's ``rotation_by``)."""
         e1, e2, e3 = self.frame
-        c, s = math.cos(turn), math.sin(turn)
+        c, s = fs.cos(turn), fs.sin(turn)
         frame = np.column_stack([e1, e2, e3])
         local = np.array([[c, 0.0, -s], [0.0, 1.0, 0.0], [s, 0.0, c]])
-        return frame @ local @ frame.T
+        return fv.matmul(fv.matmul(frame, local), frame.T)
 
     def axis_point(self) -> Any:
         inside, _, start, _ = self.layout
@@ -117,7 +119,7 @@ class BendSpec:
         # A point at the zone's end on the axis's level maps to the axis's foot, turned.
         end = self.world(start + middle * self.angle, 0.0, inside + self.radius)
         target = self.axis_point()
-        return Motion.of(rotation, target - rotation @ end)
+        return Motion.of(rotation, target - fv.matmul(rotation, end))
 
     def forward(self, p: Any) -> Any:
         """V1's unheld map of one point of the flat part."""
@@ -128,11 +130,11 @@ class BendSpec:
         if start < x < start + middle * theta:
             phi = (x - start) / middle
             r = cz - z
-            return self.world(cx + r * math.sin(phi), y, cz - r * math.cos(phi))
+            return self.world(cx + r * fs.sin(phi), y, cz - r * fs.cos(phi))
         if x >= start + middle * theta:
             a, b = x - start - middle * theta, z - cz
-            return self.world(cx + a * math.cos(theta) - b * math.sin(theta), y,
-                              cz + a * math.sin(theta) + b * math.cos(theta))  # fmt: skip
+            return self.world(cx + a * fs.cos(theta) - b * fs.sin(theta), y,
+                              cz + a * fs.sin(theta) + b * fs.cos(theta))  # fmt: skip
         return np.asarray(p, dtype=np.float64)
 
     def hold_motion(self) -> Motion | None:
@@ -145,7 +147,7 @@ class BendSpec:
         )
         bent = self.forward(flat)
         rotation = self.rotation_by(-self.hold)
-        return Motion.of(rotation, flat - rotation @ bent)
+        return Motion.of(rotation, flat - fv.matmul(rotation, bent))
 
 
 def _faces_of(
@@ -153,7 +155,7 @@ def _faces_of(
 ) -> tuple[float, float]:
     """V1's ``faces_of``: the inside face and thickness from the envelope's corners."""
     _, _, e3 = spec_frame
-    local = (envelope.corners() - np.asarray(position)) @ e3
+    local = fv.matmul(envelope.corners() - np.asarray(position), e3)
     inside, outside = float(local.max()), float(local.min())
     return inside, max(inside - outside, 0.0)
 
@@ -190,9 +192,9 @@ def _is_prism(
         if kind == GeomAbs_Plane:
             normal = surface.Plane().Axis().Direction()
             n = np.array([normal.X(), normal.Y(), normal.Z()])
-            if abs(float(n @ e1)) < 1e-9:
+            if abs(float(fv.matmul(n, e1))) < 1e-9:
                 continue
-            if abs(abs(float(n @ e1)) - 1.0) < 1e-9:
+            if abs(abs(float(fv.matmul(n, e1))) - 1.0) < 1e-9:
                 origin = surface.Plane().Location()
                 x = spec.local((origin.X(), origin.Y(), origin.Z()))[0]
                 if any(abs(x - c) < 1e-6 for c in cuts):
@@ -200,12 +202,18 @@ def _is_prism(
             return False
         if kind == GeomAbs_Cylinder:
             d = surface.Cylinder().Axis().Direction()
-            if abs(abs(float(np.array([d.X(), d.Y(), d.Z()]) @ e1)) - 1.0) < 1e-9:
+            if (
+                abs(abs(float(fv.matmul(np.array([d.X(), d.Y(), d.Z()]), e1))) - 1.0)
+                < 1e-9
+            ):
                 continue
             return False
         if kind == GeomAbs_SurfaceOfExtrusion:
             d = surface.Direction()
-            if abs(abs(float(np.array([d.X(), d.Y(), d.Z()]) @ e1)) - 1.0) < 1e-9:
+            if (
+                abs(abs(float(fv.matmul(np.array([d.X(), d.Y(), d.Z()]), e1))) - 1.0)
+                < 1e-9
+            ):
                 continue
             return False
         return False
@@ -276,7 +284,7 @@ def _on_cut(face: Any, spec: BendSpec, x: float) -> bool:
     origin, normal = found
     e1 = spec.frame[0]
     return (
-        abs(abs(float(normal @ e1)) - 1.0) < 1e-9
+        abs(abs(float(fv.matmul(normal, e1))) - 1.0) < 1e-9
         and abs(float(spec.local(origin)[0]) - x) < 1e-6
     )
 
@@ -369,7 +377,7 @@ def _end_names(step: str, sliver: SolidProduct, spec: BendSpec) -> frozenset[Nam
     found: set[Name] = set()
     for face, names in sliver.names.items():
         plane = _plane_of(face)
-        if plane is not None and abs(abs(float(plane[1] @ e1)) - 1.0) < 1e-9:
+        if plane is not None and abs(abs(float(fv.matmul(plane[1], e1))) - 1.0) < 1e-9:
             found |= {n for n in names if n != Name(step, "cut")}
     return frozenset(found)
 
@@ -398,7 +406,7 @@ def _extent(piece: SolidProduct, spec: BendSpec) -> float:
     corners = np.array(
         [[x, y, z] for x in (x0, x1) for y in (y0, y1) for z in (z0, z1)]
     )
-    along = corners @ spec.frame[0]
+    along = fv.matmul(corners, spec.frame[0])
     return float(along.max() - along.min())
 
 
@@ -429,7 +437,7 @@ def _bend(ctx: Context) -> Product:
         e1 = probe.frame[0]
     except DesignError as error:
         raise ctx.fail(error) from error
-    if any(abs(abs(float(b.frame[0] @ e1)) - 1.0) > 1e-9 for b in earlier):
+    if any(abs(abs(float(fv.matmul(b.frame[0], e1))) - 1.0) > 1e-9 for b in earlier):
         earlier, flat = (), source
     envelope, how = envelope_of(_flat_context(ctx, flat, source), flat.shape)
     face, thickness = _faces_of(probe.frame, position, envelope)
@@ -460,7 +468,7 @@ def _bend(ctx: Context) -> Product:
     specs = [this, *earlier]
     if len(specs) > 1:
         specs = [replace(s, hold=0.0) for s in specs]
-    specs.sort(key=lambda s: -float(np.asarray(s.position) @ e1))
+    specs.sort(key=lambda s: -float(fv.matmul(np.asarray(s.position), e1)))
     reach = (
         4.0 * envelope.diagonal
         + 4.0 * max(s.radius + s.thickness for s in specs)

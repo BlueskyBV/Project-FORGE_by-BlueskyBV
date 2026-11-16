@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 
 from forge_checks import rounds
@@ -95,7 +95,7 @@ def _turned_rims(
             beside = [
                 q
                 for q in section.pieces()
-                if q is not flat[0] and any(math.dist(p, rim) <= 1e-9 for p in q.ends())
+                if q is not flat[0] and any(fs.dist(p, rim) <= 1e-9 for p in q.ends())
             ]
             if len(beside) != 1:
                 raise OracleError(

@@ -28,6 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import vector as fv
 
 from ..classes import Tolerance, bracket_mutants
 from ..measure import FEWEST, Measurement, Probe
@@ -57,9 +58,9 @@ def measure(
         return measure_position(target, nominal, tolerance, probe)
     width = width_for(tolerance, float(probe.deflection.max(initial=0.0)))
     along = np.asarray(target.along, dtype=np.float64)
-    along /= float(np.linalg.norm(along))
+    along /= float(fv.norm(along))
     found = 0
-    value = float(np.dot(np.subtract(target.a.point, target.b.point), along))
+    value = float(fv.dot(np.subtract(target.a.point, target.b.point), along))
     uncertainty = 0.0
     # Both faces looked at before either is judged missing: a measurement taken again finer
     # where it looked looks at both again (generated part 2010: a wall's outer face all but
@@ -76,9 +77,9 @@ def measure(
             )
         found += len(window)
         normal = np.asarray(plane.normal, dtype=np.float64)
-        normal /= float(np.linalg.norm(normal))
-        value += sign * offset * float(normal @ along)
-        uncertainty += u * abs(float(normal @ along))
+        normal /= float(fv.norm(normal))
+        value += sign * offset * float(fv.matmul(normal, along))
+        uncertainty += u * abs(float(fv.matmul(normal, along)))
     return Measurement.of(
         value, uncertainty, found, f"two planes fitted to {found} built points"
     )

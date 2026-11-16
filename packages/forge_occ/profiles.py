@@ -30,6 +30,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from OCP.BRepAlgoAPI import BRepAlgoAPI_Common
 from OCP.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -134,25 +136,25 @@ def _sample(s: Segment, n: int) -> list[P2]:
         return [(s.a[0] + (s.b[0] - s.a[0]) * k / n, s.a[1] + (s.b[1] - s.a[1]) * k / n)
                 for k in range(n)]  # fmt: skip
     if isinstance(s, Circle):
-        return [(s.centre[0] + s.radius * math.cos(2 * math.pi * k / n),
-                 s.centre[1] + s.radius * math.sin(2 * math.pi * k / n)) for k in range(n)]  # fmt: skip
+        return [(s.centre[0] + s.radius * fs.cos(2 * math.pi * k / n),
+                 s.centre[1] + s.radius * fs.sin(2 * math.pi * k / n)) for k in range(n)]  # fmt: skip
     if isinstance(s, Arc):
         centre, radius = _circle_through(s.a, s.mid, s.b)
-        a0 = math.atan2(s.a[1] - centre[1], s.a[0] - centre[0])
-        am = math.atan2(s.mid[1] - centre[1], s.mid[0] - centre[0])
-        a1 = math.atan2(s.b[1] - centre[1], s.b[0] - centre[0])
+        a0 = fs.atan2(s.a[1] - centre[1], s.a[0] - centre[0])
+        am = fs.atan2(s.mid[1] - centre[1], s.mid[0] - centre[0])
+        a1 = fs.atan2(s.b[1] - centre[1], s.b[0] - centre[0])
         sweep = (a1 - a0) % (2 * math.pi)
         if (am - a0) % (2 * math.pi) > sweep:  # it goes the other way round
             sweep -= 2 * math.pi
-        return [(centre[0] + radius * math.cos(a0 + sweep * k / n),
-                 centre[1] + radius * math.sin(a0 + sweep * k / n)) for k in range(n)]  # fmt: skip
+        return [(centre[0] + radius * fs.cos(a0 + sweep * k / n),
+                 centre[1] + radius * fs.sin(a0 + sweep * k / n)) for k in range(n)]  # fmt: skip
     if isinstance(s, Bezier):
         p = np.asarray(s.poles, dtype=np.float64)
         out = []
         for k in range(n):
             t = k / n
-            q = ((1 - t) ** 3 * p[0] + 3 * (1 - t) ** 2 * t * p[1] + 3 * (1 - t) * t * t * p[2]
-                 + t**3 * p[3])  # fmt: skip
+            q = (fv.cube(1 - t) * p[0] + 3 * fv.sq(1 - t) * t * p[1] + 3 * (1 - t) * t * t * p[2]
+                 + t * t * t * p[3])  # fmt: skip
             out.append((float(q[0]), float(q[1])))
         return out
     lo, hi = s.span
@@ -170,7 +172,7 @@ def _circle_through(a: P2, b: P2, c: P2) -> tuple[P2, float]:
           + (cx * cx + cy * cy) * (ay - by)) / d  # fmt: skip
     uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx)
           + (cx * cx + cy * cy) * (bx - ax)) / d  # fmt: skip
-    return (ux, uy), math.hypot(ax - ux, ay - uy)
+    return (ux, uy), fs.hypot(ax - ux, ay - uy)
 
 
 def _reversed(outline: Sequence[Segment]) -> list[Segment]:
@@ -193,14 +195,14 @@ def _reversed(outline: Sequence[Segment]) -> list[Segment]:
 def _closed(outline: Sequence[Segment]) -> list[Segment]:
     """The outline with its zero-length lines taken out, checked to close."""
     kept = [
-        s for s in outline if not (isinstance(s, Line) and math.dist(s.a, s.b) <= SAME)
+        s for s in outline if not (isinstance(s, Line) and fs.dist(s.a, s.b) <= SAME)
     ]
     if not kept:
         raise DesignError("an outline with nothing in it")
     for s, t in zip(kept, kept[1:] + kept[:1], strict=True):
-        if math.dist(_end(s), _start(t)) > 1e-7:
+        if fs.dist(_end(s), _start(t)) > 1e-7:
             raise OperationError(
-                "an outline that doesn't close", gap=math.dist(_end(s), _start(t))
+                "an outline that doesn't close", gap=fs.dist(_end(s), _start(t))
             )
     return kept
 
@@ -324,7 +326,7 @@ def _arc(centre: P2, radius: float, a0: float, a1: float) -> Arc:
     mid = (a0 + a1) / 2.0
 
     def at(t: float) -> P2:
-        return centre[0] + radius * math.cos(t), centre[1] + radius * math.sin(t)
+        return centre[0] + radius * fs.cos(t), centre[1] + radius * fs.sin(t)
 
     return Arc(at(a0), at(mid), at(a1))
 
@@ -416,7 +418,7 @@ def slot(centre: P2, length: float, width: float, rotation: float = 0.0) -> Prof
     half = length / 2.0 - radius
     if half <= SAME:
         return Profile((Circle(centre, radius),))
-    d = (math.cos(rotation), math.sin(rotation))
+    d = (fs.cos(rotation), fs.sin(rotation))
     n = (-d[1], d[0])
     cu, cv = centre
     right = (cu + d[0] * half, cv + d[1] * half)
@@ -444,7 +446,7 @@ def polygon(
         raise DesignError(
             "a polygon needs a size", circumscribed_diameter=circumscribed_diameter
         )
-    apothem = big * math.cos(math.pi / sides)
+    apothem = big * fs.cos(math.pi / sides)
     if corner_radius < 0.0 or corner_radius >= apothem:
         raise DesignError(
             "a polygon's corner radius is under its inradius",
@@ -452,11 +454,9 @@ def polygon(
         )
     cu, cv = centre
     inner = apothem - corner_radius
-    reach = inner / math.cos(math.pi / sides)
+    reach = inner / fs.cos(math.pi / sides)
     corner_angles = [rotation + (2 * i + 1) * math.pi / sides for i in range(sides)]
-    corners = [
-        (cu + reach * math.cos(a), cv + reach * math.sin(a)) for a in corner_angles
-    ]
+    corners = [(cu + reach * fs.cos(a), cv + reach * fs.sin(a)) for a in corner_angles]
     if corner_radius <= 0.0:
         return Profile(
             tuple(
@@ -483,7 +483,7 @@ def sketch(
         raise DesignError("a sketch's points are [u, v], or [u, v, corner radius]")
     corners = [(float(p[0]), float(p[1])) for p in points]
     radii = [float(p[2]) if len(p) > 2 else corner_radius for p in points]
-    if len(corners) > 3 and math.dist(corners[0], corners[-1]) < 1e-9:
+    if len(corners) > 3 and fs.dist(corners[0], corners[-1]) < 1e-9:
         corners, radii = corners[:-1], radii[:-1]
     n = len(corners)
     if n < 3:
@@ -508,22 +508,22 @@ def sketch(
         before = np.asarray(corners[i - 1])
         after = np.asarray(corners[(i + 1) % n])
         a, b = before - here, after - here
-        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        la, lb = float(fv.norm(a)), float(fv.norm(b))
         r = radii[i]
         point = (float(here[0]), float(here[1]))
         if r <= 0.0 or la < 1e-12 or lb < 1e-12:
             joints.append((point, point, None))
             continue
         a, b = a / la, b / lb
-        angle = math.acos(float(np.clip(np.dot(a, b), -1.0, 1.0)))
+        angle = fs.acos(float(np.clip(fv.dot(a, b), -1.0, 1.0)))
         if angle < 1e-6 or angle > math.pi - 1e-6:
             joints.append((point, point, None))
             continue
-        cut = min(r / math.tan(angle / 2.0), la / 2.0, lb / 2.0)
-        r = cut * math.tan(angle / 2.0)
+        cut = min(r / fs.tan(angle / 2.0), la / 2.0, lb / 2.0)
+        r = cut * fs.tan(angle / 2.0)
         start, end = here + a * cut, here + b * cut
-        bisector = (a + b) / float(np.linalg.norm(a + b))
-        centre = here + bisector * (r / math.sin(angle / 2.0))
+        bisector = (a + b) / float(fv.norm(a + b))
+        centre = here + bisector * (r / fs.sin(angle / 2.0))
         middle = centre - bisector * r
         s = (float(start[0]), float(start[1]))
         e = (float(end[0]), float(end[1]))
@@ -546,17 +546,17 @@ def gear(
         raise DesignError("a spur gear needs at least 6 teeth and a positive module",
                           teeth=teeth, module=module)  # fmt: skip
     pitch = module * teeth / 2.0
-    base = pitch * math.cos(pressure_angle)
+    base = pitch * fs.cos(pressure_angle)
     tip = pitch + module
     root = max(pitch - 1.25 * module, 0.2 * pitch)
     start = max(base, root)
     half_at_pitch = math.pi / (2.0 * teeth)
 
     def involute(phi: float) -> float:
-        return math.tan(phi) - phi
+        return fs.tan(phi) - phi
 
     def half_angle(r: float) -> float:
-        phi = math.acos(min(1.0, base / r))
+        phi = fs.acos(min(1.0, base / r))
         return half_at_pitch + involute(pressure_angle) - involute(phi)
 
     # Where the two flanks meet, if before the tip: the tooth ends in a point there.
@@ -570,11 +570,11 @@ def gear(
 
     def at(r: float, angle: float) -> P2:
         angle += rotation
-        return centre[0] + r * math.cos(angle), centre[1] + r * math.sin(angle)
+        return centre[0] + r * fs.cos(angle), centre[1] + r * fs.sin(angle)
 
     # The flank by its roll angle t (r = base·√(1 + t²)), in which the involute is smooth.
-    t_lo = math.sqrt(max((start / base) ** 2 - 1.0, 0.0))
-    t_hi = math.sqrt(max((top / base) ** 2 - 1.0, 0.0))
+    t_lo = math.sqrt(max(fv.sq(start / base) - 1.0, 0.0))
+    t_hi = math.sqrt(max(fv.sq(top / base) - 1.0, 0.0))
 
     def flank(c: float, sign: float, upward: bool) -> Fitted:
         def curve(t: float) -> P2:
@@ -595,7 +595,7 @@ def gear(
         if root < start:
             outline.append(Line(at(root, c - half_angle(start)), _start(up)))
         outline.append(up)
-        if math.dist(_end(up), _start(down)) > SAME:
+        if fs.dist(_end(up), _start(down)) > SAME:
             outline.append(Line(_end(up), _start(down)))
         outline.append(down)
         if root < start:
@@ -603,7 +603,7 @@ def gear(
     closed: list[Segment] = []
     for s, t in zip(outline, outline[1:] + outline[:1], strict=True):
         closed.append(s)
-        if math.dist(_end(s), _start(t)) > SAME:
+        if fs.dist(_end(s), _start(t)) > SAME:
             closed.append(Line(_end(s), _start(t)))
     return Profile(tuple(closed))
 
@@ -632,8 +632,8 @@ def outline(points: Sequence[Sequence[float]]) -> Profile:
             Line(here, to) if len(p) == 2 else Arc(here, (float(p[2]), float(p[3])), to)
         )
         here = to
-    if math.dist(here, start) > SAME:
-        raise DesignError("an outline ends where it starts", gap=math.dist(here, start))
+    if fs.dist(here, start) > SAME:
+        raise DesignError("an outline ends where it starts", gap=fs.dist(here, start))
     return Profile(tuple(pieces))
 
 
@@ -646,9 +646,9 @@ def green_area(pieces: Sequence[Segment]) -> float:
             found += (ax * by - bx * ay) / 2
         elif isinstance(s, Arc):
             (cx, cy), r = _circle_through(s.a, s.mid, s.b)
-            a0 = math.atan2(ay - cy, ax - cx)
-            am = math.atan2(s.mid[1] - cy, s.mid[0] - cx)
-            a1 = math.atan2(by - cy, bx - cx)
+            a0 = fs.atan2(ay - cy, ax - cx)
+            am = fs.atan2(s.mid[1] - cy, s.mid[0] - cx)
+            a1 = fs.atan2(by - cy, bx - cx)
             sweep = (a1 - a0) % (2 * math.pi)
             if (am - a0) % (2 * math.pi) > sweep:  # it goes the other way round
                 sweep -= 2 * math.pi
@@ -696,9 +696,9 @@ def v_extremes(profile: Profile) -> tuple[float, float]:
         elif isinstance(s, Arc):
             (cx, cy), r = _circle_through(s.a, s.mid, s.b)
             points = [s.a, s.b]
-            a0 = math.atan2(s.a[1] - cy, s.a[0] - cx)
-            am = math.atan2(s.mid[1] - cy, s.mid[0] - cx)
-            a1 = math.atan2(s.b[1] - cy, s.b[0] - cx)
+            a0 = fs.atan2(s.a[1] - cy, s.a[0] - cx)
+            am = fs.atan2(s.mid[1] - cy, s.mid[0] - cx)
+            a1 = fs.atan2(s.b[1] - cy, s.b[0] - cx)
             sweep = (a1 - a0) % (2 * math.pi)
             forward = (am - a0) % (2 * math.pi) <= sweep
             for angle, p in ((math.pi / 2, (cx, cy + r)), (-math.pi / 2, (cx, cy - r))):

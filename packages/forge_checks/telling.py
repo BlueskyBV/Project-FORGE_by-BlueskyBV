@@ -28,6 +28,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, replace
 
 import numpy as np
+from forge_numeric import vector as fv
 from forge_spec.draft import Item, PartSpec
 from numpy.typing import NDArray
 
@@ -100,11 +101,11 @@ def _spread(points: Array, keep: int) -> NDArray[np.int64]:
     if len(points) <= keep:
         return np.arange(len(points))
     chosen = [0]
-    gap = np.linalg.norm(points - points[0], axis=1)
+    gap = fv.norm(points - points[0], axis=1)
     for _ in range(keep - 1):
         k = int(np.argmax(gap))
         chosen.append(k)
-        gap = np.minimum(gap, np.linalg.norm(points - points[k], axis=1))
+        gap = np.minimum(gap, fv.norm(points - points[k], axis=1))
     return np.array(chosen, dtype=np.int64)
 
 
@@ -119,7 +120,7 @@ def tells(
     """For each other choice that can be made and makes a different shape, the points that tell the spec's from it; or that none can."""
     found: list[Tells] = []
     untold: list[str] = []
-    rng = np.random.default_rng(_seed(item.id, field))
+    rng = fv.Draws(_seed(item.id, field))
     for other in alternatives:
         changed = _with(spec, other.item)
         try:

@@ -38,6 +38,8 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from ..classes import Tolerance, bracket_mutants
@@ -61,7 +63,7 @@ class Annulus:
 
 def _band(window: Window, distance: Array, lean: float) -> tuple[float, float]:
     """The least and greatest distance a surface may be from the line or point, given its built points' (``distance``): each within its deflection, over the cosine of the most its normal may lean from the way the distance is measured (``lean``, a sine)."""
-    off = window.deflection / math.sqrt(1 - min(lean, 0.5) ** 2)
+    off = window.deflection / math.sqrt(1 - fv.sq(min(lean, 0.5)))
     return float((distance - off).min()), float((distance + off).max())
 
 
@@ -100,13 +102,14 @@ def _rounds(outer: Round, inner: Round, width: float, probe: Probe) -> Measureme
     def distance(window: Window) -> Array:
         d = window.points - a.centre
         return np.asarray(
-            np.linalg.norm(d - np.outer(d @ a.axis, a.axis), axis=1), dtype=np.float64
+            fv.norm(d - np.outer(fv.matmul(d, a.axis), a.axis), axis=1),
+            dtype=np.float64,
         )
 
     # How far each surface's own axis may be from the outside's fitted one, any way across it.
-    off_a = math.hypot(a.fit.u_centre[0], a.fit.u_centre[1])
+    off_a = fs.hypot(a.fit.u_centre[0], a.fit.u_centre[1])
     gap = b.centre - a.centre
-    off_b = float(np.linalg.norm(gap - (gap @ a.axis) * a.axis)) + math.hypot(
+    off_b = float(fv.norm(gap - (fv.matmul(gap, a.axis)) * a.axis)) + fs.hypot(
         b.fit.u_centre[0], b.fit.u_centre[1]
     )
     outside = _band(a.window, distance(a.window), off_a / a.fit.radius)
@@ -129,14 +132,12 @@ def _balls(outer: Ball, inner: Ball, width: float, probe: Probe) -> Measurement:
     centre = np.asarray(a.fit.centre, dtype=np.float64)
 
     def distance(window: Window) -> Array:
-        return np.asarray(
-            np.linalg.norm(window.points - centre, axis=1), dtype=np.float64
-        )
+        return np.asarray(fv.norm(window.points - centre, axis=1), dtype=np.float64)
 
     # How far each surface's own centre may be from the outside's fitted one.
-    off_a = float(np.linalg.norm(a.fit.u_centre))
-    off_b = float(np.linalg.norm(np.asarray(b.fit.centre) - centre)) + float(
-        np.linalg.norm(b.fit.u_centre)
+    off_a = float(fv.norm(a.fit.u_centre))
+    off_b = float(fv.norm(np.asarray(b.fit.centre) - centre)) + float(
+        fv.norm(b.fit.u_centre)
     )
     outside = _band(a.window, distance(a.window), off_a / a.fit.radius)
     hollow = _band(b.window, distance(b.window), off_b / b.fit.radius)

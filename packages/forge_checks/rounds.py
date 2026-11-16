@@ -48,6 +48,8 @@ from enum import StrEnum
 from itertools import pairwise
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
 from .csg import Inter, Minus, Node, Union
@@ -128,7 +130,7 @@ Boundary = Line2 | Circle2
 
 
 def _unit2(x: float, y: float) -> Point:
-    length = math.hypot(x, y)
+    length = fs.hypot(x, y)
     if not (math.isfinite(length) and length > 0):
         raise ValueError(f"not a direction: {(x, y)}")
     return (x / length, y / length)
@@ -198,7 +200,7 @@ def section(k: Point, b1: Boundary, b2: Boundary, size: float, fillet: bool) -> 
     # them, are no farther from the corner than they (a closing point where
     # two tangents meet far off is only where the polygon is closed, out in
     # the air).
-    reach = max(math.hypot(x - k[0], y - k[1]) for x, y in (t1, t2))
+    reach = max(fs.hypot(x - k[0], y - k[1]) for x, y in (t1, t2))
     return Section(ring, circle, reach)
 
 
@@ -258,12 +260,12 @@ def _step(b: Boundary, other: Boundary, k: Point, size: float) -> Point:
             f"a {size:g} mm chamfer is longer than half the ball round"
         )
     ox, oy = b.centre
-    angle = math.atan2(k[1] - oy, k[0] - ox)
+    angle = fs.atan2(k[1] - oy, k[0] - ox)
     # Which way round the circle the region's edge goes from the corner.
     tangent = (-(k[1] - oy), k[0] - ox)
     turn = 1.0 if tangent[0] * f[0] + tangent[1] * f[1] > 0 else -1.0
     a = angle + turn * size / b.radius
-    return (ox + b.radius * math.cos(a), oy + b.radius * math.sin(a))
+    return (ox + b.radius * fs.cos(a), oy + b.radius * fs.sin(a))
 
 
 def _closing(k: Point, b1: Boundary, b2: Boundary, p1: Point, p2: Point) -> Point:
@@ -307,9 +309,9 @@ def _anticlockwise(corners: Sequence[Point]) -> tuple[Point, ...]:
     """The corners anticlockwise, with coincident ones (a corner that closes onto a touching point) dropped."""
     found: list[Point] = []
     for c in corners:
-        if not found or math.dist(c, found[-1]) > 1e-12:
+        if not found or fs.dist(c, found[-1]) > 1e-12:
             found.append(c)
-    if len(found) > 1 and math.dist(found[0], found[-1]) <= 1e-12:
+    if len(found) > 1 and fs.dist(found[0], found[-1]) <= 1e-12:
         found.pop()
     area = sum(
         found[i][0] * found[(i + 1) % len(found)][1]
@@ -377,7 +379,7 @@ class RoundEdge:
     def at(self, s: float) -> tuple[Array, Array, Array]:
         """The edge's point ``s`` round it (radians from ``start``), and the section's axes there (out, along the axis)."""
         a = self.start + s
-        out = math.cos(a) * np.asarray(self.u) + math.sin(a) * np.asarray(self.v)
+        out = fs.cos(a) * np.asarray(self.u) + fs.sin(a) * np.asarray(self.v)
         w = np.asarray(self.axis)
         return np.asarray(self.centre) + self.rho * out + self.z * w, out, w
 
@@ -443,7 +445,7 @@ def _quadrants(edge: Edge, s: float) -> tuple[Array, Array]:
     n1 = m1[0] * e1 + m1[1] * e2
     n2 = m2[0] * e1 + m2[1] * e2
     ways = np.array([-(n1 + n2), n1 + n2, n1 - n2, n2 - n1])
-    return point, ways / np.linalg.norm(ways, axis=1)[:, None]
+    return point, ways / fv.norm(ways, axis=1)[:, None]
 
 
 def _what(held: Held, edge: Edge, at: Sequence[float], fill: bool) -> list[str]:
@@ -714,7 +716,7 @@ def make(
     # Each stop that isn't clean, or that another run stops at too (two rounded edges meeting at a corner).
     for at, (point, radius, clean) in enumerate(ends):
         shared = any(
-            j != at and float(np.linalg.norm(point - other)) <= 1e-9
+            j != at and float(fv.norm(point - other)) <= 1e-9
             for j, (other, _, _) in enumerate(ends)
         )
         if not clean or shared:
@@ -766,9 +768,9 @@ def _turned(frame: Frame, corners: tuple[Point, ...]) -> Node:
     found: list[Point] = []
     for x, z in corners:
         q = (0.0 if abs(x) <= 1e-9 else x, z)
-        if not found or math.dist(q, found[-1]) > 1e-12:
+        if not found or fs.dist(q, found[-1]) > 1e-12:
             found.append(q)
-    if len(found) > 1 and math.dist(found[0], found[-1]) <= 1e-12:
+    if len(found) > 1 and fs.dist(found[0], found[-1]) <= 1e-12:
         found.pop()
     turning = [
         found[k]
@@ -795,7 +797,7 @@ def _wedge(edge: RoundEdge, a0: float, a1: float) -> tuple[Node, ...]:
             Union((Inter(_wedge(edge, a0, middle)), Inter(_wedge(edge, middle, a1)))),
         )
     for angle, sign in ((a0, 1.0), (a1, -1.0)):
-        across = -math.sin(angle) * u + math.cos(angle) * v
+        across = -fs.sin(angle) * u + fs.cos(angle) * v
         n = -sign * across
         found.append(Halfspace(edge.centre, (float(n[0]), float(n[1]), float(n[2]))))
     return tuple(found)
@@ -881,8 +883,8 @@ def rounding_reach(
         d1 = _unit2(t1[0] - centre[0], t1[1] - centre[1])
         d2 = _unit2(t2[0] - centre[0], t2[1] - centre[1])
         middle = _unit2(d1[0] + d2[0], d1[1] + d2[1])
-        half = math.acos(max(-1.0, min(1.0, d1[0] * middle[0] + d1[1] * middle[1])))
-        far = 2 * (size + thickness) / max(math.cos(half), 1e-6)
+        half = fs.acos(max(-1.0, min(1.0, d1[0] * middle[0] + d1[1] * middle[1])))
+        far = 2 * (size + thickness) / max(fs.cos(half), 1e-6)
         sector = _anticlockwise(
             [
                 centre,

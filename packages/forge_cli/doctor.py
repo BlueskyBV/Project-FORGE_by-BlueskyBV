@@ -116,8 +116,8 @@ PROBE_NAMES = ("plate.z_max", "plate.x_min", "mount.bore", "mount.counterbore_wa
 def probe_volume() -> float:
     """The probe's volume worked out by hand (mm³)."""
     plate = 60.0 * 40.0 * 6.0
-    hole = math.pi * 3.0**2 * 3.0 + math.pi * 5.5**2 * 3.0
-    rounded = 40.0 * 1.0**2 * (1.0 - math.pi / 4.0)
+    hole = math.pi * (3.0 * 3.0) * 3.0 + math.pi * (5.5 * 5.5) * 3.0
+    rounded = 40.0 * (1.0 * 1.0) * (1.0 - math.pi / 4.0)
     return plate - hole - rounded
 
 

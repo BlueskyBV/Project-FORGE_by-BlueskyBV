@@ -22,6 +22,11 @@ macOS on ARM on 199. The causes, each found by switching it alone:
   `hypot`): NumPy's SIMD paths (AVX-512's differ from AVX2's for
   `arctan2`, `cbrt`, `exp`, `log`, `arccos`) and each operating system's C
   library (glibc, Microsoft's, Apple's) round their last bit their own way.
+- **Fused multiply-adds in compiled C**: Clang (macOS) fuses `a * b + c`
+  into one rounding unless told not to, and Microsoft's compiler does on
+  ARM, so NumPy's `einsum`, `interp` and complex arithmetic, and CPython's
+  complex numbers, `math.hypot` and `math.dist`, may round otherwise there;
+  and `x ** y` is the C library's `pow`.
 
 IEEE 754 fixes `+ - * /` and `sqrt` exactly; NumPy's elementwise arithmetic
 and its sums (its own pairwise addition, scalar C) are the same everywhere.
@@ -33,31 +38,51 @@ Forge fixes,** through `forge_numeric`, an L0 package (standard library and
 NumPy):
 
 - `forge_numeric.scalar`: `sin`, `cos`, `sincos`, `tan`, `atan`, `atan2`,
-  `asin`, `acos`, `exp`, `log`, `cbrt` on floats, ported from FreeBSD's msun
-  (Sun's fdlibm), each under one ulp (`tan` two), raising where `math` does;
-  arguments past 2^20 pi/2 reduced exactly with integers.
+  `asin`, `acos`, `exp`, `expm1`, `log`, `log1p`, `cbrt` on floats, ported
+  from FreeBSD's msun (Sun's fdlibm), each under one ulp (`tan` two),
+  raising where `math` does; arguments past 2^20 pi/2 reduced exactly with
+  integers; `decade` (`floor(log10(x))` as the number is written, exactly);
+  `sq` and `cube` for `**`. It imports no NumPy, so the standard-library
+  packages use it too.
 - `forge_numeric.vector`: the same on NumPy arrays, bit for bit the scalar
-  ones; `hypot` as `sqrt(x*x + y*y)` (CPython's own `math.hypot` past
-  1e150 or below 1e-150); and products and small linear algebra in a fixed
+  ones; `hypot` by CPython's own algorithm (the coordinates scaled by a
+  power of two, the squares summed exactly in two parts, the root
+  corrected once: correctly rounded but in rare cases), with Dekker's exact
+  products for its fused ones, and on numbers `hypot` and `dist` of any
+  number of coordinates (the same bits as CPython's on Linux); random draws
+  through `Draws` (NumPy's PCG64, its uniform draws unfused); and products
+  and small linear algebra in a fixed
   order: `dot`, `norm`, `unit`, `matmul`, `solve` (Gaussian elimination
   with partial pivoting), `det`, `inv`, `eigh` (cyclic Jacobi),
   `cond_symmetric`, `real_roots` (isolated between the derivative's roots,
-  bisected to the last bit).
+  bisected to the last bit), `roots` (complex, Aberth and Ehrlich's
+  iteration, for `numpy.roots`), `interp` (`numpy.interp`'s formula, each
+  operation rounded) and `normal` (normal draws from uniform ones, Box and
+  Muller).
 - **A compiled twin, for speed:** `native/forge_numeric_native`, a Rust
   library with a C interface (Rust never fuses or reorders floating-point
-  operations), the vector functions operation for operation. It is loaded
-  with `ctypes` from `packages/forge_numeric/_native/<platform>/`, where the
+  operations), the vector functions and the matrix product with a short
+  contracted axis, operation for operation, and `hypot` of two or three
+  numbers for the scalar side; its array `hypot` works two lanes at once
+  (four where an x86-64 processor has AVX2: the same correctly rounded
+  operations, no fused ones). It is opened
+  with `ctypes`, without NumPy (`_core`), from
+  `packages/forge_numeric/_native/<platform>/`, where the
   libraries CI builds for Linux x86-64 and ARM, Windows x86-64 and macOS
   ARM (`native.yml`) are committed: one file per platform serves every
   Python (3.14, 3.15, the free-threaded 3.14t), and the laptop gets it with
   the project, with no install step. It is used only if its interface
-  version matches, its compiled-in source digest is the source's, and it
-  reproduces the NumPy twin on fixed inputs at load; otherwise NumPy
-  computes the same bits more slowly.
-- **The rule's guard:** no V2 package calls `math`'s or NumPy's
-  elementary functions, `@`, `dot`, `einsum`, `linalg`, `hypot`, `**` with
-  a float exponent, or a random draw other than uniform ones
-  (`tests/test_v2_architecture.py`).
+  version matches, its compiled-in source digest is the source's, and what
+  each side takes from it reproduces that side's own long way on fixed
+  inputs at load (the arrays NumPy's twin, the numbers the Python);
+  otherwise NumPy and Python compute the same bits more slowly.
+- **The rule's guard:** no V2 code (its packages, and its modules in V1's)
+  calls `math`'s or NumPy's elementary functions, `@`, `dot`, `einsum`,
+  `linalg`, `fft`, `hypot` (NumPy's or CPython's), `math.dist`, `interp`,
+  `roots`, `**` other than whole numbers' or two's whole powers, `pow`,
+  `cmath`, `statistics`, complex numbers, `np.random` (only `Draws`), or a
+  random draw by another law than the uniform one
+  (`tests/test_v2_architecture.py`, `EveryNumberIsTheSameOnEveryMachine`).
 - **The proof:** golden digests in `tests/test_v2_numeric.py` that every
   machine must reproduce bit for bit, run by `trust-core.yml` on Linux
   x86-64 and ARM, Windows and macOS on every push; and the fingerprints of

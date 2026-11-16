@@ -20,6 +20,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 
 from ..errors import AfterCheckError, DesignError
 from ..geom import Motion, rotation_about, unit
@@ -66,9 +67,7 @@ def _check_placed(original: Any, copy: Any, motion: Motion) -> None:
     p, q = (BRep_Tool.Pnt_s(TopoDS.Vertex(v[0])) for v in (before, after))
     want = motion.point((p.X(), p.Y(), p.Z()))
     found = np.array([q.X(), q.Y(), q.Z()])
-    if float(np.linalg.norm(found - want)) > PLACED * (
-        1.0 + float(np.linalg.norm(want))
-    ):
+    if float(fv.norm(found - want)) > PLACED * (1.0 + float(fv.norm(want))):
         raise AfterCheckError("the operation did not do what it should: a copy is not where its motion puts it",
                               expected=[round(float(c), 9) for c in want], found=[round(float(c), 9) for c in found])  # fmt: skip
 
@@ -139,7 +138,7 @@ def _pattern_circular(ctx: Context) -> Product:
         copies.append(
             moved(
                 source,
-                Motion.of(rotation, origin - rotation @ origin),
+                Motion.of(rotation, origin - fv.matmul(rotation, origin)),
                 copy_offset=i * stride,
             )
         )
@@ -153,7 +152,7 @@ def _mirror(ctx: Context) -> Product:
     except DesignError as error:
         raise ctx.fail(error) from error
     reflection = np.eye(3) - 2.0 * np.outer(n, n)
-    motion = Motion.of(reflection, 2.0 * float(point @ n) * n)
+    motion = Motion.of(reflection, 2.0 * float(fv.matmul(point, n)) * n)
     source = ctx.solid(0)
     if not ctx.flag("keep_original", True):
         return moved(source, motion)
@@ -173,7 +172,7 @@ def _transform(ctx: Context) -> Product:
         pivot = np.asarray(
             ctx.vector("rotate_origin", (0.0, 0.0, 0.0)), dtype=np.float64
         )
-        translation = pivot - rotation @ pivot + translate
+        translation = pivot - fv.matmul(rotation, pivot) + translate
     else:
         rotation, translation = np.eye(3), translate
     return moved(ctx.solid(0), Motion.of(rotation, translation))

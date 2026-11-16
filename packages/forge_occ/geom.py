@@ -18,12 +18,13 @@ The conventions are V1's, read as definitions (docs/V2-stage3.md, 7.2):
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCP.gp import gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
@@ -57,7 +58,7 @@ def unit(vector: Vector, what: str = "a direction") -> Array:
         raise DesignError(
             f"{what} must be three finite numbers", value=list(map(float, v.ravel()))
         )
-    length = float(np.linalg.norm(v))
+    length = float(fv.norm(v))
     if length < NO_LENGTH:
         raise DesignError(f"{what} has no length", value=v.tolist())
     return v / length
@@ -72,7 +73,9 @@ def rotation_about(axis: Vector, angle: float) -> Array:
     x, y, z = (float(c) for c in unit(axis, "a rotation's axis"))
     cross = np.array([[0.0, -z, y], [z, 0.0, -x], [-y, x, 0.0]])
     return np.asarray(
-        np.eye(3) + math.sin(angle) * cross + (1.0 - math.cos(angle)) * (cross @ cross),
+        np.eye(3)
+        + fs.sin(angle) * cross
+        + (1.0 - fs.cos(angle)) * (fv.matmul(cross, cross)),
         dtype=np.float64,
     )
 
@@ -100,7 +103,7 @@ class Frame:
         helper = np.zeros(3)
         helper[int(np.argmin(np.abs(z)))] = 1.0
         x = np.cross(helper, z)
-        x = x / np.linalg.norm(x)
+        x = x / fv.norm(x)
         y = np.cross(z, x)
         o = np.asarray(origin, dtype=np.float64)
         return cls(_tuple(o), _tuple(x), _tuple(y), _tuple(z))
@@ -126,9 +129,10 @@ class Frame:
 
     def at(self, u: float, v: float, w: float = 0.0) -> Array:
         """The world point at local (u, v, w)."""
-        return np.asarray(self.origin, dtype=np.float64) + self.matrix @ np.array(
-            [u, v, w], dtype=np.float64
+        point: Array = np.asarray(self.origin, dtype=np.float64) + fv.matmul(
+            self.matrix, np.array([u, v, w], dtype=np.float64)
         )
+        return point
 
     def moved(self, by: Vector) -> Frame:
         o = np.asarray(self.origin, dtype=np.float64) + np.asarray(by, dtype=np.float64)
@@ -151,9 +155,9 @@ class Motion:
     @classmethod
     def of(cls, rotation: Array, translation: Vector = (0.0, 0.0, 0.0)) -> Motion:
         r = np.asarray(rotation, dtype=np.float64)
-        if r.shape != (3, 3) or abs(abs(np.linalg.det(r)) - 1.0) > 1e-9:
+        if r.shape != (3, 3) or abs(abs(fv.det(r)) - 1.0) > 1e-9:
             raise DesignError("a motion's matrix must be a rotation or a reflection")
-        if not np.allclose(r @ r.T, np.eye(3), atol=1e-9):
+        if not np.allclose(fv.matmul(r, r.T), np.eye(3), atol=1e-9):
             raise DesignError("a motion's matrix must be orthogonal")
         t = np.asarray(translation, dtype=np.float64)
         return cls(tuple(float(c) for c in r.ravel()), _tuple(t))
@@ -168,21 +172,24 @@ class Motion:
 
     @property
     def reflects(self) -> bool:
-        return bool(np.linalg.det(self.matrix) < 0.0)
+        return bool(fv.det(self.matrix) < 0.0)
 
     def then(self, other: Motion) -> Motion:
         """This motion, then ``other``."""
-        m = other.matrix @ self.matrix
-        t = other.matrix @ np.asarray(self.translation) + np.asarray(other.translation)
+        m = fv.matmul(other.matrix, self.matrix)
+        t = fv.matmul(other.matrix, np.asarray(self.translation)) + np.asarray(
+            other.translation
+        )
         return Motion.of(m, t)
 
     def point(self, p: Vector) -> Array:
         return np.asarray(
-            self.matrix @ np.asarray(p, dtype=np.float64) + np.asarray(self.translation)
+            fv.matmul(self.matrix, np.asarray(p, dtype=np.float64))
+            + np.asarray(self.translation)
         )
 
     def direction(self, d: Vector) -> Array:
-        return np.asarray(self.matrix @ np.asarray(d, dtype=np.float64))
+        return np.asarray(fv.matmul(self.matrix, np.asarray(d, dtype=np.float64)))
 
     def trsf(self) -> gp_Trsf:
         """The motion as OpenCascade's ``gp_Trsf`` (a reflection is the reflection's own form)."""
@@ -192,11 +199,11 @@ class Motion:
             if self.reflects:
                 # gp_Trsf takes only rotations in SetValues; a reflection is a
                 # mirror about the plane whose normal the matrix negates, then the rest.
-                eigen, vectors = np.linalg.eigh((m + m.T) / 2.0)
+                eigen, vectors = fv.eigh((m + m.T) / 2.0)
                 normal = vectors[:, int(np.argmin(eigen))]
                 mirror = gp_Trsf()
                 mirror.SetMirror(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(*normal)))
-                rest = m @ (np.eye(3) - 2.0 * np.outer(normal, normal))
+                rest = fv.matmul(m, np.eye(3) - 2.0 * np.outer(normal, normal))
                 rotation = gp_Trsf()
                 rotation.SetValues(
                     rest[0, 0], rest[0, 1], rest[0, 2], t[0],

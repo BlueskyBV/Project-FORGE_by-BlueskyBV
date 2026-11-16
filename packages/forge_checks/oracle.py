@@ -68,6 +68,8 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
 import numpy as np
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_spec.draft import (
     EdgeSet,
     Item,
@@ -106,7 +108,6 @@ from .place import (
     body_edges,
     direction_of,
     section_of,
-    unit,
 )
 from .shapes import (
     INSIDE,
@@ -228,7 +229,7 @@ def probes(normals: Sequence[NDArray[np.float64]]) -> Array:
                 through = [
                     c for c, d in zip(circles, dots, strict=True) if abs(d) <= _THROUGH
                 ]
-                apart = [math.asin(min(abs(d), 1.0)) for d in dots if abs(d) > _THROUGH]
+                apart = [fs.asin(min(abs(d), 1.0)) for d in dots if abs(d) > _THROUGH]
                 step = 0.5 * min([*apart, 2e-3])
                 tangents: list[Vec3] = []
                 for c in through:
@@ -237,17 +238,17 @@ def probes(normals: Sequence[NDArray[np.float64]]) -> Array:
                 e1 = tangents[0]
                 e2 = _cross3(corner, e1)
                 angles = sorted(
-                    (math.atan2(_dot3(t, e2), _dot3(t, e1)) % (2 * math.pi), k)
+                    (fs.atan2(_dot3(t, e2), _dot3(t, e1)) % (2 * math.pi), k)
                     for k, t in enumerate(tangents)
                 )
-                near, out = math.cos(step), math.sin(step)
+                near, out = fs.cos(step), fs.sin(step)
                 for k in range(len(angles)):
                     a0 = angles[k][0]
                     a1 = angles[(k + 1) % len(angles)][0] + (
                         2 * math.pi if k + 1 == len(angles) else 0.0
                     )
                     middle = (a0 + a1) / 2
-                    cm, sm = math.cos(middle), math.sin(middle)
+                    cm, sm = fs.cos(middle), fs.sin(middle)
                     b = (
                         cm * e1[0] + sm * e2[0],
                         cm * e1[1] + sm * e2[1],
@@ -444,7 +445,7 @@ class Oracle:
                     (s * m for s, m in zip(signs, facets, strict=True)), np.zeros(3)
                 )
                 at.append(points[p])
-                nudged.append(way / np.linalg.norm(way))
+                nudged.append(way / fv.norm(way))
                 owner.append(n)
         more_inner, more_outer, more_known, _ = self._held_once(
             np.asarray(at), np.asarray(nudged)[:, None, :], finished
@@ -490,7 +491,7 @@ class Oracle:
                 unused = np.isnan(
                     found.normals.reshape(len(rows), -1, 3)[:, None, :, 0]
                 )
-                dots = np.einsum("pdj,psj->pds", ways[rows], normals)
+                dots = fv.matmul(ways[rows], np.swapaxes(normals, 1, 2))
                 on = found.held(dots, unused)
                 on = ~on if found.inverted else on
                 answers.append(
@@ -509,7 +510,9 @@ class Oracle:
                     m = normals[r, slot]
                     seen = grazed[rows[r], w]
                     if any(
-                        abs(float(m @ g)) > 1.0 - 1e-9 for g in seen if np.any(g != 0.0)
+                        abs(float(fv.matmul(m, g))) > 1.0 - 1e-9
+                        for g in seen
+                        if np.any(g != 0.0)
                     ):
                         continue  # the same facet's plane, from another solid sharing it
                     free = [i for i in range(2) if not np.any(seen[i] != 0.0)]
@@ -762,16 +765,16 @@ class _Settle:
             axis=1,
         )  # (points, facets, 3), NaN where unused
         used = ~np.isnan(facets[:, :, 0])
-        lengths = np.where(used, np.linalg.norm(np.nan_to_num(facets), axis=2), 1.0)
+        lengths = np.where(used, fv.norm(np.nan_to_num(facets), axis=2), 1.0)
         normed = np.nan_to_num(facets) / lengths[:, :, None]
         everyone = np.arange(len(rows))
         # Each point's first normal's line (any when it has none), then its first normal off that line.
         first = normed[everyone, np.argmax(used, axis=1)]
-        on_first = np.abs(np.einsum("pfj,pj->pf", normed, first)) > 1 - _THROUGH
+        on_first = np.abs(fv.dot(normed, first[:, None, :])) > 1 - _THROUGH
         off = used & ~on_first
         two = off.any(axis=1)
         second = normed[everyone, np.argmax(off, axis=1)]
-        on_second = np.abs(np.einsum("pfj,pj->pf", normed, second)) > 1 - _THROUGH
+        on_second = np.abs(fv.dot(normed, second[:, None, :])) > 1 - _THROUGH
         plain: NDArray[np.bool_] = ~singular & np.all(
             ~used | on_first | (two[:, None] & on_second), axis=1
         )
@@ -790,7 +793,7 @@ class _Settle:
         answers: list[NDArray[np.bool_]] = []
         for w, n, flip, groups in zip(wheres, normals, inverted, grouped, strict=True):
             w, n = w[plain], n[plain]
-            dots = np.einsum("pdj,psj->pds", ways, np.nan_to_num(n))
+            dots = fv.matmul(ways, np.swapaxes(np.nan_to_num(n), 1, 2))
             unused = np.isnan(n[:, None, :, 0])
             these = Locals(w, n, flip, None if groups is None else groups[plain])
             on = these.held(dots, unused)
@@ -1129,7 +1132,9 @@ def _face_of(body: Item, copy: Copy, edge: rounds.Edge, side: int) -> str:
         return ("+" if world[k] > 0 else "-") + "xyz"[k]
     if abs(n[0]) > abs(n[1]):
         return "side"
-    up = float(np.asarray(edge.axis) @ np.asarray(copy.direction, dtype=float))
+    up = float(
+        fv.matmul(np.asarray(edge.axis), np.asarray(copy.direction, dtype=float))
+    )
     return "+end" if n[1] * up > 0 else "-end"
 
 
@@ -1185,7 +1190,7 @@ def _extrusion_chains(
     up = np.asarray(copy.direction, dtype=float)
     frame = _frame(copy.point, first, second)
     sign = float(
-        np.asarray(frame.w) @ up
+        fv.matmul(np.asarray(frame.w), up)
     )  # +1 or -1: the frame's third axis is the way it runs, or back
     outward: list[rounds.Chain] = []
     inward: list[rounds.Chain] = []
@@ -1196,8 +1201,8 @@ def _extrusion_chains(
     if which in ("vertical", "all"):
         su, sv = (first, second) if sign > 0 else (second, first)
         axes = (
-            np.array([float(su @ first), float(su @ second)]),
-            np.array([float(sv @ first), float(sv @ second)]),
+            np.array([float(fv.matmul(su, first)), float(fv.matmul(su, second))]),
+            np.array([float(fv.matmul(sv, first)), float(fv.matmul(sv, second))]),
         )
         for k, side in enumerate(sides):
             after = sides[(k + 1) % len(sides)]
@@ -1236,7 +1241,7 @@ def _side_tangent(side: OutlineSide, at_end: bool) -> tuple[float, float]:
         return _unit2(side.b[0] - side.a[0], side.b[1] - side.a[1])
     point = side.b if at_end else side.a
     out = _unit2(point[0] - side.arc.centre[0], point[1] - side.arc.centre[1])
-    forward = math.dist(side.a, side.arc.at(side.arc.start)) <= math.dist(
+    forward = fs.dist(side.a, side.arc.at(side.arc.start)) <= fs.dist(
         side.a, side.arc.at(side.arc.start + side.arc.sweep)
     )
     return (-out[1], out[0]) if forward else (out[1], -out[0])
@@ -1258,19 +1263,19 @@ def _profile_chain(
     for side in sides:
         (x0, y0), (x1, y1) = side.a, side.b
         if side.arc is None:
-            length = math.hypot(x1 - x0, y1 - y0)
+            length = fs.hypot(x1 - x0, y1 - y0)
             along = ((x1 - x0) * u + (y1 - y0) * v) / length
             out = ((y1 - y0) * u - (x1 - x0) * v) / length
             sv = np.asarray(np.cross(along, n_face), dtype=np.float64)
             origin = frame.world(np.array([x0]), np.array([y0]), np.array([z]))[0]
             edges.append(rounds.StraightEdge(_vec(origin), _vec(along), length, _vec(n_face), _vec(sv),
-                                             rounds.Line2((1.0, 0.0)), rounds.Line2((float(out @ n_face), float(out @ sv)))))  # fmt: skip
+                                             rounds.Line2((1.0, 0.0)), rounds.Line2((float(fv.matmul(out, n_face)), float(fv.matmul(out, sv))))))  # fmt: skip
             continue
         arc = side.arc
         centre = frame.world(
             np.array([arc.centre[0]]), np.array([arc.centre[1]]), np.array([z])
         )[0]
-        forward = math.dist(side.a, arc.at(arc.start)) <= math.dist(
+        forward = fs.dist(side.a, arc.at(arc.start)) <= fs.dist(
             side.a, arc.at(arc.start + arc.sweep)
         )
         if forward:  # anticlockwise: its material inside its circle
@@ -1283,7 +1288,7 @@ def _profile_chain(
     n = len(sides)
     smooth = tuple(
         float(
-            np.dot(
+            fv.dot(
                 _side_tangent(sides[i], True), _side_tangent(sides[(i + 1) % n], False)
             )
         )
@@ -1357,11 +1362,11 @@ def _face_chains(face: FlatFace, copy: Copy) -> list[rounds.Chain]:
     middle = np.asarray(face.centre, dtype=float)
     middle = (
         middle
-        + (outline.centre[0] - float(middle @ a1)) * a1
-        + (outline.centre[1] - float(middle @ a2)) * a2
+        + (outline.centre[0] - float(fv.matmul(middle, a1))) * a1
+        + (outline.centre[1] - float(fv.matmul(middle, a2))) * a2
     )
     at = _frame(middle, a1, a2)
-    sign = float(np.asarray(at.w) @ g)
+    sign = float(fv.matmul(np.asarray(at.w), g))
     # The air is below the face (behind it) and outside the face's edge; inside a ring's hole, inside it.
     if outline.shape == "rect":
         shape: Shape2D = RoundRect(outline.half[0], outline.half[1], outline.corners)
@@ -1380,7 +1385,7 @@ def _joint_band(item: Item, copy: Copy, face: RoundSide, size: float) -> Node:
     assert copy.lo is not None and copy.hi is not None
     lo = np.asarray(copy.lo) - reach
     hi = np.asarray(copy.hi) + reach
-    axis = Frame.along(face.start, unit("+" + face.axis))
+    axis = Frame.along(face.start, face.frame.n)
     near = Prism.box(_vec(lo), _vec(hi))
     band = Inter(
         (
@@ -1585,9 +1590,9 @@ def _apart(
         return np.zeros(len(centres), dtype=bool)
     g = solid.signed_distance(centres)
     _, slope = solid.nearest(centres)
-    along = slope - np.einsum("ij,ij->i", slope, normals)[:, None] * normals
+    along = slope - fv.dot(slope, normals)[:, None] * normals
     flat, chord = bend[:, 0], bend[:, 1]
-    outside = (g > ON) & (g - np.linalg.norm(along, axis=1) * reach - flat > ON)
+    outside = (g > ON) & (g - fv.norm(along, axis=1) * reach - flat > ON)
     deepest = solid.signed_distance(corners.reshape(-1, 3)).reshape(-1, 4).max(axis=1)
     inside = (deepest + chord < -ON) & (g + chord < -ON)
     return np.asarray(outside | inside)
@@ -1620,18 +1625,16 @@ def _apart_revolved(
     out = solid.frame.turn(ca, cb, np.zeros(len(ca)))
     w = np.asarray(solid.frame.w, dtype=np.float64)
     gradient = g_r[:, None] * out + g_z[:, None] * w
-    along = gradient - np.einsum("ij,ij->i", gradient, normals)[:, None] * normals
+    along = gradient - fv.dot(gradient, normals)[:, None] * normals
     curl = np.zeros(len(rho))
     turning = g_r < 0
     far = rho > reach
-    curl[turning & far] = (reach**2 / (2 * (rho - reach)))[turning & far]
+    curl[turning & far] = (reach * reach / (2 * (rho - reach)))[turning & far]
     curl[turning & ~far] = np.inf
     # g_r times curl: nothing where g_r >= 0, minus -g_r times it where it is less.
-    outside = (g > ON) & (
-        g - np.linalg.norm(along, axis=1) * reach - bend + g_r * curl > ON
-    )
-    up = w[None, :] - (normals @ w)[:, None] * normals
-    rise = np.linalg.norm(up, axis=1) * reach + bend
+    outside = (g > ON) & (g - fv.norm(along, axis=1) * reach - bend + g_r * curl > ON)
+    up = w[None, :] - (fv.matmul(normals, w))[:, None] * normals
+    rise = fv.norm(up, axis=1) * reach + bend
     r_lo, r_hi = np.maximum(rho - reach, 0.0), rho + reach
     deepest = np.max(
         [solid.meridian.sd(r, z + dz) for r in (r_lo, r_hi) for dz in (-rise, rise)],
@@ -1693,7 +1696,7 @@ def _near_other(part: Oracle, centres: Array, corners: Array, normals: Array, re
             c = corners[r].reshape(-1, 3)
             flat = np.all(np.abs(leaf.signed_distance(c).reshape(-1, 4)) <= ON, axis=1)
             _, n = leaf.nearest(centres[r])
-            parallel = np.abs(np.einsum("ij,ij->i", n, normals[r])) >= 1 - 1e-9
+            parallel = np.abs(fv.dot(n, normals[r])) >= 1 - 1e-9
             on_it &= flat & parallel
         near[r[~on_it]] = True
     return near
@@ -1732,22 +1735,22 @@ def _bend(patch: Patch, size_u: Array, size_v: Array) -> Array:
     if isinstance(piece, FlatPatch):
         return np.zeros((len(size_u), 2))
     if isinstance(piece, RoundPatch):
-        sag = np.asarray(size_u**2 / (8 * piece.r))
+        sag = np.asarray(size_u * size_u / (8 * piece.r))
         return np.stack([sag, sag], axis=1)
     if isinstance(piece, ConePatch):
-        sag = np.asarray(size_v**2 / (8 * max(piece.r0, piece.r1)))
+        sag = np.asarray(size_v * size_v / (8 * max(piece.r0, piece.r1)))
         flat = np.zeros(len(sag)) if piece.t0 == piece.t1 else sag
         return np.stack([flat, sag], axis=1)
     if isinstance(piece, TorusPatch) and piece.big >= 0:
         outer = piece.big + piece.r
         bow = np.asarray(
-            size_u**2 / (8 * outer)
+            size_u * size_u / (8 * outer)
             + size_u * size_v / (4 * outer)
-            + size_v**2 / (8 * piece.r)
+            + size_v * size_v / (8 * piece.r)
         )
         return np.stack([bow, bow], axis=1)
     if isinstance(piece, SpherePatch):
-        bow = np.asarray((size_u + size_v) ** 2 / (8 * piece.r))
+        bow = np.asarray(fv.sq(size_u + size_v) / (8 * piece.r))
         return np.stack([bow, bow], axis=1)
     return np.full((len(size_u), 2), np.nan)
 
@@ -1882,7 +1885,7 @@ def _settle_cells(
     size_v: Array,
 ) -> tuple[tuple[Array, Array, NDArray[np.int64]], tuple[NDArray[np.int64], Array, Array, Array, Array]]:  # fmt: skip
     """One share of a round of :func:`_coverage`, its cells in order of their surface: the points kept (their points, outward normals and surfaces), and the cells to split (their surfaces, middles and sizes, not yet split)."""
-    reach: Array = np.hypot(size_u, size_v) / 2
+    reach: Array = fv.hypot(size_u, size_v) / 2
     where: NDArray[np.int8] = np.empty(len(u), dtype=np.int8)
     for index, start, end in _groups(which):
         where[start:end] = surfaces[index].patch.inside(
@@ -2036,12 +2039,12 @@ def _witness(part: Oracle, points: Array, radius: float | Array) -> NDArray[np.b
         outside = np.maximum(
             np.maximum(boxes[listed, :3] - x, x - boxes[listed, 3:]), 0.0
         )
-        listed = listed[np.linalg.norm(outside, axis=1) <= 2 * reach[row] + OFF]
+        listed = listed[fv.norm(outside, axis=1) <= 2 * reach[row] + OFF]
         mine = close.setdefault(row, [])
         for n in listed.tolist():
             s = surfaces[n]
             q = s.patch.foot(x)
-            gap = float(np.linalg.norm(q - x))
+            gap = float(fv.norm(q - x))
             if gap <= reach[row]:
                 feet.append(q)
                 owner.append(row)
@@ -2073,7 +2076,7 @@ def _witness(part: Oracle, points: Array, radius: float | Array) -> NDArray[np.b
                 on_all = _meet([mine[n].patch for n in chosen], x)
                 if on_all is None:
                     continue
-                gap = float(np.linalg.norm(on_all - x))
+                gap = float(fv.norm(on_all - x))
                 if many == 2 and gap <= 2 * reach[row] + OFF:
                     edges.add(chosen)
                 if gap <= reach[row]:
@@ -2111,9 +2114,9 @@ def _may_be_surface(part: Oracle, where: Array) -> NDArray[np.bool_]:
     unsure = np.flatnonzero((inner == Side.UNKNOWN) | (outer == Side.UNKNOWN))
     if len(apexes) and len(unsure):
         # Unknown there only because of the apex: material over it, or a cut through it, would settle the side.
-        gap = np.linalg.norm(
-            where[unsure][:, None, :] - apexes[None, :, :], axis=2
-        ).min(axis=1)
+        gap = fv.norm(where[unsure][:, None, :] - apexes[None, :, :], axis=2).min(
+            axis=1
+        )
         found[unsure[gap <= OFF]] = True
     return found
 
@@ -2168,11 +2171,11 @@ def _cusps(
         np.abs(n[:, :1]) < 0.9, np.array([[1.0, 0.0, 0.0]]), np.array([[0.0, 1.0, 0.0]])
     )
     t1 = np.cross(n, helper)
-    t1 /= np.linalg.norm(t1, axis=1, keepdims=True)
+    t1 /= fv.norm(t1, axis=1, keepdims=True)
     t2 = np.cross(n, t1)
     turn = 2.0 * np.pi * np.arange(_CUSP_WAYS) / _CUSP_WAYS
-    ways = (np.cos(turn)[None, :, None] * t1[:, None, :]
-            + np.sin(turn)[None, :, None] * t2[:, None, :]).reshape(-1, 3)  # fmt: skip
+    ways = (fv.cos(turn)[None, :, None] * t1[:, None, :]
+            + fv.sin(turn)[None, :, None] * t2[:, None, :]).reshape(-1, 3)  # fmt: skip
     walker = np.repeat(starts, _CUSP_WAYS)
     row_of = rows[walker]
     step = reach[row_of].copy()
@@ -2184,7 +2187,7 @@ def _cusps(
         still, _, spread = _touching(part, at)
         told = np.flatnonzero(~still)
         if first:
-            gap = np.linalg.norm(at[told] - points[row_of[told]], axis=1)
+            gap = fv.norm(at[told] - points[row_of[told]], axis=1)
             told = told[gap <= reach[row_of[told]]]
         if len(told):
             served[row_of[told[_may_be_surface(part, at[told])]]] = True
@@ -2228,8 +2231,8 @@ def _touching(part: Oracle, points: Array) -> tuple[NDArray[np.bool_], Array, Ar
                 unset = np.isnan(first[rows, 0]) & used.any(axis=1)
                 first[rows[unset]] = normals[unset, np.argmax(used[unset], axis=1)]
                 line = np.nan_to_num(first[rows])
-                cos = np.abs(np.einsum("psj,pj->ps", normals, line))
-                sin = np.linalg.norm(np.cross(normals, line[:, None, :]), axis=2)
+                cos = np.abs(fv.dot(normals, line[:, None, :]))
+                sin = fv.norm(np.cross(normals, line[:, None, :]), axis=2)
                 count[rows] += used.sum(axis=1)
                 apart[rows] = np.maximum(
                     apart[rows], np.where(used, 1.0 - cos, 0.0).max(axis=1, initial=0.0)
@@ -2311,12 +2314,12 @@ def _meet(pieces: Sequence[Patch], x: Array, rounds: int = 200) -> Array | None:
         q_next = q
         for piece in pieces:
             q_next = piece.foot(q_next)
-        if float(np.linalg.norm(q_next - q)) <= 1e-13 * (1 + float(np.linalg.norm(q))):
+        if float(fv.norm(q_next - q)) <= 1e-13 * (1 + float(fv.norm(q))):
             q = q_next
             break
         q = q_next
     # On the last piece by making; on the others only where they meet there.
-    if any(float(np.linalg.norm(piece.foot(q) - q)) > 10 * ON for piece in pieces[:-1]):
+    if any(float(fv.norm(piece.foot(q) - q)) > 10 * ON for piece in pieces[:-1]):
         return None
     return q
 
@@ -2420,7 +2423,7 @@ def _along(
         raise ValueError(
             "segments are finite: origins and directions (n, 3), lengths (n,) of 0 or more"
         )
-    if np.any(np.abs(np.linalg.norm(directions, axis=1) - 1.0) > 1e-12):
+    if np.any(np.abs(fv.norm(directions, axis=1) - 1.0) > 1e-12):
         raise ValueError("a segment's direction is a unit vector")
     line, t = _places(part, origins, directions, lengths)
     count = np.bincount(line, minlength=n)
@@ -2469,9 +2472,9 @@ def _around(part: Oracle, centre: Array, u: Array, v: Array, radius: float) -> A
     if (
         any(x.shape != (3,) or not np.all(np.isfinite(x)) for x in (centre, u, v))
         or not (math.isfinite(radius) and radius > 0)
-        or abs(float(np.linalg.norm(u)) - 1) > 1e-12
-        or abs(float(np.linalg.norm(v)) - 1) > 1e-12
-        or abs(float(u @ v)) > 1e-12
+        or abs(float(fv.norm(u)) - 1) > 1e-12
+        or abs(float(fv.norm(v)) - 1) > 1e-12
+        or abs(float(fv.matmul(u, v))) > 1e-12
     ):
         raise ValueError(
             "a circle has a finite centre, square unit axes and a radius above 0"
@@ -2577,11 +2580,11 @@ def _volume(part: Oracle, rel: float, budget: int) -> Interval:
             for start in range(0, len(unsure), _CELLS):
                 centres = unsure[start : start + _CELLS]
                 f = _fold(part, centres, form, half, half)
-                inside += float((f < -half).sum()) * size**3
+                inside += float((f < -half).sum()) * (size * size * size)
                 kept.append(centres[np.abs(f) <= half])
             spent += len(unsure)
             unsure = np.concatenate(kept) if kept else np.zeros((0, 3))
-            unknown = len(unsure) * size**3
+            unknown = len(unsure) * (size * size * size)
             if unknown <= rel * max(inside, 1e-300) or spent + 8 * len(unsure) > budget:
                 ends.append((inside, inside + unknown))
                 break
@@ -2741,8 +2744,8 @@ def _width2d(shape: Shape2D) -> float:
         least = _INF
         for k in range(len(pts)):
             a, b = pts[k], pts[(k + 1) % len(pts)]
-            n = np.array([b[1] - a[1], a[0] - b[0]]) / float(np.linalg.norm(b - a))
-            least = min(least, float(np.max(np.abs((pts - a) @ n))))
+            n = np.array([b[1] - a[1], a[0] - b[0]]) / float(fv.norm(b - a))
+            least = min(least, float(np.max(np.abs(fv.matmul(pts - a, n)))))
         return least
     return float(min(np.array(shape.hi) - np.array(shape.lo)))
 
@@ -2786,7 +2789,7 @@ def _clear(part: Oracle, starts: Array, ends: Array) -> NDArray[np.bool_]:
             for k in range(0, len(starts), _LINES_AT_ONCE)
         ])  # fmt: skip
     gap = ends - starts
-    length = np.linalg.norm(gap, axis=1)
+    length = fv.norm(gap, axis=1)
     found = np.zeros(len(starts), dtype=bool)
     usable = length > 0
     if usable.any():
@@ -2986,7 +2989,7 @@ def _join_seeds(
         here = base + corner
         inside = np.flatnonzero(np.all((here >= 0) & (here < shape), axis=1))
         is_air[inside, c] = air[here[inside, 0], here[inside, 1], here[inside, 2]]
-        far[:, c] = np.linalg.norm(start + here * size - points, axis=1)
+        far[:, c] = fv.norm(start + here * size - points, axis=1)
     order = np.argsort(np.where(is_air, far, np.inf), axis=1)
     del far
     joined = np.zeros(n, dtype=bool)
@@ -3085,7 +3088,7 @@ def _nearest_points(
             both_i.append(i)
             both_j.append(order[np.repeat(first, many) + within])
         i, j = np.concatenate(both_i), np.concatenate(both_j)
-        far = np.linalg.norm(points[i] - points[j], axis=1)
+        far = fv.norm(points[i] - points[j], axis=1)
         keep = (i != j) & (far <= reach)
         i, j, far = i[keep], j[keep], far[keep]
         by = np.lexsort((far, i))
@@ -3146,7 +3149,7 @@ def _near_pairs(
             j = order[np.repeat(first, count) + within]
             keep = (i < j) & (labels[i] != labels[j])
             i, j = i[keep], j[keep]
-            keep = np.linalg.norm(points[i] - points[j], axis=1) <= reach
+            keep = fv.norm(points[i] - points[j], axis=1) <= reach
             found_a.append(i[keep])
             found_b.append(j[keep])
     if not found_a:

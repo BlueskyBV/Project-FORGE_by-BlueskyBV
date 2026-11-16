@@ -32,8 +32,12 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
+from functools import cached_property
 from itertools import pairwise
 
+from forge_numeric import scalar as fs
+
+from .frames import Frame
 from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
@@ -205,6 +209,11 @@ class FlatFace:
             s for s in self.axis_sources[1] if s not in self.axis_sources[0]
         )
 
+    @cached_property
+    def frame(self) -> Frame:
+        """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`)."""
+        return Frame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+
     @property
     def symmetric(self) -> bool:
         """Centrally symmetric and convex: a shape that fits anywhere fits at the centre."""
@@ -242,8 +251,22 @@ class SideFace:
             s for s in self.length_sources if s not in self.radius_sources
         )
 
+    @property
+    def reference(self) -> tuple[str, str]:
+        """The axes 0 and 90 degrees round it point along (frame.md: round z, x then y; round x, y then z; round y, z then x)."""
+        return _REFERENCE[self.axis]
+
+    @cached_property
+    def frame(self) -> Frame:
+        """The centre of the end its axis starts from; ``u`` and ``v`` the ways out at 0 and 90 degrees round it, ``n`` its axis."""
+        u, v = self.reference
+        return Frame.of_names(self.start, u, v, self.axis)
+
 
 Face = FlatFace | SideFace
+
+#: Round each axis, the axes at 0 and 90 degrees.
+_REFERENCE = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}
 
 
 @dataclass(frozen=True)
@@ -300,9 +323,9 @@ def reach(parts: Iterable[Part]) -> float:
     for part in parts:
         c1, c2 = abs(part.centre[0]), abs(part.centre[1])
         if part.disc:
-            far = max(far, math.hypot(c1, c2) + part.half[0])
+            far = max(far, fs.hypot(c1, c2) + part.half[0])
         else:
-            far = max(far, math.hypot(c1 + part.half[0], c2 + part.half[1]))
+            far = max(far, fs.hypot(c1 + part.half[0], c2 + part.half[1]))
     return far
 
 
@@ -322,7 +345,7 @@ def _disc_in_rect_face(face: FlatFace, u1: float, u2: float, r: float) -> bool:
         if r >= radius:
             continue
         a1, a2 = s1 * u1 - (h1 - radius), s2 * u2 - (h2 - radius)
-        if a1 > 0 and a2 > 0 and math.hypot(a1, a2) > radius - r + EPS:
+        if a1 > 0 and a2 > 0 and fs.hypot(a1, a2) > radius - r + EPS:
             return False
     return True
 
@@ -338,10 +361,10 @@ def _far_near(part: Part, p1: float, p2: float) -> tuple[float, float]:
     c1, c2 = part.centre[0] + p1, part.centre[1] + p2
     h1, h2 = part.half
     if part.disc:
-        d = math.hypot(c1, c2)
+        d = fs.hypot(c1, c2)
         return d + h1, max(d - h1, 0.0)
-    far = math.hypot(abs(c1) + h1, abs(c2) + h2)
-    near = math.hypot(max(abs(c1) - h1, 0.0), max(abs(c2) - h2, 0.0))
+    far = fs.hypot(abs(c1) + h1, abs(c2) + h2)
+    near = fs.hypot(max(abs(c1) - h1, 0.0), max(abs(c2) - h2, 0.0))
     return far, near
 
 
@@ -349,7 +372,7 @@ def _covers_hole(part: Part, p1: float, p2: float, radius: float) -> bool:
     """Whether a part covers a ring's whole central hole (a step around a bore)."""
     c1, c2 = part.centre[0] + p1, part.centre[1] + p2
     if part.disc:
-        return math.hypot(c1, c2) + radius <= part.half[0] + EPS
+        return fs.hypot(c1, c2) + radius <= part.half[0] + EPS
     return (
         abs(c1) + radius <= part.half[0] + EPS
         and abs(c2) + radius <= part.half[1] + EPS
@@ -422,7 +445,7 @@ def touches_edge(face: FlatFace, parts: Sequence[Part], p1: float, p2: float) ->
         if not part.disc and face.shape in ("rect", "profile"):
             continue
         c1, c2 = part.centre[0] + p1, part.centre[1] + p2
-        if face.shape in ("disc", "annulus") and math.hypot(c1, c2) < EPS:
+        if face.shape in ("disc", "annulus") and fs.hypot(c1, c2) < EPS:
             continue
         grown = Part(
             part.centre, (part.half[0] + 2 * EPS, part.half[1] + 2 * EPS), part.disc
@@ -478,7 +501,7 @@ def outline_meets_face(
             g1 = max(abs(c1) - face.half[0], 0.0)
             g2 = max(abs(c2) - face.half[1], 0.0)
             if part.disc:
-                if math.hypot(g1, g2) < h1 - EPS:
+                if fs.hypot(g1, g2) < h1 - EPS:
                     return True
             elif (
                 abs(c1) - h1 < face.half[0] - EPS and abs(c2) - h2 < face.half[1] - EPS
@@ -529,7 +552,7 @@ def _point_in_parts(
     for part in parts:
         c1, c2 = part.centre[0] + position[0], part.centre[1] + position[1]
         if part.disc:
-            if math.hypot(u1 - c1, u2 - c2) <= part.half[0] + EPS:
+            if fs.hypot(u1 - c1, u2 - c2) <= part.half[0] + EPS:
                 return True
         elif abs(u1 - c1) <= part.half[0] + EPS and abs(u2 - c2) <= part.half[1] + EPS:
             return True
@@ -544,8 +567,8 @@ def _part_in_part(
     b1, b2 = b.centre[0] + pb[0], b.centre[1] + pb[1]
     if b.disc:
         if a.disc:
-            return math.hypot(a1 - b1, a2 - b2) + a.half[0] <= b.half[0] + EPS
-        return all(math.hypot(a1 + s1 * a.half[0] - b1, a2 + s2 * a.half[1] - b2) <= b.half[0] + EPS
+            return fs.hypot(a1 - b1, a2 - b2) + a.half[0] <= b.half[0] + EPS
+        return all(fs.hypot(a1 + s1 * a.half[0] - b1, a2 + s2 * a.half[1] - b2) <= b.half[0] + EPS
                    for s1, s2 in QUADRANTS)  # fmt: skip
     return (
         abs(a1 - b1) + a.half[0] <= b.half[0] + EPS
@@ -568,7 +591,7 @@ def outline_within(inner: Sequence[Part], at: tuple[float, float], outer: Sequen
         c1, c2 = part.centre[0] + at[0], part.centre[1] + at[1]
         if part.disc:
             r = part.half[0]
-            points = [(c1 + r * math.cos(t), c2 + r * math.sin(t))
+            points = [(c1 + r * fs.cos(t), c2 + r * fs.sin(t))
                       for t in (2 * math.pi * k / 256 for k in range(256))]  # fmt: skip
         else:
             h1, h2 = part.half
@@ -594,7 +617,7 @@ def _parts_overlap(
     a1, a2 = a.centre[0] + pa[0], a.centre[1] + pa[1]
     b1, b2 = b.centre[0] + pb[0], b.centre[1] + pb[1]
     if a.disc and b.disc:
-        return math.hypot(a1 - b1, a2 - b2) < a.half[0] + b.half[0] - EPS
+        return fs.hypot(a1 - b1, a2 - b2) < a.half[0] + b.half[0] - EPS
     if not a.disc and not b.disc:
         return (
             abs(a1 - b1) < a.half[0] + b.half[0] - EPS
@@ -605,7 +628,7 @@ def _parts_overlap(
     )
     g1 = max(abs(d1 - r1) - box.half[0], 0.0)
     g2 = max(abs(d2 - r2) - box.half[1], 0.0)
-    return math.hypot(g1, g2) < disc_.half[0] - EPS
+    return fs.hypot(g1, g2) < disc_.half[0] - EPS
 
 
 def first_close_pair(points: Sequence[tuple[float, float]], owners: Sequence[int], cells: tuple[float, float],
@@ -956,7 +979,7 @@ def _on_face(face: FlatFace, p: tuple[float, float]) -> bool:
         return face.profile.contains(p, EPS)
     if face.shape == "rect":
         return _disc_in_rect_face(face, p[0], p[1], 0.0)
-    far = math.hypot(p[0], p[1])
+    far = fs.hypot(p[0], p[1])
     return far <= face.half[0] + EPS and (
         face.shape != "annulus" or far >= face.inner_radius - EPS
     )
@@ -1006,7 +1029,7 @@ def shape_meets_face(face: FlatFace, shape: Shape, p1: float, p2: float) -> bool
     q = moved.pieces[0]
     m, ahead = q.at(0.5), q.at(0.5 + 1e-6)
     tx, ty = ahead[0] - m[0], ahead[1] - m[1]
-    norm = math.hypot(tx, ty) or 1.0
+    norm = fs.hypot(tx, ty) or 1.0
     for side in (1.0, -1.0):
         p = (m[0] - side * ty / norm * 1e-4, m[1] + side * tx / norm * 1e-4)
         if moved.inside(p):
@@ -1021,9 +1044,9 @@ def shape_reach(shape: Shape) -> float:
         points = list(q.ends())
         if isinstance(q, Arc):
             cx, cy = q.centre
-            angle = math.atan2(cy, cx) if math.hypot(cx, cy) > 0 else q.start
+            angle = fs.atan2(cy, cx) if fs.hypot(cx, cy) > 0 else q.start
             fraction = q.fraction(angle)
             if fraction is not None:
                 points.append(q.at(fraction))
-        found = max(found, *(math.hypot(x, y) for x, y in points))
+        found = max(found, *(fs.hypot(x, y) for x, y in points))
     return found

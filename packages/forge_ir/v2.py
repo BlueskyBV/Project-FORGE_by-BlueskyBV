@@ -47,6 +47,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
+from forge_numeric import scalar as fs
+
 from .document import SCHEMA_VERSION, Component, Document, decode_document
 from .features import (
     FEATURE_SPECS,
@@ -623,7 +625,7 @@ class Placement:
             else (0.0, 0.0, 0.0)
         )
         x, y, z = axis
-        c, s, t = math.cos(angle), math.sin(angle), 1.0 - math.cos(angle)
+        c, s, t = fs.cos(angle), fs.sin(angle), 1.0 - fs.cos(angle)
         rows = (
             (c + x * x * t, x * y * t - z * s, x * z * t + y * s),
             (y * x * t + z * s, c + y * y * t, y * z * t - x * s),
@@ -1111,7 +1113,7 @@ def _chords(reader: Reader) -> list[list[float]]:
         if len(numbers) == 4:
             found += _arc_chords(found[-1], numbers, at)
         found.append(numbers[:2])
-    if len(found) < 4 or math.dist(found[0], found[-1]) > 1e-9:
+    if len(found) < 4 or fs.dist(found[0], found[-1]) > 1e-9:
         raise ValueRangeError("an outline has three sides or more and ends where it starts",
                               pointer=reader.pointer)  # fmt: skip
     return found
@@ -1123,7 +1125,7 @@ def _arc_chords(
     """The points an arc from ``start`` to (row[0], row[1]) through (row[2], row[3]) is followed by, before its end."""
     (ax, ay), (bx, by), (mx, my) = start, row[:2], row[2:]
     d = 2.0 * (ax * (my - by) + mx * (by - ay) + bx * (ay - my))
-    if abs(d) <= 1e-12 * max(1.0, math.dist(start, row[:2])) ** 2:
+    if abs(d) <= 1e-12 * fs.sq(max(1.0, fs.dist(start, row[:2]))):
         raise ValueRangeError("an arc's three points lie on a line", pointer=pointer)
     ux = (
         (ax * ax + ay * ay) * (my - by)
@@ -1135,21 +1137,21 @@ def _arc_chords(
         + (mx * mx + my * my) * (ax - bx)
         + (bx * bx + by * by) * (mx - ax)
     ) / d
-    r = math.hypot(ax - ux, ay - uy)
-    a0 = math.atan2(ay - uy, ax - ux)
-    am = math.atan2(my - uy, mx - ux)
-    a1 = math.atan2(by - uy, bx - ux)
+    r = fs.hypot(ax - ux, ay - uy)
+    a0 = fs.atan2(ay - uy, ax - ux)
+    am = fs.atan2(my - uy, mx - ux)
+    a1 = fs.atan2(by - uy, bx - ux)
     sweep = (a1 - a0) % (2 * math.pi)
     if (am - a0) % (2 * math.pi) > sweep:  # it goes the other way round
         sweep -= 2 * math.pi
     step = (
-        2 * math.acos(max(-1.0, 1.0 - OUTLINE_CHORD / r))
+        2 * fs.acos(max(-1.0, 1.0 - OUTLINE_CHORD / r))
         if r > OUTLINE_CHORD
         else math.pi
     )
     n = max(1, math.ceil(abs(sweep) / step))
     return [
-        [ux + r * math.cos(a0 + sweep * k / n), uy + r * math.sin(a0 + sweep * k / n)]
+        [ux + r * fs.cos(a0 + sweep * k / n), uy + r * fs.sin(a0 + sweep * k / n)]
         for k in range(1, n)
     ]
 

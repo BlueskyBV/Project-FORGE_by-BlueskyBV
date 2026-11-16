@@ -11,7 +11,7 @@ from forge_spec.geometry import (
     FlatFace,
     rect,
 )
-from forge_spec.items.solve._common import _INDEX, _choice_of, _dir, _size
+from forge_spec.items.solve._common import _choice_of, _size
 from forge_spec.items.solve.protocol import SolveKind
 from forge_spec.letters import ink_box
 
@@ -64,13 +64,13 @@ class Text(SolveKind):
         if ink is None:
             return ()
         (x0, y0), (x1, y1) = ink
-        up, out = _dir("+" + face.axes[1]), _dir(face.normal)
+        up, out = face.frame.v, face.frame.n
         right = (
             up[1] * out[2] - up[2] * out[1],
             up[2] * out[0] - up[0] * out[2],
             up[0] * out[1] - up[1] * out[0],
         )
-        sign = right[_INDEX[face.axes[0]]]
+        sign = face.frame.across(right)[0]
         middle = text_width(letters, height) / 2
         return (
             rect(

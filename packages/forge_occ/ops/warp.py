@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from forge_numeric import vector as fv
 from OCP.BRep import BRep_Builder, BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface
 from OCP.BRepBuilderAPI import BRepBuilderAPI_Copy
@@ -51,13 +52,13 @@ def _map(spec: Any, points: Any) -> Any:
     e1, e2, e3 = spec.frame
     origin = np.asarray(spec.position, dtype=np.float64)
     rel = np.asarray(points, dtype=np.float64).reshape(-1, 3) - origin
-    x, y, z = rel @ e1, rel @ e2, rel @ e3
+    x, y, z = fv.matmul(rel, e1), fv.matmul(rel, e2), fv.matmul(rel, e3)
     inside, _, start, middle = spec.layout
     cx, cz = start, inside + spec.radius
     phi = (x - start) / middle
     r = cz - z
-    out_x = cx + r * np.sin(phi)
-    out_z = cz - r * np.cos(phi)
+    out_x = cx + r * fv.sin(phi)
+    out_z = cz - r * fv.cos(phi)
     return origin + np.outer(out_x, e1) + np.outer(y, e2) + np.outer(out_z, e3)
 
 
@@ -67,7 +68,10 @@ def _on_cut(spec: Any, x_cut: float, shape: Any) -> bool:
     origin = np.asarray(spec.position)
     for v in vertices(shape):
         p = BRep_Tool.Pnt_s(TopoDS.Vertex(v))
-        if abs(float((np.array([p.X(), p.Y(), p.Z()]) - origin) @ e1) - x_cut) > 1e-7:
+        if (
+            abs(float(fv.matmul(np.array([p.X(), p.Y(), p.Z()]) - origin, e1)) - x_cut)
+            > 1e-7
+        ):
             return False
     return True
 

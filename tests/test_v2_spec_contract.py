@@ -61,6 +61,14 @@ class TheReaderNeverRaisesOrCoerces(unittest.TestCase):
         for wrong in (True, 1.0, "1", 2):
             d = dict(self.good, spec_format=wrong)
             self.assertIn("/spec_format", [at for at, _ in faults(d)], wrong)
+            d.pop("schema_version", None)
+            self.assertIn("/spec_format", [at for at, _ in faults(d)], wrong)
+        for wrong in (1.1, "1", "1.1.0", "01.1", "v1.1", "2.0", "1.2", True, None):
+            d = dict(self.good, schema_version=wrong)
+            self.assertIn("/schema_version", [at for at, _ in faults(d)], wrong)
+        d = dict(self.good)
+        d.pop("schema_version", None)
+        self.assertIn("/schema_version", [at for at, _ in faults(d)])
 
     def test_text_that_isn_t_valid_unicode(self) -> None:
         d = dict(self.good, name="plate \ud800")

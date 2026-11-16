@@ -52,6 +52,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from itertools import pairwise
 
+from forge_numeric import scalar as fs
+
 __all__ = [
     "TOL",
     "Arc",
@@ -104,7 +106,7 @@ class Segment:
 
     def distance(self, c: Point) -> float:
         p = self.nearest_to(c)[0]
-        return math.hypot(c[0] - p[0], c[1] - p[1])
+        return fs.hypot(c[0] - p[0], c[1] - p[1])
 
 
 @dataclass(frozen=True)
@@ -118,8 +120,8 @@ class Arc:
 
     def at(self, angle: float) -> Point:
         return (
-            self.centre[0] + self.radius * math.cos(angle),
-            self.centre[1] + self.radius * math.sin(angle),
+            self.centre[0] + self.radius * fs.cos(angle),
+            self.centre[1] + self.radius * fs.sin(angle),
         )
 
     def holds(self, angle: float) -> bool:
@@ -142,7 +144,7 @@ class Arc:
         dx, dy = c[0] - self.centre[0], c[1] - self.centre[1]
         if dx == 0.0 and dy == 0.0:
             return []  # every point of the circle is as near: its ends and quarters stand for them
-        angle = math.atan2(sign * dy, sign * dx)
+        angle = fs.atan2(sign * dy, sign * dx)
         return [self.at(angle)] if self.holds(angle) else []
 
     def nearest_to(self, c: Point) -> list[Point]:
@@ -160,7 +162,7 @@ class Arc:
     def distance(self, c: Point) -> float:
         near = self.nearest_to(c)
         candidates = near + self.ends()
-        return min(math.hypot(c[0] - p[0], c[1] - p[1]) for p in candidates)
+        return min(fs.hypot(c[0] - p[0], c[1] - p[1]) for p in candidates)
 
 
 Piece = Segment | Arc
@@ -325,7 +327,7 @@ class Outline:
         c1, c2 = self.centre
         d1, d2 = p[0] - c1, p[1] - c2
         if self.shape != "rect":
-            far = math.hypot(d1, d2)
+            far = fs.hypot(d1, d2)
             return far <= self.half[0] and (self.shape == "disc" or far >= self.inner)
         h1, h2 = self.half
         if abs(d1) > h1 or abs(d2) > h2:
@@ -334,14 +336,14 @@ class Outline:
             r = self.corners[k]
             if r > 0 and s1 * d1 > h1 - r and s2 * d2 > h2 - r:
                 centre, _, _ = self._corner(k)
-                return math.hypot(p[0] - centre[0], p[1] - centre[1]) <= r
+                return fs.hypot(p[0] - centre[0], p[1] - centre[1]) <= r
         return True
 
     def signed_distance(self, p: Point) -> float:
         """How far ``p`` is outside the outline: negative inside, by how far it is from the edge."""
         c1, c2 = self.centre
         if self.shape in ("disc", "ring"):
-            far = math.hypot(p[0] - c1, p[1] - c2)
+            far = fs.hypot(p[0] - c1, p[1] - c2)
             out = far - self.half[0]
             return out if self.shape == "disc" else max(out, self.inner - far)
         edge = min(piece.distance(p) for piece in self.pieces())
@@ -358,7 +360,7 @@ class Outline:
             for piece in self.pieces()
             for p in (*piece.ends(), *piece.farthest_from(c))
         ]
-        return max(math.hypot(c[0] - p[0], c[1] - p[1]) for p in points)
+        return max(fs.hypot(c[0] - p[0], c[1] - p[1]) for p in points)
 
     def _features(self) -> list[Point]:
         """The points its signed distance is measured from, near its corners: the arcs' centres."""
@@ -439,7 +441,7 @@ def _segment_segment(s: Segment, t: Segment) -> list[Point]:
 def _line_circle(s: Segment, arc: Arc) -> list[Point]:
     (ax, ay), (bx, by) = s.a, s.b
     dx, dy = bx - ax, by - ay
-    length = math.hypot(dx, dy)
+    length = fs.hypot(dx, dy)
     if length == 0.0:
         return []
     ux, uy = dx / length, dy / length
@@ -454,7 +456,7 @@ def _line_circle(s: Segment, arc: Arc) -> list[Point]:
     for t in {along - half, along + half}:
         if -TOL <= t <= length + TOL:
             point = (ax + t * ux, ay + t * uy)
-            angle = math.atan2(point[1] - arc.centre[1], point[0] - arc.centre[0])
+            angle = fs.atan2(point[1] - arc.centre[1], point[0] - arc.centre[0])
             if arc.holds(angle):
                 found.append(point)
     return found
@@ -462,7 +464,7 @@ def _line_circle(s: Segment, arc: Arc) -> list[Point]:
 
 def _circle_circle(a: Arc, b: Arc) -> list[Point]:
     dx, dy = b.centre[0] - a.centre[0], b.centre[1] - a.centre[1]
-    d = math.hypot(dx, dy)
+    d = fs.hypot(dx, dy)
     if d == 0.0:
         return []  # one centre: where the circles are one, their ends stand for it
     if d > a.radius + b.radius + TOL or d < abs(a.radius - b.radius) - TOL:
@@ -474,8 +476,8 @@ def _circle_circle(a: Arc, b: Arc) -> list[Point]:
     found = []
     for sign in (1.0, -1.0):
         point = (mx - sign * half * uy, my + sign * half * ux)
-        on_a = math.atan2(point[1] - a.centre[1], point[0] - a.centre[0])
-        on_b = math.atan2(point[1] - b.centre[1], point[0] - b.centre[0])
+        on_a = fs.atan2(point[1] - a.centre[1], point[0] - a.centre[0])
+        on_b = fs.atan2(point[1] - b.centre[1], point[0] - b.centre[0])
         if a.holds(on_a) and b.holds(on_b):
             found.append(point)
     return found
@@ -519,7 +521,7 @@ def nearest_point(
     found = [p for p in candidates if common(p)]
     if not found:
         return None
-    return min(found, key=lambda p: math.hypot(c[0] - p[0], c[1] - p[1]))
+    return min(found, key=lambda p: fs.hypot(c[0] - p[0], c[1] - p[1]))
 
 
 def nearest_common(
@@ -527,7 +529,7 @@ def nearest_common(
 ) -> float | None:
     """How far ``c`` is from the nearest point that lies in every outline; None if they share none."""
     p = nearest_point(c, outlines, tol)
-    return None if p is None else math.hypot(c[0] - p[0], c[1] - p[1])
+    return None if p is None else fs.hypot(c[0] - p[0], c[1] - p[1])
 
 
 def overlap(outlines: Iterable[Outline], tol: float = TOL) -> bool:
@@ -563,7 +565,7 @@ def _param(side: Piece, p: Point) -> float:
             )
         )
     turned = (
-        math.atan2(p[1] - side.centre[1], p[0] - side.centre[0]) - side.start
+        fs.atan2(p[1] - side.centre[1], p[0] - side.centre[0]) - side.start
     ) % _TURN
     if turned > side.sweep + TOL / side.radius:
         turned = 0.0 if _TURN - turned < turned - side.sweep else side.sweep
@@ -586,7 +588,7 @@ def _runs(side: Piece, axis: int) -> list[tuple[Point, Point, float]]:
     ordered = sorted(stops)
     for a, b in pairwise(ordered):
         middle = side.start + (a + b) / 2
-        sign = math.cos(middle) if axis == 1 else math.sin(middle)
+        sign = fs.cos(middle) if axis == 1 else fs.sin(middle)
         found.append(
             (
                 side.at(side.start + a),

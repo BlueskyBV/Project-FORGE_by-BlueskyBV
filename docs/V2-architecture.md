@@ -47,8 +47,10 @@ where it is.
                                              forge_plan  forge_registry
                                NumPy only:   forge_geom  forge_kernel
                                              forge_spec  forge_checks
-                               (and Forge's own compiled crate forge_core,
-                                ADR-0024, ADR-0034)
+                                             forge_numeric
+                               (and Forge's own compiled code: forge_core,
+                                ADR-0024, ADR-0034; forge_numeric's twin,
+                                ADR-0037)
 ```
 
 **Dependency rules, each checked by `tests/test_architecture.py`:**
@@ -57,6 +59,7 @@ where it is.
 |---|---|
 | A package imports only from its own layer or below | Layering |
 | L0 imports only the standard library, NumPy, Forge's own crate `forge_core` and other L0 packages | ADR-0002, ADR-0034, rule R11 |
+| V2 computes no number a machine may round its own way: elementary functions, products and linear algebra through `forge_numeric`; the standard-library packages use its NumPy-free `scalar` | ADR-0037 |
 | `forge_checks` never imports `forge_plan`, `forge_kernel`, `forge_occ`, `forge_designer`, or ForgeIR's construction types | Checks can't see the design (R2) |
 | `forge_plan` never imports `forge_checks` | The compiler can't tune itself to the checks |
 | `forge_checks.oracle` never imports `forge_geom` | The oracle shares no shape code with the second kernel |
@@ -79,6 +82,7 @@ where it is.
 | `forge_checks` | L0 | Views, checks and the oracle (4.2, 4.3) | **new** |
 | `forge_plan` | L0 | The deterministic compiler: confirmed spec → ForgeIR v2, with proven-equal alternatives per item | **new** |
 | `forge_registry` | L0 | The one dispatch mechanism: a registry of entries by key, total and in its keys' order, with its reserved methods (V2-stage4b-0b.md, 3) | **new** (4b.0b) |
+| `forge_numeric` | L0 | The same numbers on every machine (ADR-0037): elementary functions ported from msun (`scalar`, NumPy-free, and `vector`, bit for bit each other), products and small linear algebra in a fixed order, polynomial roots, `interp`, normal draws; a compiled twin (`native/forge_numeric_native`, Rust behind a C interface) where the machine has it. Every V2 number goes through it (`EveryNumberIsTheSameOnEveryMachine`) | **new** (4b.0c) |
 | `forge_occ` | L1 | OpenCascade through its OCP bindings, directly (V2-stage3.md; ADR-0022: OpenCascade 8.0.1) | **new** |
 | `forge_print` | L1 | The calibration coupon, entering measured offsets into a profile, the optional slicer run | **new** |
 | `forge_fonts` | L1 | Reads the one pinned font (fontTools) into glyph outlines, stored in the spec when text is resolved | **new** |
@@ -569,6 +573,7 @@ third, separately coded model, not by the views agreeing with each other.
 packages/
   forge_units/  forge_expr/  forge_ir/  forge_evidence/  forge_analysis/
   forge_geom/   forge_kernel/                                   # V1 trust core
+  forge_numeric/   scalar.py vector.py linear.py _native.py _native/<platform>/   # ADR-0037
   forge_spec/      schema.py values.py words.py citations.py problems.py draft.py wire.py
                    geometry.py placement.py derived.py tables.py checks.py accounting.py
                    questions.py orientation.py print_spec.py render.py render_views.py
@@ -594,7 +599,7 @@ packages/
   forge_eval/      keys.py grade.py deviation.py bounds.py generator.py
                    truth_shapes.py planted.py sets.py
   forge_cli/       (V1, plus the preview and confirmation page)
-docs/adr/          0001–0011, 0022–0036 (0012–0021: section 10's table; their files written in 4b.0b)
+docs/adr/          0001–0011, 0022–0037 (0012–0021: section 10's table; their files written in 4b.0b)
 eval/              keys/ references/ blind/ corpus/ planted/    # answer keys, locked
 docs/definitions/  what every field of every item kind means    # approved by you
 tests/             test_architecture.py test_rules.py ...
