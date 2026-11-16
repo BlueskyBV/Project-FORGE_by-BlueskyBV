@@ -1,0 +1,63 @@
+# Every value one program makes for some seeds, written out in full on several machines (tests/v2_values.py), so
+# where the machines' fingerprints differ the first differing value, and the path to it, can be found. Started
+# by hand only.
+name: values
+
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: "Seeds, A-B"
+        default: "0-2"
+      sections:
+        description: "report, judge (comma separated)"
+        default: "judge"
+      runners:
+        description: "JSON list of runners"
+        default: '["ubuntu-24.04", "macos-15"]'
+      python:
+        description: "The Python"
+        default: "3.14.10"
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.runners) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONHASHSEED: "0"
+      PYTHONUTF8: "1"
+    steps:
+      - name: Line endings as committed
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python }}
+      - name: Forge's pinned tools
+        run: |
+          python -m pip install --disable-pip-version-check -q -r .github/requirements-runner.txt || {
+            python -m pip install --disable-pip-version-check -q numpy==2.5.3 fonttools==4.67.0 manifold3d==3.5.4
+          }
+      - name: The values
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          SECTIONS: ${{ inputs.sections }}
+        run: |
+          python -c "import forge_numeric.vector as v; print('compiled twin', v._use is not None)" 2>/dev/null || PYTHONPATH=packages python -c "import forge_numeric.vector as v; print('compiled twin', v._use is not None)"
+          mkdir -p out
+          python tests/v2_values.py dump --seeds "$SEEDS" --sections "$SECTIONS" --out "out/values-${{ matrix.runner }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: values-${{ matrix.runner }}
+          path: out/
+          retention-days: 14
