@@ -22,8 +22,8 @@ from forge_spec.draft import (
     Item,
     Place,
     Profile,
-    Through,
 )
+from forge_spec.ends import ThroughAll, end_of
 from forge_spec.frames import Frame
 from forge_spec.geometry import EPS, FlatFace, SideFace, Source, Taper, Vec
 from forge_spec.outline import Shape
@@ -120,7 +120,7 @@ def _place_of(item: Item) -> Place | None:
 
 
 def _is_through(item: Item) -> bool:
-    return isinstance(item.get("depth"), Through)
+    return isinstance(end_of(item), ThroughAll)
 
 
 def _flatten(value: object) -> list[object]:

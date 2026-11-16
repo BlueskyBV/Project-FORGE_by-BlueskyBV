@@ -62,8 +62,8 @@ from forge_spec.draft import (
     PartSpec,
     Pattern,
     Place,
-    Through,
 )
+from forge_spec.ends import ThroughAll, end_of
 from forge_spec.schema import KINDS
 from forge_spec.values import Count, Value
 from numpy.typing import NDArray
@@ -792,7 +792,7 @@ class _Compiler:
         first axis, and its half sizes along it and the other), or a disc
         within ``reach`` of its centre.
         """
-        if isinstance(item.get("depth"), Through):
+        if isinstance(end_of(item), ThroughAll):
             self.check(item, "depth", "depth", depth, None, Open(copy.point, _t(-_v(copy.direction)), depth, radius),
                        copy.index, _RAYS)  # fmt: skip
             return

@@ -59,6 +59,7 @@ from .draft import (
     Text,
     Through,
 )
+from .ends import Blind, ThroughAll, end_of
 from .geometry import (
     EPS,
     Face,
@@ -634,16 +635,16 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
         r = layout.diameters.get(item.id, 0.0) / 2
         least, most = side_material(face, r), side_most_material(face, r)
     emboss = VIEWS[item.kind].embossed(item)
-    depth = item.get("depth")
+    end = end_of(item)
     if emboss:
-        return (mm(depth) if isinstance(depth, Value) else 0.0), False
-    through = isinstance(depth, Through) or (
-        isinstance(depth, Value) and least > EPS and mm(depth) >= least - EPS
+        return (mm(end.depth) if isinstance(end, Blind) else 0.0), False
+    through = isinstance(end, ThroughAll) or (
+        isinstance(end, Blind) and least > EPS and mm(end.depth) >= least - EPS
     )
     deep = (
         most
-        if isinstance(depth, Through)
-        else (min(mm(depth), most) if isinstance(depth, Value) else 0.0)
+        if isinstance(end, ThroughAll)
+        else (min(mm(end.depth), most) if isinstance(end, Blind) else 0.0)
     )
     return deep, not VIEWS[item.kind].lettered and least > EPS and through
 

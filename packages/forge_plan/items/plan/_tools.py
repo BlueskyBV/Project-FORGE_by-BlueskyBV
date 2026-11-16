@@ -6,7 +6,8 @@ import math
 from collections.abc import Mapping
 
 from forge_numeric import scalar as fs
-from forge_spec.draft import Choice, Item, Profile, Through
+from forge_spec.draft import Choice, Item, Profile
+from forge_spec.ends import ThroughAll, end_of
 from forge_spec.geometry import FlatFace, Part, SideFace, most_material_under
 from forge_spec.placement import Instance
 from forge_spec.schema import DIRECTIONS
@@ -236,7 +237,7 @@ def _on_face(face: FlatFace, w: Vec) -> tuple[float, float]:
 
 
 def _through(item: Item) -> bool:
-    return isinstance(item.get("depth"), Through)
+    return isinstance(end_of(item), ThroughAll)
 
 
 def _cut_depth(item: Item, face: FlatFace, parts: tuple[Part, ...], w: Vec) -> float:

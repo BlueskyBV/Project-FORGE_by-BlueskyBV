@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
+from forge_spec.ends import Blind, end_of
 from forge_spec.geometry import (
     EPS,
     FlatFace,
@@ -25,7 +26,6 @@ from forge_spec.items.solve._common import (
 )
 from forge_spec.items.solve.protocol import SolveKind
 from forge_spec.problems import pointer
-from forge_spec.values import Value
 
 if TYPE_CHECKING:
     from forge_spec.geometry import FlatFace, Part
@@ -67,13 +67,14 @@ class Pocket(SolveKind):
         """The floor of a pocket, a face other features can go into."""
         from forge_spec.placement import _outline
 
-        depth = item.get("depth")
+        end = end_of(item)
         layout.faces.setdefault(key, {})
-        if not isinstance(depth, Value):
+        if not isinstance(end, Blind):
             layout.close(
                 key, "bottom", "fault", f"{item.id} goes through; it has no bottom"
             )
             return
+        depth = end.depth
         deep = mm(depth)
         if deep >= material - EPS:
             # As deep as the material: it breaks through and leaves no floor. The

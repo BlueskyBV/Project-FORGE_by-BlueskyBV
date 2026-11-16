@@ -51,8 +51,8 @@ from forge_spec.draft import (
     Place,
     Profile,
     Text,
-    Through,
 )
+from forge_spec.ends import ThroughAll, end_of
 from forge_spec.font import missing_letters, text_width
 from forge_spec.schema import KINDS
 from forge_spec.tables import lookup_fit
@@ -636,7 +636,7 @@ def _on(item: Item) -> On | None:
 
 
 def _through(item: Item) -> bool:
-    return isinstance(item.get("depth"), Through)
+    return isinstance(end_of(item), ThroughAll)
 
 
 def _depends_on(item: Item) -> set[str]:

@@ -54,6 +54,7 @@ from .draft import (
     Pattern,
     Place,
 )
+from .ends import Blind, ThroughAll, end_of
 from .geometry import (
     EPS,
     FlatFace,
@@ -785,15 +786,15 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
         for other in layout.items.values()
     ):  # fmt: skip
         return
-    depth = item.get("depth")
+    end = end_of(item)
     far = reach(parts)
     for n, (p1, p2) in enumerate(positions):
         nearest = max(fs.hypot(p1, p2) - far, 0.0)
         if not (
-            _is_through(item)
+            isinstance(end, ThroughAll)
             or (
-                isinstance(depth, Value)
-                and mm(depth) >= material_at(face, nearest, 0.0, 0.0) - EPS
+                isinstance(end, Blind)
+                and mm(end.depth) >= material_at(face, nearest, 0.0, 0.0) - EPS
             )
         ):
             continue
@@ -813,7 +814,7 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
                     place = _place_of(item)
                     where = place.axes.get(face.axes[j]) if place is not None else None
                     values = [where, *_item_values(item, *_outline_fields(item, face.axes, k)), *_place_values(item, face.axes[j]),
-                              *layout.values_of(face.axis_sources[k]), depth]  # fmt: skip
+                              *layout.values_of(face.axis_sources[k]), item.get("depth")]  # fmt: skip
                     layout.problem("cant", at,
                                    f"{item.id} copy {first + n + 1} goes right across face {face.name} and through "
                                    "it: it would cut the part in two", values)  # fmt: skip
@@ -931,11 +932,11 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
     hole below it.
     """
     deep: list[tuple[str, float, tuple[Part, ...], list[object], bool]] = []
-    depth = item.get("depth")
+    end = end_of(item)
     hole = layout.diameters.get(item.id)
-    if isinstance(depth, Value) and not (SOLVE[item.kind].embossed(item)):
+    if isinstance(end, Blind) and not (SOLVE[item.kind].embossed(item)):
         mouth = (disc(hole / 2),) if hole is not None else outline
-        deep.append(("depth", mm(depth), mouth, [depth], False))
+        deep.append(("depth", mm(end.depth), mouth, [end.depth], False))
     bore = item.get("counterbore")
     if isinstance(bore, Counterbore):
         deep.append(
@@ -1130,11 +1131,11 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
     """
     entry = SOLVE[item.kind]
     if face.outward and entry.cut:
-        value = item.get("depth")
+        end = end_of(item)
         depth = (
             face.wall
-            if _is_through(item)
-            else (mm(value) if isinstance(value, Value) else 0.0)
+            if isinstance(end, ThroughAll)
+            else (mm(end.depth) if isinstance(end, Blind) else 0.0)
         )
         inner = face.radius - depth
     elif not face.outward and entry.adds:

@@ -406,6 +406,14 @@ generator compute their own.
 and `through_all`, expressing today's two cases, byte-identical (today's
 `through` is `through_all` as the solver's material model defines it).
 
+Status of 2a: built, byte-identical (the fingerprints of 40 sample
+seeds): `forge_spec.ends` (`Blind(depth)`, `ThroughAll`, `end_of(item)`),
+through which the solver (placement, pockets' floors, holes' shapes), its
+comparison and views, the judge's placement and check compiler, the
+planner and the spec grading read a cut's end. The generator's own plans
+keep a depth or none (through) until 2b gives them its conditions, with
+the regressions' plans migrated.
+
 **2b, the ability:** the definitions gain the end conditions as CAD means
 them, feature-level: blind, through-next (the first face that covers the
 whole profile), through-all, up-to-face, up-to-vertex, up-to-body,

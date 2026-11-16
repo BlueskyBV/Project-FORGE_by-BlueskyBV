@@ -42,8 +42,8 @@ from forge_spec.draft import (
     Item,
     On,
     PartSpec,
-    Through,
 )
+from forge_spec.ends import Blind, ThroughAll, end_of
 from forge_spec.geometry import (
     EPS,
     FlatFace,
@@ -53,7 +53,6 @@ from forge_spec.geometry import (
     most_material_under,
 )
 from forge_spec.placement import Instance, Layout, mm
-from forge_spec.values import Value
 from forge_spec.wire import to_wire
 
 from .bounds import upper_bound
@@ -464,11 +463,12 @@ def _at_edge(face: FlatFace, p1: float, p2: float, reach: float) -> bool:
 
 def _through_at(item: Item, copy: Instance, face: FlatFace, reach: float) -> bool:
     """Whether one copy of a cut leaves no material under any of it."""
-    depth = item.get("depth")
-    if isinstance(depth, Through):
+    end = end_of(item)
+    if isinstance(end, ThroughAll):
         return True
-    if not isinstance(depth, Value):
+    if not isinstance(end, Blind):
         return False
+    depth = end.depth
     p1, p2 = _offset(copy, face)
     # The most material anywhere within its reach (on a turned part's end, not always at the nearest point).
     most = most_material_under(face, (disc(reach),), p1, p2)
@@ -559,11 +559,11 @@ def _through_holes(
                 item, copy, face, diameter / 2
             ):
                 k = _axis(copy)
-                depth = item.get("depth")
+                blind = end_of(item)
                 p1, p2 = _offset(copy, face)
                 deep = (
-                    mm(depth)
-                    if isinstance(depth, Value)
+                    mm(blind.depth)
+                    if isinstance(blind, Blind)
                     else material_at(face, p1, p2, 0.0)
                 )
                 end = copy.origin[k] - copy.normal[k] * deep

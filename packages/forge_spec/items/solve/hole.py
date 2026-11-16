@@ -13,6 +13,7 @@ from forge_spec.draft import (
     Fit,
     Item,
 )
+from forge_spec.ends import Blind, end_of
 from forge_spec.geometry import (
     EPS,
     disc,
@@ -61,10 +62,11 @@ class Hole(SolveKind):
                 layout.diameters[item.id] = entry.size_mm
 
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
+        end = end_of(item)
         bore, sink, depth = (
             item.get("counterbore"),
             item.get("countersink"),
-            item.get("depth"),
+            end.depth if isinstance(end, Blind) else None,
         )
         if isinstance(bore, Counterbore) and isinstance(sink, Countersink):
             layout.issue(

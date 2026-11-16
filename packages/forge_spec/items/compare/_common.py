@@ -11,7 +11,8 @@ import itertools
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
-from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item, Through
+from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item
+from forge_spec.ends import Blind, ThroughAll, end_of
 from forge_spec.geometry import EPS, FlatFace, SideFace, Vec, bbox, material_at
 from forge_spec.items.solve._common import degrees
 from forge_spec.placement import Instance, Layout, _outline, mm
@@ -164,9 +165,9 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
     """
     kind = item.kind
     mouth, into = copy.origin, _neg(copy.normal)
-    depth = item.get("depth")
-    deep = mm(depth) if isinstance(depth, Value) else material
-    through = isinstance(depth, Through) or deep >= material - EPS
+    end = end_of(item)
+    deep = mm(end.depth) if isinstance(end, Blind) else material
+    through = isinstance(end, ThroughAll) or deep >= material - EPS
     deep = min(deep, material)
     head: tuple[object, ...]
     tail: tuple[object, ...]
