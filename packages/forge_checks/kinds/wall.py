@@ -38,6 +38,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from forge_numeric import scalar as fs
 from forge_numeric import vector as fv
 from numpy.typing import NDArray
 
@@ -106,9 +107,9 @@ def _rounds(outer: Round, inner: Round, width: float, probe: Probe) -> Measureme
         )
 
     # How far each surface's own axis may be from the outside's fitted one, any way across it.
-    off_a = math.hypot(a.fit.u_centre[0], a.fit.u_centre[1])
+    off_a = fs.hypot(a.fit.u_centre[0], a.fit.u_centre[1])
     gap = b.centre - a.centre
-    off_b = float(fv.norm(gap - (fv.matmul(gap, a.axis)) * a.axis)) + math.hypot(
+    off_b = float(fv.norm(gap - (fv.matmul(gap, a.axis)) * a.axis)) + fs.hypot(
         b.fit.u_centre[0], b.fit.u_centre[1]
     )
     outside = _band(a.window, distance(a.window), off_a / a.fit.radius)

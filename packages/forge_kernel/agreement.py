@@ -174,7 +174,7 @@ _PRIMITIVES = frozenset({"box", "cylinder", "sphere"})
 
 def _sketch_convex(points: Sequence[Sequence[float]]) -> bool:
     corners = [(float(p[0]), float(p[1])) for p in points]
-    if len(corners) > 3 and math.dist(corners[0], corners[-1]) < 1e-9:
+    if len(corners) > 3 and fs.dist(corners[0], corners[-1]) < 1e-9:
         corners = corners[:-1]
     n = len(corners)
     turns = []

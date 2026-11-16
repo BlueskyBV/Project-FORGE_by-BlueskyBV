@@ -639,11 +639,12 @@ class EveryRoleHasAnEntryForEveryKind(unittest.TestCase):
 # ----------------------------------------------------------------------
 # The same numbers on every machine (ADR-0037)
 # ----------------------------------------------------------------------
-#: math's functions the C library computes, each rounding its own way.
+#: math's functions the C library computes, each rounding its own way, and CPython's own hypot, dist and
+#: sumprod, whose multiply-adds in C Clang and Microsoft's ARM compiler fuse (found on a Mac and an ARM PC).
 _MATH_FUNCTIONS = frozenset({
     "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "exp", "exp2", "expm1", "log", "log1p",
     "log2", "log10", "pow", "cbrt", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "erf",
-    "erfc", "gamma", "lgamma",
+    "erfc", "gamma", "lgamma", "hypot", "dist", "sumprod",
 })  # fmt: skip
 #: NumPy's: its SIMD paths and C library (elementary functions), BLAS and LAPACK (products and
 #: linear algebra), and C a compiler may fuse into multiply-adds (einsum, interp, complex numbers).
@@ -777,11 +778,12 @@ y @= b
 z = w ** 0.5 + w ** 2 + 10 ** -3 + w ** n
 q = pow(w, 3) + v.dot(u) + rng.normal(size=3) + random.gauss(0, 1) + 1j
 f = math.log10
+g = math.hypot(a, b) + math.dist(p, q)
 """
-        self.assertEqual(len(numeric_sites(caught)), 19, numeric_sites(caught))
+        self.assertEqual(len(numeric_sites(caught)), 21, numeric_sites(caught))
         fine = """
 from numpy.typing import NDArray
-x = math.sqrt(a) + math.hypot(a, b) + math.fsum(c) + np.sqrt(d) + np.sum(e) + np.cross(f, g)
+x = math.sqrt(a) + fs.hypot(a, b) + math.fsum(c) + np.sqrt(d) + np.sum(e) + np.cross(f, g)
 y = fs.sin(a) + fv.dot(b, c) + fv.matmul(b, c) + fv.normal(rng, size=3) + rng.uniform(0, 1)
 z = 2 ** 10 + 2.0 ** -53 + 3 ** 2 + w * w
 """

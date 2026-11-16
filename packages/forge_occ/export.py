@@ -45,6 +45,7 @@ import numpy as np
 from forge_checks.mesh import Mesh, MeshView
 from forge_checks.readers import MeshFileError, read_3mf, read_stl
 from forge_checks.view import Box
+from forge_numeric import scalar as fs
 from forge_numeric import vector as fv
 from numpy.typing import NDArray
 from OCP.BRep import BRep_Builder, BRep_Tool
@@ -399,7 +400,7 @@ def _face_deviation(face: Any, samples: Array, uv: Array, enough: float) -> Arra
     p = gp_Pnt()
     for k, (a, b) in enumerate(uv.tolist()):
         surface.D0(a, b, p)
-        out[k] = math.dist(samples[k], (p.X(), p.Y(), p.Z()))
+        out[k] = fs.dist(samples[k], (p.X(), p.Y(), p.Z()))
     far = np.flatnonzero(out > enough)
     if far.size:
         search = Extrema_GenLocateExtPS(surface, 1e-12, 1e-12)

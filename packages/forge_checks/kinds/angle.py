@@ -87,7 +87,7 @@ def _near(angle: float, expected: float) -> float:
 def _cone(target: Cone, tolerance: Tolerance, probe: Probe) -> Measurement:
     deflection = float(probe.deflection.max(initial=0.0))
     (r0, r1), (s0, s1) = target.radii, target.ends
-    slant = math.hypot(r1 - r0, s1 - s0)
+    slant = fs.hypot(r1 - r0, s1 - s0)
     # The band, as how far the cone's far end moves square to it.
     width = (
         2 * slant * fs.tan(math.radians(min(tolerance.band, 60.0)))
@@ -124,7 +124,7 @@ def mesh_deflection(target: Cone, tolerance: Tolerance) -> float:
     # No length along its axis: no cone to fit, and nothing it asks of a mesh.
     if s1 == s0:
         return math.inf
-    slant = math.hypot(r1 - r0, s1 - s0)
+    slant = fs.hypot(r1 - r0, s1 - s0)
     width = 2 * slant * fs.tan(math.radians(min(tolerance.band, 60.0))) + 1e-3
     margin = _margin(width, s1 - s0)
     slope = (r1 - r0) / (s1 - s0)
@@ -237,7 +237,7 @@ def _turns(target: Turns, tolerance: Tolerance, probe: Probe) -> Measurement:
         y = float(fv.matmul(fit.centre, quarter)) - float(line[1])
         ux = fit.uncertainty_along(zero) + float(u_line[0])
         uy = fit.uncertainty_along(quarter) + float(u_line[1])
-        reach = math.hypot(x, y)
+        reach = fs.hypot(x, y)
         if reach == 0:
             return Measurement(
                 None,

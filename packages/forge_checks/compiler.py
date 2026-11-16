@@ -377,7 +377,7 @@ class _Compiler:
         for a in steps[0]:
             for b in steps[1]:
                 at = centre + a * e1 + b * e2
-                key = (share(at), -math.hypot(a, b))
+                key = (share(at), -fs.hypot(a, b))
                 if key > best_key:
                     best, best_key = at, key
         return best
@@ -441,10 +441,10 @@ class _Compiler:
         lines = [q for q in face.outline.pieces() if isinstance(q, Segment)
                  and abs(q.a[k] - extreme) <= 1e-9 and abs(q.b[k] - extreme) <= 1e-9]  # fmt: skip
         if lines:
-            line = max(lines, key=lambda q: math.dist(q.a, q.b))
+            line = max(lines, key=lambda q: fs.dist(q.a, q.b))
             middle = ((line.a[0] + line.b[0]) / 2, (line.a[1] + line.b[1]) / 2)
             return self.wall_at(
-                face, placed(middle), a, sign, min(math.dist(line.a, line.b) / 2, 4.0)
+                face, placed(middle), a, sign, min(fs.dist(line.a, line.b) / 2, 4.0)
             )
         quadrant = (0.0 if k == 0 else math.pi / 2) + (0.0 if sign > 0 else math.pi)
         arcs = [q for q in face.outline.pieces() if isinstance(q, OutlineArc) and q.holds(quadrant)
@@ -554,7 +554,7 @@ class _Compiler:
             if isinstance(side, OutlineArc):
                 self.size(item, min(side.radius, side.radius * side.sweep))
             else:
-                self.size(item, math.dist(side.a, side.b))
+                self.size(item, fs.dist(side.a, side.b))
         self.skip(item, "profile", "an outline has no single size: face accounting holds every point of the "
                   "built faces to it", held_by="face accounting")  # fmt: skip
 
@@ -907,7 +907,7 @@ class _Compiler:
             )
         if pieces:
             (r0, h0), (r1, h1) = max(
-                pieces, key=lambda p: (p[0][0] + p[1][0]) * math.dist(*p)
+                pieces, key=lambda p: (p[0][0] + p[1][0]) * fs.dist(*p)
             )
             cone = Cone(
                 copy.point,
@@ -1078,7 +1078,7 @@ class _Compiler:
             return "it has no flat end there"
         rim = max(flat[0].a, flat[0].b, key=lambda p: p[0])
         beside = [q for q in section.pieces() if q is not flat[0]
-                  and any(math.dist(p, rim) <= 1e-9 for p in q.ends())]  # fmt: skip
+                  and any(fs.dist(p, rim) <= 1e-9 for p in q.ends())]  # fmt: skip
         q = beside[0] if len(beside) == 1 else None
         if isinstance(q, Segment):
             (r0, h0), (r1, h1) = sorted((q.a, q.b), key=lambda p: p[1])
@@ -1940,7 +1940,7 @@ def _rounding_target(stretch: Rounded) -> object | None:
         legs = tuple(
             _t(
                 ((p[0] - k[0]) * u + (p[1] - k[1]) * v)
-                / math.hypot(p[0] - k[0], p[1] - k[1])
+                / fs.hypot(p[0] - k[0], p[1] - k[1])
             )
             for p in (t1, t2)
         )
@@ -1971,8 +1971,8 @@ def _rounding_target(stretch: Rounded) -> object | None:
     inside = bool(normal2[0] < 0)  # facing the axis: the material is outside the cone
     legs2 = tuple(
         (
-            float((p[0] - k[0]) / math.hypot(p[0] - k[0], p[1] - k[1])),
-            float((p[1] - k[1]) / math.hypot(p[0] - k[0], p[1] - k[1])),
+            float((p[0] - k[0]) / fs.hypot(p[0] - k[0], p[1] - k[1])),
+            float((p[1] - k[1]) / fs.hypot(p[0] - k[0], p[1] - k[1])),
         )
         for p in (t1, t2)
     )

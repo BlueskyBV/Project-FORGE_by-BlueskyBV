@@ -545,11 +545,11 @@ def _np_cbrt(x: Any) -> Array:
     return cast(Array, out.reshape(x.shape))
 
 
-_HYPOT_SAFE = (1e-150, 1e150)
+_HYPOT_SAFE = (sc.HYPOT_SMALL, sc.HYPOT_LARGE)
 
 
 def _np_hypot(x: Any, y: Any) -> Array:
-    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, ``math.hypot`` (CPython's own)."""
+    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, both scaled by a power of two first (exact): :func:`.scalar.hypot`."""
     x, y = np.broadcast_arrays(_in(x), _in(y))
     shape = x.shape
     x, y = x.ravel(), y.ravel()
@@ -559,8 +559,11 @@ def _np_hypot(x: Any, y: Any) -> Array:
         odd = (
             (big > _HYPOT_SAFE[1]) | ((big < _HYPOT_SAFE[0]) & (big > 0.0))
         ) & np.isfinite(big)
-    for k in np.flatnonzero(odd):
-        out[k] = math.hypot(float(x[k]), float(y[k]))
+    if odd.any():
+        e = np.frexp(big[odd])[1]
+        xs, ys = np.ldexp(x[odd], -e), np.ldexp(y[odd], -e)
+        with np.errstate(over="ignore", under="ignore"):
+            out[odd] = np.ldexp(np.sqrt(xs * xs + ys * ys), e)
     inf = np.isinf(x) | np.isinf(y)
     out[inf] = np.inf
     return cast(Array, out.reshape(shape))
@@ -679,7 +682,7 @@ def arctan2(y: Any, x: Any) -> Array:
 
 
 def hypot(x: Any, y: Any) -> Array:
-    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, ``math.hypot`` (CPython's own)."""
+    """sqrt(x*x + y*y), under one ulp; where that would overflow or lose bits to underflow, both scaled by a power of two first (:func:`.scalar.hypot`)."""
     if _number(x) and _number(y):
         return cast(Array, np.float64(_hypot1(float(x), float(y))))
     if _use is None:
@@ -693,9 +696,7 @@ def hypot(x: Any, y: Any) -> Array:
         ]
         return _out(np.array(found, dtype=np.float64).reshape(shape))
     xf, yf = np.ascontiguousarray(x.ravel()), np.ascontiguousarray(y.ravel())
-    out, deferred = _native.hypot(xf, yf)
-    if deferred:
-        return _out(_np_hypot(xf, yf).reshape(shape))
+    out, _ = _native.hypot(xf, yf)
     return _out(out.reshape(shape))
 
 
@@ -705,13 +706,7 @@ _FEW = 8
 
 def _hypot1(x: float, y: float) -> float:
     """:func:`_np_hypot` of one pair, in Python floats: the same operations, so the same bits."""
-    if math.isinf(x) or math.isinf(y):
-        return math.inf
-    ax, ay = abs(x), abs(y)
-    big = ax if ax >= ay else ay
-    if ax == ax and ay == ay and (big > _HYPOT_SAFE[1] or 0.0 < big < _HYPOT_SAFE[0]):
-        return math.hypot(x, y)
-    return math.sqrt(x * x + y * y)
+    return sc.hypot(x, y)
 
 
 def _pair(a: Any, b: Any) -> tuple[Array, Array]:

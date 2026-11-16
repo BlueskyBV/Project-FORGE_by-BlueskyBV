@@ -1242,7 +1242,7 @@ def _side_tangent(side: OutlineSide, at_end: bool) -> tuple[float, float]:
         return _unit2(side.b[0] - side.a[0], side.b[1] - side.a[1])
     point = side.b if at_end else side.a
     out = _unit2(point[0] - side.arc.centre[0], point[1] - side.arc.centre[1])
-    forward = math.dist(side.a, side.arc.at(side.arc.start)) <= math.dist(
+    forward = fs.dist(side.a, side.arc.at(side.arc.start)) <= fs.dist(
         side.a, side.arc.at(side.arc.start + side.arc.sweep)
     )
     return (-out[1], out[0]) if forward else (out[1], -out[0])
@@ -1264,7 +1264,7 @@ def _profile_chain(
     for side in sides:
         (x0, y0), (x1, y1) = side.a, side.b
         if side.arc is None:
-            length = math.hypot(x1 - x0, y1 - y0)
+            length = fs.hypot(x1 - x0, y1 - y0)
             along = ((x1 - x0) * u + (y1 - y0) * v) / length
             out = ((y1 - y0) * u - (x1 - x0) * v) / length
             sv = np.asarray(np.cross(along, n_face), dtype=np.float64)
@@ -1276,7 +1276,7 @@ def _profile_chain(
         centre = frame.world(
             np.array([arc.centre[0]]), np.array([arc.centre[1]]), np.array([z])
         )[0]
-        forward = math.dist(side.a, arc.at(arc.start)) <= math.dist(
+        forward = fs.dist(side.a, arc.at(arc.start)) <= fs.dist(
             side.a, arc.at(arc.start + arc.sweep)
         )
         if forward:  # anticlockwise: its material inside its circle

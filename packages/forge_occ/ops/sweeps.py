@@ -687,7 +687,7 @@ def _coil(ctx: Context) -> Product:
         return "surface"
 
     # Pappus for a section swept square to its path: the section's area times the helix's length.
-    length = turns * math.hypot(2.0 * math.pi * radius, pitch)
+    length = turns * fs.hypot(2.0 * math.pi * radius, pitch)
     wound = math.pi * wire * wire * length
     return replace(
         _named(shape, ctx.step, role),

@@ -1627,7 +1627,7 @@ class ConePatch(Patch):
     size: tuple[float, float] = field(init=False)
 
     def __post_init__(self) -> None:
-        slant = math.hypot(self.r1 - self.r0, self.t1 - self.t0)
+        slant = fs.hypot(self.r1 - self.r0, self.t1 - self.t0)
         object.__setattr__(self, "size", (slant, 2 * math.pi * max(self.r0, self.r1)))
 
     def _section(self, s: Array) -> tuple[Array, Array]:
@@ -1658,7 +1658,7 @@ class ConePatch(Patch):
             fv.matmul(d, np.asarray(self.e2)),
             fv.matmul(d, np.asarray(self.w)),
         )
-        rho = math.hypot(a, b)
+        rho = fs.hypot(a, b)
         dr, dt = self.r1 - self.r0, self.t1 - self.t0
         s = min(
             max(((rho - self.r0) * dr + (c - self.t0) * dt) / (dr * dr + dt * dt), 0.0),
@@ -1843,7 +1843,7 @@ def patches(solid: Solid, lo: Vec, hi: Vec) -> list[Patch]:
         for kind, data in solid.shape.pieces():
             if kind == "seg":
                 x0, y0, x1, y1 = data
-                length = math.hypot(x1 - x0, y1 - y0)
+                length = fs.hypot(x1 - x0, y1 - y0)
                 d = ((x1 - x0) * u + (y1 - y0) * v) / length
                 n2 = ((y1 - y0) * u - (x1 - x0) * v) / length
                 start = o + x0 * u + y0 * v + solid.t0 * w

@@ -75,7 +75,7 @@ class Hole(CompileKind):
                     cone,
                     copy.index,
                 )
-                slant = math.hypot(r - radius, recess)
+                slant = fs.hypot(r - radius, recess)
                 angle = sink.angle
                 assert isinstance(angle, Value)
                 tolerance_angle = tolerance_of(angle, shorter_side=slant)

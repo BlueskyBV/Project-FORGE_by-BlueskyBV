@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
@@ -35,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from forge_numeric import scalar as fs
 from forge_spec.checks import SpecReport
 from forge_spec.draft import (
     Choice,
@@ -453,7 +453,7 @@ def _at_edge(face: FlatFace, p1: float, p2: float, reach: float) -> bool:
             abs(p1) + reach >= face.half[0] - EPS
             or abs(p2) + reach >= face.half[1] - EPS
         )
-    return math.hypot(p1, p2) + reach >= face.half[0] - EPS
+    return fs.hypot(p1, p2) + reach >= face.half[0] - EPS
 
 
 def _through_at(item: Item, copy: Instance, face: FlatFace, reach: float) -> bool:

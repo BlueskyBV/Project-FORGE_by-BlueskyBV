@@ -88,18 +88,18 @@ def _tangent(side: tuple[tuple[float, float], tuple[float, float], tuple[float, 
              at_end: bool) -> tuple[float, float]:  # fmt: skip
     a, b, centre, clockwise = side
     if centre is None:
-        length = math.dist(a, b)
+        length = fs.dist(a, b)
         return ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
     x = b if at_end else a
     dx, dy = x[0] - centre[0], x[1] - centre[1]
-    r = math.hypot(dx, dy)
+    r = fs.hypot(dx, dy)
     return (dy / r, -dx / r) if clockwise else (-dy / r, dx / r)
 
 
 def _arc_box(a: tuple[float, float], b: tuple[float, float], centre: tuple[float, float],
              clockwise: bool) -> tuple[tuple[float, float], tuple[float, float]]:  # fmt: skip
     """The box round an arc from ``a`` to ``b`` about ``centre``: its ends, and its circle's points furthest along each axis that it passes."""
-    r = math.dist(a, centre)
+    r = fs.dist(a, centre)
     a0 = fs.atan2(a[1] - centre[1], a[0] - centre[0])
     a1 = fs.atan2(b[1] - centre[1], b[0] - centre[0])
     sweep = ((a0 - a1) if clockwise else (a1 - a0)) % (2 * math.pi)
@@ -285,7 +285,7 @@ def _corner_where(
     near = [min(a[i], b[i], corner[i]) for i in range(3)]
     far = [max(a[i], b[i], corner[i]) for i in range(3)]
     if earlier.bevel:  # the bevel's own line, across the corner: never one of the face's straight edges
-        run = math.dist(a, b)
+        run = fs.dist(a, b)
         across = [(b[i] - a[i]) / run for i in range(3)]
         return {
             "kind": "line",

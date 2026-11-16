@@ -296,7 +296,7 @@ def material_at(material: Material, p: Point) -> float:
     if isinstance(material, Solid):
         return material.depth
     if isinstance(material, (Taper, Dome, Turned)):
-        return material.at(math.dist(p, material.centre))
+        return material.at(fs.dist(p, material.centre))
     if isinstance(material, Less):
         return material_at(material.base, p) - material.depth
     if all(o.contains(p) for o in material.over):
@@ -838,7 +838,7 @@ def section_of(item: Item) -> Outline:
             )  # an arc back to where it starts goes all the way round
             sweep = 2 * math.pi if whole else sweep
             start = last if segment.clockwise and not whole else first
-            sides.append(Arc(c, math.dist(here, c), start, sweep))
+            sides.append(Arc(c, fs.dist(here, c), start, sweep))
         here = segment.to
     return Outline.profile(sides)
 
@@ -856,8 +856,7 @@ def _turned_end(section: Outline, top: bool) -> tuple[float, float, float] | Non
             continue
         points = [*q.ends(), *(q.quarters() if isinstance(q, Arc) else ())]
         if any(
-            abs(p[1] - height) <= TOL
-            and min(math.dist(p, e) for e in end.ends()) > 1e-6
+            abs(p[1] - height) <= TOL and min(fs.dist(p, e) for e in end.ends()) > 1e-6
             for p in points
         ):
             return None

@@ -7,9 +7,9 @@ extrusion's branches here (V2-stage4b-0b.md, 7).
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 from forge_spec.placement import Instance
 
@@ -107,12 +107,12 @@ def _extrusion_edges(chain: Chain, queries: Queries, target: Item, copy: Instanc
         for a, b, centre, clockwise in sides:
             if centre is None:
                 start, stop = world(a, height), world(b, height)
-                run = math.dist(a, b)
+                run = fs.dist(a, b)
                 where = {"kind": "line", "axis": _vec([(stop[i] - start[i]) / run for i in range(3)]),
                          "through": _vec(start), "within": _within(*_box_of(start, stop))}  # fmt: skip
             else:
                 (l1, l2), (h1, h2) = _arc_box(a, b, centre, clockwise)
-                where = {**circle_where(world(centre, height), u, math.dist(a, centre)),
+                where = {**circle_where(world(centre, height), u, fs.dist(a, centre)),
                          "within": _within(*_box_of(world((l1, l2), height), world((h1, h2), height)))}  # fmt: skip
             queries.add(
                 names[end], names["side"], where=where, count=_count(chain, where, key)

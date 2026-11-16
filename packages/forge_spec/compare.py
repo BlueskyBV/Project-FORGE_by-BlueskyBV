@@ -47,6 +47,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
+from forge_numeric import scalar as fs
+
 from .checks import SpecReport
 from .geometry import EPS, Vec
 from .items.compare import COMPARE
@@ -474,7 +476,7 @@ def _apart(f: Feature, g: Feature) -> tuple[int, float]:
     if f.sizes is not None and g.sizes is not None:
         ways += int(sorted(_r(x) for x in f.sizes) != sorted(_r(x) for x in g.sizes))
     far = (
-        math.dist(f.point, g.point)
+        fs.dist(f.point, g.point)
         if f.point is not None and g.point is not None
         else 0.0
     )

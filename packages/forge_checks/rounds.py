@@ -130,7 +130,7 @@ Boundary = Line2 | Circle2
 
 
 def _unit2(x: float, y: float) -> Point:
-    length = math.hypot(x, y)
+    length = fs.hypot(x, y)
     if not (math.isfinite(length) and length > 0):
         raise ValueError(f"not a direction: {(x, y)}")
     return (x / length, y / length)
@@ -200,7 +200,7 @@ def section(k: Point, b1: Boundary, b2: Boundary, size: float, fillet: bool) -> 
     # them, are no farther from the corner than they (a closing point where
     # two tangents meet far off is only where the polygon is closed, out in
     # the air).
-    reach = max(math.hypot(x - k[0], y - k[1]) for x, y in (t1, t2))
+    reach = max(fs.hypot(x - k[0], y - k[1]) for x, y in (t1, t2))
     return Section(ring, circle, reach)
 
 
@@ -309,9 +309,9 @@ def _anticlockwise(corners: Sequence[Point]) -> tuple[Point, ...]:
     """The corners anticlockwise, with coincident ones (a corner that closes onto a touching point) dropped."""
     found: list[Point] = []
     for c in corners:
-        if not found or math.dist(c, found[-1]) > 1e-12:
+        if not found or fs.dist(c, found[-1]) > 1e-12:
             found.append(c)
-    if len(found) > 1 and math.dist(found[0], found[-1]) <= 1e-12:
+    if len(found) > 1 and fs.dist(found[0], found[-1]) <= 1e-12:
         found.pop()
     area = sum(
         found[i][0] * found[(i + 1) % len(found)][1]
@@ -768,9 +768,9 @@ def _turned(frame: Frame, corners: tuple[Point, ...]) -> Node:
     found: list[Point] = []
     for x, z in corners:
         q = (0.0 if abs(x) <= 1e-9 else x, z)
-        if not found or math.dist(q, found[-1]) > 1e-12:
+        if not found or fs.dist(q, found[-1]) > 1e-12:
             found.append(q)
-    if len(found) > 1 and math.dist(found[0], found[-1]) <= 1e-12:
+    if len(found) > 1 and fs.dist(found[0], found[-1]) <= 1e-12:
         found.pop()
     turning = [
         found[k]

@@ -676,7 +676,7 @@ def _check_overlaps(item: Item, parts: Sequence[Part], positions: Sequence[tuple
         return
     i, j = pair
     (u1, u2), (w1, w2) = positions[i], positions[j]
-    how = "land on each other" if math.hypot(u1 - w1, u2 - w2) <= EPS else "overlap"
+    how = "land on each other" if fs.hypot(u1 - w1, u2 - w2) <= EPS else "overlap"
     layout.problem(
         "question",
         at,
@@ -757,7 +757,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
         if not outline_on_face(face, parts, p1, p2, cut=cut):
             into_hole = (
                 face.shape == "annulus"
-                and reach(parts) + math.hypot(p1, p2) <= face.half[0] + EPS
+                and reach(parts) + fs.hypot(p1, p2) <= face.half[0] + EPS
             )
             where = f"breaks into the hole in the middle of face {face.name}" if into_hole else (
                 f"runs past the edge of face {face.name}")  # fmt: skip
@@ -793,7 +793,7 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
     depth = item.get("depth")
     far = reach(parts)
     for n, (p1, p2) in enumerate(positions):
-        nearest = max(math.hypot(p1, p2) - far, 0.0)
+        nearest = max(fs.hypot(p1, p2) - far, 0.0)
         if not (
             _is_through(item)
             or (
@@ -1178,7 +1178,7 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
     def close(j: int, i: int) -> bool:
         chord, gap_along = apart(j, i)
         if round_:
-            return math.hypot(chord, gap_along) < sizes[i][0] + sizes[j][0] - EPS
+            return fs.hypot(chord, gap_along) < sizes[i][0] + sizes[j][0] - EPS
         return (
             chord < sizes[i][0] + sizes[j][0] - EPS
             and gap_along < sizes[i][1] + sizes[j][1] - EPS
@@ -1499,9 +1499,9 @@ def _inside_bore(mouth: list[tuple[Part, dict[str, float]]], axes: tuple[str, st
     for part, centre in mouth:
         c1, c2 = centre[first] - o1, centre[second] - o2
         reach = (
-            math.hypot(c1, c2) + part.half[0]
+            fs.hypot(c1, c2) + part.half[0]
             if part.disc
-            else math.hypot(abs(c1) + part.half[0], abs(c2) + part.half[1])
+            else fs.hypot(abs(c1) + part.half[0], abs(c2) + part.half[1])
         )
         if reach > r + EPS:
             return False

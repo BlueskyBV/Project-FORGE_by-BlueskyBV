@@ -23,9 +23,10 @@ macOS on ARM on 199. The causes, each found by switching it alone:
   `arctan2`, `cbrt`, `exp`, `log`, `arccos`) and each operating system's C
   library (glibc, Microsoft's, Apple's) round their last bit their own way.
 - **Fused multiply-adds in compiled C**: Clang (macOS) fuses `a * b + c`
-  into one rounding unless told not to, so NumPy's `einsum`, `interp` and
-  complex arithmetic, and CPython's complex numbers, may round otherwise
-  there; and `x ** y` is the C library's `pow`.
+  into one rounding unless told not to, and Microsoft's compiler does on
+  ARM, so NumPy's `einsum`, `interp` and complex arithmetic, and CPython's
+  complex numbers, `math.hypot` and `math.dist`, may round otherwise there;
+  and `x ** y` is the C library's `pow`.
 
 IEEE 754 fixes `+ - * /` and `sqrt` exactly; NumPy's elementwise arithmetic
 and its sums (its own pairwise addition, scalar C) are the same everywhere.
@@ -44,8 +45,9 @@ NumPy):
   `sq` and `cube` for `**`. It imports no NumPy, so the standard-library
   packages use it too.
 - `forge_numeric.vector`: the same on NumPy arrays, bit for bit the scalar
-  ones; `hypot` as `sqrt(x*x + y*y)` (CPython's own `math.hypot` past
-  1e150 or below 1e-150); and products and small linear algebra in a fixed
+  ones; `hypot` as `sqrt(x*x + y*y)` (scaled by a power of two first past
+  1e150 or below 1e-150), and on numbers `hypot` and `dist` of any number
+  of coordinates; and products and small linear algebra in a fixed
   order: `dot`, `norm`, `unit`, `matmul`, `solve` (Gaussian elimination
   with partial pivoting), `det`, `inv`, `eigh` (cyclic Jacobi),
   `cond_symmetric`, `real_roots` (isolated between the derivative's roots,
@@ -67,8 +69,9 @@ NumPy):
   computes the same bits more slowly.
 - **The rule's guard:** no V2 code (its packages, and its modules in V1's)
   calls `math`'s or NumPy's elementary functions, `@`, `dot`, `einsum`,
-  `linalg`, `fft`, `hypot`, `interp`, `roots`, `**` other than whole numbers'
-  or two's whole powers, `pow`, `cmath`, `statistics`, complex numbers, or a
+  `linalg`, `fft`, `hypot` (NumPy's or CPython's), `math.dist`, `interp`,
+  `roots`, `**` other than whole numbers' or two's whole powers, `pow`,
+  `cmath`, `statistics`, complex numbers, or a
   random draw other than uniform ones
   (`tests/test_v2_architecture.py`, `EveryNumberIsTheSameOnEveryMachine`).
 - **The proof:** golden digests in `tests/test_v2_numeric.py` that every

@@ -197,7 +197,7 @@ class Outline2:
             if centre is None:
                 found.append((here, to, None, 0.0, 0.0, 0.0))
             else:
-                r = math.dist(here, centre)
+                r = fs.dist(here, centre)
                 a0 = fs.atan2(here[1] - centre[1], here[0] - centre[0])
                 a1 = fs.atan2(to[1] - centre[1], to[0] - centre[0])
                 sweep = ((a0 - a1) if clockwise else (a1 - a0)) % (2 * math.pi)
@@ -282,7 +282,7 @@ def _followed(outline: Outline2, step: float) -> Array:
     found: list[Point] = []
     for a, b, centre, r, a0, sweep in outline.pieces():
         if centre is None:
-            n = max(1, math.ceil(math.dist(a, b) / step))
+            n = max(1, math.ceil(fs.dist(a, b) / step))
             found += [
                 (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
                 for k in range(n)

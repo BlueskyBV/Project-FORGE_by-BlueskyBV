@@ -35,7 +35,7 @@
 use std::slice;
 
 /// The interface's version: the loader refuses any other.
-const ABI: u64 = 3;
+const ABI: u64 = 4;
 
 #[inline(always)]
 fn from_high(h: u32) -> f64 {
@@ -687,8 +687,9 @@ pub unsafe extern "C" fn fnum_atan2(y: *const f64, x: *const f64, out: *mut f64,
     }
 }
 
-/// sqrt(x*x + y*y); returns how many elements were deferred (the larger magnitude finite and past 1e150, or
-/// below 1e-150 but not zero: CPython's hypot computes those), written NaN for the caller.
+/// sqrt(x*x + y*y); where the larger magnitude is finite and past 1e150, or below 1e-150 but not zero, both
+/// scaled by a power of two first and back after (exact). Returns 0: nothing is deferred (the count is kept
+/// for the interface).
 #[no_mangle]
 pub unsafe extern "C" fn fnum_hypot(
     x: *const f64,
@@ -699,7 +700,7 @@ pub unsafe extern "C" fn fnum_hypot(
     let x = slice::from_raw_parts(x, n);
     let y = slice::from_raw_parts(y, n);
     let out = slice::from_raw_parts_mut(out, n);
-    let mut count = 0usize;
+    let count = 0usize;
     for i in 0..n {
         let (a, b) = (x[i], y[i]);
         if a.is_infinite() || b.is_infinite() {
@@ -707,9 +708,10 @@ pub unsafe extern "C" fn fnum_hypot(
             continue;
         }
         let big = if a.abs() >= b.abs() { a.abs() } else { b.abs() };
-        if big.is_finite() && (big > 1e150 || (big < 1e-150 && big > 0.0)) {
-            out[i] = f64::NAN;
-            count += 1;
+        if !a.is_nan() && !b.is_nan() && (big > 1e150 || (big < 1e-150 && big > 0.0)) {
+            let e = frexp_exp(big);
+            let (xs, ys) = (ldexp(a, -e), ldexp(b, -e));
+            out[i] = ldexp((xs * xs + ys * ys).sqrt(), e);
         } else {
             out[i] = (a * a + b * b).sqrt();
         }

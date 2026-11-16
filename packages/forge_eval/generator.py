@@ -212,7 +212,7 @@ class _Foot:
         """Whether the two are at least ``gap`` apart (their boxes, or their circles when both are discs)."""
         du, dv = abs(self.at[0] - other.at[0]), abs(self.at[1] - other.at[1])
         if self._disc() and other._disc():
-            return math.hypot(du, dv) >= self.half[0] + other.half[0] + gap
+            return fs.hypot(du, dv) >= self.half[0] + other.half[0] + gap
         return (
             du >= self.half[0] + other.half[0] + gap
             or dv >= self.half[1] + other.half[1] + gap
@@ -295,7 +295,7 @@ class _Flat:
             return _within_outline(self.outline, foot, gap)
         if self.shape == "ring":
             near = _rounded_rect_distance(foot, (cu, cv))
-            far = max(math.hypot(foot.at[0] - cu + su * (foot.half[0] - r), foot.at[1] - cv + sv * (foot.half[1] - r))
+            far = max(fs.hypot(foot.at[0] - cu + su * (foot.half[0] - r), foot.at[1] - cv + sv * (foot.half[1] - r))
                       for su, sv in QUADRANTS) + r  # fmt: skip
             return near >= self.inner + gap and far <= self.half[0] - gap - self.rim
         shrink = gap + r + (self.rim if self.shape == "disc" else 0.0)
@@ -327,7 +327,7 @@ class _Flat:
                     radius > most
                     and du > 0
                     and dv > 0
-                    and math.hypot(du, dv) > radius - most
+                    and fs.hypot(du, dv) > radius - most
                 ):
                     return False
         return True
@@ -338,7 +338,7 @@ def _rounded_rect_distance(foot: _Foot, p: tuple[float, float]) -> float:
     r = foot.corner
     qu = abs(p[0] - foot.at[0]) - (foot.half[0] - r)
     qv = abs(p[1] - foot.at[1]) - (foot.half[1] - r)
-    return math.hypot(max(qu, 0.0), max(qv, 0.0)) + min(max(qu, qv), 0.0) - r
+    return fs.hypot(max(qu, 0.0), max(qv, 0.0)) + min(max(qu, qv), 0.0) - r
 
 
 #: How far apart the points an outline is followed by are, to see that a footprint keeps clear of it (mm).
@@ -490,7 +490,7 @@ def _under(face: _Flat, foot: _Foot) -> float:
     if face.dome <= 0 and face.flare[1] <= 0:
         return face.material
     cu, cv = face.coords()
-    widest = math.hypot(
+    widest = fs.hypot(
         abs(foot.at[0] - cu) + foot.half[0], abs(foot.at[1] - cv) + foot.half[1]
     )
     if face.flare[1] > 0:
@@ -1270,7 +1270,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             raise DoesNotFitError(f"{f.id} is too wide for the rod, here")
         if side.bore > 0 and carry + REACH > side.radius - side.bore - GAP:
             raise DoesNotFitError(f"{f.id}'s foot would reach the tube's bore")
-        mine = [(along, a, math.hypot(rounded, wide), carry) for a in angles]
+        mine = [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
         for k, here in enumerate(mine):
             for other in side.taken + mine[:k]:
                 if not _holes_apart(here, other, side.radius):
@@ -1332,7 +1332,7 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             half = {third: rounded, side.axis: wide}
             part.flats[far] = _Flat(far, p + height * u, u.copy(), fa, "rect", (half[fa[0]], half[fa[1]]), height,
                                     None)  # fmt: skip
-    side.taken += [(along, a, math.hypot(rounded, wide), carry) for a in angles]
+    side.taken += [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
     side.standing.append((along - wide, along + wide))
     return made
 

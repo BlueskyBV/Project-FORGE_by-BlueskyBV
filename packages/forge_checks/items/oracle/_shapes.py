@@ -14,6 +14,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
+from forge_numeric import scalar as fs
 from forge_numeric import vector as fv
 from forge_spec.draft import Choice, Item
 from forge_spec.values import Value
@@ -185,9 +186,9 @@ def _round_bulge(centre: tuple[float, float], r: float, a: tuple[float, float],
         corners = cut
     found: list[tuple[float, float]] = []
     for p in map(_off_axis, corners):
-        if not found or math.dist(p, found[-1]) > 1e-9:
+        if not found or fs.dist(p, found[-1]) > 1e-9:
             found.append(p)
-    if len(found) > 1 and math.dist(found[0], found[-1]) <= 1e-9:
+    if len(found) > 1 and fs.dist(found[0], found[-1]) <= 1e-9:
         found.pop()
     return tuple(found)
 
@@ -294,11 +295,11 @@ def _outline_boundary(outline: Outline, side: OutlineSegment | OutlineArc, corne
     outline's two), along those.
     """
     if isinstance(side, OutlineSegment):
-        other = side.b if math.dist(side.a, corner) <= 1e-9 else side.a
+        other = side.b if fs.dist(side.a, corner) <= 1e-9 else side.a
         d = _unit2(other[0] - corner[0], other[1] - corner[1])
         normal = (d[1], -d[0])
         middle = ((side.a[0] + side.b[0]) / 2, (side.a[1] + side.b[1]) / 2)
-        step = 1e-6 * max(1.0, math.dist(side.a, side.b))
+        step = 1e-6 * max(1.0, fs.dist(side.a, side.b))
         if (
             outline.signed_distance(
                 (middle[0] + step * normal[0], middle[1] + step * normal[1])
@@ -337,7 +338,7 @@ def _circle(
 
 
 def _unit2(x: float, y: float) -> tuple[float, float]:
-    length = math.hypot(x, y)
+    length = fs.hypot(x, y)
     return (x / length, y / length)
 
 
@@ -369,7 +370,7 @@ def _outline_chain(
     for kind, data in pieces:
         if kind == "seg":
             x0, y0, x1, y1 = data
-            length = math.hypot(x1 - x0, y1 - y0)
+            length = fs.hypot(x1 - x0, y1 - y0)
             along = ((x1 - x0) * u + (y1 - y0) * v) / length
             out = ((y1 - y0) * u - (x1 - x0) * v) / length
             su = n_face

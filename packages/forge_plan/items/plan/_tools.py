@@ -190,7 +190,7 @@ def outline_points(
         if seg.centre is None:
             rows.append(to)
         else:
-            (cx, cy), r = seg.centre, math.dist(here, seg.centre)
+            (cx, cy), r = seg.centre, fs.dist(here, seg.centre)
             a0 = fs.atan2(here[1] - cy, here[0] - cx)
             a1 = fs.atan2(seg.to[1] - cy, seg.to[0] - cx)
             sweep = ((a0 - a1) if seg.clockwise else (a1 - a0)) % (2 * math.pi)

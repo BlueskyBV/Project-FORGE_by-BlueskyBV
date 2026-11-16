@@ -7,8 +7,7 @@ pocket's branches here (V2-stage4b-0b.md, 7).
 
 from __future__ import annotations
 
-import math
-
+from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 from forge_spec.placement import Layout, mm
 from forge_spec.values import Value
@@ -30,7 +29,7 @@ class Pocket(GradeKind):
         if _choice(item, "shape") == "circle":
             return size["diameter"] / 2 if "diameter" in size else None
         if "length" in size and "width" in size:
-            return math.hypot(size["length"], size["width"]) / 2
+            return fs.hypot(size["length"], size["width"]) / 2
         return None
 
     def through_diameter(self, item: Item, layout: Layout) -> float | None:

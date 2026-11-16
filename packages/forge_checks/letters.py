@@ -269,7 +269,7 @@ def _meet_straight(p: Quad, q: Quad, size: float) -> list[tuple[float, float]]:
     (cx, cy), _, (dx, dy) = q
     ux, uy, vx, vy = bx - ax, by - ay, dx - cx, dy - cy
     det = ux * vy - uy * vx
-    lu, lv = math.hypot(ux, uy), math.hypot(vx, vy)
+    lu, lv = fs.hypot(ux, uy), fs.hypot(vx, vy)
     if abs(det) > 1e-12 * lu * lv:
         s = ((cx - ax) * vy - (cy - ay) * vx) / det
         t = ((cx - ax) * uy - (cy - ay) * ux) / det
@@ -896,7 +896,7 @@ def _left(q: Quad, t: float) -> Point:
         vx == 0.0 and vy == 0.0
     ):  # a piece whose control sits on an end: its way there is to the other end
         vx, vy = q[2][0] - q[0][0], q[2][1] - q[0][1]
-    length = math.hypot(vx, vy)
+    length = fs.hypot(vx, vy)
     return -vy / length, vx / length
 
 
@@ -1201,7 +1201,7 @@ class WallPatch(Patch):
 
     def __post_init__(self) -> None:
         (x0, y0), (x1, y1), (x2, y2) = self.edge.q
-        speed = 2 * max(math.hypot(x1 - x0, y1 - y0), math.hypot(x2 - x1, y2 - y1))
+        speed = 2 * max(fs.hypot(x1 - x0, y1 - y0), fs.hypot(x2 - x1, y2 - y1))
         object.__setattr__(self, "speed", max(speed, 1e-12))
         object.__setattr__(self, "size", (self.speed, self.t1 - self.t0))
         h0, k0, h1, k1 = _hull(self.edge.q)

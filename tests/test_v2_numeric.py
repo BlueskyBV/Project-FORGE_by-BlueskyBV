@@ -150,6 +150,38 @@ class EachFunctionIsAccurate(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertLessEqual(worst, 2)
 
+    def test_hypot_and_dist_within_an_ulp_of_cpythons(self) -> None:
+        rng = np.random.default_rng(32)
+        for lo, hi in (
+            (-60, 60),
+            (480, 530),
+            (-540, -480),
+            (-1074, -1000),
+            (1000, 1023),
+        ):
+            a, b = (
+                _inputs(20000, lo, hi, 33).tolist(),
+                _inputs(20000, lo, hi, 34).tolist(),
+            )
+            worst = max(
+                _ulps(fs.hypot(x, y), math.hypot(x, y))
+                for x, y in zip(a, b, strict=True)
+            )
+            with self.subTest(lo=lo, hi=hi):
+                self.assertLessEqual(worst, 1)
+        for n in (1, 2, 3, 5):
+            pts = rng.normal(size=(2000, 2, n)) * 100.0
+            worst = max(_ulps(fs.dist(p, q), math.dist(p, q)) for p, q in pts.tolist())
+            with self.subTest(n=n):
+                self.assertLessEqual(worst, 2)
+        for args, want in (((), 0.0), ((3.0, 4.0), 5.0), ((-0.0, 0.0), 0.0), ((math.inf, math.nan), math.inf),
+                           ((math.nan, 1.0), math.nan), ((1e308, 1e308), 1.4142135623730951e308),
+                           ((5e-324, 5e-324), 5e-324), ((2.0, 3.0, 6.0), 7.0)):  # fmt: skip
+            with self.subTest(args=args):
+                self.assertTrue(_same(fs.hypot(*args), want))
+        with self.assertRaises(ValueError):
+            fs.dist((0.0, 1.0), (0.0, 1.0, 2.0))
+
     def test_decade_is_the_written_power_of_ten(self) -> None:
         for x, want in ((1.0, 0), (1000.0, 3), (999.9999999999999, 2), (0.001, -3),
                         (1e-299, -299), (5e-324, -324), (1.7976931348623157e308, 308),
@@ -242,6 +274,7 @@ class GoldenDigests(unittest.TestCase):
         "interp": "3dbf840b9a61d032",
         "normal": "5754b61e72364619",
         "roots": "c61ed0aa6e688edf",
+        "hypot, scaled": "1bf645fc4065494e",
     }
 
     @staticmethod
@@ -298,6 +331,17 @@ class GoldenDigests(unittest.TestCase):
             fv.interp(_inputs(5000, -2, 8, 23), xp, _inputs(200, -3, 3, 24))
         )
         found["normal"] = _digest(fv.normal(np.random.default_rng(25), 1.0, 2.0, 5000))
+        big, small = _inputs(4000, 480, 1020, 27), _inputs(4000, -1074, -480, 28)
+        found["hypot, scaled"] = _digest(
+            fv.hypot(big, big[::-1]),
+            fv.hypot(small, small[::-1]),
+            np.array(
+                [
+                    fs.dist(p, q)
+                    for p, q in _inputs(6000, -20, 20, 29).reshape(-1, 2, 3).tolist()
+                ]
+            ),
+        )
         polys = _inputs(9 * 300, -3, 3, 26).reshape(300, 9)
         found["roots"] = _digest(
             *(

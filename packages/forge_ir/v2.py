@@ -1113,7 +1113,7 @@ def _chords(reader: Reader) -> list[list[float]]:
         if len(numbers) == 4:
             found += _arc_chords(found[-1], numbers, at)
         found.append(numbers[:2])
-    if len(found) < 4 or math.dist(found[0], found[-1]) > 1e-9:
+    if len(found) < 4 or fs.dist(found[0], found[-1]) > 1e-9:
         raise ValueRangeError("an outline has three sides or more and ends where it starts",
                               pointer=reader.pointer)  # fmt: skip
     return found
@@ -1125,7 +1125,7 @@ def _arc_chords(
     """The points an arc from ``start`` to (row[0], row[1]) through (row[2], row[3]) is followed by, before its end."""
     (ax, ay), (bx, by), (mx, my) = start, row[:2], row[2:]
     d = 2.0 * (ax * (my - by) + mx * (by - ay) + bx * (ay - my))
-    if abs(d) <= 1e-12 * fs.sq(max(1.0, math.dist(start, row[:2]))):
+    if abs(d) <= 1e-12 * fs.sq(max(1.0, fs.dist(start, row[:2]))):
         raise ValueRangeError("an arc's three points lie on a line", pointer=pointer)
     ux = (
         (ax * ax + ay * ay) * (my - by)
@@ -1137,7 +1137,7 @@ def _arc_chords(
         + (mx * mx + my * my) * (ax - bx)
         + (bx * bx + by * by) * (mx - ax)
     ) / d
-    r = math.hypot(ax - ux, ay - uy)
+    r = fs.hypot(ax - ux, ay - uy)
     a0 = fs.atan2(ay - uy, ax - ux)
     am = fs.atan2(my - uy, mx - ux)
     a1 = fs.atan2(by - uy, bx - ux)

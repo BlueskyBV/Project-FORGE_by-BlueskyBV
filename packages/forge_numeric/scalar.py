@@ -36,7 +36,7 @@ import math
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
-from typing import cast
+from typing import Any, cast
 
 from ._bits import bits, from_bits, from_high, high, with_low_zero
 
@@ -49,8 +49,10 @@ __all__ = [
     "cos",
     "cube",
     "decade",
+    "dist",
     "exp",
     "expm1",
+    "hypot",
     "log",
     "log1p",
     "sin",
@@ -766,6 +768,53 @@ def decade(x: float) -> int:
     if math.isinf(x):
         raise OverflowError("cannot convert float infinity to integer")
     return Decimal(repr(float(x))).adjusted()
+
+
+#: Below and above these, squares lose bits to underflow or overflow: the coordinates are scaled first.
+HYPOT_SMALL, HYPOT_LARGE = 1e-150, 1e150
+
+
+def hypot(*coordinates: float) -> float:
+    """The length of a vector, sqrt(x*x + y*y + ...), squares summed left to right (``math.hypot``'s place).
+
+    CPython's own ``math.hypot`` and ``math.dist`` multiply and add in C,
+    which Clang and Microsoft's ARM compiler fuse into one rounding: another
+    last bit on a Mac or an ARM PC. Here every operation rounds on its own.
+    Where the largest coordinate is past :data:`HYPOT_LARGE` or below
+    :data:`HYPOT_SMALL` (not zero), all are scaled by a power of two first
+    and back after (exact); infinity wins over NaN, as there.
+    """
+    values = [float(c) for c in coordinates]
+    if any(math.isinf(c) for c in values):
+        return _INF
+    big = 0.0
+    for c in values:
+        if abs(c) > big:
+            big = abs(c)
+    nan = any(
+        c != c for c in values
+    )  # (then NaN, by the plain sum, as the arrays give it)
+    if not nan and (big > HYPOT_LARGE or 0.0 < big < HYPOT_SMALL):
+        e = math.frexp(big)[1]
+        return math.ldexp(_sum_of_squares([math.ldexp(c, -e) for c in values]), e)
+    return _sum_of_squares(values)
+
+
+def _sum_of_squares(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    total = values[0] * values[0]
+    for c in values[1:]:
+        total = total + c * c
+    return math.sqrt(total)
+
+
+def dist(p: Any, q: Any) -> float:
+    """The distance between two points of as many coordinates (``math.dist``'s place, by :func:`hypot`)."""
+    a, b = tuple(p), tuple(q)
+    if len(a) != len(b):
+        raise ValueError("both points must have the same number of dimensions")
+    return hypot(*(float(x) - float(y) for x, y in zip(a, b, strict=True)))
 
 
 def sq[T](x: T) -> T:

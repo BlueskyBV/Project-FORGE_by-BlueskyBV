@@ -140,12 +140,10 @@ def _outline_points(profile: Profile, step_degrees: float = 3.0) -> tuple[list[t
     here = profile.start
     for seg in profile.segments:
         if seg.centre is not None:
-            r = math.dist(here, seg.centre)
+            r = fs.dist(here, seg.centre)
             for p in ((seg.centre[0] + r, seg.centre[1]), (seg.centre[0] - r, seg.centre[1]),
                       (seg.centre[0], seg.centre[1] + r), (seg.centre[0], seg.centre[1] - r)):  # fmt: skip
-                if any(
-                    math.dist(p, q) <= r * math.radians(step_degrees) for q in chain
-                ):
+                if any(fs.dist(p, q) <= r * math.radians(step_degrees) for q in chain):
                     corners.append(p)
         here = seg.to
     return chain, corners
@@ -164,7 +162,7 @@ def _round(canvas: _Canvas, start: Vec, direction: Vec, length: float, r0: float
         start[2] + direction[2] * length,
     )
     s, e = canvas.at(start), canvas.at(end)
-    across = math.hypot(direction[canvas.u], direction[canvas.v])
+    across = fs.hypot(direction[canvas.u], direction[canvas.v])
     if across <= EPS:
         for r, style in ((r0, start_style), (r1, end_style)):
             if style is not None and r > EPS:

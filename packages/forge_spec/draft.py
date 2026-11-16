@@ -591,7 +591,7 @@ def _profile(raw: Any, at: str, problems: Problems) -> Profile | None:
     )
     if len(problems.faults) > before or start is None or provenance is None:
         return None
-    if math.dist(start, segments[-1].to) > 1e-6:
+    if fs.dist(start, segments[-1].to) > 1e-6:
         problems.fault(
             at + pointer("segments"),
             "an outline is closed: the last segment ends at the start",
@@ -599,14 +599,14 @@ def _profile(raw: Any, at: str, problems: Problems) -> Profile | None:
         return None
     point = start
     for n, seg in enumerate(segments):
-        if math.dist(point, seg.to) <= 1e-6:
+        if fs.dist(point, seg.to) <= 1e-6:
             problems.fault(
                 at + pointer("segments", n),
                 "a segment goes somewhere: it ends where it starts",
             )
             return None
         if seg.centre is not None:
-            off = abs(math.dist(point, seg.centre) - math.dist(seg.to, seg.centre))
+            off = abs(fs.dist(point, seg.centre) - fs.dist(seg.to, seg.centre))
             if off > 1e-3:
                 problems.fault(at + pointer("segments", n),
                                "an arc ends on its circle: its end is not as far from its centre as its start is")  # fmt: skip
@@ -641,11 +641,11 @@ def outline_turns_back(profile: Profile) -> int | None:
     def tangent(n: int, at_end: bool) -> tuple[float, float]:
         seg, a, b = profile.segments[n], ends[n], ends[n + 1]
         if seg.centre is None:
-            length = math.dist(a, b)
+            length = fs.dist(a, b)
             return ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
         x = b if at_end else a
         dx, dy = x[0] - seg.centre[0], x[1] - seg.centre[1]
-        r = math.hypot(dx, dy)
+        r = fs.hypot(dx, dy)
         return (dy / r, -dx / r) if seg.clockwise else (-dy / r, dx / r)
 
     count = len(profile.segments)
@@ -691,7 +691,7 @@ def outline_points(
             if sweep <= 1e-12:
                 sweep = 2 * math.pi  # an arc back to where it starts is a full turn
             steps = max(1, math.ceil(math.degrees(sweep) / step_degrees))
-            radius = math.dist(here, seg.centre)
+            radius = fs.dist(here, seg.centre)
             sign = -1.0 if seg.clockwise else 1.0
             for k in range(1, steps):
                 t = a0 + sign * sweep * k / steps

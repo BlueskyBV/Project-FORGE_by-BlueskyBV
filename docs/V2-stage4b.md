@@ -249,6 +249,7 @@ an ADR:
 | [0034](adr/0034-trust-core-dependencies.md) | The trust core imports the standard library, NumPy and Forge's own crate only; part two's checking code in it, every solver and proposer above it (supersedes ADR-0002 in part) |
 | [0035](adr/0035-through-holes-and-the-restructure-first.md) | The owner, 13 November 2026: the oracle counts every body's through-holes (item 7); 4b.0b done after the 8.0.1 replay, the Python move after it |
 | [0036](adr/0036-the-restructures-proof-scaled.md) | The owner, 14 November 2026: 4b.0b's byte-identity proof digests everything a verdict consumes for every seed, and verdicts on built parts for samples; about three to four days instead of two weeks |
+| [0037](adr/0037-the-same-numbers-on-every-machine.md) | 16 November 2026, 4b.0c's first item: every V2 number through `forge_numeric` (msun's elementary functions, products and linear algebra in a fixed order, a compiled twin), so a seed is the same part, and its digests the same, on any machine |
 
 ADR-0012 to ADR-0021 are the core V2 decisions listed in
 [V2-architecture.md](V2-architecture.md), section 10; stage 4b.0a's begin

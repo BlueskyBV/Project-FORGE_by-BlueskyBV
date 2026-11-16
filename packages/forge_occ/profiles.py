@@ -172,7 +172,7 @@ def _circle_through(a: P2, b: P2, c: P2) -> tuple[P2, float]:
           + (cx * cx + cy * cy) * (ay - by)) / d  # fmt: skip
     uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx)
           + (cx * cx + cy * cy) * (bx - ax)) / d  # fmt: skip
-    return (ux, uy), math.hypot(ax - ux, ay - uy)
+    return (ux, uy), fs.hypot(ax - ux, ay - uy)
 
 
 def _reversed(outline: Sequence[Segment]) -> list[Segment]:
@@ -195,14 +195,14 @@ def _reversed(outline: Sequence[Segment]) -> list[Segment]:
 def _closed(outline: Sequence[Segment]) -> list[Segment]:
     """The outline with its zero-length lines taken out, checked to close."""
     kept = [
-        s for s in outline if not (isinstance(s, Line) and math.dist(s.a, s.b) <= SAME)
+        s for s in outline if not (isinstance(s, Line) and fs.dist(s.a, s.b) <= SAME)
     ]
     if not kept:
         raise DesignError("an outline with nothing in it")
     for s, t in zip(kept, kept[1:] + kept[:1], strict=True):
-        if math.dist(_end(s), _start(t)) > 1e-7:
+        if fs.dist(_end(s), _start(t)) > 1e-7:
             raise OperationError(
-                "an outline that doesn't close", gap=math.dist(_end(s), _start(t))
+                "an outline that doesn't close", gap=fs.dist(_end(s), _start(t))
             )
     return kept
 
@@ -483,7 +483,7 @@ def sketch(
         raise DesignError("a sketch's points are [u, v], or [u, v, corner radius]")
     corners = [(float(p[0]), float(p[1])) for p in points]
     radii = [float(p[2]) if len(p) > 2 else corner_radius for p in points]
-    if len(corners) > 3 and math.dist(corners[0], corners[-1]) < 1e-9:
+    if len(corners) > 3 and fs.dist(corners[0], corners[-1]) < 1e-9:
         corners, radii = corners[:-1], radii[:-1]
     n = len(corners)
     if n < 3:
@@ -595,7 +595,7 @@ def gear(
         if root < start:
             outline.append(Line(at(root, c - half_angle(start)), _start(up)))
         outline.append(up)
-        if math.dist(_end(up), _start(down)) > SAME:
+        if fs.dist(_end(up), _start(down)) > SAME:
             outline.append(Line(_end(up), _start(down)))
         outline.append(down)
         if root < start:
@@ -603,7 +603,7 @@ def gear(
     closed: list[Segment] = []
     for s, t in zip(outline, outline[1:] + outline[:1], strict=True):
         closed.append(s)
-        if math.dist(_end(s), _start(t)) > SAME:
+        if fs.dist(_end(s), _start(t)) > SAME:
             closed.append(Line(_end(s), _start(t)))
     return Profile(tuple(closed))
 
@@ -632,8 +632,8 @@ def outline(points: Sequence[Sequence[float]]) -> Profile:
             Line(here, to) if len(p) == 2 else Arc(here, (float(p[2]), float(p[3])), to)
         )
         here = to
-    if math.dist(here, start) > SAME:
-        raise DesignError("an outline ends where it starts", gap=math.dist(here, start))
+    if fs.dist(here, start) > SAME:
+        raise DesignError("an outline ends where it starts", gap=fs.dist(here, start))
     return Profile(tuple(pieces))
 
 

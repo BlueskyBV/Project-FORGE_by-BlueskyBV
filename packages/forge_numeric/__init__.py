@@ -10,7 +10,8 @@ path rounds its own way), nor about the order of a sum that BLAS adds (``@``,
 
 - :mod:`forge_numeric.scalar` (``fs``): ``sin``, ``cos``, ``sincos``, ``tan``,
   ``atan``, ``atan2``, ``asin``, ``acos``, ``exp``, ``expm1``, ``log``
-  (of any integer too, as ``math.log``), ``log1p``, ``cbrt`` on Python floats,
+  (of any integer too, as ``math.log``), ``log1p``, ``cbrt``, ``hypot`` and
+  ``dist`` on Python floats,
   raising where ``math`` raises; ``decade`` (``floor(log10(x))``, exactly);
   ``sq`` and ``cube`` for ``x ** 2`` and ``x ** 3``. It imports no NumPy, so
   the standard-library packages use it too;
@@ -28,9 +29,11 @@ computes the array functions and the larger matrix products where this
 machine has it, the same bits faster; numbers and short vectors take Python
 float shortcuts, the same bits again.
 
-``math.sqrt``, ``math.hypot`` (CPython's own), ``math.fsum``, NumPy's
-elementwise arithmetic, ``np.sqrt`` and its sums (``np.sum``, its own pairwise
-addition in scalar C) are the same everywhere and stay. The rule is held by
+``math.sqrt``, ``math.fsum``, NumPy's elementwise arithmetic, ``np.sqrt``
+and its sums (``np.sum``, its own pairwise addition in scalar C) are the
+same everywhere and stay. CPython's ``math.hypot`` and ``math.dist`` are not
+(their multiply-adds in C are fused by Clang and by Microsoft's ARM
+compiler): ``fs.hypot`` and ``fs.dist`` replace them. The rule is held by
 ``tests/test_v2_numeric.py`` (the functions: accuracy, the twins and the
 shortcuts bit for bit, and golden digests every machine must reproduce) and
 ``tests/test_v2_architecture.py`` (no V2 code calls what they replace:

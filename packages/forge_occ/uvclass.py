@@ -386,7 +386,7 @@ def read(face: Any, narrow: float = _NARROW) -> Boundary | None:
     starts: list[Array] = []
     ends: list[Array] = []
     u0, u1, v0, v1 = BRepTools.UVBounds_s(face)
-    scale = max(1.0, math.hypot(u1 - u0, v1 - v0))
+    scale = max(1.0, fs.hypot(u1 - u0, v1 - v0))
     try:
         explorer = TopExp_Explorer(face, TopAbs_EDGE)
         while explorer.More():

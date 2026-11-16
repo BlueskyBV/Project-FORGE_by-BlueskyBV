@@ -54,7 +54,7 @@ class Envelope:
 
     @property
     def diagonal(self) -> float:
-        return math.dist(self.lo, self.hi)
+        return fs.dist(self.lo, self.hi)
 
     def corners(self) -> Any:
         return np.array([[x, y, z] for x in (self.lo[0], self.hi[0]) for y in (self.lo[1], self.hi[1])

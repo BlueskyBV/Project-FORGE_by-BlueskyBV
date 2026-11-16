@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 
 from forge_checks.items.compile._common import Buried, _mm, _t, _v
@@ -58,7 +58,7 @@ class Extrusion(CompileKind):
                     continue
             k1, k2 = ("xyz".index(a) for a in top.axes)
             (c1, c2), point = top.outline.centre, copy.point
-            reach = math.hypot(
+            reach = fs.hypot(
                 abs(c1 - point[k1]) + half[0], abs(c2 - point[k2]) + half[1]
             )
             c._height(item, "length", copy, top_plane, bottom, length, reach)

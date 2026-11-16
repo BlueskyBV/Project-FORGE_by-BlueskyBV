@@ -912,7 +912,7 @@ class _Drawing:
             )
             halves = None if round_ else self._halves(copy)
             for canvas in self.canvases:
-                axial = math.hypot(n[canvas.u], n[canvas.v]) <= EPS
+                axial = fs.hypot(n[canvas.u], n[canvas.v]) <= EPS
                 if round_:
                     seen_in, seen_out = self._seen(canvas, copy, out, exits, (r, r))
                     _round(canvas, copy.origin, into, deep, r, r,
