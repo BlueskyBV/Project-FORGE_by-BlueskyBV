@@ -334,10 +334,7 @@ class DrawKind:
                     }
                     u, v = wall.axes
                     pressed = _Foot(
-                        (
-                            float(middle["xyz".index(u)]),
-                            float(middle["xyz".index(v)]),
-                        ),
+                        wall.frame.plane(middle),
                         (across[u], across[v]),
                         0.0,
                     )

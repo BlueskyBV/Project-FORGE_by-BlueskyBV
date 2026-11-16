@@ -16,7 +16,6 @@ from forge_numeric import scalar as fs
 from forge_eval.generator import (
     GAP,
     REACH,
-    TURN_AXES,
     Array,
     DoesNotFitError,
     Feature,
@@ -28,10 +27,9 @@ from forge_eval.generator import (
     _q,
     _Round,
     _t,
-    _v,
 )
 from forge_eval.items.draw.protocol import DrawKind
-from forge_eval.truth import Copy, Prism, Step, unit_of
+from forge_eval.truth import Copy, Prism, Step
 
 
 class Hole(DrawKind):
@@ -63,8 +61,8 @@ class Hole(DrawKind):
                 f"{f.id}: round a side, a plain hole placed along its axis, here"
             )
         r = f.sizes["diameter"] / 2
-        w = _v(unit_of(side.axis))
-        zero, quarter = (_v(unit_of(a)) for a in TURN_AXES[side.axis])
+        w = side.frame.n
+        zero, quarter = side.frame.u, side.frame.v
         start = f.angle or 0.0
         n = f.pattern.counts["count"] if f.pattern is not None else 1
         angles = [start + k * 360.0 / n for k in range(n)]

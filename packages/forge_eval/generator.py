@@ -35,6 +35,7 @@ meet in one plane by chance.
 
 from __future__ import annotations
 
+import functools
 import math
 import random
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -222,6 +223,87 @@ class _Foot:
         return self.half[0] == self.half[1] == self.corner
 
 
+class _FaceFrame:
+    """A face's frame as the generator reads it (4b.0c item 1a; V2-stage4b-0c.md, 3.3): its origin, its first and second axes and its normal.
+
+    Round a side, ``u`` and ``v`` are the ways out at 0 and 90 degrees and
+    ``n`` its axis. Coordinates in its plane are measured along ``u`` and
+    ``v`` from the part's origin, as the generator's footprints are. An
+    aligned frame (each axis one of the part's) is applied by choosing
+    coordinates and their signs, never a product with 0 or 1, so the numbers
+    are those the axis names gave; any other by its products (item 1b). The
+    generator's own, made from the definitions (R2). Its axes are handed out
+    as fresh arrays.
+    """
+
+    def __init__(self, origin: Array, u: Vec, v: Vec, n: Vec) -> None:
+        self.origin = origin
+        self._u, self._v, self._n = u, v, n
+        self._axes = tuple(_aligned_axis(d) for d in (u, v, n))
+
+    @staticmethod
+    def of_names(origin: Array, u: str, v: str, n: str) -> _FaceFrame:
+        return _FaceFrame(
+            origin, *(unit_of(a if a[0] in "+-" else "+" + a) for a in (u, v, n))
+        )
+
+    @property
+    def u(self) -> Array:
+        return _v(self._u)
+
+    @property
+    def v(self) -> Array:
+        return _v(self._v)
+
+    @property
+    def n(self) -> Array:
+        return _v(self._n)
+
+    def plane(self, p: Array) -> tuple[float, float]:
+        """Where ``p`` is in the face's plane, along ``u`` and ``v`` from the part's origin."""
+        found = []
+        for j, d in ((0, self._u), (1, self._v)):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                found.append(float(p[k]) if plus else -float(p[k]))
+            else:
+                found.append(float(p[0] * d[0] + p[1] * d[1] + p[2] * d[2]))
+        return found[0], found[1]
+
+    def components(self, d: Array) -> tuple[float, float, float]:
+        """A direction's parts along ``u``, ``v`` and ``n``."""
+        found = []
+        for j, e in enumerate((self._u, self._v, self._n)):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                found.append(float(d[k]) if plus else -float(d[k]))
+            else:
+                found.append(float(d[0] * e[0] + d[1] * e[1] + d[2] * e[2]))
+        return found[0], found[1], found[2]
+
+    def point(self, at: tuple[float, float]) -> Array:
+        """The point of the face's plane at ``at`` in it (:meth:`plane`'s inverse there)."""
+        p = self.origin.copy()
+        for j, (d, value) in enumerate(((self._u, at[0]), (self._v, at[1]))):
+            axis = self._axes[j]
+            if axis is not None:
+                k, plus = axis
+                p[k] = value if plus else -value
+            else:
+                p = p + (value - float(p[0] * d[0] + p[1] * d[1] + p[2] * d[2])) * _v(d)
+        return p
+
+
+def _aligned_axis(d: Vec) -> tuple[int, bool] | None:
+    """(which coordinate, whether the + way) of a vector that is exactly one of +-x, +-y, +-z; else None."""
+    for k in range(3):
+        if abs(d[k]) == 1.0 and all(d[j] == 0.0 for j in range(3) if j != k):
+            return k, d[k] > 0.0
+    return None
+
+
 @dataclass
 class _Flat:
     """A flat face: centre, outward normal, axes, its outline (``rect`` half sizes or a ``disc``'s radius), the material under it, and where a cut through it comes out.
@@ -265,8 +347,18 @@ class _Flat:
     #: How much further than the gap things keep in from a disc's or a ring's rim: a rounding of it.
     rim: float = 0.0
 
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its centre, its first and second axes and its outward normal."""
+        return _FaceFrame(
+            self.centre,
+            unit_of("+" + self.axes[0]),
+            unit_of("+" + self.axes[1]),
+            _t(self.normal),
+        )
+
     def coords(self) -> tuple[float, float]:
-        return tuple(float(self.centre["xyz".index(a)]) for a in self.axes)  # type: ignore[return-value]
+        return self.frame.plane(self.centre)
 
     def holds(
         self,
@@ -389,6 +481,12 @@ class _Round:
     #: made after keeps clear of them.
     standing: list[tuple[float, float]] = field(default_factory=list)
 
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its start; the ways out at 0 and 90 degrees round it; its axis."""
+        u, v = TURN_AXES[self.axis]
+        return _FaceFrame.of_names(self.start, u, v, self.axis)
+
 
 def _v(a: Any) -> Array:
     return np.asarray(a, dtype=np.float64)
@@ -472,9 +570,7 @@ def _line_length(f: Feature) -> float:
 
 def _right(face: _Flat) -> Array:
     """The way letters on a flat face run: its up (the face's second axis) across its outward normal (text.md)."""
-    return np.asarray(
-        np.cross(_v(unit_of("+" + face.axes[1])), face.normal), dtype=np.float64
-    )
+    return np.asarray(np.cross(face.frame.v, face.normal), dtype=np.float64)
 
 
 def _foot_of(f: Feature, face: _Flat, at: tuple[float, float]) -> _Foot:
@@ -585,10 +681,7 @@ def _flat_spots(f: Feature, face: _Flat) -> list[tuple[float, float]]:
 
 
 def _point(face: _Flat, at: tuple[float, float]) -> Array:
-    p = face.centre.copy()
-    for a, value in zip(face.axes, at, strict=True):
-        p["xyz".index(a)] = value
-    return p
+    return face.frame.point(at)
 
 
 def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes: tuple[str, str],
@@ -852,7 +945,7 @@ def _on_flat(
         _stays_in_room(f, face, feet, rise, part)
     before = set(part.flats)
     n = face.normal
-    e1, e2 = (_v(unit_of(a)) for a in face.axes)
+    e1, e2 = face.frame.u, face.frame.v
     made = []
     first = len(part.steps)
     for k, at in enumerate(spots):
@@ -1039,7 +1132,7 @@ def _overhanging(f: Feature, index: int, p: Array, frame: tuple[Array, Array, Ar
     e1, e2, n = frame
     block = Prism(_t(p), _t(e1), _t(e2), _t(n), half, 0.0, 0.0, height)
     part.steps.append(Step(f.id, index, True, block))
-    centre, at = face.coords(), tuple(float(p["xyz".index(a)]) for a in face.axes)
+    centre, at = face.coords(), face.frame.plane(p)
     lo = [max(at[k] - half[k], centre[k] - face.half[k]) for k in (0, 1)]
     hi = [min(at[k] + half[k], centre[k] + face.half[k]) for k in (0, 1)]
     middle = p + ((lo[0] + hi[0]) / 2 - at[0]) * e1 + ((lo[1] + hi[1]) / 2 - at[1]) * e2
@@ -1275,8 +1368,8 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             for other in side.taken + mine[:k]:
                 if not _holes_apart(here, other, side.radius):
                     raise DoesNotFitError(f"{f.id} meets something else round the side")
-    w = _v(unit_of("+" + side.axis))
-    zero, quarter = (_v(unit_of("+" + a)) for a in TURN_AXES[side.axis])
+    w = side.frame.n
+    zero, quarter = side.frame.u, side.frame.v
     # What else is on this side is kept apart above; the rod itself is what it stands on.
     beside = {
         c.item for copies in part.copies.values() for c in copies if c.host == side.key
@@ -2203,7 +2296,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
                     _margin(face, up[1], (1.0 if up[0] == "+" else -1.0) * (-b), size)
     if which == "joint":
         assert host is not None
-        at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+        at = host.frame.plane(p)
         old = _foot_of(target, host, (at[0], at[1]))
         if _flush(target, host) or _overhang(target, host, [old], False):
             # A side flush with the face's edge has no corner along it, and under an overhang the corner is
@@ -2314,7 +2407,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
             )
     if which == "joint":
         assert host is not None
-        at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+        at = host.frame.plane(p)
         old = _foot_of(target, host, (at[0], at[1]))
         _keep_clear(f, host, old, _Foot(old.at, (r + size, r + size), r + size), strict)
         part.late.append(
@@ -2341,7 +2434,7 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     depth = host.material if target.depth is None else target.depth
     if strict and size > depth / 2:
         raise DoesNotFitError(f"{f.id} is too big for the cut it rounds")
-    at = tuple(float(p["xyz".index(a)]) for a in host.axes)
+    at = host.frame.plane(p)
     circle = _draw(target.kind).round_mouth(target)
     if which == "bottom" and target.depth is None:
         raise DoesNotFitError(f"{f.id}: a pocket through has no floor")
