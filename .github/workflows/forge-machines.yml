@@ -1,0 +1,89 @@
+# The same seeds fingerprinted on different machines (4b.0c's first item: the same numbers on any machine).
+# Each machine runs tests/v2_fingerprint.py on this commit's code with nothing pinned (or, for a Linux row
+# marked pinned, held to x86-64-v3 as forge-runs does); the compare job holds every row against the first,
+# section by section. Started by hand only.
+name: forge-machines
+
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: "Seeds, as tests/v2_fingerprint.py --seeds takes them"
+        default: "0-200"
+      python:
+        description: "The Python on every machine"
+        default: "3.14.10"
+      machines:
+        description: "JSON list of [runner, pinned] rows; the first is the reference"
+        default: '[["ubuntu-24.04", true], ["ubuntu-24.04", false], ["windows-2025", false], ["macos-15", false], ["ubuntu-24.04-arm", false]]'
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        row: ${{ fromJSON(inputs.machines) }}
+    runs-on: ${{ matrix.row[0] }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONHASHSEED: "0"
+      PYTHONUTF8: "1"
+    steps:
+      - name: Line endings as committed
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python }}
+      - name: Forge's pinned tools
+        run: |
+          python -m pip install --disable-pip-version-check -q -r .github/requirements-runner.txt || {
+            echo "the whole set didn't install here: the fingerprint's own needs instead"
+            python -m pip install --disable-pip-version-check -q numpy==2.5.3 fonttools==4.67.0 manifold3d==3.5.4
+          }
+      - name: The machine
+        run: |
+          python -c "import platform, sys; print(platform.platform(), platform.machine(), platform.processor()); print(sys.version)"
+          python -c "import numpy; numpy.show_runtime()" || true
+          (lscpu 2>/dev/null | grep -E 'Model name|^CPU\(s\)') || sysctl -n machdep.cpu.brand_string 2>/dev/null || (wmic cpu get name 2>/dev/null) || true
+      - name: Fingerprints
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          PINNED: ${{ matrix.row[1] }}
+        run: |
+          if [ "$PINNED" = "true" ]; then
+            export NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR" OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
+          fi
+          python tests/v2_fingerprint.py --seeds "$SEEDS" --out "out/fp" --workers 4
+          python -c "import platform, json; json.dump({'runner': '${{ matrix.row[0] }}', 'pinned': '$PINNED', 'machine': platform.platform(), 'cpu': platform.processor()}, open('out/fp/machine.json', 'w'))"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fp-${{ strategy.job-index }}
+          path: out
+          include-hidden-files: true
+
+  compare:
+    needs: run
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: in
+      - name: Compare
+        run: python .github/machines_compare.py in | tee compare.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compare
+          path: compare.txt
