@@ -214,6 +214,11 @@ kind modules on the same foundation, never as a rebuild of it.
   machine with no pins, before anything else in 4b.0c moves; then
   frames, depth by geometry, analytic hosts (items 1
   to 3), with the schema migration (item 14) that they need.
+  Status (V2-stage4b-0c.md): the same numbers on any machine **done**
+  (six machines equal on 200 seeds; every one of the 10,000 counted seeds
+  passing old and new); item 14 done (schema 1.1); item 1a done for the
+  solver, the judge and the generator (byte-identical), the planner's and
+  the second kernel's with 1b.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and

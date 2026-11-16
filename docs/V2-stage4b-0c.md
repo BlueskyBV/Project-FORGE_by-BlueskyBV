@@ -130,11 +130,13 @@ seeds: the same parts, every float within 2.3e-16 of the old one.
 | Step | State |
 |---|---|
 | forge_numeric, its tests and its compiled twin | done (`acf5a9f`, `aed942e`); golden digests reproduced on all four platforms (trust-core run 43880625574), each platform's library equal to the NumPy twin (native run 43880625544) |
-| The call sites and the rule | on `numeric/adopt` (`ae9dfe5`), in proof |
+| The call sites and the rule | done (`ae9dfe5`) |
 | The suite on it | every file passes but `test_v2_eval_keys` (it needs the corpus, which runners don't have: run 43926576936) |
-| The machines | run 43926561703: in proof |
-| Old code against new | exit pairs on seeds 0 to 5,000 and 5,000 to 10,000 (runs 43926589836, 43926602844): in proof |
-| The speed commit | on `numeric/speed` (`6f0ff6a`): the fingerprints of 40 sample seeds byte-identical to the adopted code's here; the libraries building (native run 43938379282) |
+| The machines | **the same everywhere**: 200 seeds' fingerprints on Linux x86 (pinned and not), Windows x86, macOS ARM, Linux ARM and Windows ARM, 0 differences, nothing pinned (run 43926561703) |
+| Old code against new | stage 4's exit harness on all 10,000 counted seeds, the code before against the adopted on one runner (runs 43926589836, 43926602844): **every seed passed on both**; the only differences are last digits of the second kernel's exact B-rep volume (114 values in 57 seeds, at most 6.8e-13 apart relatively) and of the width the agreement widens it by (89 values, 3.5e-11): ADR-0037's one move of last bits, no outcome, count or verdict |
+| The speed commit | done (`fc36206`): the fingerprints of 200 sample seeds byte-identical to the adopted code's on one runner (run 43951936987); each platform's library built and tested (native run 43938379282) |
+
+Item 0 is done.
 
 What the machines found on the way (2.1's last cause): with every
 elementary function and product replaced, a Mac and an ARM PC still
@@ -310,7 +312,16 @@ from what they hold, so no record gains a field until 1b.
 | The solver (`forge_spec.frames`; its faces, round sides, positions, pockets' floors, letters) | done | the fingerprints of 40 sample seeds byte-identical |
 | The judge's placement, oracle and check compiler (`forge_checks.place.FaceFrame`; its faces and round sides, positions, cuts and pockets' floors, the way round a side, the layouts' comparison; the compiler's and the oracle's face directions) | done | the fingerprints of 40 sample seeds byte-identical |
 | The generator and its truth (`forge_eval.generator._FaceFrame`; its faces' and round sides' points and plane coordinates, axes, letters' reading direction, extrusions' ends and walls' pressed feet) | done | the fingerprints of 40 sample seeds byte-identical |
-| The planner and the second kernel's view | next | |
+| The planner and the second kernel's view | nothing to move (below) | |
+
+The planner and the second kernel need no step of their own: their
+geometry is ForgeIR's, each primitive's box in its own frame with its faces
+named by role (`x_max`), placed by a rigid motion (ForgeIR v2), so an
+aligned copy's motion is a translation and its roles the part's directions.
+What the planner reads off a copy's box (an edge's run, a box flattened to
+its face, a hollow's walls) it reads in the copy's frame from 1b, when a
+copy can turn; the second kernel reads roles in each primitive's own
+frame already.
 
 **1b, the ability:**
 
