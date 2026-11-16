@@ -335,7 +335,7 @@ class Probe:
             on = self.part.classify(feet) == Side.ON
             kept, kept_feet = rows[on], feet[on]
         else:
-            order = np.random.default_rng(len(rows)).permutation(len(rows))
+            order = fv.Draws(len(rows)).permutation(len(rows))
             found: list[NDArray[np.int64]] = []
             have = 0
             for start in range(0, len(order), enough):

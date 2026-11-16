@@ -120,7 +120,7 @@ def tells(
     """For each other choice that can be made and makes a different shape, the points that tell the spec's from it; or that none can."""
     found: list[Tells] = []
     untold: list[str] = []
-    rng = np.random.default_rng(_seed(item.id, field))
+    rng = fv.Draws(_seed(item.id, field))
     for other in alternatives:
         changed = _with(spec, other.item)
         try:

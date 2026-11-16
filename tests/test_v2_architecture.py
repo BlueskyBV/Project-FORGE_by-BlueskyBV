@@ -656,7 +656,8 @@ _NUMPY_FUNCTIONS = frozenset({
     "convolve", "correlate", "cov", "corrcoef", "polyfit", "polyval", "roots", "interp",
     "linalg", "fft", "polynomial",
 })  # fmt: skip
-#: Random draws by a law other than the uniform one (which take logarithms and exponentials).
+#: Random draws by a law other than the uniform one (which take logarithms and exponentials). NumPy's
+#: generators are reached only through ``fv.Draws`` (their uniform draws fuse a multiply-add in C).
 _RANDOM_LAWS = frozenset({
     "normal", "standard_normal", "gauss", "normalvariate", "lognormvariate", "lognormal",
     "expovariate", "exponential", "standard_exponential", "vonmisesvariate", "vonmises",
@@ -699,11 +700,14 @@ def numeric_sites(source: str) -> list[str]:
                 found.append(f"{line}: math.{node.attr}")
             if node.value.id in ("np", "numpy") and node.attr in _NUMPY_FUNCTIONS:
                 found.append(f"{line}: np.{node.attr}")
+            if node.value.id in ("np", "numpy") and node.attr == "random":
+                found.append(f"{line}: np.random (fv.Draws instead)")
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 top, _, rest = alias.name.partition(".")
                 if top in ("cmath", "statistics") or (
-                    top == "numpy" and rest.split(".")[0] in _NUMPY_FUNCTIONS
+                    top == "numpy"
+                    and rest.split(".")[0] in {*_NUMPY_FUNCTIONS, "random"}
                 ):
                     found.append(f"{line}: import {alias.name}")
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
@@ -716,7 +720,7 @@ def numeric_sites(source: str) -> list[str]:
                     top == "numpy"
                     and (
                         rest.split(".")[0] in _NUMPY_FUNCTIONS
-                        or (not rest and names & _NUMPY_FUNCTIONS)
+                        or (not rest and names & {*_NUMPY_FUNCTIONS, "random"})
                     )
                 )
             ):
@@ -779,12 +783,13 @@ z = w ** 0.5 + w ** 2 + 10 ** -3 + w ** n
 q = pow(w, 3) + v.dot(u) + rng.normal(size=3) + random.gauss(0, 1) + 1j
 f = math.log10
 g = math.hypot(a, b) + math.dist(p, q)
+r = np.random.default_rng(1).uniform(0, 1)
 """
-        self.assertEqual(len(numeric_sites(caught)), 21, numeric_sites(caught))
+        self.assertEqual(len(numeric_sites(caught)), 22, numeric_sites(caught))
         fine = """
 from numpy.typing import NDArray
 x = math.sqrt(a) + fs.hypot(a, b) + math.fsum(c) + np.sqrt(d) + np.sum(e) + np.cross(f, g)
-y = fs.sin(a) + fv.dot(b, c) + fv.matmul(b, c) + fv.normal(rng, size=3) + rng.uniform(0, 1)
+y = fs.sin(a) + fv.dot(b, c) + fv.matmul(b, c) + fv.normal(rng, size=3) + fv.Draws(1).uniform(0, 1)
 z = 2 ** 10 + 2.0 ** -53 + 3 ** 2 + w * w
 """
         self.assertEqual(numeric_sites(fine), [])

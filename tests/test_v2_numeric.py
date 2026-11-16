@@ -275,6 +275,7 @@ class GoldenDigests(unittest.TestCase):
         "normal": "5754b61e72364619",
         "roots": "c61ed0aa6e688edf",
         "hypot, scaled": "1bf645fc4065494e",
+        "draws": "30f181b92ac2cdb8",
     }
 
     @staticmethod
@@ -331,6 +332,14 @@ class GoldenDigests(unittest.TestCase):
             fv.interp(_inputs(5000, -2, 8, 23), xp, _inputs(200, -3, 3, 24))
         )
         found["normal"] = _digest(fv.normal(np.random.default_rng(25), 1.0, 2.0, 5000))
+        draws = fv.Draws(30)
+        found["draws"] = _digest(
+            draws.uniform(
+                np.array([-3.0, 0.5, 1e3]), np.array([2.0, 0.75, 1e4]), (2000, 3)
+            ),
+            draws.normal(1.0, 3.0, 2000),
+            draws.random(100),
+        )
         big, small = _inputs(4000, 480, 1020, 27), _inputs(4000, -1074, -480, 28)
         found["hypot, scaled"] = _digest(
             fv.hypot(big, big[::-1]),
@@ -516,6 +525,29 @@ class TheNewcomersAreNumPys(unittest.TestCase):
                 )
         self.assertEqual(len(fv.roots([0.0, 0.0, 1.0, -3.0, 2.0, 0.0])), 3)
         self.assertEqual(sorted(fv.roots([1.0, -3.0, 2.0]).real.round(12)), [1.0, 2.0])
+
+    def test_draws(self) -> None:
+        mine, numpys = fv.Draws(7), np.random.default_rng(7)
+        lo, hi = np.array([-1.0, 0.0, 5.0]), np.array([1.0, 1e-3, 5.5])
+        a = mine.uniform(lo, hi, size=(500, 3))
+        b = numpys.uniform(lo, hi, size=(500, 3))
+        # NumPy's own may fuse its multiply-add (Clang, Microsoft's ARM compiler): an ulp apart at most.
+        np.testing.assert_allclose(a, b, rtol=0, atol=8e-15)
+        again = fv.Draws(7).random((500, 3))
+        self.assertTrue(np.array_equal(a, lo + (hi - lo) * again))
+        self.assertEqual(type(fv.Draws(1).uniform(0.0, 2.0)), np.float64)
+        self.assertEqual(
+            fv.Draws(3).permutation(10).tolist(),
+            np.random.default_rng(3).permutation(10).tolist(),
+        )
+        self.assertEqual(
+            fv.Draws(3).integers(0, 100, 5).tolist(),
+            np.random.default_rng(3).integers(0, 100, 5).tolist(),
+        )
+        self.assertEqual(
+            fv.Draws(3).choice(50, 7, replace=False).tolist(),
+            np.random.default_rng(3).choice(50, 7, replace=False).tolist(),
+        )
 
     def test_normal(self) -> None:
         z = fv.normal(np.random.default_rng(6), 1.0, 2.0, (400, 500))

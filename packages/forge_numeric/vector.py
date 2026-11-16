@@ -29,6 +29,7 @@ from .scalar import cube, sq  # (numbers or arrays alike)
 Array = NDArray[np.float64]
 
 __all__ = [
+    "Draws",
     "arccos",
     "arcsin",
     "arctan",
@@ -759,13 +760,55 @@ def interp(x: Any, xp: Any, fp: Any) -> Array:
     return _out(out.reshape(x.shape))
 
 
+class Draws:
+    """NumPy's PCG64 random draws, the same numbers on every machine: ``numpy.random.default_rng(seed)``'s place.
+
+    NumPy's ``uniform`` and ``normal`` compute ``low + range * u`` and the
+    like in C, which Clang and Microsoft's ARM compiler fuse into one
+    rounding: another last bit on a Mac or an ARM PC. Here ``uniform`` is
+    ``low + (high - low) * u`` in NumPy's elementwise arithmetic (the bits
+    GCC's unfused build gives), from the same draws in the same order;
+    ``normal`` is :func:`normal`'s; ``random``, ``integers``,
+    ``permutation`` and ``choice`` are NumPy's own (exact: integers, and
+    ``u`` a whole number times 2^-53).
+    """
+
+    def __init__(self, seed: Any = None) -> None:
+        self.generator = np.random.default_rng(seed)
+
+    def random(self, size: Any = None) -> Array:
+        drawn: Array = self.generator.random(size)
+        return drawn
+
+    def uniform(self, low: Any = 0.0, high: Any = 1.0, size: Any = None) -> Array:
+        low, high = (
+            np.asarray(low, dtype=np.float64),
+            np.asarray(high, dtype=np.float64),
+        )
+        if size is None:
+            size = np.broadcast_shapes(low.shape, high.shape)
+        return _out(low + (high - low) * self.generator.random(size))
+
+    def normal(self, loc: float = 0.0, scale: float = 1.0, size: Any = None) -> Array:
+        return normal(self.generator, loc, scale, size)
+
+    def integers(self, *args: Any, **kwargs: Any) -> Any:
+        return self.generator.integers(*args, **kwargs)
+
+    def permutation(self, x: Any) -> Any:
+        return self.generator.permutation(x)
+
+    def choice(self, *args: Any, **kwargs: Any) -> Any:
+        return self.generator.choice(*args, **kwargs)
+
+
 def normal(
-    rng: np.random.Generator,
+    rng: Any,
     loc: float = 0.0,
     scale: float = 1.0,
     size: int | tuple[int, ...] | None = None,
 ) -> Array:
-    """Normal draws from ``rng``'s uniform ones (Box and Muller's transform): ``rng.normal``'s place.
+    """Normal draws from ``rng``'s uniform ones (Box and Muller's transform): ``rng.normal``'s place (``rng`` a NumPy generator or :class:`Draws`).
 
     NumPy's own normal draws take ``exp`` and ``log`` from the C library on
     their rarer path, so a seed may draw other numbers on another machine.

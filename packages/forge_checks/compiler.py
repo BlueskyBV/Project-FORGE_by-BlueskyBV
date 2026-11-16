@@ -305,7 +305,7 @@ class _Compiler:
             points = points[fv.norm(points - _v(plane.point), axis=1) <= plane.reach]
         # A batch at a time, in an order spread over the plane (a fixed one): the answer is
         # whether any point is on the part's surface, found as soon as one is.
-        spread = points[np.random.default_rng(len(points)).permutation(len(points))]
+        spread = points[fv.Draws(len(points)).permutation(len(points))]
         for start in range(0, len(spread), _LOOKED_AT):
             batch = spread[start : start + _LOOKED_AT]
             on = batch[self.part.classify(batch) == Side.ON]

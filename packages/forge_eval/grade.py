@@ -338,7 +338,7 @@ def grade(truth: Truth, built: ViewProxy, *, exact: ViewProxy | None = None, spa
     failed["truth's surface"] = on[~built.near(on, np.full(len(on), reach))]
 
     # Points in every copy's box, clear of the truth's surface: on the same side of the built part.
-    rng = np.random.default_rng(seed)
+    rng = fv.Draws(seed)
     drawn = []
     for item, copies in truth.copies.items():
         for copy in copies:

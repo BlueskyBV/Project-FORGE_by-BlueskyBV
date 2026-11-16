@@ -135,7 +135,7 @@ def draw(
     if each < 1 or tries < 1:
         raise ValueError("fresh probes need some points and some tries")
     margin = max(4 * tolerance, LEAST)
-    rng = np.random.default_rng(seed)
+    rng = fv.Draws(seed)
     points: list[Array] = []
     inside: list[NDArray[np.bool_]] = []
     items: list[str] = []

@@ -401,7 +401,7 @@ def agree(document: DocumentV2, component: str, *, exact: BuildResult | None = N
     area = sum(surface_area(f) for f in faces(exact.shape))
     radius = max(math.sqrt(area / _SURFACE_POINTS) / 0.6, size / 400.0)
     cover = view.coverage(radius)
-    rng = np.random.default_rng(0)
+    rng = fv.Draws(0)
     cover_points, cover_normals = cover.points, cover.normals
     if (
         len(cover_points) > _SURFACE_POINTS
@@ -623,9 +623,7 @@ def _thinnest(view: BrepView, cell: float) -> float:
     cover = view.coverage(max(cell, 1e-3))
     points, normals = cover.points, cover.normals
     if len(points) > _THIN_POINTS:
-        chosen = np.random.default_rng(0).choice(
-            len(points), _THIN_POINTS, replace=False
-        )
+        chosen = fv.Draws(0).choice(len(points), _THIN_POINTS, replace=False)
         points, normals = points[np.sort(chosen)], normals[np.sort(chosen)]
     off = 1e-6
     found = math.inf
