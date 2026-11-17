@@ -122,7 +122,7 @@ def _turned_round_tab(chain: Chain, item: Item, copy: Instance, axes: tuple[str,
     at its point as it stands unturned and turned about the line through its point square to the face, from the
     face's first axis towards its second (a ``transform``, ForgeIR v2's rigid motion); kept within its foot's box
     turned, from its foot's plane out past its end (each side of that box clear of the stadium's). The box is made
-    after the motion, in place: its foot's face is where it is built, and is lost on the part as an unturned tab's
+    in place, not moved: its foot's face is where it is built, and is lost on the part as an unturned tab's
     keeping box's is. Its faces take nothing yet (a later move), so none is named; its box is the box round its
     turned foot, its length out."""
     if chain.early.get(item.id):
@@ -156,11 +156,9 @@ def _turned_round_tab(chain: Chain, item: Item, copy: Instance, axes: tuple[str,
     turn = turn_of(item)
     assert turn is not None
     roomy = Shape.rect((0.0, 0.0), (halves[axes[0]] + _SIDE_PAST, halves[axes[1]] + _SIDE_PAST)).turned(*turn)
-    # Named after the motion's step, so it comes after it in the document's order (dependency order, ties
-    # alphabetical): no motion follows the box whose face is the tab's foot.
-    keep_outline, axis, datum_sign = plane_outline(chain, item, k, axes, w, w, roomy, "turned_keep_")
+    keep_outline, axis, datum_sign = plane_outline(chain, item, k, axes, w, w, roomy, "keep_")
     mode = "normal" if u["xyz".index(axis)] == datum_sign else "reverse"
-    keep = chain.extrude(_id(item.id, k, "turned_keep"), keep_outline, height + _SIDE_PAST, mode, item=item.id)
+    keep = chain.extrude(_id(item.id, k, "keep"), keep_outline, height + _SIDE_PAST, mode, item=item.id)
     tool = chain.boolean(_id(item.id, k, "tab"), "intersect", [turned, keep], item=item.id)
     foot = Shape.rect((0.0, 0.0), (halves[axes[0]], halves[axes[1]])).turned(*turn)
     h1, h2 = turned_halves(foot)

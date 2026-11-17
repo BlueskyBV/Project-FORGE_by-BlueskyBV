@@ -277,6 +277,30 @@ class AWallTooThinForTheMesh(unittest.TestCase):
 
 
 @needs_occ
+class AMotionOfAnotherSolid(unittest.TestCase):
+    def test_leaves_the_faces_lost_before_it_excused(self) -> None:
+        """Generated part 620: a boss on a block's side and holes in another, then a round-ended tab turned in a third
+        face, made by turning its own stadium (a transform) before it is kept and joined. The faces the boss's foot and
+        the holes' far ends lost were taken as moved by that motion, which moves only the stadium, and went
+        unexcused; now a move counts only for what is made from the step that made the face."""
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import v2_exit4
+        from forge_eval.generator import render
+        from v2_regressions import REGRESSIONS
+
+        spec = v2_exit4._spec(render(REGRESSIONS[620][1]).items)
+        plan, built = v2_exit4._built(spec)
+        document = plan.document(built.choice)
+        self.assertIn("transform", [s.op for s in document.steps("part")])
+        report = agree(document, "part", exact=built.result)
+        self.assertTrue(report.holds, json.dumps(report.as_dict(), default=str)[:2000])
+        self.assertEqual(report.names["missing"], [])
+
+
+@needs_occ
 class BossesFlushWithEdges(unittest.TestCase):
     def test_the_exact_part_counts_no_through_hole_for_them(self) -> None:
         """Generated part 450: two blocks, each crossed by a through slot that four deep round slots meet, a boss flush with each block's edge, and a tube with a hole into its bore: genus 11. Counted by its faces' wires alone, each boss's face (its circle touching the face's outline at a point) lost one from the Euler characteristic, and the exact part said 12; the implicit kernel's mesh, sound at 256 cells, said 11 and was right."""

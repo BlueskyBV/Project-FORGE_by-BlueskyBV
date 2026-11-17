@@ -639,6 +639,33 @@ def _thinnest(view: BrepView, cell: float) -> float:
 _MOVES = frozenset({"transform", "bend", "mirror"})
 
 
+def _moved_after(steps: Sequence[Any], owner: str) -> bool:
+    """Whether a step after ``owner`` moves what ``owner`` made: a move whose input is made from its product.
+
+    A move of another solid only (a turned tab's stadium, turned on its own
+    before it is kept and joined: V2-stage4b-0c.md 3.3, 1b's first move)
+    leaves the faces ``owner`` made where it made them.
+    """
+    inputs = {step.id: tuple(step.inputs) for step in steps}
+    made_from: dict[str, bool] = {}
+
+    def from_owner(step: str) -> bool:
+        if step == owner:
+            return True
+        if step not in made_from:
+            made_from[step] = False  # no step is made from itself: a guard on the walk alone
+            made_from[step] = any(from_owner(i) for i in inputs.get(step, ()))
+        return made_from[step]
+
+    after = False
+    for step in steps:
+        if step.id == owner:
+            after = True
+        elif after and step.op in _MOVES and from_owner(step.id):
+            return True
+    return False
+
+
 def _lost_fairly(entity: Any, document: DocumentV2, component: str, exact: BuildResult, solid: Any,
                  view: BrepView) -> str | None:  # fmt: skip
     """Why a face V1 finds on its part has no face of the exact part named for it, when that is right; None when it isn't.
@@ -649,16 +676,12 @@ def _lost_fairly(entity: Any, document: DocumentV2, component: str, exact: Build
     base on its flange, the patch's corners on the flange's top. It is right
     when none of V1's samples on its boundary lies on the face the exact
     kernel's step made (as that step made it) and on the exact part too.
-    Undecided (None) when the part was moved after the step.
+    Undecided (None) when what the step made was moved after it.
     """
     steps = document.steps(component)
     owner = entity.owning_feature
-    after = False
-    for step in steps:
-        if step.id == owner:
-            after = True
-        elif after and step.op in _MOVES:
-            return None
+    if _moved_after(steps, owner):
+        return None
     product = exact.products.get(owner)
     suffix = entity.name.split(".")[-1]
     if not isinstance(product, SolidProduct):
@@ -701,12 +724,8 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
     """
     steps = document.steps(component)
     owner = entity.owning_feature
-    after = False
-    for step in steps:
-        if step.id == owner:
-            after = True
-        elif after and step.op in _MOVES:
-            return None
+    if _moved_after(steps, owner):
+        return None
     # The face as the last step that still has it left it (a tool's face cut down to the tool by the next step),
     # and the first step after that whose trace says it lost the name.
     suffix = entity.name.split(".")[-1]

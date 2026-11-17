@@ -361,6 +361,8 @@ def build(truth: Truth) -> Any:
 
     from forge_occ.errors import BooleanFlagError
     from forge_occ.make import boolean, unify
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_Copy
+    from OCP.BRepCheck import BRepCheck_Analyzer
 
     part = None
     for k, step in enumerate(truth.steps):
@@ -380,7 +382,12 @@ def build(truth: Truth) -> Any:
             _held_to(made, replace(truth, steps=truth.steps[: k + 1]), step, error)
             part = made
     assert part is not None
-    return unify(part).shape
+    # Its faces on one surface merged, where that leaves a valid solid: merging can fail on faces a turned cut
+    # crosses (generated part 477: a slot turned 120 degrees in a block's side, crossed by a slot through the block;
+    # every boolean valid, the merged solid not), and a solid that isn't valid makes no exact boolean with another.
+    # The merging changes what it shares with the solid it is given, so it is given a copy.
+    merged = unify(BRepBuilderAPI_Copy(part).Shape()).shape
+    return merged if BRepCheck_Analyzer(merged).IsValid() else part
 
 
 def _held_to(made: Any, truth: Truth, step: Any, error: Exception) -> None:

@@ -143,6 +143,26 @@ class AMutantThatLeavesTheShape(unittest.TestCase):
         truth = self._threaded("left")
         self.assertFalse(v2_exit4._changes_shape(truth, truth))
 
+    def test_a_hole_through_moved_to_the_face_across_leaves_the_shape(self) -> None:
+        """Generated part 477: a slot turned 120 degrees in a block's side, crossed by a slot through the block. Its
+        truth's faces merged came out invalid (and the merging left the solid it was given invalid too), so its mutant,
+        a row of holes through the block moved to the face across, made no exact boolean with it and was taken for
+        another shape, which survived. Merged on a copy, and kept unmerged where the merged one isn't valid, the two
+        are one shape."""
+        from dataclasses import replace
+
+        import v2_exit4
+        from forge_eval.generator import render
+        from OCP.BRepCheck import BRepCheck_Analyzer
+        from v2_regressions import REGRESSIONS
+        from v2_truth_occ import build
+
+        plan = REGRESSIONS[477][1]
+        moved = tuple(replace(f, on=("body", "+z")) if f.id == "i4" else f for f in plan)
+        one, other = render(plan).truth, render(moved, strict=False).truth
+        self.assertTrue(BRepCheck_Analyzer(build(one)).IsValid())
+        self.assertFalse(v2_exit4._changes_shape(one, other))
+
 
 class WorkersThatDieOrHang(unittest.TestCase):
     """A worker killed on a seed, or silent past the limit, is recorded against that seed, and its other seeds run; one that runs out of memory ends, and a fresh one runs the rest."""

@@ -6427,6 +6427,327 @@ REGRESSIONS: dict[int, tuple[str, Plan]] = {
             ),
         ),
     ),
+    477: (
+        "a slot turned in a block's side, crossed by a slot through it: the truth's merged faces invalid, its mutant "
+        "taken for another shape",
+        (
+            Feature(
+                id="body",
+                kind="block",
+                sizes={
+                    "length": 111.846,
+                    "width": 48.166,
+                    "height": 9.256,
+                },
+                on=None,
+                depth=None,
+                choices={},
+                recess=None,
+                place={},
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="round_body",
+                kind="fillet",
+                sizes={
+                    "radius": 0.766,
+                },
+                on=None,
+                depth=None,
+                choices={
+                    "which": "top",
+                },
+                recess=None,
+                place={},
+                angle=None,
+                pattern=None,
+                of="body",
+            ),
+            Feature(
+                id="i0",
+                kind="slot",
+                sizes={
+                    "width": 5.458,
+                    "length": 17.234,
+                },
+                on=("body", "+z"),
+                depth=None,
+                choices={
+                    "along": "x",
+                    "ends": "round",
+                },
+                recess=None,
+                place={
+                    "x": Position(mode="side", distance=30.47, side="+x", to="centre"),
+                    "y": Position(mode="none", distance=0.0, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="i1",
+                kind="tab",
+                sizes={
+                    "thickness": 2.258,
+                    "width": 4.242,
+                    "length": 11.668,
+                },
+                on=("body", "+x"),
+                depth=None,
+                choices={
+                    "thickness_along": "y",
+                    "end": "square",
+                },
+                recess=None,
+                place={
+                    "y": Position(mode="offset", distance=-4.656, side="", to="centre"),
+                    "z": Position(mode="centred", distance=0.0, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="i2",
+                kind="hole",
+                sizes={
+                    "diameter": 1.529,
+                },
+                on=("i1", "+y"),
+                depth=1.473,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="offset", distance=-2.721, side="", to="centre"),
+                    "z": Position(mode="offset", distance=0.281, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="i3",
+                kind="slot",
+                sizes={
+                    "width": 2.037,
+                    "length": 4.481,
+                },
+                on=("body", "+x"),
+                depth=67.229,
+                choices={
+                    "along": "y",
+                    "ends": "square",
+                },
+                recess=None,
+                place={
+                    "y": Position(mode="centred", distance=0.0, side="", to="centre"),
+                    "z": Position(mode="offset", distance=-1.118, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+                turn=120.0,
+            ),
+            Feature(
+                id="i4",
+                kind="hole",
+                sizes={
+                    "diameter": 5.634,
+                },
+                on=("body", "-z"),
+                depth=None,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="offset", distance=12.067, side="", to="centre"),
+                    "y": Position(mode="side", distance=1.594, side="-y", to="edge"),
+                },
+                angle=None,
+                pattern=Pattern(
+                    kind="row",
+                    values={
+                        "pitch": 11.663,
+                    },
+                    counts={
+                        "count": 2,
+                    },
+                    axis="x",
+                ),
+            ),
+            Feature(
+                id="i5",
+                kind="pocket",
+                sizes={
+                    "length": 3.972,
+                    "width": 3.329,
+                    "corner_radius": 1.212,
+                },
+                on=("body", "+x"),
+                depth=None,
+                choices={
+                    "shape": "rectangle",
+                },
+                recess=None,
+                place={
+                    "y": Position(mode="side", distance=12.19, side="-y", to="edge"),
+                    "z": Position(mode="offset", distance=0.828, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+        ),
+    ),
+    620: (
+        "a round-ended tab turned by a rigid motion: faces lost earlier left unexcused",
+        (
+            Feature(
+                id="body",
+                kind="block",
+                sizes={
+                    "length": 80.611,
+                    "width": 66.481,
+                    "height": 24.682,
+                },
+                on=None,
+                depth=None,
+                choices={},
+                recess=None,
+                place={},
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="i0",
+                kind="boss",
+                sizes={
+                    "diameter": 4.26,
+                    "height": 11.942,
+                },
+                on=("body", "+x"),
+                depth=None,
+                choices={},
+                recess=None,
+                place={
+                    "y": Position(mode="none", distance=0.0, side="", to="centre"),
+                    "z": Position(mode="none", distance=0.0, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+            Feature(
+                id="i1",
+                kind="hole",
+                sizes={
+                    "diameter": 3.158,
+                },
+                on=("body", "-y"),
+                depth=33.277,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="offset", distance=-18.166, side="", to="centre"),
+                    "z": Position(mode="side", distance=5.578, side="+z", to="centre"),
+                },
+                angle=None,
+                pattern=Pattern(
+                    kind="rectangle",
+                    values={
+                        "x": 15.706,
+                        "z": 12.775,
+                    },
+                    counts={},
+                    axis="",
+                ),
+            ),
+            Feature(
+                id="i2",
+                kind="extrusion",
+                sizes={
+                    "length": 10.75,
+                },
+                on=("body", "-y"),
+                depth=None,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="offset", distance=9.96, side="", to="centre"),
+                    "z": Position(mode="offset", distance=1.792, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+                outline=("stadium", (("l", 28.766), ("w", 12.432))),
+            ),
+            Feature(
+                id="i3",
+                kind="boss",
+                sizes={
+                    "diameter": 13.961,
+                    "height": 11.539,
+                },
+                on=("body", "+z"),
+                depth=None,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="side", distance=16.166, side="-x", to="edge"),
+                    "y": Position(mode="centred", distance=0.0, side="", to="centre"),
+                },
+                angle=None,
+                pattern=Pattern(
+                    kind="grid",
+                    values={
+                        "pitch_x": 16.669,
+                        "pitch_y": 16.143,
+                    },
+                    counts={
+                        "count_x": 2,
+                        "count_y": 3,
+                    },
+                    axis="",
+                ),
+            ),
+            Feature(
+                id="i4",
+                kind="tab",
+                sizes={
+                    "thickness": 3.145,
+                    "width": 8.342,
+                    "length": 5.623,
+                },
+                on=("body", "-z"),
+                depth=None,
+                choices={
+                    "thickness_along": "y",
+                    "end": "round",
+                },
+                recess=None,
+                place={
+                    "x": Position(mode="side", distance=2.334, side="-x", to="edge"),
+                    "y": Position(mode="side", distance=5.306, side="-y", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+                turn=30.0,
+            ),
+            Feature(
+                id="i5",
+                kind="pocket",
+                sizes={
+                    "diameter": 2.233,
+                },
+                on=("i3", "+end"),
+                depth=20.557,
+                choices={
+                    "shape": "circle",
+                },
+                recess=None,
+                place={
+                    "x": Position(mode="offset", distance=-3.855, side="", to="centre"),
+                    "y": Position(mode="offset", distance=0.992, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+            ),
+        ),
+    ),
 }
 
 #: Plans the generator once made and now refuses, by the seed that made them: what was wrong, the refusal, and the plan.
