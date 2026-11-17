@@ -6,7 +6,8 @@ holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
 schema 1.4), its second (a turned box's sides) and 2c (a turned item's
 edges, rounded), neither a schema minor, and its third (a body leans,
-schema 1.5); schema 2.0 next, a leaning item's faces after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
+schema 1.5): 1b done, its schema 2.0 made with item 2b (revision 12). 3a's
+second part next, then 3b, then 2b (a leaning item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -670,6 +671,17 @@ Tests: `tests/test_v2_plan_leanbody.py` (1.5's own, a fault before; placed
 as a post leans; built and judged: a block leaning, turned and leaning, on
 the plate's side, a cylinder leaning; half a degree more fails; the second
 kernel agrees).
+
+**1b's third move, step 4, decided (revision 12, 17 November 2026): schema
+2.0 waits for item 2b.** Two majors are planned: step 4's (positions along
+`u` and `v` only) and item 2b's (each `depth` written as an end condition).
+Each rewrites every draft Forge holds, and a writer of drafts learns each
+once; so they are one major, 2.0, made with 2b, its one migration proven by
+`tests/v2_migrations.py`. Until then `x`, `y` and `z` stay a face's axes'
+other names wherever the face's axes are the part's, as 1.4 reads them (a
+brief's "10 mm along X" is said as said), and a face whose axes aren't the
+part's (a turned item's) takes `u` and `v` only. So 1b's third move is done
+with step 3; 3a's second part is next, then 3b, then 2b with 2.0.
 
 **1b, the ability:**
 

@@ -224,8 +224,9 @@ kind modules on the same foundation, never as a rebuild of it.
   1.3) done; its third's first step (positions along a face's own axes,
   and a turned item's far face, schema 1.4), second (a turned box's
   sides), 2c (a turned item's edges rounded) and third (a body leans,
-  schema 1.5) done, schema 2.0 next (a leaning item's faces after item
-  2b).
+  schema 1.5) done: 1b done, its schema 2.0 made with item 2b's
+  (V2-stage4b-0c.md, revision 12). 3a's second part next, then 3b, then
+  2b.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and
