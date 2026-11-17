@@ -778,12 +778,17 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
         bores.append((f.sizes["diameter"] / 2, f.depth))
         if f.recess is not None:
             bores.append((f.recess[1] / 2, f.recess[2]))
-        low = min(-thick * lean.tan - r / lean.c if d is None else -d * lean.s - r * lean.c for r, d in bores)
+        # Its foot's far side back against the lean, too: a shallow cut's floor may reach less far (generated part 669's
+        # neighbour, a boss's foot, was held apart from a leaning foot by less than the foot).
+        low = min(-along / lean.c, *(-thick * lean.tan - r / lean.c if d is None else -d * lean.s - r * lean.c
+                                     for r, d in bores))  # fmt: skip
         high = along / lean.c
         deepest = max(thick if d is None else d * lean.c + r * lean.s for r, d in bores)
     else:
         height = f.sizes[_draw(f.kind).stand_height]
-        low, high = -along / lean.c, height * lean.s + along * lean.c
+        # Its foot's front, too: a short one's top may reach less far along the lean than its foot (generated part
+        # 669: two bosses 2 mm tall leaning 45 degrees along their row, their feet overlapping).
+        low, high = -along / lean.c, max(along / lean.c, height * lean.s + along * lean.c)
         deepest = 0.0
     spots = _flat_spots(f, face)
     covers = [_lean_box(lean, at, (low + high) / 2, (high - low) / 2, across) for at in spots]

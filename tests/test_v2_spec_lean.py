@@ -304,6 +304,38 @@ class TheViewsShowALean(unittest.TestCase):
         self.assertIn((round(-5.0 / math.cos(t), 2), round(12.0 * math.sin(t) + 5.0 * math.cos(t), 2)), spans)
 
 
+class TheGeneratorHoldsLeaningFeetApart(unittest.TestCase):
+    """What the generator keeps a leaning item's covering clear by holds all of its foot (forge_eval.generator)."""
+
+    def _row(self, height: float, pitch: float) -> Any:
+        from forge_eval.generator import Feature, Pattern, Position, render
+
+        body = Feature("body", "block", {"length": 80.0, "width": 60.0, "height": 10.0})
+        boss = Feature("i0", "boss", {"diameter": 9.0, "height": height}, ("body", "+z"), None, {}, None,
+                       {"x": Position("centred"), "y": Position("centred")}, None,
+                       Pattern("row", {"pitch": pitch}, {"count": 2}, "y"), tilt=(45.0, "+y"))  # fmt: skip
+        return render((body, boss))
+
+    def test_a_short_one_s_foot_reaches_past_its_top(self) -> None:
+        from forge_eval.generator import DoesNotFitError
+
+        # 9 mm across, 2 mm tall, leaning 45 degrees along its row: each foot is 9 / cos 45 = 12.73 mm long, though
+        # its top reaches only 2 sin 45 + 4.5 cos 45 = 4.6 mm forward: 12.2 mm apart, the feet overlap (generated
+        # part 669); 13.5 mm apart, they are the gap apart.
+        with self.assertRaises(DoesNotFitError):
+            self._row(2.0, 12.2)
+        case = self._row(2.0, 13.5)
+        self.assertEqual(len(case.truth.copies["i0"]), 2)
+
+    def test_the_solver_agrees(self) -> None:
+        from forge_eval.generator import draft_of
+        from forge_spec.draft import read_draft
+        from forge_spec.placement import solve
+
+        spec, _ = read_draft(draft_of(self._row(2.0, 13.5).items))
+        self.assertEqual([str(i) for i in solve(spec).issues], [])
+
+
 class WordsAndVersions(unittest.TestCase):
     def test_the_fixed_wording_says_it(self) -> None:
         from forge_spec.render import _line
