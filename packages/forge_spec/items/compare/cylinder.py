@@ -5,7 +5,16 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from forge_spec.draft import Item
-from forge_spec.items.compare._common import Feature, _Edge, _mid, _r, _sub, _up, rims
+from forge_spec.items.compare._common import (
+    Feature,
+    _Edge,
+    _length,
+    _mid,
+    _r,
+    _sub,
+    _up,
+    rims,
+)
 from forge_spec.items.compare.protocol import CompareKind
 from forge_spec.placement import Instance
 
@@ -20,6 +29,8 @@ class Cylinder(CompareKind):
         up = _up(copy)
         across = (hi[(up + 1) % 3] - lo[(up + 1) % 3]) / 2
         axis = (copy.normal, False)
+        if copy.direction is not None:  # leaning on its face (schema 1.5): as a boss, its own diameter along its lean
+            across, axis = (_length(item, "diameter") or 0.0) / 2, (copy.direction, False)
         return [
             Feature(
                 n,

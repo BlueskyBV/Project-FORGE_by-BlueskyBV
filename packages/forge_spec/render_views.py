@@ -79,6 +79,7 @@ from .geometry import (
     side_material,
     side_most_material,
 )
+from .items.solve import SOLVE
 from .items.solve._common import _turn, degrees
 from .items.views import VIEWS
 from .items.views._common import (
@@ -118,6 +119,12 @@ __all__ = ["Dimension", "View", "Views", "render_views"]
 
 #: The kinds of value the views show; a choice is drawn (the way a slot runs, a round end).
 _SHOWN = (Value, Count, Through, Fit, Text, Counterbore, Countersink)
+
+
+def _rises(item: Item) -> str:
+    """The field an item rises by out of its face: its height, a cylinder's length."""
+    found = SOLVE[item.kind].height(item)
+    return found[1] if found is not None else "height"
 
 
 @dataclass(frozen=True)
@@ -706,7 +713,7 @@ def _leaning_ends(item: Item, copy: Instance, layout: Layout, face: FlatFace) ->
     if not VIEWS[item.kind].cut:
         foot = turned_outline(item, layout, face.axes)
         assert foot is not None
-        height = _length(item, "height")
+        height = _length(item, _rises(item))
         top = along(o, u, height)
         if isinstance(item.get("diameter"), Value):  # round: a boss
             far = ring(top, _length(item, "diameter") / 2)
@@ -1031,7 +1038,8 @@ class _Drawing:
                 self.say(kind)
                 for name in ("length", "width"):
                     self.say(f"{name} {_value(item.get(name))}", name)
-            self.say(f"height {_value(item.get('height'))} along its lean", "height")
+            rises = _rises(item)
+            self.say(f"{rises} {_value(item.get(rises))} along its lean", rises)
             self.anchor = (first.hi[self.home.u], first.hi[self.home.v])
             return
         VIEWS[kind].body(self, first, up)

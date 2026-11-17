@@ -17,7 +17,8 @@ The versions: 1.0, ``spec_format`` 1; 1.1, named ``schema_version``;
 1.2, a placement's ``turn`` on a flat face; 1.3, a hole's, a boss's or a
 post's ``tilt`` and ``tilt_towards`` on a flat face; 1.4, positions and
 choices along a flat face's own axes ``u`` and ``v``, and the far face of a
-turned item.
+turned item; 1.5, a block's and a cylinder's ``tilt`` and ``tilt_towards``
+on a flat face (a body leaning as a post or a boss does).
 
 >>> version_of({"schema_version": "1.1"})
 (1, 1)
@@ -48,7 +49,7 @@ __all__ = [
 Version = tuple[int, int]
 
 #: The version Forge writes, and the latest it reads.
-CURRENT: Version = (1, 4)
+CURRENT: Version = (1, 5)
 
 #: The major steps, in order: (from this major version, to the next, the migration), from :mod:`.migrations`.
 MIGRATIONS: tuple[tuple[int, int, Migration], ...] = STEPS

@@ -28,6 +28,9 @@ from forge_eval.truth import Copy, Prism, Step
 
 class Cylinder(DrawKind):
     key = "cylinder"
+    leans = True
+    leans_round = True
+    leans_since = (1, 5)
     openable = ("+end", "-end")
     hosts_standing = True
     threadable = True

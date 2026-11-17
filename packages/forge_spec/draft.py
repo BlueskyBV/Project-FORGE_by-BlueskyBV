@@ -57,6 +57,7 @@ from .schema import (
     NUMBER_SOURCES,
     PRESENT,
     STATED_SOURCES,
+    Category,
     FieldSpec,
     FieldType,
     KindSpec,
@@ -1179,10 +1180,13 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                 ):
                     problems.fault(pointer("items", n, "place", "turn"),
                                    'a turn is schema 1.2\'s: give the draft\'s "schema_version": "1.2"')  # fmt: skip
+                # A body leans in 1.5 (step 3), a hole, a boss or a post in 1.3.
+                since = (1, 5) if KINDS[item.kind].category is Category.BODY else (1, 3)
                 for leans in ("tilt", "tilt_towards"):
-                    if item.get(leans) is not None and version < (1, 3):
+                    if item.get(leans) is not None and version < since:
                         problems.fault(pointer("items", n, leans),
-                                       f'a {leans} is schema 1.3\'s: give the draft\'s "schema_version": "1.3"')  # fmt: skip
+                                       f'a {item.kind}\'s {leans} is schema {since[0]}.{since[1]}\'s: give the '
+                                       f'draft\'s "schema_version": "{since[0]}.{since[1]}"')  # fmt: skip
                 _check_axis_names(item, pointer("items", n), version, problems)
     for listed in ("not_modelled", "silent"):
         if not isinstance(raw.get(listed, []), list):

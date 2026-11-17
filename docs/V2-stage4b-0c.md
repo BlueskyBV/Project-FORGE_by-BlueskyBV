@@ -5,8 +5,8 @@ Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
 holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
 schema 1.4), its second (a turned box's sides) and 2c (a turned item's
-edges, rounded), neither a schema minor; oriented bodies (schema 1.5)
-and schema 2.0 next, a leaning item's faces after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
+edges, rounded), neither a schema minor, and its third (a body leans,
+schema 1.5); schema 2.0 next, a leaning item's faces after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -642,6 +642,34 @@ vertical edges a quarter turn round, a turned rib's top edges, a turned
 pocket's floor, a turned slot's mouth, a boss's rim and a hole's mouth on a
 turned post's side and on its far face, a block turned on its side, a post
 turned on its far face; an edge left out fails; the second kernel agrees).
+
+**1b's third move, step 3, revised and built (revision 11, 17 November
+2026): a body leans.** Revision 7's oriented bodies were a turn about each
+of a body's own axes, the first body's included. The first body's frame is
+the part's by definition (frame.md), so turning it changes no part, only
+how its faces are named; a body standing on a face that turns about any
+axis but the face's normal meets the face at an edge or a corner, unless it
+is cut back by the face's plane, as a leaning post is. So what step 3 adds
+is the lean (schema 1.5): a block or a cylinder standing on a flat face may
+lean as a post or a boss does (`tilt`, `tilt_towards`; place.md, "Leaning
+on the face"), its height (a cylinder's length) along its direction, turned
+in its face too where `place.turn` turns it. A body's lean in an older
+draft is a fault naming 1.5; a hole's, a boss's and a post's stay 1.3's.
+As a leaning post's, its faces take nothing, its edges aren't rounded and
+it isn't hollowed yet (after item 2b, with a leaning item's faces). In each
+program, the lean reused: **the solver** bounds a leaning body by the
+field it rises by (`SolveKind.height`); **the judge** leans a block and a
+cylinder (`PlaceKind.leans`, `PlaceKind.rise`), the oracle's solids lean
+already; **the planner** builds a leaning block as a leaning post and a
+leaning cylinder as a leaning boss (`leaning_standing`); **the generator**
+leans a block or a cylinder now and then from the leans stream
+(`DrawKind.leans_round`, `leans_since`; a draft says 1.5 only when a body
+leans); **the views** say a leaning cylinder's length along its lean.
+
+Tests: `tests/test_v2_plan_leanbody.py` (1.5's own, a fault before; placed
+as a post leans; built and judged: a block leaning, turned and leaning, on
+the plate's side, a cylinder leaning; half a degree more fails; the second
+kernel agrees).
 
 **1b, the ability:**
 

@@ -347,6 +347,8 @@ class WordsAndVersions(unittest.TestCase):
         from forge_eval.generator import draft_of
 
         self.assertEqual(draft_of([{"id": "a", "tilt": {}}])["schema_version"], "1.3")
+        self.assertEqual(draft_of([{"id": "a", "kind": "post", "tilt": {}}])["schema_version"], "1.3")
+        self.assertEqual(draft_of([{"id": "a", "kind": "block", "tilt": {}}])["schema_version"], "1.5")
         self.assertEqual(draft_of([{"id": "a", "place": {"turn": {}}}])["schema_version"], "1.2")
         self.assertEqual(draft_of([{"id": "a"}]).get("spec_format"), 1)
 

@@ -34,6 +34,9 @@ from forge_checks.place import (
 class Cylinder(PlaceKind):
     key = "cylinder"
 
+    leans = True
+    rise = "length"
+
     axial = True
     joined_by_end = True
     both_ends = True

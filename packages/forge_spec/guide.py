@@ -692,10 +692,13 @@ edges, and those of what is on its faces, are rounded and chamfered as with \
 it upright (a turned post's "vertical" edges are its own four, turned with \
 it); a leaning item's aren't yet.
 
-A hole, a boss or a post on a flat face may lean: "tilt": angle (more than \
+A hole, a boss or a post on a flat face may lean, and so may a block or a \
+cylinder standing on one: "tilt": angle (more than \
 0, at most 75 deg) from square to the face, towards "tilt_towards", one of \
 the face's two axes ("+x", "-y", ...; turned with it where "turn" turns it; \
-"schema_version": "1.3"). A boss or a post leans that way as it rises; a \
+"schema_version": "1.3", or "1.5" for a block or a cylinder). A boss, a \
+post, a block or a cylinder leans that way as it rises (a cylinder's \
+length, as a boss's height, along it); a \
 hole's way out of its mouth does, so it goes in leaning the other way. Its \
 height or depth is along it; its foot on the face is its section by the \
 face (a round one's an ellipse), which is what fits, overlaps and is \

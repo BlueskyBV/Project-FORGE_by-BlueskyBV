@@ -106,8 +106,11 @@ class DrawKind:
     #: down), else half a turn (each other outline is the same turned half a turn).
     turnable = False
     turns_all_round = False
-    #: It leans from square to its flat face (tilt): a hole, a boss, a post.
+    #: It leans from square to its flat face (tilt): a hole, a boss, a post, a block, a cylinder.
     leans = False
+    #: Leaning, its cross-section is round (a boss's, a cylinder's); and the schema version it leans in (a body's, 1.5).
+    leans_round = False
+    leans_since: tuple[int, int] = (1, 3)
     #: A cut the generator puts on a turned item's far face, turned with it (place.md, "A turned item's far face"): a
     #: hole, a slot, a pocket. What stands there stands as a box or a rod does.
     cuts_turned_faces = False

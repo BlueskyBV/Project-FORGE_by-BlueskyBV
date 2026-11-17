@@ -1054,7 +1054,7 @@ def _lean(item: Item, axes: tuple[str, str]) -> _Lean | None:
     if not isinstance(tilt, Value):
         return None
     if not _entry(item.kind).leans:
-        raise PlaceError(item.id, "a hole, a boss or a post leans on its face, nothing else")
+        raise PlaceError(item.id, "a hole, a boss, a post, a block or a cylinder leans on its face, nothing else")
     towards = item.get("tilt_towards")
     if not isinstance(towards, Choice):
         raise PlaceError(item.id, "a tilt says which way it leans")
@@ -1641,7 +1641,7 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
             if depth * lean.c + r * lean.s > thick + TOL:
                 raise PlaceError(item.id, "leaning, it is deeper than the material under it")
         return replace(copy, span=(0.0, depth), lean=u)
-    height = _mm(item, "height")
+    height = _mm(item, _entry(item.kind).rise)
     foot = _entry(item.kind).footprint(item, layout.diameters, face.axes)
     across = (-lean.way[1], lean.way[0])
     q = tuple(across[0] * a1[k] + across[1] * a2[k] for k in range(3))

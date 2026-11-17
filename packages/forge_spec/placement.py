@@ -593,8 +593,8 @@ def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | N
 
 def _leaning_bounds(item: Item, inst: Instance, lean: Lean, layout: Layout,
                     axes: tuple[str, str]) -> tuple[list[float], list[float]]:  # fmt: skip
-    """The box round a leaning boss or post: its foot (its cross-section's section by its face, about its point) and its
-    far end (its cross-section square to its direction, its height along it from its point)."""
+    """The box round a leaning boss, post, block or cylinder: its foot (its cross-section's section by its face, about its
+    point) and its far end (its cross-section square to its direction, its height along it from its point)."""
     assert inst.direction is not None
     p, u = inst.origin, inst.direction
     e1, e2 = _axis_vec(axes[0]), _axis_vec(axes[1])
@@ -603,7 +603,8 @@ def _leaning_bounds(item: Item, inst: Instance, lean: Lean, layout: Layout,
     q = tuple(across[0] * e1[k] + across[1] * e2[k] for k in range(3))  # in the face, square to the lean
     n = inst.normal
     tilted = tuple(lean.c * w[k] - lean.s * n[k] for k in range(3))  # the lean's way square to its direction
-    height = _size(item, "height")
+    rises = SOLVE[item.kind].height(item)  # its height (a cylinder's length) along its direction
+    height = rises[0] if rises is not None else 0.0
     top = tuple(p[k] + height * u[k] for k in range(3))
     sizes = SOLVE[item.kind].turnable(item, layout, axes)
     if sizes is not None:  # a post: its half sizes along and across its lean

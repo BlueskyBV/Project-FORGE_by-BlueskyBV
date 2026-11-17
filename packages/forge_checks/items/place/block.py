@@ -32,6 +32,8 @@ from forge_checks.place import (
 class Block(PlaceKind):
     key = "block"
 
+    leans = True
+
     def turnable(self, item: Item) -> bool:
         return True
 

@@ -710,7 +710,7 @@ def _own_halves(f: Feature, axes: tuple[str, str], lean: _Lean) -> tuple[float, 
     """A leaning item's half sizes square to its direction, along its lean and across it: a post's own; a boss's
     radius; a hole's widest (its counterbore's, where that is wider), both ways."""
     (h1, h2), _ = _footprint(f, axes)
-    if not _draw(f.kind).round_foot:  # a post's own
+    if not _draw(f.kind).leans_round:  # a post's or a block's own
         return (h1, h2) if lean.along_first else (h2, h1)
     return h1, h1
 
@@ -861,7 +861,7 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
                 part.steps.append(Step(f.id, copy_index, False, Kept(rod, _t(p), _t(n), *keep), reach))
         else:
             height = f.sizes[_draw(f.kind).stand_height]
-            corner = along if _draw(f.kind).round_foot else 0.0
+            corner = along if _draw(f.kind).leans_round else 0.0
             body = Prism(_t(p), _t(tilted), _t(side), _t(u), (along, across), corner, -(along * lean.tan + 1.0),
                          height)  # fmt: skip
             top = height * lean.c + along * lean.s + 1.0
@@ -879,7 +879,8 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
 
 
 def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
-    """Now and then a hole (plain or counterbored), a boss or a post (turned or not) on a face with the same material
+    """Now and then a hole (plain or counterbored), a boss, a post, a block or a cylinder (turned or not; a body in schema
+    1.5) on a face with the same material
     under all of it leaning (tilt, tilt_towards), from a stream of its own: a share of leans by nice angles, the rest
     anywhere on a half-degree grid up to the most Forge leans one, towards either way of either of the face's axes;
     None when it doesn't lean."""
@@ -3363,10 +3364,13 @@ def _names_own_axes(item: Mapping[str, Any]) -> bool:
 
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.4 where an item names its face's own axes (u and v), 1.3 where one leans on its face (tilt), 1.2 where one is
+    1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
+    on its face (tilt), 1.2 where one is
     turned in it (place.turn), else the first, so a part that does none of these is read, and its spec's digest
     made, as it always was."""
     found = list(items)
+    if any("tilt" in item and "kind" in item and _draw(item["kind"]).leans_since >= (1, 5) for item in found):
+        return {"schema_version": "1.5", "name": name, "items": found}
     if any(_names_own_axes(item) for item in found):
         return {"schema_version": "1.4", "name": name, "items": found}
     if any("tilt" in item for item in found):

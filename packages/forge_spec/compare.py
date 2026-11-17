@@ -15,7 +15,7 @@ features, each one shape of the part placed in the frame:
 
 - a solid: a box, a rod, a cone, a ball or a dome, a round-ended tab, a
   region's envelope, with its sizes, its centre and the way it points (a
-  boss or a post leaning on its face: along its lean);
+  boss, a post, a block or a cylinder leaning on its face: along its lean);
 - a cut: a round or a square-edged one, by its mouth and how deep it goes,
   or, right through, by the line it runs along (where it enters is then no
   matter: one hole through a plate is one, drilled from either side), the

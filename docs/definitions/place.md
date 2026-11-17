@@ -121,15 +121,17 @@ what is on its faces, are rounded and chamfered as an upright one's are
 
 ### Leaning on the face (`tilt`)
 
-On a flat face, a hole, a boss or a post may lean: `tilt` (an angle; schema
-1.3) from square to the face, towards `tilt_towards`, one of the face's two
-axes, `+` or `-` (turned with the item where `place.turn` turns it, so a
-post leans along its own length or width). Its **direction** is the face's
-outward normal turned `tilt` towards that way: a boss or a post stands out
-along it, its `height` along it from its point; a hole's way out of its
-mouth is along it, so it goes in against it, its `depth` along it from its
-point. Its cross-section, square to its direction, is what it would be
-unleaning: a disc, or the post's `length` by `width`.
+On a flat face, a hole, a boss or a post may lean, and so may a block or a
+cylinder standing on it: `tilt` (an angle; schema 1.3, and 1.5 for a block
+or a cylinder) from square to the face, towards `tilt_towards`, one of the
+face's two axes, `+` or `-` (turned with the item where `place.turn` turns
+it, so a post or a block leans along its own length or width). Its
+**direction** is the face's outward normal turned `tilt` towards that way: a
+boss, a post, a block or a cylinder stands out along it, its `height` (a
+cylinder's `length`) along it from its point; a hole's way out of its mouth
+is along it, so it goes in against it, its `depth` along it from its point.
+Its cross-section, square to its direction, is what it would be unleaning: a
+disc, or the post's or block's `length` by `width`.
 
 Its **foot** (what it covers on the face, its fit, what it is held apart
 from, and what a position `to` `edge` is measured to) is that

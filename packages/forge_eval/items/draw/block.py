@@ -41,6 +41,8 @@ from forge_eval.truth import Copy, Outline2, Prism, Pushed, Step, unit_of
 
 class Block(DrawKind):
     key = "block"
+    leans = True
+    leans_since = (1, 5)
     turnable = True
     flat_weight = 1
     flat_rank = 5

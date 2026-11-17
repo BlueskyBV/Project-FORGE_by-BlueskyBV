@@ -41,6 +41,23 @@ The face of an earlier item it stands on: a body's, or a feature's (a boss's top
 Where on that face it stands ([place.md](place.md)). The
 first body has none.
 
+### `tilt`
+
+How far it leans from square to the flat face it stands on, towards
+`tilt_towards` ([place.md](place.md), "Leaning on the face"): more than 0,
+and at most 75 degrees for now; its `height` is then along its lean. Schema
+1.5.
+
+### `tilt_towards`
+
+Which way it leans: one of its face's two axes, + or - (turned with it, so it leans along its own length or width).
+
+- `+u`, `-u`: towards the face's first axis, + or - (schema 1.4).
+- `+v`, `-v`: towards the face's second axis, + or - (schema 1.4).
+- `+x`, `-x`: towards +X or -X.
+- `+y`, `-y`: towards +Y or -Y.
+- `+z`, `-z`: towards +Z or -Z.
+
 ## Faces
 
 - `+x`, `-x`, `+y`, `-y`, `+z`, `-z`: its six flat faces, by the direction

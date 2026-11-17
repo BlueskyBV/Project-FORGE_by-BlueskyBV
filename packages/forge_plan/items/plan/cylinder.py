@@ -10,12 +10,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
+from forge_spec.geometry import FlatFace
 from forge_spec.placement import Instance
 
 from forge_plan.items.plan._edges import Queries, _mm, _rims, circle_where
 from forge_plan.items.plan._families import BodyPlan
 from forge_plan.items.plan._shells import _check_walls, _inner, _round, _span, _walls
-from forge_plan.items.plan._tools import _rod
+from forge_plan.items.plan._tools import _rod, leaning_standing
 from forge_plan.write import Box, Chain, Hollow, Ref, add, axis_of, ordered
 
 if TYPE_CHECKING:
@@ -72,6 +73,10 @@ class Cylinder(BodyPlan):
         self, chain: Chain, ctx: Context, item: Item, copy: Instance, dome_cut: bool
     ) -> str:
         k, o, u = copy.index, copy.origin, copy.normal
+        if copy.direction is not None and copy.host is not None:  # leaning on its face (step 3): as a boss leans
+            face = ctx.face(copy)
+            assert isinstance(face, FlatFace)
+            return leaning_standing(chain, item, copy, face, None, _mm(item, "diameter") / 2, _mm(item, "length"))
         return _rod(chain, item, k, o, u, _mm(item, "diameter"), _mm(item, "length"))
 
     def hollow_tool(

@@ -32,6 +32,7 @@ class Boss(DrawKind):
     threadable = True
     rod_length = "height"
     round_foot = True
+    leans_round = True
     stands_flush = True
     stand_height = "height"
     falls_flush = True

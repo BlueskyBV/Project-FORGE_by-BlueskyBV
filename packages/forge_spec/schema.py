@@ -65,7 +65,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 __all__ = [
@@ -322,6 +322,9 @@ _TILT_TOWARDS = _f(
     required=False, choices=(*DIRECTIONS, *FACE_SIDES), only_when=("tilt", PRESENT),
 )  # fmt: skip
 
+#: A body leans only standing on a face (schema 1.5; V2-stage4b-0c.md 3.3, 1b's third move, step 3): the first has none.
+_BODY_TILT = replace(_TILT, only_when=("on", PRESENT))
+
 KINDS: Mapping[str, KindSpec] = {
     spec.kind: spec
     for spec in (
@@ -335,6 +338,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f("height", L, "size along Z (or out of the face it stands on)"),
                 _ON_BODY,
                 _BODY_PLACE,
+                _BODY_TILT,
+                _TILT_TOWARDS,
             ),
             faces=BLOCK_FACES,
             edges=BOX_EDGES,
@@ -350,6 +355,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _AXIS,
                 _ON_BODY,
                 _BODY_PLACE,
+                _BODY_TILT,
+                _TILT_TOWARDS,
             ),
             faces=(*ROUND_FACES, *INNER_ROUND_FACES),
             edges=ROUND_EDGES,
