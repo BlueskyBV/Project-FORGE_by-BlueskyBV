@@ -13,7 +13,6 @@ from forge_spec.geometry import (
     FlatFace,
     Footprint,
     SideFace,
-    most_material_under,
 )
 from forge_spec.items.solve._common import _turn, degrees
 from forge_spec.outline import Line, Shape
@@ -255,7 +254,7 @@ def _cut_depth(item: Item, face: FlatFace, parts: Footprint, w: Vec) -> float:
     if not _through(item):
         return _mm(item, "depth")
     p1, p2 = _on_face(face, w)
-    deep = most_material_under(face, parts, p1, p2)
+    deep = face.most_material_under(parts, (p1, p2))
     if deep <= 0.0:
         raise PlanError(
             "there is no material under its mouth to go through", item=item.id
@@ -470,7 +469,7 @@ def _leaning_names(chain: Chain, item: Item, copy: Instance, face: FlatFace, upr
     chain.name(item.id, k, up, Ref(upright, far_end))
     for axis, way in ((a1, e1), (a2, e2)):
         for sign in (1.0, -1.0):
-            normal = motion.vector(tuple(sign * x + 0.0 for x in way))  # type: ignore[arg-type]
+            normal = motion.vector(tuple(sign * x + 0.0 for x in way))
             chain.name(item.id, k, ("+" if sign > 0 else "-") + axis, Ref(upright, "side", normal))
 
 

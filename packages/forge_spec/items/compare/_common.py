@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item, Place
 from forge_spec.ends import Blind, ThroughAll, end_of
-from forge_spec.geometry import EPS, FlatFace, SideFace, Vec, bbox, material_at
+from forge_spec.geometry import EPS, FlatFace, SideFace, Vec, bbox, disc
 from forge_spec.items.solve._common import _turn, degrees
 from forge_spec.placement import Instance, Layout, _outline, mm, turned_outline
 from forge_spec.values import Value
@@ -143,12 +143,8 @@ def cut_material(copy: Instance, layout: Layout) -> float | None:
     )
     if isinstance(face, FlatFace):
         i1, i2 = (_INDEX[a] for a in face.axes)
-        material = material_at(
-            face,
-            copy.origin[i1] - face.centre[i1],
-            copy.origin[i2] - face.centre[i2],
-            0.0,
-        )
+        material = face.material_under((disc(0.0),), (copy.origin[i1] - face.centre[i1],
+                                                      copy.origin[i2] - face.centre[i2]))  # fmt: skip
     elif isinstance(face, SideFace):
         material = face.wall
     else:  # pragma: no cover - a placed cut has its face

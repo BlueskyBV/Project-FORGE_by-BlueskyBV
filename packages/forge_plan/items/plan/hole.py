@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
-from forge_spec.geometry import FlatFace, SideFace, disc, side_most_material
+from forge_spec.geometry import FlatFace, SideFace, disc
 from forge_spec.placement import Instance
 
 from forge_plan.errors import PlanError
@@ -62,7 +62,7 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace
     start = _start(face)
     if isinstance(face, SideFace):
         depth = (
-            side_most_material(face, radius) if _through(item) else _mm(item, "depth")
+            face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
         )
     else:
         depth = _cut_depth(item, face, (disc(radius),), w)

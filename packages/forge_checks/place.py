@@ -558,6 +558,29 @@ class FlatFace:
         frame = self.frame
         return FaceFrame(frame.point(*at), frame.u, frame.v, frame.n)
 
+    # Item 3a's placeable face, second part (V2-stage4b-0c.md, 3.4): where on the face a foot lies (its outline), and
+    # the material under one, asked of the face itself. A foot is an item's outline in the face's coordinates, placed.
+    def holds(self, foot: Outline) -> bool:
+        """Whether a foot lies wholly within the face's outline."""
+        return foot.within(self.outline)
+
+    @property
+    def same_under(self) -> float | None:
+        """The material under it where it is the same under all of it; None where it isn't (:func:`same_under`)."""
+        return same_under(self)
+
+    def material_at(self, at: Point) -> float:
+        """The material under one point of it."""
+        return material_at(self.material, at)
+
+    def most_under(self, mouth: Sequence[Outline]) -> float:
+        """The most material anywhere in the region every outline of ``mouth`` covers: how deep ``through`` goes."""
+        return most(self.material, mouth)
+
+    def least_under(self, mouth: Outline) -> float:
+        """The least material anywhere under ``mouth``: whether a blind cut fits, or breaks through."""
+        return least(self.material, mouth)
+
 
 @dataclass(frozen=True)
 class RoundSide:
@@ -1561,7 +1584,7 @@ def _lies_on(item: Item, face: FlatFace, at: Point, layout: _Layout) -> None:
         if not overlap([foot, outline]):
             raise PlaceError(item.id, f"at {at}, it doesn't meet the face it stands on")
         return
-    if foot.within(outline):
+    if face.holds(foot):
         return
     if outline.shape == "ring" and _entry(item.kind).taken:
         outside = Outline.disc(outline.half[0], outline.centre)
@@ -1627,7 +1650,7 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     past the far side: ``(T + r sin) / cos``); a standing one's box round its foot and its far end, and what it
     reaches back into the face from its foot (its half size along its lean times tan) held to ``T``. Every face it
     has is closed, as a turned item's is."""
-    thick = same_under(face)
+    thick = face.same_under
     if thick is None:
         raise PlaceError(item.id, "it leans on a face without the same material under all of it: not yet")
     n = face.frame.n
@@ -1736,7 +1759,7 @@ def _turned_floor(item: Item, faces: dict[str, Face], face: FlatFace, degrees: f
     own axes about its centre, the material under its face less its depth under it, where its face has the same
     material under all of it; else None (closed)."""
     floor = faces.get("bottom")
-    host = same_under(face)
+    host = face.same_under
     if not isinstance(floor, FlatFace) or host is None or not isinstance(floor.material, Less):
         return None
     turned = replace(floor, turn=degrees)
@@ -1755,14 +1778,14 @@ def _turned_far(item: Item, far: FlatFace, face: FlatFace, at: Point, degrees: f
     outline = far.outline.moved(c1 - o1, c2 - o2)
     if round_:
         return replace(turned, outline=outline)
-    host = same_under(face)
+    host = face.same_under
     if host is None:
         return None
     own = _turn_of(item)
     foot = _entry(item.kind).footprint(item, {}, face.axes)
     if own is not None:
         foot = _turned(item, foot, own)
-    if not foot.moved(*at).within(face.outline):
+    if not face.holds(foot.moved(*at)):
         return None
     height = far.material.own if isinstance(far.material, Over) else far.material
     assert isinstance(height, Solid)
@@ -1785,7 +1808,7 @@ def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int
     embossed = entry.embossed(item)
     if _through(item):
         entry.cut_through(item)
-        depth = most(face.material, [mouth])
+        depth = face.most_under([mouth])
         if depth <= TOL:
             raise PlaceError(
                 item.id, "there is no material under its mouth to cut through"
@@ -1806,12 +1829,12 @@ def _pocket_floor(item: Item, face: FlatFace, index: int, point: Vec, mouth: Out
     if _through(item):
         layout.close(key, "bottom", "it goes through: it has no floor")
         return
-    if depth >= least(face.material, mouth) - TOL:
+    if depth >= face.least_under(mouth) - TOL:
         layout.close(
             key, "bottom", "it is as deep as the material under it: it has no floor"
         )
         return
-    if face.outline.shape == "ring" and not mouth.within(face.outline):
+    if face.outline.shape == "ring" and not face.holds(mouth):
         layout.close(
             key,
             "bottom",

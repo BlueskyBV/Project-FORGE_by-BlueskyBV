@@ -4151,9 +4151,10 @@ def _hollowed_now_and_then(seed: int, k: int, body: Feature, plan: list[Feature]
     face = part.flats.get((body.on[0], 0, body.on[1])) if body.on is not None else None
     if face is None or rng.random() >= _STANDING_SHELLED:
         return
-    shell = _draw(body.kind).standing_shell(rng, f"hollow{k}", body, _named(face.normal))
-    if shell is None:
+    drawn = _draw(body.kind).standing_shell(rng, body, _named(face.normal))
+    if drawn is None:
         return
+    shell = Feature(f"hollow{k}", "shell", drawn[0], of=body.id, faces=drawn[1])
     try:
         render((*plan, shell))
     except DoesNotFitError:

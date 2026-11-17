@@ -224,17 +224,19 @@ class Block(DrawKind):
                 _margin(part.flats[inner], other, -1.0, corner)
                 _margin(part.flats[inner], other, 1.0, corner)
 
-    def standing_shell(self, rng: random.Random, name: str, body: Feature, up: str) -> Feature | None:
-        """A shell of a block standing on a face, ``up`` the way it stands: sealed, or open on its far face (a box, a
-        cup standing on the part), its walls 1 mm thick or more, and now and then a floor of its own (the wall it
-        stands by)."""
+    def standing_shell(
+        self, rng: random.Random, body: Feature, up: str
+    ) -> tuple[dict[str, float], tuple[str, ...]] | None:
+        """A shell of a block standing on a face, ``up`` the way it stands, by its sizes and the faces it leaves open:
+        sealed, or open on its far face (a box, a cup standing on the part), its walls 1 mm thick or more, and now
+        and then a floor of its own (the wall it stands by)."""
         s = body.sizes
         least = min(s["length"], s["width"], s["height"])
         opened = () if rng.random() < 0.4 else (up,)
         sizes_ = {"thickness": _q(rng.uniform(1.0, max(1.2, least / 6)))}
         if opened and rng.random() < 0.5:
             sizes_["floor"] = _q(rng.uniform(1.0, max(1.2, s["height"] / 5)))
-        return Feature(name, "shell", sizes_, of=body.id, faces=opened)
+        return sizes_, opened
 
     def hollow_standing(self, f: Feature, body: Feature, plan: Plan, part: _Part, t: float, floor: float,
                         opened: set[str], wall: Callable[[str], float]) -> None:  # fmt: skip

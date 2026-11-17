@@ -11,7 +11,6 @@ from forge_spec.geometry import (
     FlatFace,
     Less,
     disc,
-    outline_on_face,
     rounded_rect,
 )
 from forge_spec.items.solve._common import (
@@ -94,7 +93,7 @@ class Pocket(SolveKind):
             return
         if face.shape == "annulus":
             p1, p2 = face.frame.on(copy.origin)
-            if not outline_on_face(face, _outline(item, layout, face.axes), p1, p2):
+            if not face.holds(_outline(item, layout, face.axes), (p1, p2)):
                 # It covers the ring's opening: the bore runs on through its floor.
                 layout.close(key, "bottom", "unable",
                              f"{item.id}'s floor has the bore through it: Forge doesn't place on that yet")  # fmt: skip

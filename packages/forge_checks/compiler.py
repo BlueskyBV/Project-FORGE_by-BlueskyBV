@@ -128,7 +128,6 @@ from .place import (
     _entry,
     _named_by,
     in_axes,
-    material_at,
     section_of,
     unit,
 )
@@ -461,7 +460,7 @@ class _Compiler:
         if not arcs:
             return f"the outline's edge along {'+' if sign > 0 else '-'}{axis} is a corner: nothing there to fit, for now"
         arc = max(arcs, key=lambda q: q.radius)
-        depth = material_at(face.material, arc.centre)
+        depth = face.material_at(arc.centre)
         surface = Round(
             _t(placed(arc.centre)),
             _t(-n),
@@ -514,7 +513,7 @@ class _Compiler:
         # its top aren't on its rounding, and are never measured).
         first, second = ("xyz".index(x) for x in face.axes)
         under = (float(centre[first]), float(centre[second]))
-        depth = material_at(face.material, under) if body else 1.0
+        depth = face.material_at(under) if body else 1.0
         surface = Round(
             _t(centre),
             _t(-n if body else n),

@@ -28,8 +28,7 @@ from forge_spec.geometry import (
     FlatFace,
     Footprint,
     SideFace,
-    least_material_under,
-    side_most_material,
+    disc,
 )
 from forge_spec.outline import Shape
 from forge_spec.placement import Instance, Layout
@@ -276,7 +275,7 @@ def side_air_boxes(
         mouth = _bounds_of_cylinder(add(w, d, -CARRY), d, widest, CARRY)
     if not _through(item):
         return mouth, None
-    depth = side_most_material(face, radius)
+    depth = face.most_material_under((disc(radius),))
     into = face.outward and face.wall < 2 * face.radius - EPS  # a bore or a hollow
     if into:
         inner = face.radius - face.wall
@@ -403,7 +402,7 @@ def sink_box(
         parts, halves = turned, {face.axes[0]: h1, face.axes[1]: h2}
     else:
         parts, halves = PLAN[item.kind].sink_footprint(item, face, copy)
-    if least_material_under(face, parts, p1, p2) <= CARRY:
+    if face.material_under(parts, (p1, p2)) <= CARRY:
         return None
     region = _span_box(w, u, -CARRY, 0.0, halves)
     host = next(

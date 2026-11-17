@@ -15,8 +15,6 @@ from forge_spec.geometry import (
     FlatFace,
     SideFace,
     disc,
-    most_material_under,
-    outline_on_face,
 )
 from forge_spec.placement import (
     Layout,
@@ -57,9 +55,7 @@ def material_of_cut(cut: Item, layout: Layout) -> float | None:
         return None
     i1, i2 = ("xyz".index(a) for a in face.axes)
     point = copies[0].origin
-    return most_material_under(
-        face, (disc(0.0),), point[i1] - face.centre[i1], point[i2] - face.centre[i2]
-    )
+    return face.most_material_under((disc(0.0),), (point[i1] - face.centre[i1], point[i2] - face.centre[i2]))
 
 
 def rim_rounded(
@@ -267,7 +263,7 @@ def base_edges_missing(
             return None
         i1, i2 = ("xyz".index(a) for a in face.axes)
         p1, p2 = copy.origin[i1] - face.centre[i1], copy.origin[i2] - face.centre[i2]
-        if not outline_on_face(face, _outline(target, layout, face.axes), p1, p2):
+        if not face.holds(_outline(target, layout, face.axes), (p1, p2)):
             return None  # it overhangs: its base has outside edges there
     return "question", (
         f"{target.id} stands wholly on {on.item}'s {on.face} face, so its base has no outside edges: "

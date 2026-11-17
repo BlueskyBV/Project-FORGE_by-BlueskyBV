@@ -264,6 +264,45 @@ class FlatFace:
         c = self.corners
         return self.shape == "rect" and c[0] == c[2] and c[1] == c[3]
 
+    # Item 3a's placeable face, second part (V2-stage4b-0c.md, 3.4): where on the face a footprint lies (its outline),
+    # and the material under one, asked of the face itself. A footprint is an item's foot: its outline as parts, or of
+    # lines and arcs, in the face's axes, at a point given in its own coordinates from its centre.
+    def holds(self, footprint: Footprint, at: tuple[float, float], *, cut: bool = False) -> bool:
+        """Whether a footprint at ``at`` lies wholly on the face's material; a cut's on a ring may cover its hole (a
+        step round the bore)."""
+        if isinstance(footprint, Shape):
+            return shape_on_face(self, footprint, *at)
+        return outline_on_face(self, footprint, *at, cut=cut)
+
+    def meets(self, footprint: Footprint, at: tuple[float, float]) -> bool:
+        """Whether a footprint at ``at`` shares some area with the face (a body may overhang the face it stands on)."""
+        return _footprint_meets(self, footprint, *at)
+
+    def fits_somewhere(self, parts: Sequence[Part], *, cut: bool = False) -> bool | None:
+        """Whether an outline fits anywhere on the face; None when the face can't settle it on its own."""
+        return fits_somewhere(self, parts, cut=cut)
+
+    def in_its_hole(self, parts: Sequence[Part], at: tuple[float, float]) -> bool:
+        """Whether an outline at ``at`` lies wholly in a ring's hole: a cut there cuts nothing."""
+        return inside_hole(self, parts, *at)
+
+    def touches_its_edge(self, parts: Sequence[Part], at: tuple[float, float]) -> bool:
+        """Whether a cut's outline at ``at`` touches the face's edge from inside, pinching the wall between to nothing."""
+        return touches_edge(self, parts, *at)
+
+    def material_under(self, footprint: Footprint, at: tuple[float, float]) -> float:
+        """The least material under a footprint at ``at``: what a blind cut of that outline must fit in."""
+        return least_material_under(self, footprint, *at)
+
+    def most_material_under(self, footprint: Footprint, at: tuple[float, float]) -> float:
+        """The most material under a footprint at ``at``: how far a cut of that outline through goes."""
+        return most_material_under(self, footprint, *at)
+
+    @property
+    def uniform(self) -> bool:
+        """Whether the same material is under every point of it: its own, with no model, host or base to it."""
+        return uniform(self)
+
 
 @dataclass(frozen=True)
 class SideFace:
@@ -312,6 +351,16 @@ class SideFace:
         u, v = self.reference
         found = Frame.of_names(self.start, u, v, self.axis)
         return found if self.local is None else self.local.frame(found)
+
+    # Item 3a's placeable face, second part: the material a cut along a radius of the side meets, the same wherever on
+    # it, asked of the side itself (its foot, the cut's mouth, counts only by how far it reaches).
+    def material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
+        """The least material a radial cut of that mouth meets: what a blind one must fit in."""
+        return side_material(self, _reach_of(footprint))
+
+    def most_material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
+        """How far a radial cut of that mouth through the side's wall goes: until it is out all across its mouth."""
+        return side_most_material(self, _reach_of(footprint))
 
     def frame_at(self, turn: tuple[float, float], along: float) -> Frame:
         """The side's frame at a point on it (item 3a): ``turn`` the cosine and sine of its angle round the axis, ``along``
@@ -404,6 +453,11 @@ def reach(parts: Iterable[Part]) -> float:
         else:
             far = max(far, fs.hypot(c1 + part.half[0], c2 + part.half[1]))
     return far
+
+
+def _reach_of(footprint: Footprint) -> float:
+    """How far a footprint reaches from its own origin: an outline's parts', or one of lines and arcs."""
+    return shape_reach(footprint) if isinstance(footprint, Shape) else reach(footprint)
 
 
 def _disc_in_rect_face(face: FlatFace, u1: float, u2: float, r: float) -> bool:

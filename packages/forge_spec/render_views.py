@@ -73,11 +73,8 @@ from .geometry import (
     SideFace,
     Vec,
     bbox,
-    least_material_under,
-    most_material_under,
+    disc,
     reach,
-    side_material,
-    side_most_material,
 )
 from .items.solve import SOLVE
 from .items.solve._common import _turn, degrees
@@ -762,11 +759,11 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
         mouth: tuple[Part, ...] | Shape = (
             VIEWS[item.kind].cut_mouth(item, layout, face.axes) if turned is None else turned
         )
-        least = least_material_under(face, mouth, p1, p2)
-        most = most_material_under(face, mouth, p1, p2)
+        least = face.material_under(mouth, (p1, p2))
+        most = face.most_material_under(mouth, (p1, p2))
     elif isinstance(face, SideFace):
         r = layout.diameters.get(item.id, 0.0) / 2
-        least, most = side_material(face, r), side_most_material(face, r)
+        least, most = face.material_under((disc(r),)), face.most_material_under((disc(r),))
     emboss = VIEWS[item.kind].embossed(item)
     end = end_of(item)
     if emboss:

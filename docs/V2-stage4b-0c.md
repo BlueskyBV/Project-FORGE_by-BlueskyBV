@@ -1,6 +1,6 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
-Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
+Status (17 November 2026): items 0, 14, 1a, 2a and 3a done;
 1b's first and second moves done (items turned in their face, schema 1.2;
 holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
@@ -9,7 +9,7 @@ edges, rounded), neither a schema minor, and its third (a body leans,
 schema 1.5): its schema 2.0 made with item 2b (revision 12). Step 5
 (revision 13: a turned box hollowed, round sides on a turned item's faces, a
 leaning item's edges, a thread on a leaning rod) done but for what waits
-for item 2b and 4b.0d1; 3a's second part next, then 3b, then 2b (a leaning
+for item 2b and 4b.0d1; 3b next, then 2b (a leaning
 item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -840,6 +840,24 @@ at its host's frame there, and the solver and the judge place through one
 registry of host kinds (`_HOSTS`: how a kind's copies are placed, and what
 is checked of each once numbered). Its second part moves `outline`, `foot`
 and `material` behind the same protocol.
+
+Status of 3a's second part: built in the generator (with step 5.4) and in
+the solver and the judge, byte-identical (the fingerprints of 40 sample
+seeds): each program's flat face answers where a footprint lies on it
+(the solver's `FlatFace.holds`, `meets`, `fits_somewhere`, `in_its_hole`,
+`touches_its_edge`; the judge's `FlatFace.holds`; the generator's
+`_Flat.holds`) and the material under one (the solver's `material_under`,
+`most_material_under` and `uniform`; the judge's `same_under`,
+`material_at`, `most_under` and `least_under`; the generator's
+`material_under` and `uniform`), and a round side the material a cut
+along its radius meets (the solver's `SideFace.material_under`,
+`most_material_under`; the judge's `RoundSide.material`). The placement,
+the views, the checks, the comparison, the planner and the spec grading
+ask the face. The foot is each kind's own outline in the face's axes
+(`foot` in the generator; the solver's and the judge's footprints by
+kind): on a flat face, where it is placed only moves it, so the face
+needs nothing more; 3b's curved hosts give theirs its development on the
+face.
 
 **3b, the ability:** analytic hosts: planes in any orientation (1b), a
 cone's side, a sphere, a dome, a torus (a round's face, a toroidal

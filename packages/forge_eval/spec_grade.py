@@ -50,7 +50,6 @@ from forge_spec.geometry import (
     SideFace,
     disc,
     material_at,
-    most_material_under,
 )
 from forge_spec.placement import Instance, Layout, mm
 from forge_spec.wire import to_wire
@@ -471,7 +470,7 @@ def _through_at(item: Item, copy: Instance, face: FlatFace, reach: float) -> boo
     depth = end.depth
     p1, p2 = _offset(copy, face)
     # The most material anywhere within its reach (on a turned part's end, not always at the nearest point).
-    most = most_material_under(face, (disc(reach),), p1, p2)
+    most = face.most_material_under((disc(reach),), (p1, p2))
     return mm(depth) >= most - EPS
 
 

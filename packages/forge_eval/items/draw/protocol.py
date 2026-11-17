@@ -462,8 +462,11 @@ class DrawKind:
             f"{f.id}: the generator hollows a block, a cylinder or a dome, not a {body.kind}"
         )
 
-    def standing_shell(self, rng: random.Random, name: str, body: Feature, up: str) -> Feature | None:
-        """A shell of it drawn standing on a face (V2-stage4b-0c.md, step 5.1), or None: a block's only."""
+    def standing_shell(
+        self, rng: random.Random, body: Feature, up: str
+    ) -> tuple[dict[str, float], tuple[str, ...]] | None:
+        """A shell of it drawn standing on a face (V2-stage4b-0c.md, step 5.1), by its sizes and open faces, or None:
+        a block's only."""
         return None
 
     def hollow_standing(self, f: Feature, body: Feature, plan: Plan, part: _Part, t: float, floor: float,

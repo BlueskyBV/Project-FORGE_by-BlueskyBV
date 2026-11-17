@@ -76,22 +76,10 @@ from .geometry import (
     disc,
     face_footprint,
     first_close_pair,
-    fits_somewhere,
-    footprint_on_face,
-    inside_hole,
-    least_material_under,
-    material_at,
-    outline_meets_face,
-    outline_on_face,
     outline_within,
     reach,
     shape_holds,
-    shape_meets_face,
-    shape_on_face,
     shapes_overlap,
-    side_material,
-    touches_edge,
-    uniform,
 )
 from .items.solve import SOLVE
 from .items.solve._common import (
@@ -450,9 +438,7 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
             assert (host_face.part_axes, host_face.turn) == (top_face.axes, top_face.turn), (host_face, top_face)
             on_host = host_face.frame.on(top_face.centre)
             # Wholly over a host with the same material under all of it: that, under all of it too.
-            if uniform(host_face) and footprint_on_face(
-                host_face, face_footprint(top_face), *on_host
-            ):
+            if host_face.uniform and host_face.holds(face_footprint(top_face), on_host):
                 found = add_material(top_face, host_face.depth_below)
             else:
                 found = replace(top_face, over=Over(host_face, on_host))
@@ -581,7 +567,7 @@ def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | N
     key = (item.id, inst.index)
     if host_face is None:  # the first body, turned on the origin: its own height is all there is
         return
-    if not isinstance(host_face, FlatFace) or not uniform(host_face):
+    if not isinstance(host_face, FlatFace) or not host_face.uniform:
         layout.close(key, top.name, "unable", _TURNED_FAR.format(item.id))
         return
     own = degrees(_turn_value(item)) - host_face.turn  # type: ignore[arg-type]
@@ -589,7 +575,7 @@ def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | N
     assert sizes is not None
     h1, h2, r = sizes
     foot = Shape.rect((0.0, 0.0), (h1, h2), (r, r, r, r)).turned(*_turn(own))
-    if not shape_on_face(host_face, foot, *host_face.frame.on(inst.origin)):
+    if not host_face.holds(foot, host_face.frame.on(inst.origin)):
         layout.close(key, top.name, "unable", _TURNED_FAR.format(item.id))
         return
     found = add_material(top, host_face.depth_below)
@@ -903,9 +889,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
 
     if entry.body:
         for n, (p1, p2) in enumerate(positions):
-            met = (shape_meets_face(face, footing, p1, p2) if footing is not None
-                   else outline_meets_face(face, parts, p1, p2))  # fmt: skip
-            if not met:
+            if not face.meets(footing if footing is not None else parts, (p1, p2)):
                 layout.problem("question", at,
                                f"{item.id} copy {first + n + 1} doesn't meet the {face.name} face it stands on",
                                blamed([0, 1], placed=True))  # fmt: skip
@@ -913,7 +897,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
         return
     cut = entry.cut
     b1, b2 = bbox(parts)
-    fits = fits_somewhere(face, parts, cut=cut)
+    fits = face.fits_somewhere(parts, cut=cut)
     if fits is False:
         severs = cut and _is_through(item)
         failing = [k for k, b in enumerate((b1, b2)) if b > face.half[k] + EPS] or [
@@ -928,11 +912,11 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
                        blamed(failing, placed=False) + ([item.get("depth")] if severs else []))  # fmt: skip
         return
     for n, (p1, p2) in enumerate(positions):
-        if cut and inside_hole(face, parts, p1, p2):
+        if cut and face.in_its_hole(parts, (p1, p2)):
             layout.problem("question", at, f"{item.id} copy {first + n + 1} lies wholly in the hole in the "
                            f"middle of face {face.name}: it would cut nothing", blamed([0, 1], placed=True))  # fmt: skip
             return
-        if not outline_on_face(face, parts, p1, p2, cut=cut):
+        if not face.holds(parts, (p1, p2), cut=cut):
             into_hole = (
                 face.shape == "annulus"
                 and reach(parts) + fs.hypot(p1, p2) <= face.half[0] + EPS
@@ -942,7 +926,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
             layout.problem("question", at, f"{item.id} copy {first + n + 1} {where}",
                            blamed(_failing_axes(face, parts, p1, p2), placed=True))  # fmt: skip
             return
-        if cut and touches_edge(face, parts, p1, p2):
+        if cut and face.touches_its_edge(parts, (p1, p2)):
             layout.problem("question", at, f"{item.id} copy {first + n + 1} touches the edge of face {face.name}: "
                            "the wall between them would be nothing there", blamed([0, 1], placed=True))  # fmt: skip
             return
@@ -976,7 +960,7 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
             isinstance(end, ThroughAll)
             or (
                 isinstance(end, Blind)
-                and mm(end.depth) >= material_at(face, nearest, 0.0, 0.0) - EPS
+                and mm(end.depth) >= face.material_under((disc(0.0),), (nearest, 0.0)) - EPS
             )
         ):
             continue
@@ -1098,13 +1082,13 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
         instance = Instance(
             item.id, 0, face.frame_at((p1, p2)).origin, normal, host, face.part_axes
         )
-        material = least_material_under(face, footprint, p1, p2)
+        material = face.material_under(footprint, (p1, p2))
         out.append(
             _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
         )
     if entry.cut and out:
         _check_depth(item, parts,
-                     lambda mouth: min(least_material_under(face, mouth, p1, p2) for p1, p2 in positions),
+                     lambda mouth: min(face.material_under(mouth, (p1, p2)) for p1, p2 in positions),
                      layout, at, face.depth_sources)  # fmt: skip
     return out
 
@@ -1177,7 +1161,7 @@ def _leaning_faults(item: Item, face: FlatFace, layout: Layout, at: str) -> Lean
         layout.issue("unable", at + pointer("countersink"), "Forge leans a plain or counterbored hole; a "
                      "countersunk one leaning is a later step")  # fmt: skip
         return None
-    if not uniform(face):
+    if not face.uniform:
         layout.issue("unable", at + pointer("tilt"),
                      f"face {face.name} hasn't the same material under all of it: Forge leans items on such faces "
                      "in a later step (the material along a direction, item 2b)")  # fmt: skip
@@ -1232,7 +1216,7 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
     how = (f"turned {turn:g}\u00b0" if lean is None
            else f"leaning {lean.tilt:g}\u00b0" + (f" and turned {turn:g}\u00b0" if turn else ""))  # fmt: skip
     for n, (p1, p2) in enumerate(positions):
-        if not shape_on_face(face, covered, p1, p2):
+        if not face.holds(covered, (p1, p2)):
             severs = entry.cut and _is_through(item)
             layout.problem("question", at,
                            f"{item.id} copy {first + n + 1}, {how}, runs off face {face.name}"
@@ -1256,12 +1240,12 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         instance = Instance(
             item.id, 0, face.frame_at((p1, p2)).origin, face.frame.n, host, face.part_axes
         )
-        material = least_material_under(face, covered, p1, p2)
+        material = face.material_under(covered, (p1, p2))
         out.append(
             _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
         )
     if entry.cut and out:
-        _check_depth(item, (), lambda _mouth: min(least_material_under(face, covered, p1, p2) for p1, p2 in positions),
+        _check_depth(item, (), lambda _mouth: min(face.material_under(covered, (p1, p2)) for p1, p2 in positions),
                      layout, at, face.depth_sources)  # fmt: skip
     return out
 
@@ -1568,7 +1552,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     if entry.cut:
         # Round a side, only how far the mouth reaches counts: any axes give it.
         _check_depth(item, _outline(item, layout, ("x", "y")),
-                     lambda mouth: side_material(face, reach(mouth)), layout, at, face.depth_sources)  # fmt: skip
+                     lambda mouth: face.material_under(mouth), layout, at, face.depth_sources)  # fmt: skip
         bore = face.radius - face.wall
         hole = layout.diameters.get(item.id, 0.0) / 2
         if face.outward and _is_through(item) and 0 < bore <= hole + EPS:
@@ -2400,7 +2384,7 @@ def _turned_floor(item: Item, placed: Instance, face: FlatFace, copy: _Copy, lay
     turn = _turn_value(item)
     for name in KINDS[item.kind].faces:
         found = layout.faces[key].get(name)
-        if isinstance(found, FlatFace) and uniform(face) and turn is not None:
+        if isinstance(found, FlatFace) and face.uniform and turn is not None:
             layout.faces[key][name] = replace(found, less=None, turn=degrees(turn), turn_sources=((item.id, "place"),))
         elif name not in layout.closed.get(key, {}):
             layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
