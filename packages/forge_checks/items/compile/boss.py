@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
 
-from forge_checks.items.compile._common import _mm, main_face_refs
+from forge_checks.items.compile._common import _PLAIN, _mm, main_face_refs
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Centre, Ref
 from forge_checks.kinds.surfaces import Round
@@ -27,6 +28,12 @@ class Boss(CompileKind):
 
     def main(self, c: CompileContext, item: Item, copy: Copy) -> Ref | None:
         r = _mm(item.get("diameter")) / 2
+        if copy.lean is not None:  # leaning: its axis, where all of its side stands out of the face
+            cos = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
+            start = r * math.sqrt(max(1.0 - cos * cos, 0.0)) / cos
+            if c._plain(item) - start < _PLAIN:
+                return None
+            return Centre(Round(copy.point, copy.lean, r, start, c._plain(item), False))
         return Centre(Round(copy.point, copy.direction, r, 0.0, c._plain(item), False))
 
     def face_refs(

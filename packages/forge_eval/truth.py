@@ -17,8 +17,10 @@ added or taken away. A solid is a **prism** (an outline in a plane, a
 rectangle with its corners rounded, which makes discs and stadiums too, run
 along the plane's normal between two levels), a **frustum** (a piece of a
 cone, as a countersink is), an outline of straight sides and arcs **pushed**
-along the normal of its plane (an extrusion), or a half outline **turned**
-about an axis (a revolution). Which side of the part a point is follows
+along the normal of its plane (an extrusion), a half outline **turned**
+about an axis (a revolution), or a prism **kept** between two planes across
+another direction (an item leaning on its face: kept on the face's open
+side, or within its material). Which side of the part a point is follows
 from the steps alone (:meth:`Truth.inside`); an outline's inside is this
 module's own (:class:`Outline2`).
 
@@ -46,6 +48,7 @@ __all__ = [
     "Copy",
     "Corner",
     "Frustum",
+    "Kept",
     "Letters",
     "Outline2",
     "Prism",
@@ -94,6 +97,9 @@ class Copy:
     point: Vec
     direction: Vec
     axes: tuple[str, str] | None
+    #: Leaning on its flat face (tilt; place.md, "Leaning on the face"): the way it stands out or its way out of its
+    #: mouth, its face's outward normal (``direction``) turned that far towards its lean.
+    lean: Vec | None = None
 
 
 @dataclass(frozen=True)
@@ -674,7 +680,30 @@ class RingCorner:
         return np.asarray(found)
 
 
-Solid = Prism | Frustum | Pushed | Turned | Letters | Threaded | Corner | RingCorner
+@dataclass(frozen=True)
+class Kept:
+    """A prism's points whose height along ``normal`` from ``origin`` is from ``low`` to ``high``: an item leaning on
+    its flat face (place.md, "Leaning on the face"), its prism run along its direction from far enough back that all
+    of its outline is past the face's plane, kept on the face's open side (``low`` 0: what stands) or within its
+    material (``high`` 0: a cut). A step's ``reach`` carries the two planes on, not the prism's own ends."""
+
+    solid: Prism
+    origin: Vec
+    normal: Vec
+    low: float
+    high: float
+
+    def __post_init__(self) -> None:
+        if not self.high > self.low:
+            raise ValueError(f"a prism kept from {self.low} to {self.high}")
+
+    def contains(self, points: Array) -> NDArray[np.bool_]:
+        p = np.asarray(points, dtype=np.float64)
+        h = fv.matmul(p - np.asarray(self.origin), np.asarray(self.normal))
+        return np.asarray(self.solid.contains(p) & (h >= self.low) & (h <= self.high))
+
+
+Solid = Prism | Frustum | Pushed | Turned | Letters | Threaded | Corner | RingCorner | Kept
 #: How much each solid's box is grown by before the points outside it are left out of its test (mm): more
 #: than an outline's own allowance for a point on its edge.
 _CULL = 1e-6
@@ -757,6 +786,15 @@ def bounds(solid: Solid) -> tuple[Array, Array]:
 
 
 def _bounds(solid: Solid) -> tuple[Array, Array]:
+    if isinstance(solid, Kept):
+        # The prism's box, and along the planes' normal where it is one of the frame's axes, between them.
+        lo, hi = _bounds(solid.solid)
+        across = solid.normal
+        for k in range(3):
+            if abs(across[k]) == 1.0 and all(across[j] == 0.0 for j in range(3) if j != k):
+                at = [solid.origin[k] + across[k] * solid.low, solid.origin[k] + across[k] * solid.high]
+                lo[k], hi[k] = max(lo[k], min(at)), min(hi[k], max(at))
+        return lo, hi
     if isinstance(solid, Corner):
         o = np.asarray(solid.start)
         w, a, b = (np.asarray(v) for v in (solid.along, solid.a, solid.b))

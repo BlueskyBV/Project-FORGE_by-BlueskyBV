@@ -1174,6 +1174,10 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                 ):
                     problems.fault(pointer("items", n, "place", "turn"),
                                    'a turn is schema 1.2\'s: give the draft\'s "schema_version": "1.2"')  # fmt: skip
+                for leans in ("tilt", "tilt_towards"):
+                    if item.get(leans) is not None and version < (1, 3):
+                        problems.fault(pointer("items", n, leans),
+                                       f'a {leans} is schema 1.3\'s: give the draft\'s "schema_version": "1.3"')  # fmt: skip
     for listed in ("not_modelled", "silent"):
         if not isinstance(raw.get(listed, []), list):
             problems.fault(pointer(listed), f"{listed} is a list")

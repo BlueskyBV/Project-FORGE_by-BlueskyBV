@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     import numpy as np
     from forge_spec.draft import Item, PartSpec, Pattern
@@ -59,6 +59,7 @@ class CompileContext(Protocol):
     def face_rect(self, face: FlatFace) -> Plane: ...
     @staticmethod
     def along(copy: Copy, axis: str) -> Vec: ...
+    def _leaning_rest(self, item: Item, names: Sequence[str]) -> None: ...
     @staticmethod
     def cut_wall(
         copy: Copy, way: Array, at: float, across: Array, half: float

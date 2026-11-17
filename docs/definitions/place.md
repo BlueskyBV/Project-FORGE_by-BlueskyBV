@@ -61,6 +61,46 @@ is cut into them), its edges are not rounded or chamfered, and it is not
 hollowed: those come with oriented bodies (V2-stage4b-0c.md, 3.3, 1b's
 third move).
 
+### Leaning on the face (`tilt`)
+
+On a flat face, a hole, a boss or a post may lean: `tilt` (an angle; schema
+1.3) from square to the face, towards `tilt_towards`, one of the face's two
+axes, `+` or `-` (turned with the item where `place.turn` turns it, so a
+post leans along its own length or width). Its **direction** is the face's
+outward normal turned `tilt` towards that way: a boss or a post stands out
+along it, its `height` along it from its point; a hole's way out of its
+mouth is along it, so it goes in against it, its `depth` along it from its
+point. Its cross-section, square to its direction, is what it would be
+unleaning: a disc, or the post's `length` by `width`.
+
+Its **foot** (what it covers on the face, its fit, what it is held apart
+from, and what a position `to` `edge` is measured to) is that
+cross-section's section by the face's plane: drawn out along the lean by
+1 / cos(`tilt`), an ellipse for a round one. A boss's or a post's foot is
+where it meets the face; it is joined to the face over it, and what of its
+cross-section lies under the face's plane is the face's own material.
+
+Under the face, what leans is measured along its direction, so it leans
+only on a face with **the same material under all of it** (`T` deep): a
+block's face, a cylinder's end, the side of a box standing on a face. There:
+
+- a hole right through goes on until all of its circle is past the far
+  side, `(T + r sin(tilt)) / cos(tilt)` along it, and comes out there
+  `T tan(tilt)` from its point, back against the lean;
+- a blind hole (or a counterbore) of radius `r` and `depth` `D` stays in
+  the material while `D cos(tilt) + r sin(tilt) <= T`: its floor is square
+  to its direction;
+- a boss or a post reaches back into the face from its foot by its half
+  size along the lean times tan(`tilt`), which must be less than `T`.
+
+A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
+`tilt_towards`, a way that isn't one of the face's axes, or a lean round a
+side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
+counterbored hole (not a countersunk one), and only on such a face, for now:
+anything else that leans is CAN'T. As with a turn, a leaning item's own faces
+take nothing, its edges are not rounded or chamfered, and it is not hollowed
+or threaded, for now.
+
 ## On a round side
 
 On a round side, an item is placed by a position along the side's axis and

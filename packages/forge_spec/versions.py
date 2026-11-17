@@ -14,7 +14,8 @@ lock (:mod:`.lock`). Specs drafted before versions said
 ``"spec_format": 1``, which is version 1.0.
 
 The versions: 1.0, ``spec_format`` 1; 1.1, named ``schema_version``;
-1.2, a placement's ``turn`` on a flat face.
+1.2, a placement's ``turn`` on a flat face; 1.3, a hole's, a boss's or a
+post's ``tilt`` and ``tilt_towards`` on a flat face.
 
 >>> version_of({"schema_version": "1.1"})
 (1, 1)
@@ -45,7 +46,7 @@ __all__ = [
 Version = tuple[int, int]
 
 #: The version Forge writes, and the latest it reads.
-CURRENT: Version = (1, 2)
+CURRENT: Version = (1, 3)
 
 #: The major steps, in order: (from this major version, to the next, the migration), from :mod:`.migrations`.
 MIGRATIONS: tuple[tuple[int, int, Migration], ...] = STEPS

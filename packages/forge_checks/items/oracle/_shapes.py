@@ -43,6 +43,7 @@ from forge_checks.shapes import (
     Complement,
     Disc,
     Frame,
+    Halfspace,
     Prism,
     Round,
     RoundRect,
@@ -125,11 +126,44 @@ def _on_side(section: Prism, side: RoundSide) -> Node:
     return Inter((section, Round(axis, side.radius)))
 
 
+def leaning_axes(copy: Copy) -> tuple[NDArray[np.float64], NDArray[np.float64], float, float]:
+    """A leaning copy's own two axes across its direction (its face's, turned with it, then tilted with it about the line
+    in the face square to its lean), and the cosine and sine of its tilt."""
+    assert copy.lean is not None
+    n, u = np.asarray(copy.direction, dtype=float), np.asarray(copy.lean, dtype=float)
+    c = float(fv.matmul(u, n))
+    s = math.sqrt(max(1.0 - c * c, 0.0))
+    w = (u - c * n) / s  # its lean's way, in the face
+    found = []
+    for e in copy_axes(copy):
+        along = float(fv.matmul(e, w))  # +1, -1 (along its lean) or 0 (across it)
+        found.append(e if abs(along) < 0.5 else c * e - s * along * n)
+    return found[0], found[1], c, s
+
+
+def leaning_node(copy: Copy, outline: Shape2D, reach: float, height: float, into: bool) -> Node:
+    """A leaning item's solid (place.md, "Leaning on the face"): its outline across its direction, from far enough back
+    for its whole outline to be past its face's plane to ``height`` along it, kept on the face's open side (standing,
+    ``into`` False) or within its material (a cut, ``into`` True, ``height`` its depth into it)."""
+    first, second, c, s = leaning_axes(copy)
+    frame = _frame(copy.point, first, second)
+    u = np.asarray(copy.lean, dtype=float)
+    sign = float(fv.matmul(np.asarray(frame.w), u))  # +1 or -1: the frame's third axis is its way, or back
+    back = reach * s / c + 1.0  # far enough back that its whole outline is past the face's plane
+    lo, hi = (-back, height) if not into else (-height, back)
+    t0, t1 = sorted((sign * lo, sign * hi))
+    n = np.asarray(copy.direction, dtype=float)
+    keep = Halfspace(copy.point, tuple(float(x) for x in (n if into else -n)))  # type: ignore[arg-type]
+    return Inter((Prism(frame, outline, t0, t1), keep))
+
+
 def _standing_prism(
     copy: Copy, outline: Shape2D, height: float, face: FlatFace | RoundSide | None
 ) -> Node:
     """A standing item's solid: its outline across its direction, from its point out to ``height``."""
     assert copy.axes is not None
+    if copy.lean is not None and isinstance(outline, RoundRect):
+        return leaning_node(copy, outline, fs.hypot(outline.h1, outline.h2), height, False)
     u = np.asarray(copy.direction, dtype=float)
     first, second = copy_axes(copy)
     frame = _frame(copy.point, first, second)
@@ -512,6 +546,8 @@ def rod_node(
     copy: Copy, face: FlatFace | RoundSide | None, radius: float, height: float
 ) -> Node:
     """A cylinder's or a boss's solid: ``radius`` round its axis, ``height`` along it."""
+    if copy.lean is not None:
+        return leaning_node(copy, Disc(radius), radius, height, False)
     u = np.asarray(copy.direction, dtype=float)
     frame = Frame.along(copy.point, u)
     if isinstance(face, RoundSide):

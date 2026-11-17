@@ -521,13 +521,25 @@ class _Compiler:
         """The way one of the frame's axes runs for a copy: one of its face's two axes turned by its ``place.turn`` (1b's
         first move); the axis itself for any other copy, or the face's normal axis."""
         base = unit("+" + axis)
-        if copy.turn is None or copy.axes is None or axis not in copy.axes:
+        if copy.axes is None or axis not in copy.axes:
             return base
-        c, s = copy.turn
-        u, v = unit("+" + copy.axes[0]), unit("+" + copy.axes[1])
-        if axis == copy.axes[0]:
-            return (c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2])
-        return (-s * u[0] + c * v[0], -s * u[1] + c * v[1], -s * u[2] + c * v[2])
+        found = base
+        if copy.turn is not None:
+            c, s = copy.turn
+            u, v = unit("+" + copy.axes[0]), unit("+" + copy.axes[1])
+            found = ((c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2]) if axis == copy.axes[0]
+                     else (-s * u[0] + c * v[0], -s * u[1] + c * v[1], -s * u[2] + c * v[2]))  # fmt: skip
+        if copy.lean is None:
+            return found
+        # Leaning (1b's second move): tilted with it about the line in its face square to its lean.
+        n, w = copy.direction, copy.lean
+        c = sum(w[k] * n[k] for k in range(3))
+        s = math.sqrt(max(1.0 - c * c, 0.0))
+        way = tuple((w[k] - c * n[k]) / s for k in range(3))
+        along = sum(found[k] * way[k] for k in range(3))
+        if abs(along) < 0.5:
+            return found
+        return (c * found[0] - s * along * n[0], c * found[1] - s * along * n[1], c * found[2] - s * along * n[2])
 
     @staticmethod
     def cut_wall(
@@ -631,6 +643,9 @@ class _Compiler:
         """
         for copy in self.copies(item):
             assert copy.lo is not None and copy.hi is not None
+            if copy.lean is not None:
+                self._leaning_box(item, copy, sizes(copy), height)
+                continue
             if copy.turn is not None:
                 self._turned_box(item, copy, sizes(copy), height)
                 continue
@@ -757,6 +772,16 @@ class _Compiler:
             self.skip(item, diameter, "its side is threaded all along: the thread's crests are its diameter",
                       "its thread's check")  # fmt: skip
         for copy in self.copies(item):
+            if copy.lean is not None:  # leaning (1b's second move): its side fitted where it stands wholly out
+                c_ = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
+                start = radius * math.sqrt(max(1.0 - c_ * c_, 0.0)) / c_
+                if plain - start >= _PLAIN:
+                    self.check(item, diameter, "diameter", 2 * radius, self.tol(item.get(diameter)),
+                               Round(copy.point, copy.lean, radius, start, plain, False), copy.index)  # fmt: skip
+                else:
+                    self.skip(item, diameter, Buried("it leans so far that none of its side stands wholly out"))
+                self._leaning_rest(item, (length,))
+                continue
             up = _v(copy.direction)
             if plain >= _PLAIN:
                 self.check(item, diameter, "diameter", 2 * radius, self.tol(item.get(diameter)),
@@ -792,6 +817,49 @@ class _Compiler:
         if item.get("on") is not None:
             self._on(item)
             self._place(item)
+
+    def _leaning_box(self, item: Item, copy: Copy, sizes: Mapping[str, tuple[str, float]], height: str | None) -> None:
+        """A post leaning on its face (1b's second move): each size between its two sides, square to its own axes tilted
+        with it, each side's own rectangle where it stands wholly out of the face; its height along its lean, and its
+        lean, held by face accounting (its far face and its sides are where the oracle puts them, or it fails)."""
+        assert copy.axes is not None and copy.lean is not None
+        u = _v(copy.lean)
+        c = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
+        tan = math.sqrt(max(1.0 - c * c, 0.0)) / c
+        h = _mm(item.get(height)) if height is not None else 0.0
+        across = {axis: value for _, (axis, value) in sizes.items()}
+        n = _v(copy.direction)
+        # How far up its axis a side may still dip into the face: its half size along its lean (the size whose axis
+        # is tilted with it, out of the face) times tan(tilt), whichever side (generated part 209: a post leaning
+        # along its 3.5 mm length, 19.8 mm wide, measured where its sides stood wholly out by its width, a sliver).
+        along_lean = [value for axis, value in across.items() if abs(float(fv.dot(_v(self.along(copy, axis)), n))) > 1e-9]
+        reach = max(along_lean, default=0.0) / 2 * tan
+        middle = _v(copy.point) + (h + reach) / 2 * u
+        for name, (axis, value) in sizes.items():
+            a = _v(self.along(copy, axis))
+            other = copy.axes[1] if axis == copy.axes[0] else copy.axes[0]
+            half = (across.get(other, 0.0) / 2, (h - reach) / 2)
+            if h - reach < _PLAIN:
+                self.skip(item, name, Buried("it leans so far that no side stands wholly out of its face"))
+                continue
+            b = self.along(copy, other)
+            plus = Plane(_t(middle + value / 2 * a), _t(a), first=b, half=half)
+            minus = Plane(_t(middle - value / 2 * a), _t(-a), first=b, half=half)
+            if not (self.seen(plus, half) and self.seen(minus, half)):
+                self.skip(item, name, Buried(f"its {axis} faces aren't both on the part's surface"))
+                continue
+            self.check(item, name, "size", value, self.tol(item.get(name)), Between(plus, minus, _t(a)), copy.index)
+            self.size(item, value)
+        self._leaning_rest(item, (height,) if height is not None else ())
+
+    def _leaning_rest(self, item: Item, names: Sequence[str]) -> None:
+        """What a leaning item's checks leave to face accounting: its sizes along its lean (from where its axis meets
+        its face, which no plane of it holds) and its lean."""
+        present = set(leaves(item))
+        for name in (*names, "tilt", "tilt_towards"):
+            if name in present:
+                self.skip(item, name, "it leans on its face: this is along its lean from where its axis meets the "
+                          "face, as the oracle builds it", "face accounting")  # fmt: skip
 
     # Cuts -------------------------------------------------------------
     def _turned_box(
@@ -1255,11 +1323,11 @@ class _Compiler:
                     self.skip(item, name, "its side is threaded all along: the thread's profile is held about its axis",
                               "its thread's check")  # fmt: skip
             return
-        if any(copy.turn is not None for copy in copies):
+        if any(copy.turn is not None or copy.lean is not None for copy in copies):
             for name in leaves(item):
                 if name.startswith("place."):
-                    self.skip(item, name, "it is turned in its face: where it is, and its turn, are held by where its "
-                              "faces are, as the oracle builds them", "face accounting")  # fmt: skip
+                    self.skip(item, name, "it is turned in, or leans on, its face: where it is, and its turn, are held "
+                              "by where its faces are, as the oracle builds them", "face accounting")  # fmt: skip
             return
         given = item.get("place")
         place = given if isinstance(given, Place) else Place({}, None, None, None, None)

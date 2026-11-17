@@ -56,6 +56,9 @@ class PlaceKind:
     rims: ClassVar[Mapping[str, Edges]] = {}
     both_ends = False
 
+    #: It may lean from square to its flat face (``tilt``; place.md): a hole, a boss and a post.
+    leans = False
+
     def turnable(self, item: Item) -> bool:
         """Whether a ``place.turn`` turns it in its face's plane (place.md): a slot, a rectangular pocket, a rib, a tab, a
         block, a post and a line of letters."""

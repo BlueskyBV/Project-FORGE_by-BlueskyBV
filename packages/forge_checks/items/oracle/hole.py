@@ -10,7 +10,13 @@ from forge_spec.draft import Counterbore, Countersink, Item
 
 from forge_checks import rounds
 from forge_checks.csg import Node, Union
-from forge_checks.items.oracle._shapes import _circle, _mm, _unit2, round_rim
+from forge_checks.items.oracle._shapes import (
+    _circle,
+    _mm,
+    _unit2,
+    leaning_node,
+    round_rim,
+)
 from forge_checks.items.oracle.protocol import OracleKind
 from forge_checks.place import Copy, FlatFace, Placed, RoundSide
 from forge_checks.shapes import Disc, Frame, Frustum, Prism
@@ -24,6 +30,14 @@ class Hole(OracleKind):
     ) -> Node:
         assert copy.span is not None
         start, depth = copy.span
+        if copy.lean is not None:  # leaning (place.md): along its own way, within the face's material
+            radius = placed.diameters[item.id] / 2
+            bore = item.get("counterbore")
+            shapes = [leaning_node(copy, Disc(radius), radius, depth, True)]
+            if isinstance(bore, Counterbore):
+                wide = _mm(bore.diameter) / 2
+                shapes.append(leaning_node(copy, Disc(wide), wide, _mm(bore.depth), True))
+            return shapes[0] if len(shapes) == 1 else Union(tuple(shapes))
         inward = -np.asarray(copy.direction, dtype=float)
         frame = Frame.along(copy.point, inward)
         radius = placed.diameters[item.id] / 2

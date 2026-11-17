@@ -14,6 +14,7 @@ class Thread(SolveKind):
     key = "thread"
 
     made_last = True
+    threads = True
 
 
 ENTRY = Thread()

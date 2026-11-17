@@ -104,6 +104,8 @@ class DrawKind:
     #: down), else half a turn (each other outline is the same turned half a turn).
     turnable = False
     turns_all_round = False
+    #: It leans from square to its flat face (tilt): a hole, a boss, a post.
+    leans = False
 
     # ------------------------------------------------------------------
     # Its own

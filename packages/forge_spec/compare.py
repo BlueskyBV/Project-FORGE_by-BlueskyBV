@@ -14,10 +14,12 @@ the same. Each draft's layout (:mod:`forge_spec.placement`) is reduced to
 features, each one shape of the part placed in the frame:
 
 - a solid: a box, a rod, a cone, a ball or a dome, a round-ended tab, a
-  region's envelope, with its sizes, its centre and the way it points;
+  region's envelope, with its sizes, its centre and the way it points (a
+  boss or a post leaning on its face: along its lean);
 - a cut: a round or a square-edged one, by its mouth and how deep it goes,
   or, right through, by the line it runs along (where it enters is then no
-  matter: one hole through a plate is one, drilled from either side); a
+  matter: one hole through a plate is one, drilled from either side), the
+  way it goes in leaning with it where it leans (``tilt``); a
   counterbore or countersink by its own place, at the mouth it widens; and
   letters by where they are and which way they read;
 - each rounded or chamfered edge, a hollow and its openings, a thread on its

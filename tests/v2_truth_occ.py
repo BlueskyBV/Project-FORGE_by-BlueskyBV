@@ -21,6 +21,7 @@ from forge_eval.truth import (
     QUADRANTS,
     Corner,
     Frustum,
+    Kept,
     Letters,
     Outline2,
     Prism,
@@ -243,6 +244,37 @@ def _rounding(step: Step) -> Any:
         return maker.Shape()
 
 
+def _kept(step: Step) -> Any:
+    """A kept prism: its prism (carried on past neither end) in common with the slab between its two planes, each
+    carried on as the step allows, as wide as the prism's box is across."""
+    from dataclasses import replace
+
+    from forge_eval.truth import bounds
+    from forge_occ.occt import boundary
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Common
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
+    from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt
+
+    low, high = step.reach
+    k = step.solid
+    assert isinstance(k, Kept)
+    prism = _solid(replace(step, solid=k.solid, reach=(0.0, 0.0)))
+    n = np.asarray(k.normal, dtype=np.float64)
+    helper = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    a = np.cross(helper, n)
+    a /= np.linalg.norm(a)
+    b = np.cross(n, a)
+    lo, hi = bounds(k.solid)
+    big = float(np.linalg.norm(hi - lo)) + float(np.linalg.norm(0.5 * (lo + hi) - np.asarray(k.origin))) + 10.0
+    corner = np.asarray(k.origin, dtype=np.float64) + (k.low - low) * n - big * a - big * b
+    with boundary("a truth's kept prism"):
+        slab = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(*corner), gp_Dir(*n), gp_Dir(*a)), 2 * big, 2 * big,
+                                   (k.high + high) - (k.low - low)).Shape()  # fmt: skip
+        common = BRepAlgoAPI_Common(prism, slab)
+        common.Build()
+        return common.Shape()
+
+
 def _solid(step: Step) -> Any:
     from forge_occ.geom import Frame
     from forge_occ.make import prism as extrude
@@ -300,6 +332,8 @@ def _solid(step: Step) -> Any:
             maker = BRepPrimAPI_MakeRevol(face, ax1(tuple(turned.base), tuple(w)))
             maker.Build()
             return maker.Shape()
+    if isinstance(step.solid, Kept):
+        return _kept(step)
     if isinstance(step.solid, Prism):
         p = step.solid
         e1, e2, n = (

@@ -25,6 +25,7 @@ from forge_eval.truth import Copy
 
 class Boss(DrawKind):
     key = "boss"
+    leans = True
     flat_weight = 1
     flat_rank = 3
     drawn_tangent = True

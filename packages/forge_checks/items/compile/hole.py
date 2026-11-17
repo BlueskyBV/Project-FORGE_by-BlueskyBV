@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Fit, Item
+from forge_spec.ends import ThroughAll, end_of
 from forge_spec.values import Value
 
 from forge_checks.classes import general, tolerance_of
-from forge_checks.items.compile._common import _deg, _mm, _t, _v
+from forge_checks.items.compile._common import _PLAIN, _deg, _mm, _t, _v
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Centre, ConeRim, Ref, RoundEdge
 from forge_checks.kinds.surfaces import Cone, Plane, Round
@@ -18,6 +19,21 @@ from forge_checks.place import Copy
 
 if TYPE_CHECKING:
     from forge_checks.items.compile._context import CompileContext
+
+
+def leaning_wall(item: Item, copy: Copy, radius: float, recess: float) -> Round | None:
+    """A leaning hole's side where it is all round (1b's second move): from where its whole circle is past the face
+    (or its counterbore's floor), ``recess + r tan(tilt)`` along its axis, to its floor (square to its axis), or right
+    through, to where its circle starts to come out of the far side (its span ends where all of it is past that, its
+    circle's ``r tan(tilt)`` each way later); None where that is shorter than :data:`_PLAIN`."""
+    assert copy.lean is not None and copy.span is not None
+    c = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
+    tan = math.sqrt(max(1.0 - c * c, 0.0)) / c
+    start = recess + radius * tan
+    end = copy.span[1] - (2 * radius * tan if isinstance(end_of(item), ThroughAll) else 0.0)
+    if end - start < _PLAIN:
+        return None
+    return Round(copy.point, _t(-_v(copy.lean)), radius, start, end, True)
 
 
 class Hole(CompileKind):
@@ -40,6 +56,25 @@ class Hole(CompileKind):
             )
         for copy in c.copies(item):
             assert copy.span is not None
+            if copy.lean is not None:  # leaning (1b's second move): its sides fitted where each is all round
+                axis = _t(-_v(copy.lean))
+                lean_c = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
+                tan = math.sqrt(max(1.0 - lean_c * lean_c, 0.0)) / lean_c
+                wall = leaning_wall(item, copy, radius, recess)
+                if wall is not None:
+                    c.check(item, "diameter", "diameter", 2 * radius, tolerance, wall, copy.index)
+                else:
+                    c.skip(item, "diameter", "it leans so far its side isn't all round anywhere", "face accounting")
+                if isinstance(bore, Counterbore):
+                    r = _mm(bore.diameter) / 2
+                    if recess - r * tan >= _PLAIN:
+                        c.check(item, "counterbore.diameter", "diameter", 2 * r, c.tol(bore.diameter),
+                                Round(copy.point, axis, r, r * tan, recess, True), copy.index)  # fmt: skip
+                    else:
+                        c.skip(item, "counterbore.diameter", "it leans so far its counterbore's side isn't all round "
+                               "anywhere", "face accounting")  # fmt: skip
+                c._leaning_rest(item, ("depth", "counterbore.depth") if isinstance(bore, Counterbore) else ("depth",))
+                continue
             axis = _t(-_v(copy.direction))
             start, end = max(copy.span[0], recess), copy.span[1]
             wall = Round(copy.point, axis, radius, start, end, True)
@@ -95,6 +130,9 @@ class Hole(CompileKind):
     def main(self, c: CompileContext, item: Item, copy: Copy) -> Ref | None:
         assert copy.span is not None
         r = c.placed.diameters[item.id] / 2
+        if copy.lean is not None:  # leaning: its axis, where its side is all round
+            wall = leaning_wall(item, copy, r, c._recess(item, r))
+            return Centre(wall) if wall is not None else None
         return Centre(Round(copy.point, _t(-_v(copy.direction)), r, max(copy.span[0], c._recess(item, r)),
                             copy.span[1], True))  # fmt: skip
 

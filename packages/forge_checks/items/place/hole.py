@@ -24,6 +24,7 @@ from forge_checks.place import (
 
 class Hole(PlaceKind):
     key = "hole"
+    leans = True
 
     @property
     def goes_round_side(self) -> bool:

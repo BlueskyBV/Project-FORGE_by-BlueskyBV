@@ -44,6 +44,13 @@ Its size along the face's second axis.
 
 How far it rises out of the face.
 
+### `tilt` and `tilt_towards`
+
+How far it leans from square to its flat face, and towards which of the
+face's axes (turned with it, so it leans along its own length or width:
+[place.md](place.md), "Leaning on the face"); its `height` is then along its
+lean. Schema 1.3.
+
 ### `count`
 
 How many posts there are in the whole part ([place.md](place.md)).

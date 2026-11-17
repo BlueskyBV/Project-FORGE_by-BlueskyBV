@@ -190,7 +190,9 @@ def _where(line: _Line, *, cut: bool = False) -> str:
     if not isinstance(on, On):
         return "at the origin"
     verb = "into" if cut else "on"
-    return f"{verb} the {on.face} face of {on.item}, {_place(place if isinstance(place, Place) else None)}"
+    tilt, towards = line.get("tilt"), line.get("tilt_towards")
+    leaning = f", leaning {_v(tilt)} towards {_c(towards) if towards is not None else '?'}" if tilt is not None else ""
+    return f"{verb} the {on.face} face of {on.item}, {_place(place if isinstance(place, Place) else None)}{leaning}"
 
 
 def _count(line: _Line) -> str:

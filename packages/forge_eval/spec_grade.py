@@ -537,6 +537,8 @@ def _through_holes(
     runs: dict[
         tuple[int, float, float], list[tuple[float, float, float]]
     ] = {}  # line -> (from, to, diameter)
+    # A leaning hole's line, by its direction and where it passes nearest the origin.
+    slanted: dict[tuple[tuple[float, ...], tuple[float, ...]], list[tuple[float, float, float]]] = {}
     for item in items:
         copies = layout.instances.get(item.id, ())
         entry = _grade(item.kind)
@@ -555,6 +557,18 @@ def _through_holes(
                     {},
                     f"{item.id} is cut into a round side: checked on the built part",
                 )
+            if isinstance(face, FlatFace) and copy.direction is not None:
+                # Leaning on its face (tilt): through only right through (a blind one stops in the material,
+                # D cos + r sin <= T); its run along its own line, from its mouth across the face's T of material.
+                if isinstance(end_of(item), ThroughAll):
+                    d = copy.direction
+                    at = sum(copy.origin[k] * d[k] for k in range(3))
+                    foot = tuple(round(copy.origin[k] - at * d[k], 4) + 0.0 for k in range(3))
+                    run = face.depth_below / abs(sum(d[k] * copy.normal[k] for k in range(3)))
+                    slanted.setdefault((tuple(round(x, 6) + 0.0 for x in d), foot), []).append(
+                        (at - run, at, diameter)
+                    )
+                continue
             if isinstance(face, FlatFace) and _through_at(
                 item, copy, face, diameter / 2
             ):
@@ -576,7 +590,7 @@ def _through_holes(
                     diameter,
                 )
     found: Counter[float] = Counter()
-    for line in runs.values():
+    for line in [*runs.values(), *slanted.values()]:
         line.sort()
         reach, widest = line[0][1], line[0][2]
         for start, stop, diameter in line[1:]:

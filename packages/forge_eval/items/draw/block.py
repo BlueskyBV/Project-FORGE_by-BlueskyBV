@@ -67,7 +67,7 @@ class Block(DrawKind):
                 fa = _flat_axes(name)
                 part.flats[(f.id, 0, name)] = _Flat(
                     (f.id, 0, name), middle + e[axis] / 2 * _v(unit_of(name)), _v(unit_of(name)), fa, "rect",
-                    (e[fa[0]] / 2, e[fa[1]] / 2), e[axis], (f.id, 0, ("-" if sign > 0 else "+") + axis))  # fmt: skip
+                    (e[fa[0]] / 2, e[fa[1]] / 2), e[axis], (f.id, 0, ("-" if sign > 0 else "+") + axis), level=True)  # fmt: skip
         return
 
     def overhang(

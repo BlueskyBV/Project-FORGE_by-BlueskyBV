@@ -206,7 +206,8 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
     the face, ``corner`` how its corners are rounded, seen looking into it).
     """
     kind = item.kind
-    mouth, into = copy.origin, _neg(copy.normal)
+    # In against the way out of its mouth: its face's outward normal, or leaning, its direction.
+    mouth, into = copy.origin, _neg(copy.direction if copy.direction is not None else copy.normal)
     end = end_of(item)
     deep = mm(end.depth) if isinstance(end, Blind) else material
     through = isinstance(end, ThroughAll) or deep >= material - EPS

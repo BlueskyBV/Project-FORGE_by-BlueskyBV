@@ -80,8 +80,9 @@ def sample() -> list[int]:
 # ----------------------------------------------------------------------
 #: Fields a later step added to a class, None wherever a part has nothing of them: left out there, so a part that
 #: has nothing of them digests as it did before (1b's first move, V2-stage4b-0c.md 3.3: a copy's, an item's and a
-#: place's turn, and a print's turned outline).
-ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_Print", "shape")})
+#: place's turn, and a print's turned outline; its second: an instance's, a copy's and an item's lean).
+ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_Print", "shape"),
+                   ("Instance", "direction"), ("Copy", "lean"), ("Feature", "tilt")})  # fmt: skip
 
 
 def canonical(value: Any, _stack: frozenset[int] = frozenset()) -> Any:

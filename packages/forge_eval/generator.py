@@ -54,6 +54,7 @@ from .truth import (
     Copy,
     Corner,
     Frustum,
+    Kept,
     Letters,
     Outline2,
     Prism,
@@ -186,6 +187,9 @@ class Feature:
     #: ``place.turn``, V2-stage4b-0c.md 3.3, 1b's first move): a slot, a rectangular pocket, a rib, a tab, a block, a
     #: post or a line of letters.
     turn: float | None = None
+    #: How far it leans from square to its flat face (degrees), and towards which of the face's axes, + or -
+    #: (``tilt`` and ``tilt_towards``, V2-stage4b-0c.md 3.3, 1b's second move): a hole, a boss or a post.
+    tilt: tuple[float, str] | None = None
 
 
 Plan = tuple[Feature, ...]
@@ -350,6 +354,9 @@ class _Flat:
     margin: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     #: How much further than the gap things keep in from a disc's or a ring's rim: a rounding of it.
     rim: float = 0.0
+    #: The same material under all of it, as the solver reads it (forge_spec.geometry.uniform): a first block's
+    #: faces, a first cylinder's ends, the sides of a box standing on a face. Only there does an item lean.
+    level: bool = False
 
     @functools.cached_property
     def frame(self) -> _FaceFrame:
@@ -628,6 +635,240 @@ def _turned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature
     return replace(f, turn=turn)
 
 
+# ----------------------------------------------------------------------
+# Leaning from square to the face (tilt; place.md, "Leaning on the face"; V2-stage4b-0c.md 3.3, 1b's second move)
+# ----------------------------------------------------------------------
+#: How often the generator leans an item that can (DrawKind.leans), and the most it leans one (degrees).
+_LEANED = 0.2
+_MOST_LEAN = 75.0
+
+
+@dataclass(frozen=True)
+class _Lean:
+    """How an item leans on its flat face: ``tilt`` degrees (its cosine ``c`` and sine ``s``) towards ``way``, a unit
+    vector in the face's two coordinates (turned with the item where it is turned); ``along_first``: its lean is
+    along its own first axis, else its second."""
+
+    tilt: float
+    c: float
+    s: float
+    way: tuple[float, float]
+    along_first: bool
+
+    @property
+    def tan(self) -> float:
+        return self.s / self.c
+
+    def in_part(self, face: _Flat) -> Array:
+        """Its way as a direction in the part, along the face."""
+        return self.way[0] * face.frame.u + self.way[1] * face.frame.v + 0.0
+
+    def direction(self, face: _Flat) -> Array:
+        """Its direction: the face's outward normal turned ``tilt`` towards its way (place.md)."""
+        return self.c * face.normal + self.s * self.in_part(face) + 0.0
+
+
+def _lean_of(f: Feature, axes: tuple[str, str]) -> _Lean:
+    """How a leaning item leans on a flat face with these axes (a :class:`DoesNotFitError` where it leans towards
+    neither)."""
+    assert f.tilt is not None
+    tilt, towards = f.tilt
+    if towards[1] not in axes:
+        raise DoesNotFitError(f"{f.id} leans towards {towards}, which isn't one of its face's axes {axes}")
+    if not 0.0 < tilt < 90.0:
+        raise DoesNotFitError(f"{f.id} leans {tilt:g} degrees: a lean is more than 0 and less than 90")
+    sign = 1.0 if towards[0] == "+" else -1.0
+    first = towards[1] == axes[0]
+    way = (sign, 0.0) if first else (0.0, sign)
+    turn = _turn_of(f)
+    if turn is not None:  # turned with it: its lean is along its own axis
+        ct, st = turn
+        way = (ct * way[0] - st * way[1] + 0.0, st * way[0] + ct * way[1] + 0.0)
+    t = math.radians(tilt)
+    return _Lean(tilt, fs.cos(t), fs.sin(t), way, first)
+
+
+def _own_halves(f: Feature, axes: tuple[str, str], lean: _Lean) -> tuple[float, float]:
+    """A leaning item's half sizes square to its direction, along its lean and across it: a post's own; a boss's
+    radius; a hole's widest (its counterbore's, where that is wider), both ways."""
+    (h1, h2), _ = _footprint(f, axes)
+    if not _draw(f.kind).round_foot:  # a post's own
+        return (h1, h2) if lean.along_first else (h2, h1)
+    return h1, h1
+
+
+def _lean_box(lean: _Lean, at: tuple[float, float], offset: float, along: float, across: float) -> _Foot:
+    """The box along the face's axes round a rectangle on it running along a lean's way: ``along`` its half size
+    that way, ``across`` its other, its middle ``offset`` along the way from ``at``."""
+    w1, w2 = abs(lean.way[0]), abs(lean.way[1])
+    centre = (at[0] + offset * lean.way[0], at[1] + offset * lean.way[1])
+    return _Foot(centre, (w1 * along + w2 * across, w2 * along + w1 * across), 0.0)
+
+
+def _leaning_foot(f: Feature, axes: tuple[str, str]) -> tuple[float, float]:
+    """The half sizes of the box round a leaning item's foot about its point (place.md: its cross-section's section
+    by the face, drawn out along its lean by 1 / cos(tilt)), along the face's two axes: what it is placed by."""
+    lean = _lean_of(f, axes)
+    along, across = _own_halves(f, axes, lean)
+    return _lean_box(lean, (0.0, 0.0), 0.0, along / lean.c, across).half
+
+
+def _level(face: _Flat) -> bool:
+    """Whether an item may lean on a face: the same material under all of it (``level``), a rectangle or a disc, no
+    dome or flared cone under it, out of any hollow, a cut through it coming out on its far face."""
+    return (
+        face.level
+        and face.shape in ("rect", "disc")
+        and face.dome <= 0
+        and face.flare[1] <= 0
+        and face.hollow is None
+        and math.isinf(face.room)
+        and face.exit is not None
+        and not face.exit[2].startswith("inner")
+    )
+
+
+def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: bool) -> list[Copy]:
+    """Every copy of a hole, a boss or a post leaning on one copy of a flat face (place.md, "Leaning on the face").
+
+    Its direction ``u`` is the face's outward normal turned ``tilt`` towards
+    its way; its cross-section, square to ``u``, is what it is unleaning. A
+    boss or a post is that cross-section run along ``u`` from far enough back
+    that all of it is past the face's plane, out to its height, and kept on
+    the face's open side; a hole (and its counterbore) its circle run along
+    ``-u`` into the material, its depth, or right through: on until all of it
+    is past the far face, ``(T + r sin) / cos``, and kept within the face's
+    ``T`` of material, which is the same under all of it (``_level``).
+
+    What it covers, as the generator keeps it clear of everything else (and
+    the face's edges, and its far face's): the box round all of it seen
+    along the face's normal, from its foot (its cross-section's section by
+    the face, ``1 / cos(tilt)`` longer along its lean) to its top's
+    cross-section, ``height sin(tilt)`` along its lean (a cut: to its floor
+    or the far face, against it). Placed by its foot's box, as the solver
+    places it; its faces take nothing yet; it is neither rounded nor
+    threaded.
+    """
+    if not _draw(f.kind).leans:
+        raise DoesNotFitError(f"{f.id}: the generator leans a hole, a boss or a post")
+    if f.recess is not None and f.recess[0] == "countersink":
+        raise DoesNotFitError(f"{f.id}: a countersunk hole doesn't lean yet")
+    if f.turn is not None and not _draw(f.kind).turnable:
+        raise DoesNotFitError(f"{f.id}: the generator turns a post that leans, not a {f.kind}")
+    if f.pattern is not None and _pattern_draw(f.pattern.kind).at_the_corners and face.shape != "rect":
+        raise DoesNotFitError(f"{f.id}: corners are a rectangle's")
+    if f.pattern is not None and not _names_the_axes(f.pattern, face.axes):
+        raise DoesNotFitError(f"{f.id}: its pattern's values don't run along {face.key}'s axes {face.axes}")
+    for axis in (f.pattern.axis if f.pattern is not None else None, *f.place):
+        if axis and axis not in face.axes:
+            raise DoesNotFitError(f"{f.id}: {axis} isn't one of {face.key}'s axes {face.axes}")
+    if not _level(face):
+        raise DoesNotFitError(f"{f.id} leans on {face.key}, which hasn't the same material under all of it")
+    lean = _lean_of(f, face.axes)
+    if strict and lean.tilt > _MOST_LEAN:
+        raise DoesNotFitError(f"{f.id} leans more than {_MOST_LEAN:g} degrees")
+    thick = face.material
+    along, across = _own_halves(f, face.axes, lean)
+    cut = _draw(f.kind).cut_out
+    # A cut's bores: the hole's, then its counterbore's, each its radius and its depth along its axis (None: right
+    # through); how far each reaches against the lean, seen along the normal: to its floor's far side, or the far
+    # face's section of it.
+    bores: list[tuple[float, float | None]] = []
+    if cut:
+        bores.append((f.sizes["diameter"] / 2, f.depth))
+        if f.recess is not None:
+            bores.append((f.recess[1] / 2, f.recess[2]))
+        low = min(-thick * lean.tan - r / lean.c if d is None else -d * lean.s - r * lean.c for r, d in bores)
+        high = along / lean.c
+        deepest = max(thick if d is None else d * lean.c + r * lean.s for r, d in bores)
+    else:
+        height = f.sizes[_draw(f.kind).stand_height]
+        low, high = -along / lean.c, height * lean.s + along * lean.c
+        deepest = 0.0
+    spots = _flat_spots(f, face)
+    covers = [_lean_box(lean, at, (low + high) / 2, (high - low) / 2, across) for at in spots]
+    out = part.flats.get(face.exit) if face.exit is not None else None
+    if strict:
+        for k, cover in enumerate(covers):
+            if not face.holds(cover, GAP):
+                raise DoesNotFitError(f"{f.id} copy {k}, leaning, doesn't lie wholly over {face.key}")
+            for other in face.taken + covers[:k]:
+                if not cover.clear_of(other, GAP):
+                    raise DoesNotFitError(f"{f.id} copy {k}, leaning, meets something else on {face.key}")
+        if not cut and along * lean.tan > thick - GAP:
+            # It reaches back into the face from its foot (the solver asks for that much material under it).
+            raise DoesNotFitError(f"{f.id} leans further back into {face.key} than its material")
+        if cut:
+            for r, d in bores:
+                if d is not None and d * lean.c + r * lean.s > thick - GAP:
+                    raise DoesNotFitError(f"{f.id}, leaning, is deeper than the material under {face.key}")
+            if f.recess is not None and f.depth is not None and f.recess[2] > f.depth - GAP:
+                raise DoesNotFitError(f"{f.id}'s counterbore is as deep as it is")
+            if out is None:
+                raise DoesNotFitError(f"{f.id} would come out where {face.exit} is pressed against another")
+            for k, cover in enumerate(covers):
+                # Over its far face all the way, as on its own: none of it comes near the part's other sides.
+                if not out.holds(cover, GAP):
+                    raise DoesNotFitError(f"{f.id} copy {k}, leaning, doesn't lie wholly over {face.exit}")
+                for foot in out.taken if f.depth is None else ():
+                    if not cover.clear_of(foot, GAP):
+                        raise DoesNotFitError(f"{f.id} comes out through {face.exit} where something is")
+                for foot, deep in out.dug:
+                    if not cover.clear_of(foot, 0.0) and abs(deepest + deep - thick) < 0.3:
+                        raise DoesNotFitError(f"{f.id} all but breaks into a cut from the far side")
+    n = face.normal
+    w = lean.in_part(face)
+    u = lean.direction(face)
+    tilted = lean.c * w - lean.s * n + 0.0  # its lean's way square to its direction
+    side = np.asarray(np.cross(n, w), dtype=np.float64) + 0.0  # across its lean: (tilted, side, u) right-handed
+    made = []
+    first = len(part.steps)
+    for k, at in enumerate(spots):
+        p = _point(face, at)
+        copy_index = index + k
+        made.append(Copy(f.id, copy_index, face.key, _t(p), _t(n), face.axes, lean=_t(u)))
+        if cut:
+            for r, d in bores:
+                back = r * lean.tan + 1.0  # all of its circle past the face's plane
+                if d is None:
+                    run, keep, reach = (thick + r * lean.s) / lean.c + 1.0, (-thick, 0.0), (REACH, REACH)
+                else:
+                    run, keep, reach = d, (-(d * lean.c + r * lean.s) - 1.0, 0.0), (0.0, REACH)
+                rod = Prism(_t(p), _t(tilted), _t(side), _t(u), (r, r), r, -run, back)
+                part.steps.append(Step(f.id, copy_index, False, Kept(rod, _t(p), _t(n), *keep), reach))
+        else:
+            height = f.sizes[_draw(f.kind).stand_height]
+            corner = along if _draw(f.kind).round_foot else 0.0
+            body = Prism(_t(p), _t(tilted), _t(side), _t(u), (along, across), corner, -(along * lean.tan + 1.0),
+                         height)  # fmt: skip
+            top = height * lean.c + along * lean.s + 1.0
+            part.steps.append(Step(f.id, copy_index, True, Kept(body, _t(p), _t(n), 0.0, top), (REACH, 0.0)))
+    if strict and not cut:
+        _stands_in_air(f, made, part.steps[first:], (*part.steps[:first], *part.late))
+    for k, at in enumerate(spots):
+        face.taken.append(covers[k])
+        if cut and f.depth is None and out is not None:
+            r = f.sizes["diameter"] / 2
+            out.taken.append(_lean_box(lean, at, -thick * lean.tan, r / lean.c, r))
+        elif cut:
+            face.dug.append((covers[k], deepest))
+    return made
+
+
+def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
+    """Now and then a hole (plain or counterbored), a boss or a post (turned or not) on a face with the same material
+    under all of it leaning (tilt, tilt_towards), from a stream of its own: a share of leans by nice angles, the rest
+    anywhere on a half-degree grid up to the most Forge leans one, towards either way of either of the face's axes;
+    None when it doesn't lean."""
+    if rng.random() >= _LEANED or not _draw(f.kind).leans or f.on is None or f.on[1] == "side":
+        return None
+    if not _level(face) or f.angle is not None or (f.recess is not None and f.recess[0] == "countersink"):
+        return None
+    tilt = rng.choice((10.0, 15.0, 20.0, 30.0, 45.0, 60.0)) if rng.random() < 0.5 else _q(rng.uniform(0.5, _MOST_LEAN), 0.5)
+    towards = rng.choice(("+", "-")) + rng.choice(face.axes)
+    return replace(f, tilt=(tilt, towards))
+
+
 def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
     """The box round an extrusion's outline or a revolution's half outline: its least and greatest coordinates."""
     assert f.outline is not None
@@ -637,7 +878,10 @@ def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
 def _extent(
     f: Feature, axes: tuple[str, str]
 ) -> tuple[tuple[float, float], tuple[float, float]]:
-    """How far an item reaches back and forth along a face's two axes from the point it is placed by (place.md): an extrusion's outline, from its point (0, 0); anything else, its footprint about its centre; turned, the box round its turned outline."""
+    """How far an item reaches back and forth along a face's two axes from the point it is placed by (place.md): an extrusion's outline, from its point (0, 0); anything else, its footprint about its centre; turned, the box round its turned outline; leaning, the box round its foot (its cross-section's section by the face)."""
+    if f.tilt is not None:
+        h1, h2 = _leaning_foot(f, axes)
+        return (-h1, h1), (-h2, h2)
     if f.turn is not None:
         h1, h2 = _turned_half(f, axes)
         return (-h1, h1), (-h2, h2)
@@ -794,7 +1038,7 @@ def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes
                     (item, index, ("-" if sign > 0 else "+") + axis),
                 )
             part.flats[(item, index, name)] = _Flat(
-                (item, index, name), centre, d, fa, "rect", half, material, out
+                (item, index, name), centre, d, fa, "rect", half, material, out, level=name != up
             )
 
 
@@ -989,6 +1233,8 @@ def _on_flat(
         raise DoesNotFitError(
             f"{f.id}: an angle places an item round a side, not on a flat face"
         )
+    if f.tilt is not None:
+        return _on_flat_leaning(f, face, index, part, strict)
     if (
         f.pattern is not None
         and _pattern_draw(f.pattern.kind).at_the_corners
@@ -1394,6 +1640,8 @@ def _on_round(
     f: Feature, side: _Round, index: int, part: _Part, strict: bool
 ) -> list[Copy]:
     """Holes round a rod's side: at an angle round its axis (a circle of them), along it from its ends; a boss or a post standing round it (:func:`_standing_round`)."""
+    if f.tilt is not None:
+        raise DoesNotFitError(f"{f.id}: an item leans on a flat face, not round a side")
     return _draw(f.kind).on_round(f, side, index, part, strict)
 
 
@@ -1909,6 +2157,12 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
         host, face = f.on
         found["on"] = {"item": host, "face": face}
         w.say(f", on the {face}{'' if face == 'side' else ' face'} of {names[host]}")
+        if f.tilt is not None:
+            tilt, towards = f.tilt
+            w.say(", ")
+            found["tilt"] = _mm(w, tilt, before="leaning ", unit="deg")
+            w.say(" ")
+            found["tilt_towards"] = _chosen(w, towards, f"towards {towards}")
     elif own.axial:
         # The generator's first body stands upright.
         w.say(", ")
@@ -2705,7 +2959,7 @@ def _round_solids(
     """Each step's solid that is a round rod (a disc's prism): its item, a point on its axis and the axis, its radius, and how far along the axis it runs from that point."""
     found = []
     for step in steps:
-        s = step.solid
+        s = step.solid.solid if isinstance(step.solid, Kept) else step.solid  # a leaning one's whole rod
         if isinstance(s, Prism) and all(s.rounded) and s.corner >= max(s.half):
             found.append(
                 (step.item, _v(s.centre), _v(s.normal), s.corner, s.low, s.high)
@@ -2754,6 +3008,49 @@ def _cross_cleanly(steps: list[Step]) -> None:
                 raise DoesNotFitError(f"{item1} and {item2} cross all but tangentially")
 
 
+def _segment_gap(p1: Array, w1: Array, lo1: float, hi1: float, p2: Array, w2: Array, lo2: float,
+                 hi2: float) -> float:  # fmt: skip
+    """How near two stretches of line come: ``p1 + s w1`` for ``s`` from ``lo1`` to ``hi1``, and ``p2 + t w2`` for ``t``
+    from ``lo2`` to ``hi2`` (unit ``w``): the least distance between them, each end where it is (Ericson, Real-Time
+    Collision Detection, 5.1.9)."""
+    a, b = p1 + lo1 * w1, p2 + lo2 * w2
+    d1, d2 = (hi1 - lo1) * w1, (hi2 - lo2) * w2
+    r = a - b
+    e1, e2, f = float(fv.matmul(d1, d1)), float(fv.matmul(d2, d2)), float(fv.matmul(d2, r))
+    c, cross = float(fv.matmul(d1, r)), float(fv.matmul(d1, d2))
+    denominator = e1 * e2 - cross * cross
+    s = min(max((cross * f - c * e2) / denominator, 0.0), 1.0) if denominator > 1e-12 * e1 * e2 else 0.0
+    t = (cross * s + f) / e2
+    if t < 0.0:
+        t, s = 0.0, min(max(-c / e1, 0.0), 1.0)
+    elif t > 1.0:
+        t, s = 1.0, min(max((cross - c) / e1, 0.0), 1.0)
+    return float(fv.norm((a + s * d1) - (b + t * d2)))
+
+
+def _leaning_rods_cross_cleanly(steps: list[Step]) -> None:
+    """A leaning rod (a hole's or a boss's, run along its direction: :func:`_on_flat_leaning`) and another item's round
+    rod cross cleanly (:func:`_cross_cleanly`), measured between the stretches of their axes each runs along: the
+    lines' nearest points may lie far past their ends where they are all but parallel (generated part 134, a hole
+    leaning 1 degree beside one drilled from the face across, crossing it all but tangentially along 20 mm), and
+    there it is the stretches that come near. A part with nothing leaning has no such rod: it is as it was."""
+    leaning = {id(step.solid.solid) for step in steps if isinstance(step.solid, Kept)}
+    if not leaning:
+        return
+    found = []
+    for step in steps:
+        s = step.solid.solid if isinstance(step.solid, Kept) else step.solid
+        if isinstance(s, Prism) and all(s.rounded) and s.corner >= max(s.half):
+            found.append((step.item, id(s) in leaning, _v(s.centre), _v(s.normal), s.corner, s.low, s.high))
+    for i, (item1, lean1, p1, w1, r1, lo1, hi1) in enumerate(found):
+        for item2, lean2, p2, w2, r2, lo2, hi2 in found[i + 1 :]:
+            if item1 == item2 or not (lean1 or lean2):
+                continue
+            d = _segment_gap(p1, w1, lo1, hi1, p2, w2, lo2, hi2)
+            if abs(r1 - r2) - GAP < d < r1 + r2 + GAP:
+                raise DoesNotFitError(f"{item1} and {item2} cross all but tangentially")
+
+
 #: How near a round surface may come to another item's flat wall it runs along, either side of it, and be taken
 #: as touching it along a line (mm): far above OpenCascade's 1e-4 mm and the 5e-4 mm the sizes are written to.
 _TOUCHING = 0.01
@@ -2774,7 +3071,7 @@ def _walls_crossed(plan: Plan, steps: list[Step]) -> None:
     adds = {step.item: step.add for step in steps}
     rods = _round_solids(steps)
     for step in steps:
-        s = step.solid
+        s = step.solid.solid if isinstance(step.solid, Kept) else step.solid  # a leaning one's whole prism
         if not isinstance(s, Prism) or (all(s.rounded) and s.corner >= max(s.half)):
             continue
         c, e1, e2, n = (_v(x) for x in (s.centre, s.first, s.second, s.normal))
@@ -2890,13 +3187,18 @@ def _cuts_sided(plan: Plan, truth: Truth) -> None:
             step.add
             or kind is None
             or not _truth(kind).sided
-            or not isinstance(s, Prism)
+            or not isinstance(s, (Prism, Kept))
         ):
             continue
         if (step.item, step.index) in seen:
             continue  # a counterbore, after its hole's own step
         seen.add((step.item, step.index))
-        points = _past_side(s)
+        if isinstance(s, Kept):  # leaning: its rod's side, where it is kept
+            points = _past_side(s.solid)
+            height = fv.matmul(points - np.asarray(s.origin), np.asarray(s.normal))
+            points = points[(height > s.low) & (height < s.high)]
+        else:
+            points = _past_side(s)
         if float(np.mean(truth.inside(points))) < _SIDE_BUILT:
             raise DoesNotFitError(
                 f"{step.item}'s side is all but nowhere built: what else is cut there takes it"
@@ -2944,6 +3246,7 @@ def render(plan: Plan, strict: bool = True) -> Case:
     part = _build(plan, strict)
     if strict:
         _cross_cleanly(part.steps)
+        _leaning_rods_cross_cleanly(part.steps)
         _walls_crossed(plan, part.steps)
     truth = Truth(
         {k: tuple(v) for k, v in part.copies.items()},
@@ -2962,9 +3265,11 @@ def render(plan: Plan, strict: bool = True) -> Case:
 
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.2 where an item is turned in its face (place.turn), else the first, so a part that turns nothing is read,
-    and its spec's digest made, as it always was."""
+    1.3 where an item leans on its face (tilt), 1.2 where one is turned in it (place.turn), else the first, so a
+    part that does neither is read, and its spec's digest made, as it always was."""
     found = list(items)
+    if any("tilt" in item for item in found):
+        return {"schema_version": "1.3", "name": name, "items": found}
     if any(isinstance(item.get("place"), Mapping) and "turn" in item["place"] for item in found):
         return {"schema_version": "1.2", "name": name, "items": found}
     return {"spec_format": 1, "name": name, "items": found}
@@ -3581,6 +3886,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         touch = random.Random(f"forge-eval tangent {seed} {k}")
         around = random.Random(f"forge-eval round standing {seed} {k}")
         turns = random.Random(f"forge-eval turns {seed} {k}")
+        leans = random.Random(f"forge-eval leans {seed} {k}")
         outlined = not new and profiles.random() < _PROFILED
         for _ in range(tries):
             hosts = [key for key, face in part.flats.items() if key[1] == 0] + [
@@ -3590,7 +3896,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                 break
             key = rng.choice(hosts)
             standing_ok = _draw(part.kinds[key[0]]).hosts_standing and len(plan) < size
-            turned = None
+            turned = leaned = None
             if key in part.rounds:
                 candidate = _side_hole(rng, k, key[0], part.rounds[key])
                 if standing_ok and around.random() < _AROUND:
@@ -3633,6 +3939,17 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                 # doesn't fit, the item as drawn (a seed that turns nothing stays as it was drawn).
                 if plain:
                     turned = _turned_now_and_then(turns, candidate, part.flats[key])
+                    # Leaning on its face now and then, from a stream of its own (turned too, where it is): tried
+                    # before the rest, and where it doesn't fit, as it would be without it.
+                    leaned = _leaned_now_and_then(leans, turned or candidate, part.flats[key])
+            if leaned is not None:
+                try:
+                    render((*plan, leaned))
+                except DoesNotFitError:
+                    leaned = None
+                else:
+                    plan.append(leaned)
+                    break
             if turned is not None:
                 try:
                     render((*plan, turned))
@@ -3661,7 +3978,7 @@ def impossible(seed: int) -> Case:
     for attempt in range(40):
         case = generate(seed * 1000 + attempt, 4)
         cuts = [f for f in case.plan if _draw(f.kind).misfits and f.on is not None and f.pattern is None
-                and f.on[1] != "side" and f.turn is None]  # fmt: skip
+                and f.on[1] != "side" and f.turn is None and f.tilt is None]  # fmt: skip
         if not cuts:
             continue
         f = rng.choice(cuts)
@@ -3854,6 +4171,14 @@ def _changes(f: Feature, plan: Plan) -> Iterator[tuple[str, list[Feature]]]:
         turned = [f.turn + d for d in (5.0, -5.0, 20.0, -20.0)]
         most = 360.0 if _draw(f.kind).turns_all_round else 180.0
         yield "place.turn", [replace(f, turn=_q(t, 0.5)) for t in turned if 0.0 < t < most]
+    if f.tilt is not None:
+        # Leaning a little more or less (within what Forge leans), or another way along the face's axes.
+        tilt, towards = f.tilt
+        more = [tilt + d for d in (5.0, -5.0, 15.0, -15.0)]
+        yield "tilt", [replace(f, tilt=(_q(t, 0.5), towards)) for t in more if 0.0 < t <= _MOST_LEAN]
+        ways = [("-" if towards[0] == "+" else "+") + towards[1], *(s + a for a in "xyz" if a != towards[1]
+                                                                     for s in "+-")]  # fmt: skip
+        yield "tilt_towards", [replace(f, tilt=(tilt, way)) for way in ways]
     if f.angle is not None:
         # A hole turned a little round its side; something standing round it, a quarter or a half.
         turned = _draw(f.kind).turned(f.angle)

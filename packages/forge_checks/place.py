@@ -41,6 +41,7 @@ from forge_numeric import scalar as fs
 from forge_spec.draft import (
     AxisPosition,
     Choice,
+    Countersink,
     EdgeSet,
     Faces,
     Fit,
@@ -546,6 +547,9 @@ class Copy:
     foot: float = 0.0
     #: Turned in its face's plane (``place.turn``): the cosine and sine of the turn from the face's first axis.
     turn: Point | None = None
+    #: Leaning from square to its flat face (``tilt``): its own direction, the face's normal turned towards the lean
+    #: (``direction`` stays the face's); a cut's ``span`` is along it, from its point.
+    lean: Vec | None = None
 
 
 @dataclass(frozen=True)
@@ -915,8 +919,91 @@ def _footprint(
     For a hole, its widest circle (its counterbore's or countersink's).
     """
     found = _entry(item.kind).footprint(item, diameters, axes)
+    lean = _lean(item, axes)
+    if lean is not None:
+        return _leaning_foot(item, found, lean)
     turned = _turn_of(item)
     return found if turned is None else _turned(item, found, turned)
+
+
+#: How far, at most, an item leans (place.md, "Leaning on the face"), for now (degrees).
+_MOST_LEAN = 75.0
+#: The sides of the polygon round a leaning round foot's ellipse (forge_spec.lean says why it is drawn so).
+_LEAN_SIDES = 128
+
+
+@dataclass(frozen=True)
+class _Lean:
+    """How an item leans: the cosine and sine of its tilt, its way in its face's coordinates (turned with it), and
+    whether that is along its own first axis."""
+
+    c: float
+    s: float
+    way: Point
+    first: bool
+
+
+def _lean(item: Item, axes: tuple[str, str]) -> _Lean | None:
+    """How an item leans on a flat face with these axes; None if it says no tilt. Refused (PlaceError): a kind that
+    doesn't lean, no way or a way off the face's axes, a tilt out of range, a countersink."""
+    tilt = item.get("tilt")
+    if not isinstance(tilt, Value):
+        return None
+    if not _entry(item.kind).leans:
+        raise PlaceError(item.id, "a hole, a boss or a post leans on its face, nothing else")
+    towards = item.get("tilt_towards")
+    if not isinstance(towards, Choice):
+        raise PlaceError(item.id, "a tilt says which way it leans")
+    axis, sign = towards.value[1], (1.0 if towards.value[0] == "+" else -1.0)
+    if axis not in axes:
+        raise PlaceError(item.id, f"it leans towards {towards.value}, which isn't one of the face's axes {axes}")
+    degrees = _angle(tilt)
+    if not 0.0 < degrees <= _MOST_LEAN + 1e-9:
+        raise PlaceError(item.id, f"it leans {degrees:g} degrees: more than 0, at most {_MOST_LEAN:g}, for now")
+    if isinstance(item.get("countersink"), Countersink):
+        raise PlaceError(item.id, "a countersunk hole doesn't lean yet")
+    first = axis == axes[0]
+    way = (sign, 0.0) if first else (0.0, sign)
+    place = _place(item)
+    if place is not None and place.turn is not None:
+        c, s = turn(_angle(place.turn))
+        way = (c * way[0] - s * way[1], s * way[0] + c * way[1])
+    c, s = turn(degrees)
+    return _Lean(c, s, way, first)
+
+
+def _leaning_foot(item: Item, found: Outline, lean: _Lean) -> Outline:
+    """A leaning item's foot: its cross-section's section by its face, drawn out along its lean by 1 / cos(tilt); a
+    round one's ellipse as the polygon of its tangents (evenly round it, and where it reaches farthest along each of
+    the face's axes); a post's rectangle, turned with it."""
+    if found.shape == "rect":
+        h1, h2 = found.half
+        h1, h2 = (h1 / lean.c, h2) if lean.first else (h1, h2 / lean.c)
+        place = _place(item)
+        by = turn(_angle(place.turn)) if place is not None and place.turn is not None else (1.0, 0.0)
+        return _turned(item, Outline.rect(h1, h2), by)
+    if found.shape != "disc":
+        raise PlaceError(item.id, "only a round or a rectangular foot leans")
+    r = found.half[0]
+    a, b = r / lean.c, r
+    w1, w2 = lean.way
+    q1, q2 = -w2, w1
+    full = 2.0 * math.pi
+    params = [full * k / _LEAN_SIDES for k in range(_LEAN_SIDES)]
+    for x, y in ((a * w1, b * q1), (a * w2, b * q2)):  # where each coordinate is at its most
+        t = fs.atan2(y, x)
+        params += [t % full, (t + math.pi) % full]
+    params.sort()
+    kept = [t for k, t in enumerate(params) if k == 0 or t - params[k - 1] > 1e-9]
+    if full - kept[-1] + kept[0] <= 1e-9:
+        kept.pop()
+    corners: list[Point] = []
+    for k, t in enumerate(kept):
+        nxt = kept[k + 1] if k + 1 < len(kept) else kept[0] + full
+        m, d = (t + nxt) / 2.0, (nxt - t) / 2.0
+        x, y = a * fs.cos(m) / fs.cos(d), b * fs.sin(m) / fs.cos(d)
+        corners.append((x * w1 + y * q1, x * w2 + y * q2))
+    return Outline.profile([Segment(corners[k], corners[(k + 1) % len(corners)]) for k in range(len(corners))])
 
 
 def _turn_of(item: Item) -> Point | None:
@@ -924,6 +1011,8 @@ def _turn_of(item: Item) -> Point | None:
     place = _place(item)
     if place is None or place.turn is None:
         return None
+    if isinstance(item.get("tilt"), Value) and _entry(item.kind).leans:
+        return turn(_angle(place.turn))  # it turns the way it leans
     if not _entry(item.kind).turnable(item):
         raise PlaceError(
             item.id,
@@ -1037,6 +1126,8 @@ def _covering(
     (docs/V2-stage4.md, 7.1). The letters run left to right along up (the
     face's second axis) cross outward.
     """
+    if _lean(item, face.axes) is not None:  # leaning, it covers its foot: its section by the face
+        return _footprint(item, diameters, face.axes)
     found = _entry(item.kind).covers(item, diameters, face)
     turned = _turn_of(item)
     if found is None or turned is None or found.shape == "profile":  # a kind's covering made of its footprint is turned
@@ -1344,9 +1435,65 @@ def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_co
                     item, face, host, index, point, face.normal, face.axes, layout
                 )
             )
-        if turned is not None:
+        lean = _lean(item, face.axes)
+        if lean is not None:
+            made[-1] = replace(_leaning_copy(item, made[-1], face, lean, layout), turn=turned)
+        elif turned is not None:
             made[-1] = _turned_copy(item, made[-1], face, (p1, p2), turned, layout)
     return made
+
+
+def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _Layout) -> Copy:
+    """A copy leaning on its face (place.md, "Leaning on the face"), on a face with the same material under all of
+    it, ``T`` deep: its own direction; a cut's span along it, from its point (right through, until its whole circle is
+    past the far side: ``(T + r sin) / cos``); a standing one's box round its foot and its far end, and what it
+    reaches back into the face from its foot (its half size along its lean times tan) held to ``T``. Every face it
+    has is closed, as a turned item's is."""
+    material = face.material
+    if not isinstance(material, Solid):
+        raise PlaceError(item.id, "it leans on a face without the same material under all of it: not yet")
+    thick = material.depth
+    n = face.frame.n
+    a1, a2 = unit("+" + face.axes[0]), unit("+" + face.axes[1])
+    w = tuple(lean.way[0] * a1[k] + lean.way[1] * a2[k] for k in range(3))
+    u = (lean.c * n[0] + lean.s * w[0], lean.c * n[1] + lean.s * w[1], lean.c * n[2] + lean.s * w[2])
+    key = (item.id, copy.index)
+    for name in list(layout.faces.get(key, {})) + [n_ for n_ in KINDS[item.kind].faces if n_ not in layout.faces.get(key, {})]:
+        if name not in layout.closed.get(key, {}):
+            layout.close(key, name, "it leans on its face: nothing is placed on a leaning item's faces, for now")
+    if _entry(item.kind).taken:
+        r = layout.diameters[item.id] / 2
+        if _through(item):
+            depth = (thick + r * lean.s) / lean.c
+        else:
+            depth = _mm(item, "depth")
+            if depth * lean.c + r * lean.s > thick + TOL:
+                raise PlaceError(item.id, "leaning, it is deeper than the material under it")
+        return replace(copy, span=(0.0, depth), lean=u)
+    height = _mm(item, "height")
+    foot = _entry(item.kind).footprint(item, layout.diameters, face.axes)
+    across = (-lean.way[1], lean.way[0])
+    q = tuple(across[0] * a1[k] + across[1] * a2[k] for k in range(3))
+    p = copy.point
+    top = tuple(p[k] + height * u[k] for k in range(3))
+    if foot.shape == "rect":
+        along, other = (foot.half[0], foot.half[1]) if lean.first else (foot.half[1], foot.half[0])
+        if along * lean.s / lean.c > thick - TOL:
+            raise PlaceError(item.id, "leaning, its foot reaches back into the face past the material under it")
+        tilted = tuple(lean.c * w[k] - lean.s * n[k] for k in range(3))
+        points = [tuple(c_[k] + i * h * x[k] + j * other * q[k] for k in range(3))
+                  for c_, h, x in ((p, along / lean.c, w), (top, along, tilted)) for i in (-1, 1) for j in (-1, 1)]  # fmt: skip
+        lo = tuple(min(pt[k] for pt in points) for k in range(3))
+        hi = tuple(max(pt[k] for pt in points) for k in range(3))
+    else:
+        r = foot.half[0]
+        if r * lean.s / lean.c > thick - TOL:
+            raise PlaceError(item.id, "leaning, its foot reaches back into the face past the material under it")
+        reach = [fs.hypot(r / lean.c * w[k], r * q[k]) for k in range(3)]
+        cap = [r * math.sqrt(max(1.0 - u[k] * u[k], 0.0)) for k in range(3)]
+        lo = tuple(min(p[k] - reach[k], top[k] - cap[k]) for k in range(3))
+        hi = tuple(max(p[k] + reach[k], top[k] + cap[k]) for k in range(3))
+    return replace(copy, lean=u, lo=(lo[0], lo[1], lo[2]), hi=(hi[0], hi[1], hi[2]))
 
 
 def _turned_copy(

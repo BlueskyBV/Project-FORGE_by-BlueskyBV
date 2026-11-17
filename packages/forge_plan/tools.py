@@ -19,6 +19,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from forge_spec.draft import (
+    Counterbore,
     Item,
     PartSpec,
 )
@@ -30,6 +31,7 @@ from forge_spec.geometry import (
     least_material_under,
     side_most_material,
 )
+from forge_spec.outline import Shape
 from forge_spec.placement import Instance, Layout
 
 from .errors import PlanError
@@ -40,11 +42,15 @@ from .items.plan._tools import (
     _bounds_of_cylinder,
     _cut_depth,
     _id,
+    _mm,
     _on_face,
     _span_box,
     _through,
     _up,
     _vertical,
+    leaning_cut,
+    leaning_standing,
+    turn_of,
     turned_cut,
     turned_halves,
     turned_on,
@@ -203,6 +209,11 @@ def cut_tool(chain: Chain, ctx: Context, item: Item, copy: Instance, *,
             "a hole into a bore or a hollow starts at its axis: its mouth isn't carried",
             item=item.id,
         )
+    if copy.direction is not None:  # leaning on its face (1b's second move)
+        assert isinstance(face, FlatFace)
+        bore = item.get("counterbore")
+        recess = (bore.diameter.made_in("mm") / 2, bore.depth.made_in("mm")) if isinstance(bore, Counterbore) else None
+        return [leaning_cut(chain, item, copy, face, ctx.layout.diameters[item.id] / 2, recess)]
     turned = turned_on(ctx.layout, item, face)
     if turned is not None:
         assert isinstance(face, FlatFace)
@@ -221,7 +232,7 @@ def air_boxes(
     added so far. On a flat face only: a round side's are :func:`side_air_boxes`.
     """
     face = ctx.face(copy)
-    if not isinstance(face, FlatFace):
+    if not isinstance(face, FlatFace) or copy.direction is not None:  # a leaning tool is kept by its face's plane
         return None, None
     w, d = copy.origin, neg(copy.normal)
     a1, a2 = face.axes
@@ -329,6 +340,14 @@ def standing_tool(
     face = ctx.face(copy)
     if isinstance(face, SideFace):
         return _round_side(chain, item, copy, face)
+    if copy.direction is not None:  # leaning on its face (1b's second move)
+        sizes = PLAN[item.kind].section(item, face.axes) if PLAN[item.kind].box_like(item) else None
+        if sizes is None:
+            return leaning_standing(chain, item, copy, face, None, _mm(item, "diameter") / 2, _mm(item, "height"))
+        halves, height = sizes
+        by = turn_of(item) or (1.0, 0.0)
+        cross = Shape.rect((0.0, 0.0), (halves[face.axes[0]], halves[face.axes[1]])).turned(*by)
+        return leaning_standing(chain, item, copy, face, cross, 0.0, height)
     behind = CARRY if sink and sink_box(chain, ctx, item, copy) is not None else 0.0
     turned = turned_on(ctx.layout, item, face)
     if turned is not None:  # turned in its face's plane (1b's first move)
@@ -353,7 +372,7 @@ def sink_box(
     round-ended tab, is not offered.
     """
     face = ctx.face(copy)
-    if not isinstance(face, FlatFace) or copy.host is None:
+    if not isinstance(face, FlatFace) or copy.host is None or copy.direction is not None:
         return None
     if not PLAN[item.kind].sinkable(item):
         return None

@@ -300,6 +300,18 @@ _COUNT = _f(
     required=False,
 )  # fmt: skip
 _ON = _f("on", FieldType.ON, "the face it stands on or cuts into")
+#: Leaning from square to its flat face (schema 1.3; V2-stage4b-0c.md 3.3, 1b's second move).
+_TILT = _f(
+    "tilt", A,
+    "how far it leans from square to its flat face, towards tilt_towards: more than 0 and at most 75 degrees; "
+    "its height or depth is then along it",
+    required=False,
+)  # fmt: skip
+_TILT_TOWARDS = _f(
+    "tilt_towards", FieldType.CHOICE,
+    "which way it leans: one of its face's two axes, + or - (turned with it where place turns it)",
+    required=False, choices=DIRECTIONS, only_when=("tilt", PRESENT),
+)  # fmt: skip
 
 KINDS: Mapping[str, KindSpec] = {
     spec.kind: spec
@@ -464,6 +476,8 @@ KINDS: Mapping[str, KindSpec] = {
                     "a cone-shaped recess at the top",
                     required=False,
                 ),
+                _TILT,
+                _TILT_TOWARDS,
                 _COUNT,
             ),
             faces=(),
@@ -570,6 +584,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _PLACE,
                 _f("diameter", L, "outside diameter"),
                 _f("height", L, "height out of the face"),
+                _TILT,
+                _TILT_TOWARDS,
                 _COUNT,
             ),
             faces=("+end", "side"),
@@ -586,6 +602,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f("length", L, "size along the face's first axis"),
                 _f("width", L, "size along the face's second axis"),
                 _f("height", L, "height out of the face"),
+                _TILT,
+                _TILT_TOWARDS,
                 _COUNT,
             ),
             faces=DIRECTIONS,

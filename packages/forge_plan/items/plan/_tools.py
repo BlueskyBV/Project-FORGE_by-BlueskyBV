@@ -32,9 +32,11 @@ from forge_plan.write import (
     add,
     along,
     axis_of,
+    direction,
     length,
     neg,
     num,
+    point,
     role_of,
     unit,
 )
@@ -404,4 +406,98 @@ def turned_prism(chain: Chain, item: Item, copy: Instance, axes: tuple[str, str]
     chain.name(item.id, k, ("-" if up[0] == "+" else "+") + axis, Ref(tool, near))
     h1, h2 = turned_halves(shape)
     chain.add_box(Box(*_span_box(w, u, 0.0, height, {axes[0]: h1, axes[1]: h2}), item.id, k))
+    return tool
+
+
+# ----------------------------------------------------------------------
+# Leaning from square to the face (V2-stage4b-0c.md, 3.3, 1b's second move)
+# ----------------------------------------------------------------------
+def _leaning(copy: Instance, face: FlatFace) -> tuple[Vec, Vec, Vec, float, float]:
+    """A leaning copy's direction ``u``, its face's outward normal ``n``, its lean's way ``w`` in the face, and the
+    cosine and sine of its tilt."""
+    assert copy.direction is not None
+    u, n = copy.direction, unit(face.normal)
+    c = sum(u[k] * n[k] for k in range(3))
+    s = math.sqrt(max(1.0 - c * c, 0.0))
+    w = (
+        (u[0] - c * n[0]) / s,
+        (u[1] - c * n[1]) / s,
+        (u[2] - c * n[2]) / s,
+    )
+    return u, n, w, c, s
+
+
+def _keep(chain: Chain, item: Item, k: int, face: FlatFace, w: Vec, n: Vec, low: float, high: float, half: float,
+          ) -> str:  # fmt: skip
+    """A box square to the face round a leaning copy's point, from ``low`` to ``high`` along its outward normal and
+    ``half`` each way along its axes: what of a leaning tool lies on the right side of the face is kept by it."""
+    a1, a2 = face.axes
+    return chain.box(_id(item.id, k, "keep"), *_span_box(w, n, low, high, {a1: half, a2: half}), item=item.id)
+
+
+def leaning_cut(chain: Chain, item: Item, copy: Instance, face: FlatFace, radius: float,
+                bore: tuple[float, float] | None) -> str:  # fmt: skip
+    """One copy of a hole leaning on its face (hole.md, place.md): its cylinder, and its counterbore's (``bore``: its
+    radius and depth along the axis), from far enough out that all of each is past the face's plane, along its axis
+    into the material; kept within the face's material, a box from the face's plane in: to the far face (right
+    through; its cylinder runs on past it, so it comes out all across its mouth there) or past its floor. The face
+    has the same material under all of it, ``T`` (the solver holds that): through, it goes ``(T + r sin) / cos``.
+    Its faces take nothing yet, so none is named; its box is the keeping box's."""
+    if chain.early.get(item.id):
+        raise PlanError("a rounding of a leaning item's edges is made early", item=item.id)
+    k, w = copy.index, copy.origin
+    u, n, _, c, s = _leaning(copy, face)
+    thick = face.depth_below
+    widest = max(radius, bore[0] if bore is not None else 0.0)
+    back = widest * s / c + 1.0
+    through = _through(item)
+    depth = (thick + radius * s) / c + 1.0 if through else _mm(item, "depth")
+    start = add(w, u, back)
+    tools = [chain.cylinder(_id(item.id, k, "rod"), start, neg(u), 2 * radius, back + depth, item=item.id)]
+    if bore is not None:
+        tools.append(chain.cylinder(_id(item.id, k, "bore"), start, neg(u), 2 * bore[0], back + bore[1], item=item.id))
+    tool = tools[0] if len(tools) == 1 else chain.boolean(_id(item.id, k, "cylinders"), "union", tools, item=item.id)
+    deepest = thick if through else depth * c + widest * s + 1.0
+    half = (back + depth) * s + widest / c + 1.0
+    keep = _keep(chain, item, k, face, w, neg(n), 0.0, deepest, half)
+    cut = chain.boolean(_id(item.id, k, "cut"), "intersect", [tool, keep], item=item.id)
+    a1, a2 = face.axes
+    chain.cut_box(Box(*_span_box(w, neg(n), 0.0, deepest, {a1: half, a2: half}), item.id, k))
+    return cut
+
+
+def leaning_standing(chain: Chain, item: Item, copy: Instance, face: FlatFace, shape: Shape | None, radius: float,
+                     height: float) -> str:  # fmt: skip
+    """One copy of a boss or a post leaning on its face: its solid from far enough back that all of its cross-section is
+    past the face's plane to ``height`` along its direction, kept on the face's open side by a box from its plane
+    out (its foot then lies in the face's plane, joined to it as an unleaning foot is). A boss is its cylinder; a post,
+    its cross-section (``shape``, turned with it) pushed out square to the face and turned about the line through its
+    point in the face square to its lean, by its tilt (a ``transform``, ForgeIR v2's rigid motion). Its faces take
+    nothing yet, so none is named; its box is the solver's."""
+    if chain.early.get(item.id):
+        raise PlanError("a rounding of a leaning item's edges is made early", item=item.id)
+    k, w = copy.index, copy.origin
+    u, n, way, c, s = _leaning(copy, face)
+    reach = radius
+    if shape is not None:
+        (l1, l2), (h1, h2) = shape.box()
+        reach = fs.hypot(max(-l1, h1), max(-l2, h2))
+    back = reach * s / c + 1.0
+    if shape is None:
+        solid = chain.cylinder(_id(item.id, k, "rod"), add(w, u, -back), u, 2 * radius, back + height, item=item.id)
+    else:
+        outline, axis, datum_sign = plane_outline(chain, item, k, face.axes, w, add(w, n, -back), shape)
+        mode = "normal" if n["xyz".index(axis)] == datum_sign else "reverse"
+        upright = chain.extrude(_id(item.id, k, "upright"), outline, back + height, mode, item=item.id)
+        hinge = (n[1] * way[2] - n[2] * way[1], n[2] * way[0] - n[0] * way[2], n[0] * way[1] - n[1] * way[0])
+        tilt = math.degrees(fs.atan2(s, c))
+        solid = chain.step(_id(item.id, k, "leaning"), "transform", {
+            "rotate_axis": direction(hinge), "rotate_angle": {"magnitude": num(tilt), "unit": "deg"},
+            "rotate_origin": point(w)}, item=item.id, inputs=(upright,))  # fmt: skip
+    top = height * c + reach * s + 1.0
+    half = height * s + reach / c + 1.0
+    keep = _keep(chain, item, k, face, w, n, 0.0, top, half)
+    tool = chain.boolean(_id(item.id, k, "standing"), "intersect", [solid, keep], item=item.id)
+    assert copy.lo is not None and copy.hi is not None
+    chain.add_box(Box(copy.lo, copy.hi, item.id, k))
     return tool

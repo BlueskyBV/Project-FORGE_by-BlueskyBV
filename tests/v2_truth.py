@@ -33,6 +33,7 @@ from forge_eval.truth import (
     QUADRANTS,
     Corner,
     Frustum,
+    Kept,
     Letters,
     Outline2,
     Prism,
@@ -280,6 +281,14 @@ def _solid(step: Step, sag: float = SAG, *, pressed: bool = False) -> Any:
             m3().CrossSection([_polygon(t.outline, sag)]), sides(reach, sag)
         )
         return _placed(made, np.asarray(t.base, dtype=float), u, v, w)
+    if isinstance(step.solid, Kept):
+        # Its prism (carried on past neither end), cut by its two planes, each carried on as the step allows.
+        k = step.solid
+        made = _solid(replace(step, solid=k.solid, reach=(0.0, 0.0)), sag, pressed=pressed)
+        n = np.asarray(k.normal, dtype=float)
+        at = float(np.dot(np.asarray(k.origin, dtype=float), n))
+        made = made.trim_by_plane(tuple(n), at + k.low - low)
+        return made.trim_by_plane(tuple(-n), -(at + k.high + high))
     if isinstance(step.solid, Prism):
         p = step.solid
         if pressed:
@@ -538,6 +547,8 @@ def deflection(truth: Truth, sag: float = SAG, *, threads: bool = True) -> float
     worst = 0.0
     for step in truth.steps:
         s = step.solid
+        if isinstance(s, Kept):
+            s = s.solid  # cut by two planes, no round edge of its own
         if isinstance(s, Letters):
             worst = max(worst, sag)  # each chord within the sag of its curve
             continue
@@ -597,7 +608,10 @@ def moved(truth: Truth, by: Mapping[tuple[str, int], Sequence[float]]) -> Truth:
     for step in truth.steps:
         d = by.get((step.item, step.index), (0.0, 0.0, 0.0))
         solid = step.solid
-        if isinstance(solid, (Prism, Letters, RingCorner)):
+        if isinstance(solid, Kept):
+            solid = replace(solid, solid=replace(solid.solid, centre=shift(solid.solid.centre, d)),
+                            origin=shift(solid.origin, d))  # fmt: skip
+        elif isinstance(solid, (Prism, Letters, RingCorner)):
             solid = replace(solid, centre=shift(solid.centre, d))
         elif isinstance(solid, Pushed):
             solid = replace(solid, origin=shift(solid.origin, d))

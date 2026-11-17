@@ -13,6 +13,7 @@ from forge_checks.place import Face, Material, Vec, _box_body, _box_edges, _Layo
 
 class Post(PlaceKind):
     key = "post"
+    leans = True
 
     def turnable(self, item: Item) -> bool:
         return True

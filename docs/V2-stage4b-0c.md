@@ -396,6 +396,66 @@ Tests: `tests/test_v2_spec_turn.py` (the solver's and the comparison's),
 both ways round; a turn half a degree off, or a copy 0.05 mm off, fails face
 accounting; the second kernel agrees, the rigid motion included).
 
+**1b's second move, as built (revision 6, 17 November 2026).** `tilt` and
+`tilt_towards` (schema 1.3) lean a hole (plain or counterbored), a boss or a
+post (turned too) from square to its flat face, towards one of the face's
+axes, `+` or `-` (turned with the item): its direction is the face's normal
+turned that far towards that way, and its height or depth is along it
+(place.md, "Leaning on the face"). It leans only where the material under its
+face is the same everywhere (a block's face, a cylinder's end, a standing
+box's side), so what is under it along its direction is known exactly; more
+than 75 degrees, a countersink, or any other face is UNABLE for now (the
+material along a direction is item 2b). What leans is each kind's own to say,
+in each program's registry (`leans`), as what turns is. In each program:
+
+- **The solver** (`forge_spec.lean`) places a leaning copy by its foot, its
+  cross-section's section by the face (the polygon of 128 tangents round the
+  ellipse, and the four at its extremes, so its box is the ellipse's own);
+  holds a blind hole to `D cos + r sin <= T`, takes a hole right through
+  `(T + r sin) / cos` along it, asks where what stands reaches back into the
+  face further than `T`, shifts a through cut's way out on the far face by
+  `T tan` against the lean, gives the copy its `direction`, and closes its
+  faces; a rounding of its edges, a shell or a thread of it is UNABLE.
+- **The judge's placement and oracle** build its solid run along its
+  direction, a prism kept on the face's open side or within its material by
+  a half-space (`Copy.lean`); **the check compiler** fits a leaning hole's or
+  boss's side where it is all round (from `r tan` past the face to its floor,
+  or right through, `r tan` short of the far side), measures a post's sizes
+  between its tilted sides, and leaves its height or depth along the lean,
+  and the lean, to face accounting (a lean half a degree off fails it).
+- **The planner** writes a hole as its cylinder (and its counterbore's) along
+  its direction, `intersect`ed with a box from the face's plane through its
+  material; a boss as its cylinder and a post as its upright prism turned by
+  ForgeIR v2's rigid motion about the line in the face square to its lean,
+  each kept on the face's open side by a box.
+- **The generator** leans one in five of the holes, bosses and posts that
+  can, from a stream of its own, only on faces with the same material under
+  all of them (`_Flat.level`); its truth builds a prism kept between two
+  planes (`truth.Kept`), meshed by manifold3d's `trim_by_plane` and built
+  exactly by OpenCascade's common with a slab; it keeps each leaning item's
+  whole shadow on the face (from its foot to its top's cross-section, or its
+  floor, or where it comes out) clear of everything, over the face and over
+  its far face; its mutants lean 5 and 15 degrees more or less, or the other
+  way. A draft says schema 1.3 only when something leans.
+- **The views** draw a leaning item as its outline seen along each view (the
+  hull of its foot and its far end), a cut's hidden but where its mouth is
+  seen, its sizes said along its lean, and through, what can be seen through
+  it where its mouth and its way out overlap. **The comparison of two
+  drafts** reads a leaning cut's way in, and a boss's or a post's axis, along
+  its direction; **the spec grade** counts a leaning hole right through by its
+  own line.
+
+Found on the way and fixed: the views measured a turned item's position to
+its edge to its unturned outline's, and an extrusion's or a revolution's to
+the box round its outline about its point; each is now drawn as the solver
+measures it (`check_every_value_shown` on generated parts).
+
+Tests: `tests/test_v2_spec_lean.py` (the solver's, the comparison's and the
+spec grade's), `tests/test_v2_plan_lean.py` (built and judged on every face
+of a cube, both ways, a hole's side nowhere all round; a lean half a degree
+more, or the other way, fails face accounting; the second kernel agrees, the
+rigid motion included).
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block

@@ -34,6 +34,7 @@ from forge_eval.truth import Copy, Prism, Step
 
 class Hole(DrawKind):
     key = "hole"
+    leans = True
     round_rim = True
     flat_weight = 4
     flat_rank = 0

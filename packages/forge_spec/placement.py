@@ -44,6 +44,7 @@ from forge_numeric import scalar as fs
 from .draft import (
     PATTERN_ANGLES,
     AxisPosition,
+    Choice,
     Counterbore,
     Countersink,
     EdgeSet,
@@ -110,6 +111,7 @@ from .items.solve._common import (
     route,
 )
 from .items.solve.pattern import PATTERN_SOLVE
+from .lean import MOST, Lean, ellipse, lean_of, leaning
 from .outline import Piece, Shape, boundary_within
 from .problems import pointer
 from .schema import DIRECTIONS, FACE_AXES, KINDS
@@ -175,6 +177,8 @@ class Instance:
     #: is not in it, so the box's size out of the side is the item's height).
     lo: Vec | None = None
     hi: Vec | None = None
+    #: Leaning on its flat face (tilt; 1b's second move): its direction, the face's normal turned towards its lean.
+    direction: Vec | None = None
 
 
 @dataclass
@@ -464,26 +468,67 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
 
 
 #: Why a turned item's faces take nothing.
-_TURNED_FACES = "{} is turned in the face it is on: Forge places on a turned item's faces in a later move"
+_TURNED_FACES = (
+    "{} is turned in, or leans on, the face it is on: Forge places on such an item's faces in a later move"
+)
 
 
 def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: str, turned: Shape, lo: Vec,
                      hi: Vec) -> Instance:  # fmt: skip
-    """A body or feature standing turned in its face's plane: its bounds the box round it turned, its faces closed."""
+    """A body or feature standing turned in its face's plane, or leaning on it: its bounds the box round it turned, or
+    round it leaning (its foot's section and its far end's cross-section), its faces closed."""
     key = (item.id, inst.index)
     a1, a2 = inst.face_axes or FACE_AXES[up]
-    (l1, l2), (h1, h2) = turned.box()
-    low, high = list(lo), list(hi)
-    for axis, (a, b) in ((a1, (l1, h1)), (a2, (l2, h2))):
-        k = _INDEX[axis]
-        low[k], high[k] = inst.origin[k] + a, inst.origin[k] + b
-    layout.faces.setdefault(key, {})
+    lean = lean_of(item, (a1, a2)) if leaning(item) else None
+    if lean is not None and inst.direction is not None:
+        low, high = _leaning_bounds(item, inst, lean, layout, (a1, a2))
+    else:
+        (l1, l2), (h1, h2) = turned.box()
+        low, high = list(lo), list(hi)
+        for axis, (a, b) in ((a1, (l1, h1)), (a2, (l2, h2))):
+            k = _INDEX[axis]
+            low[k], high[k] = inst.origin[k] + a, inst.origin[k] + b
+    faces = layout.faces.setdefault(key, {})
+    for name in [name for name in faces if name not in KINDS[item.kind].faces]:
+        faces.pop(name)  # a boss is always joined by its foot: its kind has no such face
     for name in KINDS[item.kind].faces:
         layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
     if item.id in layout.shells:
-        layout.issue("unable", at, f"Forge doesn't hollow a turned {item.kind} yet")
+        layout.issue("unable", at, f"Forge doesn't hollow a turned or leaning {item.kind} yet")
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
-                    (low[0], low[1], low[2]), (high[0], high[1], high[2]))  # fmt: skip
+                    (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
+
+
+def _leaning_bounds(item: Item, inst: Instance, lean: Lean, layout: Layout,
+                    axes: tuple[str, str]) -> tuple[list[float], list[float]]:  # fmt: skip
+    """The box round a leaning boss or post: its foot (its cross-section's section by its face, about its point) and its
+    far end (its cross-section square to its direction, its height along it from its point)."""
+    assert inst.direction is not None
+    p, u = inst.origin, inst.direction
+    e1, e2 = _axis_vec(axes[0]), _axis_vec(axes[1])
+    w = tuple(lean.way[0] * e1[k] + lean.way[1] * e2[k] for k in range(3))  # the lean's way, in the face
+    across = (-lean.way[1], lean.way[0])
+    q = tuple(across[0] * e1[k] + across[1] * e2[k] for k in range(3))  # in the face, square to the lean
+    n = inst.normal
+    tilted = tuple(lean.c * w[k] - lean.s * n[k] for k in range(3))  # the lean's way square to its direction
+    height = _size(item, "height")
+    top = tuple(p[k] + height * u[k] for k in range(3))
+    sizes = SOLVE[item.kind].turnable(item, layout, axes)
+    if sizes is not None:  # a post: its half sizes along and across its lean
+        along, other = (sizes[0], sizes[1]) if lean.along_first else (sizes[1], sizes[0])
+        points = [tuple(c[k] + i * a * x[k] + j * b * y[k] for k in range(3))
+                  for c, a, x in ((p, along * lean.stretch, w), (top, along, tilted))
+                  for b, y in ((other, q),) for i in (-1, 1) for j in (-1, 1)]  # fmt: skip
+        low = [min(pt[k] for pt in points) for k in range(3)]
+        high = [max(pt[k] for pt in points) for k in range(3)]
+        return low, high
+    r = SOLVE[item.kind].outline(item, layout, axes)[0].half[0]
+    low, high = [0.0] * 3, [0.0] * 3
+    for k in range(3):
+        foot = fs.hypot(r * lean.stretch * w[k], r * q[k])
+        cap = r * math.sqrt(max(1.0 - u[k] * u[k], 0.0))
+        low[k], high[k] = min(p[k] - foot, top[k] - cap), max(p[k] + foot, top[k] + cap)
+    return low, high
 
 
 def _hollow(item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout: Layout,
@@ -923,7 +968,7 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
         layout.issue("fault", at + pointer("place", "angle"),
                      "an angle places an item round a round side; on a flat face, place it along the face's axes")  # fmt: skip
         return []
-    if place is not None and place.turn is not None:
+    if (place is not None and place.turn is not None) or leaning(item):
         return _turned_copies(item, place, face, host, layout, at, first)
     if place is not None and place.concentric:
         found = _concentric_positions(item, place, face, host, host_count, layout, at)
@@ -965,7 +1010,11 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
 # Turned in the face's plane (V2-stage4b-0c.md, 3.3, 1b's first move)
 # ----------------------------------------------------------------------
 def turned_outline(item: Item, layout: Layout, axes: tuple[str, str]) -> Shape | None:
-    """An item's outline on a flat face, turned by its ``place.turn``, about its point; None if it isn't turned."""
+    """An item's outline on a flat face, turned by its ``place.turn``, about its point; leaning (``tilt``), its section
+    by the face's plane (:mod:`forge_spec.lean`); None if it neither turns nor leans."""
+    lean = lean_of(item, axes) if leaning(item) else None
+    if lean is not None:
+        return _leaning_outline(item, layout, axes, lean)
     place = _place_of(item)
     if place is None or place.turn is None:
         return None
@@ -978,22 +1027,80 @@ def turned_outline(item: Item, layout: Layout, axes: tuple[str, str]) -> Shape |
     )
 
 
-def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, int, str], layout: Layout, at: str,
-                   first: int) -> list[_Copy]:  # fmt: skip
-    """The copies of an item turned in the face's plane: placed, fitted to the face, held apart and its depth checked on
-    its outline turned."""
+def _leaning_outline(item: Item, layout: Layout, axes: tuple[str, str], lean: Lean) -> Shape | None:
+    """A leaning item's foot on its face: its cross-section drawn out along its lean by 1 / cos(tilt), turned with it
+    (a post's rectangle), or the polygon round the ellipse its circle draws (a hole's widest, a boss's)."""
+    sizes = SOLVE[item.kind].turnable(item, layout, axes)
+    if sizes is not None:  # a post: its own half sizes along the face's axes, before it is turned
+        h1, h2, r = sizes
+        h1, h2 = (h1 * lean.stretch, h2) if lean.along_first else (h1, h2 * lean.stretch)
+        place = _place_of(item)
+        turn = _turn(degrees(place.turn)) if place is not None and place.turn is not None else (1.0, 0.0)
+        return Shape.rect((0.0, 0.0), (h1, h2), (r, r, r, r)).turned(*turn)
+    parts = SOLVE[item.kind].outline(item, layout, axes)
+    if len(parts) != 1 or not parts[0].disc or parts[0].half[0] <= 0.0:
+        return None
+    r = parts[0].half[0]
+    return ellipse(r * lean.stretch, r, lean.way)
+
+
+def _leaning_faults(item: Item, face: FlatFace, layout: Layout, at: str) -> Lean | None:
+    """A leaning item's lean on its face, or None and why not: its way not one of the face's axes, its tilt out of
+    range, a countersink (a later step), or a face without the same material under all of it."""
+    tilt, towards = item.get("tilt"), item.get("tilt_towards")
+    if not isinstance(towards, Choice):
+        layout.issue("fault", at + pointer("tilt"), "a tilt says which way it leans: give its tilt_towards")
+        return None
+    if towards.value[1] not in face.axes:
+        layout.issue("fault", at + pointer("tilt_towards"),
+                     f"it leans towards {towards.value}, which isn't one of face {face.name}'s axes {face.axes}")  # fmt: skip
+        return None
+    assert isinstance(tilt, Value)
+    t = degrees(tilt)
+    if not 0.0 < t < 90.0:
+        layout.issue("fault", at + pointer("tilt"), f"a tilt is more than 0 and less than 90 degrees, not {t:g}")
+        return None
+    if t > MOST + EPS:
+        layout.issue("unable", at + pointer("tilt"), f"Forge leans an item at most {MOST:g} degrees, for now")
+        return None
+    if isinstance(item.get("countersink"), Countersink):
+        layout.issue("unable", at + pointer("countersink"), "Forge leans a plain or counterbored hole; a "
+                     "countersunk one leaning is a later step")  # fmt: skip
+        return None
+    if not uniform(face):
+        layout.issue("unable", at + pointer("tilt"),
+                     f"face {face.name} hasn't the same material under all of it: Forge leans items on such faces "
+                     "in a later step (the material along a direction, item 2b)")  # fmt: skip
+        return None
+    return lean_of(item, face.axes)
+
+
+def _axis_vec(axis: str) -> Vec:
+    k = _INDEX[axis]
+    return (1.0 if k == 0 else 0.0, 1.0 if k == 1 else 0.0, 1.0 if k == 2 else 0.0)
+
+
+def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[str, int, str], layout: Layout,
+                   at: str, first: int) -> list[_Copy]:  # fmt: skip
+    """The copies of an item turned in the face's plane, or leaning on it: placed, fitted to the face, held apart and
+    its depth checked on its outline turned, or its section by the face (forge_spec.lean)."""
+    lean = None
+    if leaning(item):
+        lean = _leaning_faults(item, face, layout, at)
+        if lean is None:
+            return []
     here = at + pointer("place", "turn")
-    if SOLVE[item.kind].turnable(item, layout, face.axes) is None:
+    if lean is None and SOLVE[item.kind].turnable(item, layout, face.axes) is None:
         parts = SOLVE[item.kind].outline(item, layout, face.axes)
         what = f"a {item.kind}" + (" with a round outline" if len(parts) == 1 and parts[0].disc else "")
         layout.issue("fault", here,
                      f"Forge turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
         return []
-    if place.concentric:
+    if place is not None and place.concentric:
         layout.issue(
             "fault",
-            here,
-            "a turned item is placed along the face's axes, not concentric with another",
+            here if lean is None else at + pointer("tilt"),
+            "a turned or leaning item is placed along the face's axes, not concentric with another",
         )
         return []
     shape = turned_outline(item, layout, face.axes)
@@ -1004,18 +1111,21 @@ def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, in
     if positions is None:
         return []
     entry = SOLVE[item.kind]
-    covered = _turned_covers(item, layout, face, place) or shape
-    turn = degrees(place.turn) if place.turn is not None else 0.0
+    covered = (_turned_covers(item, layout, face, place) if place is not None else None) or shape
+    turn = degrees(place.turn) if place is not None and place.turn is not None else 0.0
     values = [
         *_item_values(item, *_outline_fields(item)),
         *_place_values(item),
-        place.turn,
+        *([place.turn] if place is not None and place.turn is not None else []),
+        *([item.get("tilt"), item.get("tilt_towards")] if lean is not None else []),
     ]
+    how = (f"turned {turn:g}\u00b0" if lean is None
+           else f"leaning {lean.tilt:g}\u00b0" + (f" and turned {turn:g}\u00b0" if turn else ""))  # fmt: skip
     for n, (p1, p2) in enumerate(positions):
         if not shape_on_face(face, covered, p1, p2):
             severs = entry.cut and _is_through(item)
             layout.problem("question", at,
-                           f"{item.id} copy {first + n + 1}, turned {turn:g}\u00b0, runs off face {face.name}"
+                           f"{item.id} copy {first + n + 1}, {how}, runs off face {face.name}"
                            + (": cut through, it could cut the part apart" if severs else ""),
                            [*values, *layout.values_of(face.sources)])  # fmt: skip
             return []
@@ -1029,6 +1139,8 @@ def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, in
                 f"copies {first + i + 1} and {first + j + 1} of {item.id} overlap",
                 values,
             )
+    if lean is not None:
+        return _leaning_copies(item, lean, face, host, layout, at, first, positions, values)
     out = []
     for p1, p2 in positions:
         instance = Instance(
@@ -1041,6 +1153,47 @@ def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, in
     if entry.cut and out:
         _check_depth(item, (), lambda _mouth: min(least_material_under(face, covered, p1, p2) for p1, p2 in positions),
                      layout, at, face.depth_sources)  # fmt: skip
+    return out
+
+
+def _leaning_copies(item: Item, lean: Lean, face: FlatFace, host: tuple[str, int, str], layout: Layout, at: str,
+                    first: int, positions: Sequence[tuple[float, float]], values: list[object]) -> list[_Copy]:  # fmt: skip
+    """A leaning item's copies, placed on a face with the same material under all of it, ``T`` thick: each with its
+    direction, the material along its axis that a blind cut of its radius stays in, ``(T - r sin) / cos``; a cut's
+    depths held to that; what stands reaching back into the face from its foot by its half size along its lean times
+    tan(tilt), which the face must have under it (forge_spec.lean)."""
+    entry = SOLVE[item.kind]
+    thick = face.depth_below
+    direction = lean.direction(face.frame.n, _axis_vec(face.axes[0]), _axis_vec(face.axes[1]))
+
+    def along(radius: float) -> float:
+        return (thick - radius * lean.s) / lean.c
+
+    if entry.cut:
+        hole = layout.diameters.get(item.id, 0.0) / 2
+        material = along(hole)
+        _check_depth(item, (), lambda mouth: along(max(p.half[0] for p in mouth) if mouth else hole),
+                     layout, at, face.depth_sources)  # fmt: skip
+    else:
+        sizes = entry.turnable(item, layout, face.axes)
+        if sizes is not None:
+            half = sizes[0] if lean.along_first else sizes[1]
+        else:
+            parts = entry.outline(item, layout, face.axes)
+            half = parts[0].half[0] if parts else 0.0
+        reach = half * lean.tan
+        material = thick
+        if reach > thick - EPS:
+            layout.problem("question", at,
+                           f"{item.id}, leaning {lean.tilt:g}\u00b0, reaches {reach:g} mm back into face {face.name} "
+                           f"from its foot, which has {thick:g} mm of material under it",
+                           [*values, *layout.values_of(face.depth_sources)])  # fmt: skip
+            return []
+    out = []
+    for p1, p2 in positions:
+        instance = Instance(item.id, 0, face.frame_at((p1, p2)).origin, face.frame.n, host, face.axes,
+                            direction=direction)  # fmt: skip
+        out.append(_Copy(instance, material, face.depth_sources, face.room, face.room_sources))
     return out
 
 
@@ -1073,18 +1226,19 @@ def turned_copies_overlap(
 def _check_turned_edges(
     spec: PartSpec, layout: Layout, position: Mapping[str, int]
 ) -> None:
-    """A rounding or chamfer of a turned item's edges is a later move."""
+    """A rounding or chamfer of a turned or leaning item's edges is a later move; so is a thread on a leaning rod."""
     for item in spec.items:
+        of = item.get("of")
+        if SOLVE[item.kind].threads and isinstance(of, str) and leaning(layout.items.get(of) or item):
+            layout.issue("unable", pointer("items", position[item.id], "of"),
+                         f"{of} leans on its face: Forge threads a leaning rod in a later move")  # fmt: skip
         edges = item.get("edges")
         if not isinstance(edges, EdgeSet):
             continue
         target = layout.items.get(edges.of)
-        if (
-            target is not None
-            and turned_outline(target, layout, ("x", "y")) is not None
-        ):
+        if target is not None and (leaning(target) or turned_outline(target, layout, ("x", "y")) is not None):
             layout.issue("unable", pointer("items", position[item.id], "edges"),
-                         f"{edges.of} is turned in its face: Forge rounds and chamfers a turned item's edges in a later move")  # fmt: skip
+                         f"{edges.of} is turned in, or leans on, its face: Forge rounds and chamfers such an item's edges in a later move")  # fmt: skip
 
 
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
@@ -1173,6 +1327,10 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     if place is not None and place.turn is not None:
         layout.issue("fault", at + pointer("place", "turn"),
                      "a turn turns an item in a flat face's plane; round a side, place.angle says where round it is")  # fmt: skip
+        return []
+    if leaning(item):
+        layout.issue("fault", at + pointer("tilt"),
+                     "a tilt leans an item from square to a flat face; round a side, it stands along the radius")  # fmt: skip
         return []
     position = place.axes.get(axis) if place else None
     if position is not None and position.mode == "side" and not position.to_given:
@@ -1628,6 +1786,11 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                 near_face, cut.origin, _outline(item, layout, near_face.axes)
             )
             mouth_turned = turned_outline(item, layout, near_face.axes)
+            # Leaning, it comes out where its axis meets the far face: across / cos(tilt) along it.
+            out_at = cut.origin
+            if cut.direction is not None:
+                square = sum(cut.direction[k] * normal[k] for k in range(3))
+                out_at = tuple(cut.origin[k] - across / square * cut.direction[k] for k in range(3))  # type: ignore[assignment]
             for other in standing[far]:
                 owner = layout.items[other.item]
                 over = _in_plane(
@@ -1642,7 +1805,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                     )
                 else:
                     near_shapes = _seen(
-                        mouth, mouth_turned, cut.origin, near_face.axes, near_face.axes
+                        mouth, mouth_turned, out_at, near_face.axes, near_face.axes
                     )
                     far_shapes = _seen(
                         over, over_turned, other.origin, far_face.axes, near_face.axes
@@ -1659,7 +1822,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                     far_face,
                     owner,
                     mouth_turned,
-                    cut.origin,
+                    out_at,
                 ):
                     continue
                 values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
@@ -1861,7 +2024,7 @@ def _place_on_hosts(item: Item, on: On, hosts: list[tuple[int, Face]], layout: L
         for copy in found:
             index = len(copies)
             placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal,
-                              copy.instance.host, copy.instance.face_axes)  # fmt: skip
+                              copy.instance.host, copy.instance.face_axes, direction=copy.instance.direction)  # fmt: skip
             kind.numbered(item, placed, face, host, copy, layout, at)
             copies.append(
                 _Copy(

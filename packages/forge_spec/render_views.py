@@ -26,7 +26,11 @@ Visible edges are solid, hidden ones dashed, centre lines dash-dot.
 Something is hidden when it faces away from the viewer or lies wholly behind
 one solid that nothing is cut right through where it would be seen; each
 circle of a hole (its bore, its counterbore, its countersink, the way out of
-it) is judged where it is and as far as it reaches. The reckoning errs one
+it) is judged where it is and as far as it reaches. An item leaning on its
+face (``tilt``) is drawn on each view as its outline seen along it: the
+outline round its foot and its far end (a cut's floor, or where it comes out),
+a cut's hidden but where its mouth is seen; its sizes, which run along no
+frame axis, are said, not drawn, and it hides nothing. The reckoning errs one
 way only: what may be seen is drawn as seen. The compiled part's own views
 and sections, in a later stage, replace it with the real shape. Nothing here
 comes from a model.
@@ -49,6 +53,7 @@ from forge_numeric import scalar as fs
 from .checks import SpecReport
 from .draft import (
     AxisPosition,
+    Choice,
     Counterbore,
     Countersink,
     Fit,
@@ -92,6 +97,7 @@ from .items.views._common import (
     _value,
 )
 from .items.views.pattern import PATTERN_VIEWS
+from .lean import ellipse, lean_of, leaning
 from .outline import Arc as OutlineArc
 from .outline import Shape
 from .placement import Instance, Layout, _along, _outline, _reaches, mm, turned_outline
@@ -245,6 +251,10 @@ def _to_show(item: Item) -> dict[str, str]:
                     )
             if value.concentric:
                 out["place.concentric"] = f"concentric with {value.concentric}"
+        elif name == "tilt" and isinstance(value, Value):
+            towards = item.get("tilt_towards")
+            way = f" towards {towards.value[0]}{towards.value[1].upper()}" if isinstance(towards, Choice) else ""
+            out[name] = f"leaning {_value(value)}{way}{_tag(towards.provenance) if isinstance(towards, Choice) else ''}"
         elif isinstance(value, _SHOWN):
             out[name] = f"{name.replace('_', ' ')} {_generic(value)}"
     return out
@@ -631,6 +641,90 @@ def _line_half(item: Item, layout: Layout, axes: tuple[str, str]) -> float:
     return bbox(_outline(item, layout, axes))[0]
 
 
+def _hull(points: Sequence[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The convex hull of points on a view, anticlockwise (Andrew's monotone chain)."""
+    found = sorted(set(points))
+    if len(found) < 3:
+        return found
+
+    def turn(o: tuple[float, float], a: tuple[float, float], b: tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: list[tuple[float, float]] = []
+    upper: list[tuple[float, float]] = []
+    for p in found:
+        while len(lower) >= 2 and turn(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    for p in reversed(found):
+        while len(upper) >= 2 and turn(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
+#: How many points round a circle a leaning item's far end is drawn by.
+_ROUND_POINTS = 64
+
+
+def _leaning_ends(item: Item, copy: Instance, layout: Layout, face: FlatFace) -> list[tuple[list[Vec], list[Vec]]]:
+    """A leaning copy's solids (place.md, "Leaning on the face"), each its two ends as points in the part: its foot,
+    its cross-section's section by its face (forge_spec.lean), and its far end. Standing, one solid: its cross-section
+    at its height along its direction. A cut, its hole's and then its counterbore's: each its floor's circle, or right
+    through, the hole's section by its face's far side, ``T`` under it and ``T tan(tilt)`` back from its lean."""
+    lean = lean_of(item, face.axes)
+    u = copy.direction
+    assert lean is not None and u is not None
+    n, a1, a2 = (_unit_axis(face.normal[1]), _unit_axis(face.axes[0]), _unit_axis(face.axes[1]))
+    sign = -1.0 if face.normal[0] == "-" else 1.0
+    n = (sign * n[0], sign * n[1], sign * n[2])
+    w = tuple(lean.way[0] * a1[k] + lean.way[1] * a2[k] for k in range(3))
+    tilted = tuple(lean.c * w[k] - lean.s * n[k] for k in range(3))
+    side = _cross_of(n, w)  # type: ignore[arg-type]
+    o = copy.origin
+
+    def on_face(shape: Shape, at: Vec) -> list[Vec]:
+        return [tuple(at[k] + x * a1[k] + y * a2[k] for k in range(3)) for x, y in (q.at(0.0) for q in shape.pieces)]  # type: ignore[misc]
+
+    def ring(at: Vec, radius: float) -> list[Vec]:
+        turns = [2.0 * math.pi * j / _ROUND_POINTS for j in range(_ROUND_POINTS)]
+        return [tuple(at[k] + radius * (fs.cos(t) * tilted[k] + fs.sin(t) * side[k]) for k in range(3))  # type: ignore[misc]
+                for t in turns]  # fmt: skip
+
+    def along(at: Vec, d: Vec, by: float) -> Vec:
+        return (at[0] + by * d[0], at[1] + by * d[1], at[2] + by * d[2])
+
+    if not VIEWS[item.kind].cut:
+        foot = turned_outline(item, layout, face.axes)
+        assert foot is not None
+        height = _length(item, "height")
+        top = along(o, u, height)
+        if isinstance(item.get("diameter"), Value):  # round: a boss
+            far = ring(top, _length(item, "diameter") / 2)
+        else:
+            h1, h2 = _length(item, "length") / 2, _length(item, "width") / 2
+            ha, hx = (h1, h2) if lean.along_first else (h2, h1)
+            far = [tuple(top[k] + p * ha * tilted[k] + q * hx * side[k] for k in range(3))  # type: ignore[misc]
+                   for p in (-1.0, 1.0) for q in (-1.0, 1.0)]  # fmt: skip
+        return [(on_face(foot, o), far)]
+    thick = face.depth_below
+    found = []
+    r = layout.diameters.get(item.id, 0.0) / 2
+    bores: list[tuple[float, float | None]] = [(r, None if isinstance(end_of(item), ThroughAll) else _length(item, "depth"))]
+    bore = item.get("counterbore")
+    if isinstance(bore, Counterbore):
+        bores.append((mm(bore.diameter) / 2, mm(bore.depth)))
+    for radius, deep in bores:
+        mouth = on_face(ellipse(radius * lean.stretch, radius, lean.way), o)
+        if deep is None:
+            out = along(along(o, n, -thick), w, -thick * lean.tan)  # type: ignore[arg-type]
+            far = on_face(ellipse(radius * lean.stretch, radius, lean.way), out)
+        else:
+            far = ring(along(o, u, -deep), radius)
+        found.append((mouth, far))
+    return found
+
+
 def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
     """How far one copy of a cut goes into the material (embossed letters: out of it), and whether it comes out.
 
@@ -682,6 +776,9 @@ def _windows(items: Iterable[Item], layout: Layout) -> list[_Window]:
         r = VIEWS[item.kind].cut_radius(item, layout)
         for copy in layout.instances.get(item.id, ()):
             k = _axis_of(copy.normal)
+            if copy.direction is not None:
+                found += _leaning_window(item, copy, layout, r)
+                continue
             deep, exits = _cut_span(item, copy, layout)
             if k is None or not exits:
                 continue
@@ -699,6 +796,29 @@ def _windows(items: Iterable[Item], layout: Layout) -> list[_Window]:
             )
             found.append((k, (lo[0], lo[1], lo[2]), (hi[0], hi[1], hi[2])))
     return found
+
+
+def _leaning_window(item: Item, copy: Instance, layout: Layout, r: float) -> list[_Window]:
+    """What can be seen through a leaning hole right through, along its face's normal: the box where its mouth's box
+    and its way out's overlap, if they do (place.md, "Leaning on the face")."""
+    host = copy.host
+    face = layout.faces.get((host[0], host[1]), {}).get(host[2]) if host is not None else None
+    k = _axis_of(copy.normal)
+    lean = lean_of(item, face.axes) if isinstance(face, FlatFace) else None
+    if lean is None or k is None or not isinstance(face, FlatFace) or not isinstance(end_of(item), ThroughAll):
+        return []
+    thick = face.depth_below
+    lo, hi = list(copy.origin), list(copy.origin)
+    for j, a in enumerate(face.axes):
+        i = _AXES.index(a)
+        half = abs(lean.way[j]) * r * lean.stretch + abs(lean.way[1 - j]) * r
+        shift = -thick * lean.tan * lean.way[j]
+        low, high = max(-half, shift - half), min(half, shift + half)
+        if high <= low + EPS:
+            return []
+        lo[i], hi[i] = copy.origin[i] + low, copy.origin[i] + high
+    lo[k], hi[k] = sorted((copy.origin[k], copy.origin[k] - copy.normal[k] * thick))
+    return [(k, (lo[0], lo[1], lo[2]), (hi[0], hi[1], hi[2]))]
 
 
 class _Occlusion:
@@ -883,6 +1003,17 @@ class _Drawing:
             self.home = self.canvas_along(up)
         else:
             self.home = self.canvases[0]
+        if self.leaning_ends(first) is not None:
+            # Its sizes run along its lean or across it, along no frame axis but where it isn't turned: said.
+            if isinstance(item.get("diameter"), Value):  # round: a boss
+                self.say(f"{kind} Ø{_value(item.get('diameter'))}", "diameter")
+            else:
+                self.say(kind)
+                for name in ("length", "width"):
+                    self.say(f"{name} {_value(item.get(name))}", name)
+            self.say(f"height {_value(item.get('height'))} along its lean", "height")
+            self.anchor = (first.hi[self.home.u], first.hi[self.home.v])
+            return
         VIEWS[kind].body(self, first, up)
 
     def _box_fields(self, copy: Instance) -> dict[int, str]:
@@ -905,6 +1036,11 @@ class _Drawing:
                 canvas, canvas.at(lo), canvas.at(hi), near, (item.id, copy.index)
             )
             style = "hidden" if hidden else "visible"
+        lean = self.leaning_ends(copy)
+        if lean is not None:  # leaning on its face: its outline seen along this view
+            for foot, far in lean:
+                canvas.path(_hull([canvas.at(p) for p in (*foot, *far)]), style, closed=True)
+            return style
         turned = self.turned(copy)
         up = _axis_of(copy.normal)
         if turned is not None and canvas.w == up:  # looked at along its face's normal: its turned outline
@@ -912,6 +1048,13 @@ class _Drawing:
             return style
         VIEWS[item.kind].outline(self, canvas, copy, style, up)
         return style
+
+    def leaning_ends(self, copy: Instance) -> list[tuple[list[Vec], list[Vec]]] | None:
+        """A copy leaning on its flat face: its solids' ends (:func:`_leaning_ends`); None if it doesn't lean."""
+        host = self.host_face(copy) if copy.host is not None else None
+        if copy.direction is None or not isinstance(host, FlatFace) or not leaning(self.item):
+            return None
+        return _leaning_ends(self.item, copy, self.layout, host)
 
     def turned(self, copy: Instance) -> Shape | None:
         """A copy's outline turned in its flat face's plane (place.turn), about its point, in the face's axes; None if
@@ -959,6 +1102,9 @@ class _Drawing:
         round_ = entry.cut_round(item)
         r = entry.cut_radius(item, layout)
         for copy in self.copies:
+            if self.leaning_ends(copy) is not None:
+                self._leaning_cut(copy, r)
+                continue
             deep, exits = _cut_span(item, copy, layout)
             n = copy.normal
             into = n if emboss else _neg(n)
@@ -1013,6 +1159,24 @@ class _Drawing:
         else:
             self.anchor = (c[0] + r * math.sqrt(0.5), c[1] + r * math.sqrt(0.5))
         entry.cut_words(self)
+
+    def _leaning_cut(self, copy: Instance, r: float) -> None:
+        """A hole leaning on its face, on every view: each of its solids' outline seen along the view, hidden in the
+        material; its mouth (its widest's section by the face) where it is seen, and right through, where it comes out
+        on the far side."""
+        solids = self.leaning_ends(copy)
+        assert solids is not None
+        through = isinstance(end_of(self.item), ThroughAll)
+        for canvas in self.canvases:
+            for foot, far in solids:
+                canvas.path(_hull([canvas.at(p) for p in (*foot, *far)]), "hidden", closed=True)
+            ends = [(solids[-1][0], copy.normal)] + ([(solids[0][1], _neg(copy.normal))] if through else [])
+            for points, facing in ends:
+                seen = [canvas.at(p) for p in points]
+                us, vs = [p[0] for p in seen], [p[1] for p in seen]
+                if canvas.faces_viewer(facing) and not self.hidden(canvas, (min(us), min(vs)), (max(us), max(vs)),
+                                                                   points[0][canvas.w], None):  # fmt: skip
+                    canvas.path(seen, "visible", closed=True)
 
     def _seen(self, canvas: _Canvas, copy: Instance, out: Vec, exits: bool,
               reach_: tuple[float, float]) -> tuple[bool, bool]:  # fmt: skip
@@ -1130,7 +1294,7 @@ class _Drawing:
         index = (_AXES.index(face.axes[0]), _AXES.index(face.axes[1]))
         feet = bbox(_outline(self.item, self.layout, face.axes))
         # How far it reaches back and forth from its point along each axis, as the solver measures to an edge: an
-        # extrusion's or a revolution's outline; turned in its face, the box round its turned outline.
+        # extrusion's or a revolution's outline; turned in its face, or leaning on it, the box round its foot.
         shape = turned_outline(self.item, self.layout, face.axes)
         reaches = _reaches(self.item)
         if shape is not None:
@@ -1370,8 +1534,8 @@ def _inside(item: Item, copy: Instance, layout: Layout) -> list[tuple[Vec, Vec]]
     curve may be drawn as seen.
     """
     up = _axis_of(copy.normal)
-    if copy.lo is None or copy.hi is None or up is None:
-        return []
+    if copy.lo is None or copy.hi is None or up is None or copy.direction is not None:
+        return []  # leaning: what hides is its own outline, run along no frame axis
     return VIEWS[item.kind].inside(item, copy, layout, up)
 
 

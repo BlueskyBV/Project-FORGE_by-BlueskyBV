@@ -51,6 +51,8 @@ class SolveKind:
     rounding = False
     #: Made after everything else, if nothing made it earlier (roundings and threads).
     made_last = False
+    #: It cuts a thread into the rod it names (``of``).
+    threads = False
     #: Letters: it covers its ink's box, and isn't checked over openings or severing as a cut.
     lettered = False
     #: Its foot on a round side is round (a hole's, a boss's).

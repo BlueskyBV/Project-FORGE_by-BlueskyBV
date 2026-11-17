@@ -78,6 +78,12 @@ cone's point, 90 degrees for most screws) until it meets the hole's diameter.
 So it is (countersink diameter - hole diameter) / 2 / tan(angle / 2) deep.
 A hole has a counterbore or a countersink, not both, for now.
 
+### `tilt` and `tilt_towards`
+
+How far it leans from square to its flat face, and towards which of the
+face's axes ([place.md](place.md), "Leaning on the face"); its `depth` is
+then along its lean. Schema 1.3.
+
 ### `count`
 
 How many holes there are in the whole part ([place.md](place.md)).

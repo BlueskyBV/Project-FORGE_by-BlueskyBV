@@ -673,10 +673,20 @@ along y, +z). "concentric": {{"item": ..., "from": ...}} puts it on the axis \
 of a round item (a hole down a boss). On a flat face, "turn": angle turns a \
 slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \
 letters in the face's plane, from the face's first axis towards its second, \
-about its own point ("schema_version": "1.2"); its edges are then not along \
+about its own point ("schema_version": "1.2" or later); its edges are then not along \
 the face's axes, so a position measured "to": "edge" is to its turned \
 outline's farthest point along that axis. A turned item's own faces take \
 nothing yet, and its edges aren't rounded.
+
+A hole, a boss or a post on a flat face may lean: "tilt": angle (more than \
+0, at most 75 deg) from square to the face, towards "tilt_towards", one of \
+the face's two axes ("+x", "-y", ...; turned with it where "turn" turns it; \
+"schema_version": "1.3"). A boss or a post leans that way as it rises; a \
+hole's way out of its mouth does, so it goes in leaning the other way. Its \
+height or depth is along it; its foot on the face is its section by the \
+face (a round one's an ellipse), which is what fits, overlaps and is \
+measured "to": "edge". It needs the same material under all of its face; \
+nothing goes on its own faces, and it isn't rounded or threaded, yet.
 
 Patterns place copies; the item's "count" is the whole part's number of \
 copies and must match:

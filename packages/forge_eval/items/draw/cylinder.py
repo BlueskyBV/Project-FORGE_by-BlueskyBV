@@ -50,9 +50,9 @@ class Cylinder(DrawKind):
         part.steps.append(Step(f.id, 0, True, Prism((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0),
                                                      (r, r), r, 0.0, length)))  # fmt: skip
         part.flats[(f.id, 0, "+end")] = _Flat((f.id, 0, "+end"), _v((0, 0, length)), _v((0, 0, 1)), ("x", "y"), "disc",
-                                              (r, r), length, (f.id, 0, "-end"))  # fmt: skip
+                                              (r, r), length, (f.id, 0, "-end"), level=True)  # fmt: skip
         part.flats[(f.id, 0, "-end")] = _Flat((f.id, 0, "-end"), origin.copy(), _v((0, 0, -1)), ("x", "y"), "disc",
-                                              (r, r), length, (f.id, 0, "+end"))  # fmt: skip
+                                              (r, r), length, (f.id, 0, "+end"), level=True)  # fmt: skip
         part.rounds[(f.id, 0, "side")] = _Round(
             (f.id, 0, "side"), "z", origin.copy(), length, r
         )
