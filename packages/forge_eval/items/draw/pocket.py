@@ -21,6 +21,7 @@ class Pocket(DrawKind):
     flat_weight = 2
     flat_rank = 1
     cut_out = True
+    cuts_turned_faces = True
     misfits = True
 
     def footprint(

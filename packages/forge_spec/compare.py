@@ -55,6 +55,7 @@ from .checks import SpecReport
 from .geometry import EPS, Vec
 from .items.compare import COMPARE
 from .items.compare._common import Feature, _add, _mid, _r, _sub
+from .placement import placed_spec
 from .problems import pointer
 
 __all__ = ["Difference", "Feature", "differences", "features"]
@@ -103,7 +104,7 @@ def features(report: SpecReport) -> tuple[Feature, ...]:
     if spec is None or layout is None:
         return ()
     found: list[Feature] = []
-    for n, item in enumerate(spec.items):
+    for n, item in enumerate(placed_spec(spec, layout).items):  # as placed: turned with a turned face it is on
         found += COMPARE[item.kind].features(n, item, layout)
     return tuple(found)
 

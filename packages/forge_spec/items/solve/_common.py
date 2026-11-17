@@ -8,12 +8,9 @@ placing a profiled body and hollowing a body several kinds share.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
-
-from forge_numeric import scalar as fs
 
 from forge_spec.draft import (
     Choice,
@@ -24,7 +21,7 @@ from forge_spec.draft import (
     Profile,
 )
 from forge_spec.ends import ThroughAll, end_of
-from forge_spec.frames import Frame
+from forge_spec.frames import Frame, cos_sin
 from forge_spec.geometry import EPS, FlatFace, SideFace, Source, Taper, Vec
 from forge_spec.outline import Shape
 from forge_spec.schema import DIRECTIONS, FACE_AXES
@@ -337,12 +334,5 @@ def profiled(item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[s
 
 
 def _turn(degrees: float) -> tuple[float, float]:
-    """The cosine and sine of an angle in degrees, exact where they are 0 or 1.
-
-    So copies a quarter turn apart sit exactly on the axes, not 1e-15 off them.
-    """
-    quarters = degrees / 90
-    if abs(quarters - round(quarters)) < 1e-12:
-        return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
-    t = math.radians(degrees)
-    return fs.cos(t), fs.sin(t)
+    """The cosine and sine of an angle in degrees, exact where they are 0 or 1 (:func:`forge_spec.frames.cos_sin`)."""
+    return cos_sin(degrees)

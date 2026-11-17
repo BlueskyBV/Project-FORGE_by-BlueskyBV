@@ -73,6 +73,9 @@ __all__ = [
     "AXIS_WORDS",
     "DIRECTIONS",
     "FACE_AXES",
+    "FACE_OWN_AXES",
+    "FACE_SIDES",
+    "IN_FACE_AXES",
     "KINDS",
     "MATERIAL_PHRASES",
     "MATERIAL_WORDS",
@@ -91,6 +94,12 @@ __all__ = [
 
 AXES = ("x", "y", "z")
 DIRECTIONS = ("+x", "-x", "+y", "-y", "+z", "-z")
+#: A flat face's own first and second axes, as a position or a choice names them on any flat face (schema 1.4;
+#: V2-stage4b-0c.md, 3.3, 1b's third move): the part's axes name them too, on a face whose axes are the part's.
+FACE_OWN_AXES = ("u", "v")
+FACE_SIDES = ("+u", "-u", "+v", "-v")
+#: What names an axis in a face: the part's, or the face's own.
+IN_FACE_AXES = (*AXES, *FACE_OWN_AXES)
 
 #: The two in-face axes of every flat face named by a direction.
 FACE_AXES: Mapping[str, tuple[str, str]] = {
@@ -130,7 +139,7 @@ STATED_SOURCES = ("words", "assumed")
 
 #: Words that name each axis, for checking a choice of axis against its citation.
 AXIS_WORDS: Mapping[str, tuple[str, ...]] = {
-    axis: (axis, f"{axis}-axis", f"{axis}axis") for axis in AXES
+    axis: (axis, f"{axis}-axis", f"{axis}axis") for axis in IN_FACE_AXES
 }
 
 #: Words that say nothing about a part's shape: materials, colours, finishes,
@@ -262,8 +271,8 @@ class KindSpec:
 def _f(name: str, type_: FieldType, meaning: str, *, required: bool = True,
        choices: tuple[str, ...] = (), only_when: tuple[str, str] | None = None,
        synonyms: Mapping[str, tuple[str, ...]] | None = None) -> FieldSpec:  # fmt: skip
-    if type_ is FieldType.CHOICE and choices == AXES and synonyms is None:
-        synonyms = AXIS_WORDS
+    if type_ is FieldType.CHOICE and choices in (AXES, IN_FACE_AXES) and synonyms is None:
+        synonyms = {axis: AXIS_WORDS[axis] for axis in choices}
     return FieldSpec(name, type_, meaning, required, choices, only_when, synonyms)
 
 
@@ -310,7 +319,7 @@ _TILT = _f(
 _TILT_TOWARDS = _f(
     "tilt_towards", FieldType.CHOICE,
     "which way it leans: one of its face's two axes, + or - (turned with it where place turns it)",
-    required=False, choices=DIRECTIONS, only_when=("tilt", PRESENT),
+    required=False, choices=(*DIRECTIONS, *FACE_SIDES), only_when=("tilt", PRESENT),
 )  # fmt: skip
 
 KINDS: Mapping[str, KindSpec] = {
@@ -496,8 +505,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "along",
                     FieldType.CHOICE,
-                    "the frame axis the slot runs along",
-                    choices=AXES,
+                    "the axis of its face the slot runs along: the face's own u or v, or the part's axis that is one",
+                    choices=IN_FACE_AXES,
                 ),
                 _f(
                     "ends",
@@ -623,8 +632,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "thickness_along",
                     FieldType.CHOICE,
-                    "the frame axis its thickness runs along",
-                    choices=AXES,
+                    "the axis of its face its thickness runs along: the face's own u or v, or the part's axis that is one",
+                    choices=IN_FACE_AXES,
                 ),
                 _f(
                     "end",
@@ -661,8 +670,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "along",
                     FieldType.CHOICE,
-                    "the frame axis the rib runs along",
-                    choices=AXES,
+                    "the axis of its face the rib runs along: the face's own u or v, or the part's axis that is one",
+                    choices=IN_FACE_AXES,
                 ),
                 _COUNT,
             ),

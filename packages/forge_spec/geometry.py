@@ -37,7 +37,7 @@ from itertools import pairwise
 
 from forge_numeric import scalar as fs
 
-from .frames import Frame
+from .frames import Frame, cos_sin
 from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
@@ -201,6 +201,13 @@ class FlatFace:
     profile: Shape | None = None
     over: Over | None = None
     less: Less | None = None
+    #: A turned item's far face, and what stands on or is cut in one (schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third
+    #: move): its axes turned in its plane by this many degrees from the part's ``axes``, the first towards the second,
+    #: and the (item, field) pairs the turn comes from.
+    turn: float = 0.0
+    turn_sources: tuple[Source, ...] = ()
+    #: Named by its own axes, ``("u", "v")`` (an item that names them so): the part's names for them before its turn.
+    named: tuple[str, str] | None = None
 
     @property
     def sources(self) -> tuple[Source, ...]:
@@ -209,10 +216,22 @@ class FlatFace:
             s for s in self.axis_sources[1] if s not in self.axis_sources[0]
         )
 
+    @property
+    def part_axes(self) -> tuple[str, str]:
+        """The part's names for its axes before any turn: ``axes``, or what ``u`` and ``v`` name."""
+        return self.named or self.axes
+
     @cached_property
     def frame(self) -> Frame:
-        """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`)."""
-        return Frame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+        """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`): turned in its plane
+        by its ``turn``."""
+        a1, a2 = self.part_axes
+        frame = Frame.of_names(self.centre, a1, a2, self.normal)
+        return frame if self.turn == 0.0 else frame.turned(*cos_sin(self.turn))
+
+    def spelled(self, names: tuple[str, str]) -> FlatFace:
+        """The face with its axes named ``names`` (``("u", "v")``), its frame unchanged."""
+        return self if names == self.axes else replace(self, axes=names, named=self.part_axes)
 
     def frame_at(self, position: tuple[float, float]) -> Frame:
         """The face's frame at a point on it, given in its own coordinates (``u``, ``v``) from its centre (item 3a)."""

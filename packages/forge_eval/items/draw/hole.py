@@ -39,6 +39,7 @@ class Hole(DrawKind):
     flat_weight = 4
     flat_rank = 0
     cut_out = True
+    cuts_turned_faces = True
     misfits = True
 
     def footprint(

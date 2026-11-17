@@ -20,6 +20,7 @@ from forge_checks.place import (
     _mm,
     _round_tab,
     _sized,
+    in_axes,
 )
 
 
@@ -34,6 +35,7 @@ class Tab(PlaceKind):
     ) -> Outline:
         a1, a2 = axes
         thin = _choice(item, "thickness_along")
+        thin = None if thin is None else in_axes(thin, axes)
         if thin not in axes:
             raise PlaceError(
                 item.id,
@@ -52,6 +54,7 @@ class Tab(PlaceKind):
              faces: dict[str, Face]) -> tuple[Vec, Vec]:  # fmt: skip
         a1, a2 = axes
         thin = _choice(item, "thickness_along")
+        thin = None if thin is None else in_axes(thin, axes)
         if thin not in axes:
             raise PlaceError(
                 item.id,

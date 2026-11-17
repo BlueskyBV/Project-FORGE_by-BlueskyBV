@@ -88,6 +88,8 @@ degrees for now; its `depth` is then along its lean. Schema 1.3.
 
 Which way it leans: one of its face's two axes, + or -.
 
+- `+u`, `-u`: towards the face's first axis, + or - (schema 1.4).
+- `+v`, `-v`: towards the face's second axis, + or - (schema 1.4).
 - `+x`, `-x`: towards +X or -X.
 - `+y`, `-y`: towards +Y or -Y.
 - `+z`, `-z`: towards +Z or -Z.

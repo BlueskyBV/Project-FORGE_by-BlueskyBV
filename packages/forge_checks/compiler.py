@@ -64,7 +64,7 @@ from forge_spec.draft import (
     Place,
 )
 from forge_spec.ends import ThroughAll, end_of
-from forge_spec.schema import KINDS
+from forge_spec.schema import AXES, KINDS
 from forge_spec.values import Count, Value
 from numpy.typing import NDArray
 
@@ -125,6 +125,8 @@ from .place import (
     Placed,
     RoundSide,
     _entry,
+    _named_by,
+    in_axes,
     material_at,
     section_of,
     unit,
@@ -224,6 +226,9 @@ class _Compiler:
     _seen: dict[tuple[Plane, tuple[float, float] | None], bool] = field(
         default_factory=dict
     )
+    #: By item, each leaf its place names along the face's axes as the frame names them, and its own name for it (an
+    #: item placed along the face's own u and v, place.md): what checks and notes are named.
+    _named: dict[str, dict[str, str]] = field(default_factory=dict)
 
     # --- emitting -----------------------------------------------------
     def check(
@@ -242,6 +247,7 @@ class _Compiler:
             "bounded": VerificationClass.BOUNDED,
             "constrained": VerificationClass.CONSTRAINED,
         }[KINDS[item.kind].verification]
+        name = self._named.get(item.id, {}).get(name, name)
         at = f"{item.id}/{name}" + ("" if copy is None else f"/{copy}")
         again = sum(1 for c in self.checks if c.id == at or c.id.startswith(at + "."))
         if again:
@@ -254,6 +260,7 @@ class _Compiler:
         """Note a field given no check of its own, and why: held by ``held_by`` where something else holds it (face accounting, where its faces are :class:`Buried`)."""
         if held_by is None and isinstance(why, Buried):
             held_by = "face accounting"
+        name = self._named.get(item.id, {}).get(name, name)
         self.unchecked.append(NotChecked(item.id, name, str(why), held_by))
 
     def size(self, item: Item, value: float) -> None:
@@ -1332,6 +1339,8 @@ class _Compiler:
         given = item.get("place")
         place = given if isinstance(given, Place) else Place({}, None, None, None, None)
         face = self.placed.face(copies[0].host)
+        if isinstance(face, FlatFace):
+            place = self._in_face_axes(item, place, face)
         if place.concentric:
             self._concentric(item, place)
             return
@@ -1355,6 +1364,20 @@ class _Compiler:
             self.skip(item, "place.angle", "an angle places an item round a round side")
         if pattern is not None:
             self._pattern(item, pattern, face)
+
+    def _in_face_axes(self, item: Item, place: Place, face: FlatFace) -> Place:
+        """A place along the face's axes as the frame names them (:func:`~forge_checks.place.in_axes`), each leaf it
+        names noted by the item's own name for it."""
+        named = _named_by(place, face.axes)
+        found = self._named.setdefault(item.id, {})
+        for mine, theirs in zip(place.axes, named.axes, strict=True):
+            found[f"place.{theirs}"] = f"place.{mine}"
+        if place.pattern is not None and named.pattern is not None:
+            prefix = f"place.pattern.{place.pattern.kind}"
+            own = (*place.pattern.values, *place.pattern.counts)
+            for mine, theirs in zip(own, (*named.pattern.values, *named.pattern.counts), strict=True):
+                found[f"{prefix}.{theirs}"] = f"{prefix}.{mine}"
+        return named
 
     def _groups(self, item: Item) -> Iterator[list[Copy]]:
         """The copies, by the host copy they are on (a pattern's copies on one host together)."""
@@ -1762,16 +1785,19 @@ class _Compiler:
                    group[0].index)  # fmt: skip
 
     def _pattern_axis(self, item: Item, pattern: Pattern, face: FlatFace) -> None:
-        """A row's or ends' axis: told from the shape with the pattern along the face's other axis."""
+        """A row's or ends' axis: told from the shape with the pattern along the face's other axis, named as the item
+        names it."""
         place = item.get("place")
-        assert isinstance(place, Place)
+        assert isinstance(place, Place) and place.pattern is not None
+        own = place.pattern
+        axes = ("u", "v") if own.axis in ("u", "v") else face.axes
         alternatives = [
             Alternative(
                 f"along {axis}",
-                replace(item, fields={**item.fields, "place": replace(place, pattern=replace(pattern, axis=axis))}),
+                replace(item, fields={**item.fields, "place": replace(place, pattern=replace(own, axis=axis))}),
             )
-            for axis in face.axes
-            if axis != pattern.axis
+            for axis in axes
+            if axis != own.axis
         ]  # fmt: skip
         self._told(item, f"place.pattern.{pattern.kind}.axis", "choice", alternatives)
 
@@ -1843,8 +1869,14 @@ class _Compiler:
 
     # Choices and faces -------------------------------------------------
     def _choice_value(self, item: Item, name: str) -> str | None:
+        """A choice; an axis of its face named by the face's own u or v, as the frame names it there."""
         value = item.get(name)
-        return value.value if isinstance(value, Choice) else None
+        if not isinstance(value, Choice):
+            return None
+        copies = self.copies(item)
+        if value.value in ("u", "v") and copies and copies[0].axes is not None:
+            return in_axes(value.value, copies[0].axes)
+        return value.value
 
     def _bands(self, item: Item) -> list[float]:
         bands = []
@@ -1880,6 +1912,8 @@ class _Compiler:
         if not isinstance(value, Choice):
             return
         options = KINDS[item.kind].field(name).choices
+        if set(options) == {*AXES, "u", "v"}:  # an axis of its face: the others as the item names them
+            options = ("u", "v") if value.value in ("u", "v") else AXES
         alternatives = [
             Alternative(
                 f"{name} {o}",

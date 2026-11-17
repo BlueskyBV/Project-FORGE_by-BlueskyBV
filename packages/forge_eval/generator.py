@@ -190,6 +190,9 @@ class Feature:
     #: How far it leans from square to its flat face (degrees), and towards which of the face's axes, + or -
     #: (``tilt`` and ``tilt_towards``, V2-stage4b-0c.md 3.3, 1b's second move): a hole, a boss or a post.
     tilt: tuple[float, str] | None = None
+    #: Its face's axes as the part names them, where the draft names them by the face's own, ``u`` and ``v``
+    #: (schema 1.4; V2-stage4b-0c.md 3.3, 1b's third move): on a turned face always, now and then on any flat face.
+    own_axes: tuple[str, str] | None = None
 
 
 Plan = tuple[Feature, ...]
@@ -357,16 +360,18 @@ class _Flat:
     #: The same material under all of it, as the solver reads it (forge_spec.geometry.uniform): a first block's
     #: faces, a first cylinder's ends, the sides of a box standing on a face. Only there does an item lean.
     level: bool = False
+    #: A turned item's far face, and what stands on one (place.md, "A turned item's far face"): its axes turned in its
+    #: plane by this many degrees from the part's ``axes``, the first towards the second.
+    turn: float = 0.0
 
     @functools.cached_property
     def frame(self) -> _FaceFrame:
-        """Its centre, its first and second axes and its outward normal."""
-        return _FaceFrame(
-            self.centre,
-            unit_of("+" + self.axes[0]),
-            unit_of("+" + self.axes[1]),
-            _t(self.normal),
-        )
+        """Its centre, its first and second axes and its outward normal, turned in its plane by its ``turn``."""
+        e1, e2 = unit_of("+" + self.axes[0]), unit_of("+" + self.axes[1])
+        if self.turn != 0.0:
+            c, s = _cos_sin(self.turn)
+            e1, e2 = (_t(c * _v(e1) + s * _v(e2) + 0.0), _t(c * _v(e2) - s * _v(e1) + 0.0))
+        return _FaceFrame(self.centre, e1, e2, _t(self.normal))
 
     def coords(self) -> tuple[float, float]:
         return self.frame.plane(self.centre)
@@ -571,12 +576,15 @@ def _footprint(f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], 
 
 def _turn_of(f: Feature) -> tuple[float, float] | None:
     """The cosine and sine of an item's turn in its face's plane, exact on the quarter turns; None if it isn't turned."""
-    if f.turn is None:
-        return None
-    quarters = f.turn / 90.0
+    return None if f.turn is None else _cos_sin(f.turn)
+
+
+def _cos_sin(degrees: float) -> tuple[float, float]:
+    """The cosine and sine of an angle in degrees, exact on the quarter turns."""
+    quarters = degrees / 90.0
     if abs(quarters - round(quarters)) < 1e-12:
         return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
-    t = math.radians(f.turn)
+    t = math.radians(degrees)
     return fs.cos(t), fs.sin(t)
 
 
@@ -872,6 +880,17 @@ def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature
     tilt = rng.choice((10.0, 15.0, 20.0, 30.0, 45.0, 60.0)) if rng.random() < 0.5 else _q(rng.uniform(0.5, _MOST_LEAN), 0.5)
     towards = rng.choice(("+", "-")) + rng.choice(face.axes)
     return replace(f, tilt=(tilt, towards))
+
+
+def _turns_with(f: Feature, face: _Flat) -> bool:
+    """Whether the generator puts an item on a turned face (place.md, "A turned item's far face"), turned with it: a
+    cut whose faces it keeps none of, or one standing as a box or a rod does (its own far face, turned so)."""
+    from .items.draw.protocol import DrawKind
+
+    entry = _draw(f.kind)
+    if entry.cut_out:
+        return entry.cuts_turned_faces
+    return type(entry).stand_flat is DrawKind.stand_flat
 
 
 def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -1262,14 +1281,18 @@ def _on_flat(
             )
     if f.turn is not None and (f.on is None or not _draw(f.kind).turnable):
         raise DoesNotFitError(f"{f.id}: the generator turns a slot, a pocket, a rib, a tab, a block, a post or letters on a flat face")
+    if face.turn != 0.0 and not _turns_with(f, face):
+        raise DoesNotFitError(f"{f.id}: on a turned face, the generator puts a hole, a slot, a pocket, a boss, a "
+                              "cylinder, a block, a post or a rib")  # fmt: skip
     half, corner = _footprint(f, face.axes)
     if f.turn is not None:  # what it covers, as the generator keeps it: the box round its turned outline
         half, corner = _turned_half(f, face.axes), 0.0
     spots = _flat_spots(f, face)
     feet = [_foot_of(f, face, at) for at in spots]
-    # Turned, it is wholly on its face, clear of its edges by the gap: flush with none, over none.
-    flush = _flush(f, face) if f.turn is None else frozenset()
-    beyond = _overhang(f, face, feet, strict) if f.turn is None else frozenset()
+    # Turned, or on a turned face, it is wholly on its face, clear of its edges by the gap: flush with none, over none.
+    plain = f.turn is None and face.turn == 0.0
+    flush = _flush(f, face) if plain else frozenset()
+    beyond = _overhang(f, face, feet, strict) if plain else frozenset()
     if strict:
         for k, foot in enumerate(feet):
             if not face.holds(foot, GAP, flush, beyond):
@@ -2155,6 +2178,8 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
         if choice in own.option_words:
             continue
         w.say(", ")
+        if choice in ("along", "thickness_along"):
+            option = _spelled(f, option)
         phrase = {"along": f"along {option}", "thickness_along": f"its thickness along {option}",
                   "ends": f"with {option} ends", "end": f"with a {option} end"}[choice]  # fmt: skip
         found[choice] = _chosen(w, option, phrase)
@@ -2167,6 +2192,7 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
             w.say(", ")
             found["tilt"] = _mm(w, tilt, before="leaning ", unit="deg")
             w.say(" ")
+            towards = towards[0] + _spelled(f, towards[1])
             found["tilt_towards"] = _chosen(w, towards, f"towards {towards}")
     elif own.axial:
         # The generator's first body stands upright.
@@ -2187,9 +2213,12 @@ def _pattern_brief(mode: str) -> PatternBrief:
 def _place_said(f: Feature, w: Writer) -> dict[str, Any]:
     """Where on its face an item is, along each axis the plan says and round a side, and its copies."""
     place: dict[str, Any] = {}
-    for axis, pos in f.place.items():
+    for named, pos in f.place.items():
         if pos.mode == "none":
             continue  # left unsaid: the solver assumes it centred, as a person's would be
+        axis = _spelled(f, named)
+        if pos.side:
+            pos = replace(pos, side=pos.side[0] + _spelled(f, pos.side[1:]))
         w.say(", ")
         if pos.mode == "centred":
             place[axis] = {"centred": {"words": w.cite(f"centred along {axis}")}}
@@ -2209,9 +2238,25 @@ def _place_said(f: Feature, w: Writer) -> dict[str, Any]:
         return place
     body: dict[str, Any] = {}
     w.say(", ")
+    if f.own_axes is not None:  # its values along the face's axes, and its axis, by the face's own names
+        names = {f.own_axes[0]: "u", f.own_axes[1]: "v"}
+
+        def spelled(name: str) -> str:
+            before, _, last = name.rpartition("_")
+            return name if last not in names else (before + "_" if before else "") + names[last]
+
+        p = replace(p, values={spelled(k): v for k, v in p.values.items()},
+                    counts={spelled(k): c for k, c in p.counts.items()}, axis=names.get(p.axis, p.axis))  # fmt: skip
     _pattern_brief(p.kind).said(p, w, body)
     place["pattern"] = {p.kind: body}
     return place
+
+
+def _spelled(f: Feature, axis: str) -> str:
+    """An axis of an item's face as its draft names it: by the face's own, ``u`` and ``v``, where it names them so."""
+    if f.own_axes is None or axis not in f.own_axes:
+        return axis
+    return "u" if axis == f.own_axes[0] else "v"
 
 
 def _sizes_hold(f: Feature) -> None:
@@ -3268,11 +3313,28 @@ def render(plan: Plan, strict: bool = True) -> Case:
     return Case(plan, brief, items, truth)
 
 
+def _names_own_axes(item: Mapping[str, Any]) -> bool:
+    """Whether a drafted item names its face's axes by the face's own, ``u`` and ``v`` (schema 1.4)."""
+    own = {"u", "v"}
+    place = item.get("place")
+    if isinstance(place, Mapping):
+        if own & set(place):
+            return True
+        for body in (place.get("pattern") or {}).values():
+            if any(k.rpartition("_")[2] in own for k in body) or (body.get("axis") or {}).get("choose") in own:
+                return True
+    return any((item.get(name) or {}).get("choose", " ")[-1] in own
+               for name in ("along", "thickness_along", "tilt_towards"))  # fmt: skip
+
+
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.3 where an item leans on its face (tilt), 1.2 where one is turned in it (place.turn), else the first, so a
-    part that does neither is read, and its spec's digest made, as it always was."""
+    1.4 where an item names its face's own axes (u and v), 1.3 where one leans on its face (tilt), 1.2 where one is
+    turned in it (place.turn), else the first, so a part that does none of these is read, and its spec's digest
+    made, as it always was."""
     found = list(items)
+    if any(_names_own_axes(item) for item in found):
+        return {"schema_version": "1.4", "name": name, "items": found}
     if any("tilt" in item for item in found):
         return {"schema_version": "1.3", "name": name, "items": found}
     if any(isinstance(item.get("place"), Mapping) and "turn" in item["place"] for item in found):
@@ -3800,7 +3862,8 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
         if not wanted:
             continue
         part = _build(tuple(plan), True)
-        hosts = sorted(key for key in part.flats if key[1] == 0)
+        # Not on a turned item's far face: what goes there is drawn from a stream of its own (_onto_turned).
+        hosts = sorted(key for key, face in part.flats.items() if key[1] == 0 and face.turn == 0.0)
         for _ in range(tries if hosts else 0):
             key = rng.choice(hosts)
             candidates = draw(rng, _next_index(plan), key[0], part.flats[key])
@@ -3892,9 +3955,15 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         around = random.Random(f"forge-eval round standing {seed} {k}")
         turns = random.Random(f"forge-eval turns {seed} {k}")
         leans = random.Random(f"forge-eval leans {seed} {k}")
+        onto = random.Random(f"forge-eval turned faces {seed} {k}")
+        spells = random.Random(f"forge-eval own axes {seed} {k}")
         outlined = not new and profiles.random() < _PROFILED
+        if _onto_turned(onto, k, plan, part, len(plan) < size):
+            continue
         for _ in range(tries):
-            hosts = [key for key, face in part.flats.items() if key[1] == 0] + [
+            # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
+            # turn nothing, or put nothing on such a face, stays as it was drawn.
+            hosts = [key for key, face in part.flats.items() if key[1] == 0 and face.turn == 0.0] + [
                 key for key in part.rounds if key[1] == 0
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
@@ -3970,8 +4039,51 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             plan.append(candidate)
             _round_now_and_then(seed, k, candidate, plan)
             break
+        _spelled_now_and_then(spells, plan, part)
     _decorate(seed, plan, tries)
     return render(tuple(plan))
+
+
+# ----------------------------------------------------------------------
+# A face's own axes, and a turned item's far face (place.md; V2-stage4b-0c.md 3.3, 1b's third move)
+# ----------------------------------------------------------------------
+#: How often the generator puts an item on a turned item's far face, where there is one, and turns it there too.
+_ON_TURNED = 0.7
+#: How often the generator names an item's face's axes by the face's own, u and v, where it may (any flat face).
+_SPELLED = 0.04
+
+
+def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
+    face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
+    Whether one was added to the plan."""
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turn != 0.0]
+    if not faces or rng.random() >= _ON_TURNED:
+        return False
+    key = rng.choice(faces)
+    face = part.flats[key]
+    standing_ok = standing_ok and _draw(part.kinds[key[0]]).hosts_standing
+    for _ in range(10):
+        candidate = replace(_feature(rng, k, key[0], face, standing_ok), own_axes=face.axes)
+        for more in (_leaned_now_and_then(rng, candidate, face), _turned_now_and_then(rng, candidate, face), None):
+            try:
+                render((*plan, more or candidate))
+            except DoesNotFitError:
+                continue
+            plan.append(more or candidate)
+            return True
+    return False
+
+
+def _spelled_now_and_then(rng: random.Random, plan: list[Feature], part: _Part) -> None:
+    """Now and then, from a stream of its own, the item just added named along its flat face's own axes, u and v
+    (schema 1.4): the same part, said otherwise."""
+    f = plan[-1]
+    if f.on is None or f.own_axes is not None or rng.random() >= _SPELLED:
+        return
+    face = part.flats.get((f.on[0], 0, f.on[1]))
+    if face is not None:
+        plan[-1] = replace(f, own_axes=face.axes)
 
 
 # ----------------------------------------------------------------------

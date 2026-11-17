@@ -25,7 +25,7 @@ from forge_checks.items.oracle._shapes import (
     standing_box,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide, in_axes
 from forge_checks.shapes import Prism, RoundRect
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class Tab(OracleKind):
             return _round_end_tab(copy, item, face)
         assert copy.axes is not None
         a1, a2 = copy.axes
-        thin = _choice(item, "thickness_along")
+        thin = in_axes(_choice(item, "thickness_along") or a2, copy.axes)
         sizes = {
             thin: _mm(item.get("thickness")),
             (a2 if thin == a1 else a1): _mm(item.get("width")),
@@ -61,6 +61,7 @@ def _round_end_tab(copy: Copy, item: Item, face: FlatFace | RoundSide | None) ->
     assert copy.axes is not None
     thin = _choice(item, "thickness_along")
     assert thin is not None
+    thin = in_axes(thin, copy.axes)
     wide = next(a for a in copy.axes if a != thin)
     length, width, thickness = (
         _mm(item.get("length")),

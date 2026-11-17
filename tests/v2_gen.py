@@ -13,7 +13,17 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from forge_spec.schema import AXES, KINDS, PRESENT, FieldSpec, FieldType
+from forge_spec.schema import (
+    AXES,
+    DIRECTIONS,
+    FACE_OWN_AXES,
+    FACE_SIDES,
+    IN_FACE_AXES,
+    KINDS,
+    PRESENT,
+    FieldSpec,
+    FieldType,
+)
 
 WORDS = [0, 1]
 
@@ -89,18 +99,18 @@ def position(rng: random.Random, axis: str) -> dict[str, Any]:
     }
 
 
-def pattern(rng: random.Random) -> dict[str, Any]:
+def pattern(rng: random.Random, axes: tuple[str, ...] = AXES) -> dict[str, Any]:
     kind = rng.choice(["corners", "rectangle", "ends", "row", "grid", "circle", "arc"])
-    a1, a2 = rng.sample(AXES, 2)
+    a1, a2 = rng.sample(axes, 2)
     body: dict[str, Any] = {}
     if kind == "corners":
         body = {f"inset_{a1}": length(rng), f"inset_{a2}": length(rng)}
     elif kind == "rectangle":
         body = {a1: length(rng), a2: length(rng)}
     elif kind == "ends":
-        body = {"inset": length(rng), "axis": choice(rng, AXES)}
+        body = {"inset": length(rng), "axis": choice(rng, axes)}
     elif kind == "row":
-        body = {"pitch": length(rng), "count": count(rng), "axis": choice(rng, AXES)}
+        body = {"pitch": length(rng), "count": count(rng), "axis": choice(rng, axes)}
     elif kind == "grid":
         body = {f"pitch_{a1}": length(rng), f"count_{a1}": count(rng),
                 f"pitch_{a2}": length(rng), f"count_{a2}": count(rng)}  # fmt: skip
@@ -117,16 +127,16 @@ def pattern(rng: random.Random) -> dict[str, Any]:
     return {kind: body}
 
 
-def place(rng: random.Random) -> dict[str, Any]:
+def place(rng: random.Random, axes: tuple[str, ...] = AXES) -> dict[str, Any]:
     out: dict[str, Any] = {}
     if rng.random() < 0.15:
         return {"concentric": {"item": "body", "from": stated(rng)}}
-    for axis in rng.sample(AXES, rng.randint(0, 2)):
+    for axis in rng.sample(axes, rng.randint(0, 2)):
         out[axis] = position(rng, axis)
     if rng.random() < 0.3:
         out["angle"] = angle(rng)
     if rng.random() < 0.5:
-        out["pattern"] = pattern(rng)
+        out["pattern"] = pattern(rng, axes)
     return out
 
 
@@ -146,7 +156,9 @@ def profile(rng: random.Random) -> dict[str, Any]:
     return {"start": [0, 0], "segments": segments, "unit": "mm", "from": stated(rng)}
 
 
-def value_for(rng: random.Random, spec: FieldSpec, kind: str, others: list[str]) -> Any:
+def value_for(rng: random.Random, spec: FieldSpec, kind: str, others: list[str],
+              axes: tuple[str, ...] = AXES) -> Any:  # fmt: skip
+    """A value of a field; ``axes`` the item's names for its face's axes, the part's or the face's own (schema 1.4)."""
     t = spec.type
     if t is FieldType.LENGTH:
         return length(rng)
@@ -175,6 +187,10 @@ def value_for(rng: random.Random, spec: FieldSpec, kind: str, others: list[str])
     if t is FieldType.ITEM:
         return "body"
     if t is FieldType.CHOICE:
+        if spec.choices == IN_FACE_AXES:
+            return choice(rng, axes)
+        if spec.choices == (*DIRECTIONS, *FACE_SIDES):
+            return choice(rng, FACE_SIDES if axes == FACE_OWN_AXES else DIRECTIONS)
         return choice(rng, spec.choices)
     if t is FieldType.DESIGNATION:
         return {
@@ -187,7 +203,7 @@ def value_for(rng: random.Random, spec: FieldSpec, kind: str, others: list[str])
             "from": stated(rng),
         }
     if t is FieldType.PLACE:
-        return place(rng)
+        return place(rng, axes)
     if t is FieldType.EDGES:
         which = rng.choice(KINDS[others[0]].edges or ("top",)) if others else "top"
         edges: dict[str, Any] = {"of": "body", "which": which}
@@ -220,6 +236,7 @@ def random_item(
     out: dict[str, Any] = {"id": item_id, "kind": kind, "words": list(WORDS)}
     others = [body_kind] if body_kind else []
     choices: dict[str, str] = {}
+    axes = FACE_OWN_AXES if body_kind and rng.random() < 0.25 else AXES  # named by the face's own axes (schema 1.4)
     for field in spec.fields:
         if field.type is FieldType.CHOICE:
             pass
@@ -234,7 +251,7 @@ def random_item(
             continue
         if field.name == "on" and body_kind is None:
             continue
-        value = value_for(rng, field, kind, others)
+        value = value_for(rng, field, kind, others, axes)
         if field.type is FieldType.CHOICE:
             choices[field.name] = value["choose"]
         out[field.name] = value
@@ -254,7 +271,7 @@ def random_draft(rng: random.Random) -> dict[str, Any]:
         )
         items.append(random_item(rng, f"item{k}", kind, body_kind))
     draft: dict[str, Any] = {
-        "schema_version": "1.3",
+        "schema_version": "1.4",
         "name": rng.choice(["part", "a bracket", "plate 2"]),
         "items": items,
     }

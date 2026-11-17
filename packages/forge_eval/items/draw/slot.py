@@ -19,6 +19,7 @@ class Slot(DrawKind):
     flat_weight = 1
     flat_rank = 2
     cut_out = True
+    cuts_turned_faces = True
 
     def footprint(
         self, f: Feature, axes: tuple[str, str]

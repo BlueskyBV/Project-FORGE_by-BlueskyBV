@@ -47,8 +47,12 @@ How far it rises out of the face.
 
 ### `along`
 
-The frame axis the rib runs along; it must be one of the face's two axes.
+The axis of its face the rib runs along: one of the face's two axes, named by the
+face's own (schema 1.4) or by the part's ([place.md](place.md), "Where on
+the face").
 
+- `u`: along the face's first axis.
+- `v`: along the face's second axis.
 - `x`: along X.
 - `y`: along Y.
 - `z`: along Z.

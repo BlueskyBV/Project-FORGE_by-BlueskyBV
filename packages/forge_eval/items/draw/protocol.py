@@ -106,6 +106,9 @@ class DrawKind:
     turns_all_round = False
     #: It leans from square to its flat face (tilt): a hole, a boss, a post.
     leans = False
+    #: A cut the generator puts on a turned item's far face, turned with it (place.md, "A turned item's far face"): a
+    #: hole, a slot, a pocket. What stands there stands as a box or a rod does.
+    cuts_turned_faces = False
 
     # ------------------------------------------------------------------
     # Its own
@@ -316,8 +319,19 @@ class DrawKind:
         up = _named(n)
         # Over an overhang, only its own height (frame.md): under its far face the least, and nothing through.
         under = 0.0 if beyond else _under(face, feet[k])
-        if f.turn is not None:
-            return  # turned in its face, its faces take nothing yet (a later move): none is kept
+        if f.turn is not None or face.turn != 0.0:
+            # Turned in its face, or on a face turned with what it is on, it is turned so (place.md, "A turned item's
+            # far face"): only its far face takes anything, turned with it, its own height and its host's material
+            # under it, where its host has the same material under all of it; else none is kept.
+            far = (f.id, copy_index, "+end" if self.round_far_end else up)
+            turn = face.turn + (f.turn or 0.0)
+            if self.round_far_end:
+                part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),
+                                        height + under, face.exit, turn=turn)  # fmt: skip
+            elif face.level and face.dome <= 0 and face.flare[1] <= 0:
+                part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
+                                        height + face.material, face.exit, level=True, turn=turn)  # fmt: skip
+            return
         if self.round_far_end:
             far = (f.id, copy_index, "+end")
             part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),

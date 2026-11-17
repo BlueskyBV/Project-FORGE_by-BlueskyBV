@@ -78,11 +78,20 @@ def sample() -> list[int]:
 # ----------------------------------------------------------------------
 # Canonical form
 # ----------------------------------------------------------------------
-#: Fields a later step added to a class, None wherever a part has nothing of them: left out there, so a part that
-#: has nothing of them digests as it did before (1b's first move, V2-stage4b-0c.md 3.3: a copy's, an item's and a
-#: place's turn, and a print's turned outline; its second: an instance's, a copy's and an item's lean).
+#: Fields a later step added to a class, at their default (None, or no turn) wherever a part has nothing of them:
+#: left out there, so a part that has nothing of them digests as it did before (1b's first move, V2-stage4b-0c.md
+#: 3.3: a copy's, an item's and a place's turn, and a print's turned outline; its second: an instance's, a copy's and
+#: an item's lean; its third's first step: a face's turn and the names of its axes, an item's own axes).
 ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_Print", "shape"),
-                   ("Instance", "direction"), ("Copy", "lean"), ("Feature", "tilt")})  # fmt: skip
+                   ("Instance", "direction"), ("Copy", "lean"), ("Feature", "tilt"),
+                   ("FlatFace", "turn"), ("FlatFace", "turn_sources"), ("FlatFace", "named"), ("_Flat", "turn"),
+                   ("Feature", "own_axes")})  # fmt: skip
+
+
+def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:
+    """Whether an added field holds its default: None, or the default it was added with (0.0, ())."""
+    held = getattr(value, f.name)
+    return held is None or (f.default is not dataclasses.MISSING and type(held) is type(f.default) and held == f.default)
 
 
 def canonical(value: Any, _stack: frozenset[int] = frozenset()) -> Any:
@@ -138,7 +147,7 @@ def canonical(value: Any, _stack: frozenset[int] = frozenset()) -> Any:
         return {"type": name,
                 "fields": [[f.name, canonical(getattr(value, f.name), stack)]
                            for f in dataclasses.fields(value) if not f.name.startswith("_")
-                           and not ((name, f.name) in ADDED and getattr(value, f.name) is None)]}  # fmt: skip
+                           and not ((name, f.name) in ADDED and _at_default(value, f))]}  # fmt: skip
     if isinstance(value, type) or callable(value):
         return "<callable>"
     cls = type(value)

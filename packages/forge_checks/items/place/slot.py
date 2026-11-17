@@ -8,7 +8,7 @@ from forge_spec.draft import Item
 
 from forge_checks.items.place.protocol import PlaceKind
 from forge_checks.outlines import Outline
-from forge_checks.place import PlaceError, _choice, _mm, _sized
+from forge_checks.place import PlaceError, _choice, _mm, _sized, in_axes
 
 
 class Slot(PlaceKind):
@@ -22,6 +22,7 @@ class Slot(PlaceKind):
     ) -> Outline:
         a1, _ = axes
         along = _choice(item, "along")
+        along = None if along is None else in_axes(along, axes)
         length, width = _mm(item, "length"), _mm(item, "width")
         if along not in axes:
             raise PlaceError(

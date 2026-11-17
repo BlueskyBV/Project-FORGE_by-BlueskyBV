@@ -18,7 +18,7 @@ from forge_spec.checks import SpecReport
 from forge_spec.draft import Choice, EdgeSet, Item, On, PartSpec
 from forge_spec.geometry import FlatFace
 from forge_spec.lock import ConfirmedSpec
-from forge_spec.placement import Instance, Layout
+from forge_spec.placement import Instance, Layout, placed_spec
 from forge_spec.values import Value
 
 from .edges import edge_reference
@@ -540,6 +540,7 @@ def _parts(spec: PartSpec, layout: Layout) -> list[tuple[str, str, str | None]]:
 def _plan(
     spec: PartSpec, layout: Layout, *, digest: str | None, gaps: tuple[Gap, ...] = ()
 ) -> Plan:
+    spec = placed_spec(spec, layout)  # each item as placed: along its face's axes as the part names them, turned with it
     items = {item.id: item for item in spec.items}
     ctx = Context(spec, layout)
     skipped = {gap.item: gap.reason for gap in gaps}

@@ -51,6 +51,8 @@ from .problems import (
 )
 from .schema import (
     AXES,
+    FACE_OWN_AXES,
+    IN_FACE_AXES,
     KINDS,
     NUMBER_SOURCES,
     PRESENT,
@@ -100,6 +102,7 @@ __all__ = [
     "Silent",
     "Text",
     "Through",
+    "axis_names",
     "read_draft",
 ]
 
@@ -839,11 +842,13 @@ PATTERN_FIELDS: Mapping[str, tuple[tuple[str, ...], tuple[str, ...], bool]] = {
     # kind: (lengths/angles, counts, needs an axis). Every pattern also takes
     # "each": how many at each position, as the brief says ("one in each
     # corner"); only one is supported.
-    "corners": (("inset_x", "inset_y", "inset_z"), ("each",), False),
-    "rectangle": (("x", "y", "z"), ("each",), False),
+    # Along an axis, a value or count is named by it: the part's, or the face's own u and v (schema 1.4).
+    "corners": (("inset_x", "inset_y", "inset_z", "inset_u", "inset_v"), ("each",), False),
+    "rectangle": (("x", "y", "z", "u", "v"), ("each",), False),
     "ends": (("inset",), ("each",), True),
     "row": (("pitch",), ("count", "each"), True),
-    "grid": (("pitch_x", "pitch_y", "pitch_z"), ("count_x", "count_y", "count_z", "each"), False),
+    "grid": (("pitch_x", "pitch_y", "pitch_z", "pitch_u", "pitch_v"),
+             ("count_x", "count_y", "count_z", "count_u", "count_v", "each"), False),
     "circle": (("diameter", "start"), ("count", "each"), False),
     # Part of a circle: copies a fixed angle apart ("two holes 90 degrees apart").
     "arc": (("diameter", "start", "step"), ("count", "each"), False),
@@ -896,7 +901,7 @@ def _pattern(raw: Any, at: str, problems: Problems) -> Pattern | None:
                 tallies[name] = count
     axis: Choice | None = None
     if needs_axis:
-        axis = _choice(obj.get("axis"), at + pointer(kind, "axis"), problems, AXES)
+        axis = _choice(obj.get("axis"), at + pointer(kind, "axis"), problems, IN_FACE_AXES)
         if axis is None:
             return None
     missing = [
@@ -922,13 +927,13 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
         at,
         problems,
         "a placement",
-        {*AXES, "angle", "turn", "pattern", "concentric"},
+        {*IN_FACE_AXES, "angle", "turn", "pattern", "concentric"},
     )
     if obj is None:
         return None
     before = len(problems.faults)
     axes: dict[str, AxisPosition] = {}
-    for axis in AXES:
+    for axis in IN_FACE_AXES:
         if axis in obj:
             position = _axis_position(obj[axis], at + pointer(axis), problems, axis)
             if position is not None:
@@ -1178,6 +1183,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                     if item.get(leans) is not None and version < (1, 3):
                         problems.fault(pointer("items", n, leans),
                                        f'a {leans} is schema 1.3\'s: give the draft\'s "schema_version": "1.3"')  # fmt: skip
+                _check_axis_names(item, pointer("items", n), version, problems)
     for listed in ("not_modelled", "silent"):
         if not isinstance(raw.get(listed, []), list):
             problems.fault(pointer(listed), f"{listed} is a list")
@@ -1217,6 +1223,49 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
         tuple(silent),
         requirements,
     ), problems
+
+
+def axis_names(item: Item) -> list[tuple[str, str]]:
+    """Each axis an item names in its face, where: (the pointer below the item, the axis), as a position, a pattern's
+    value, count or axis, an ``along``, a ``thickness_along`` or a lean's way names it (``"u"``, ``"x"``; a side or a way
+    by its axis)."""
+    found: list[tuple[str, str]] = []
+    place = item.get("place")
+    if isinstance(place, Place):
+        found += [(pointer("place", axis), axis) for axis in place.axes]
+        pattern = place.pattern
+        if pattern is not None:
+            here = pointer("place", "pattern", pattern.kind)
+            for name in (*pattern.values, *pattern.counts):
+                axis = name.rpartition("_")[2]
+                if axis in IN_FACE_AXES and (name == axis or name.rpartition("_")[0] in _ALONG_AN_AXIS):
+                    found.append((here + pointer(name), axis))
+            if pattern.axis is not None:
+                found.append((here + pointer("axis"), pattern.axis))
+    for name in ("along", "thickness_along", "tilt_towards"):
+        chosen = item.get(name)
+        if isinstance(chosen, Choice) and chosen.value[-1] in IN_FACE_AXES:
+            found.append((pointer(name), chosen.value[-1]))
+    return found
+
+
+#: What a pattern value or count along an axis is named by, before the axis: "inset_x", "count_u".
+_ALONG_AN_AXIS = frozenset({"inset", "pitch", "count"})
+
+
+def _check_axis_names(item: Item, at: str, version: tuple[int, int], problems: Problems) -> None:
+    """A face's own axes, u and v, are schema 1.4's; an item names its face's axes one way, the face's own or the
+    part's, not both."""
+    named = axis_names(item)
+    own = [(where, axis) for where, axis in named if axis in FACE_OWN_AXES]
+    if own and version < (1, 4):
+        problems.fault(at + own[0][0],
+                       'a face\'s own axes, u and v, are schema 1.4\'s: give the draft\'s "schema_version": "1.4"')  # fmt: skip
+    part = [(where, axis) for where, axis in named if axis in AXES]
+    if own and part:
+        problems.fault(at + part[0][0],
+                       f"{item.id} names its face's axes by the face's own u and v at {own[0][0]}: name them all so, "
+                       f"not by the part's {part[0][1]} as well")  # fmt: skip
 
 
 def _requirements(raw: Any, problems: Problems) -> Requirements:

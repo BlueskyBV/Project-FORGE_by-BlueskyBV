@@ -10,7 +10,7 @@ from forge_checks import rounds
 from forge_checks.csg import Node
 from forge_checks.items.oracle._shapes import _choice, _mm, box_chains, standing_box
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide, in_axes
 
 if TYPE_CHECKING:
     from forge_checks.oracle import _Making
@@ -24,7 +24,7 @@ class Rib(OracleKind):
     ) -> Node:
         assert copy.axes is not None
         a1, a2 = copy.axes
-        along = _choice(item, "along")
+        along = in_axes(_choice(item, "along") or a1, copy.axes)
         sizes = {
             along: _mm(item.get("length")),
             (a2 if along == a1 else a1): _mm(item.get("thickness")),

@@ -50,7 +50,7 @@ from .draft import (
 from .items.words.pattern import PATTERN_WORDS
 from .problems import MAX_NAME, MAX_REASON
 from .schema import (
-    AXES,
+    IN_FACE_AXES,
     KINDS,
     MATERIAL_WORDS,
     NON_SHAPE_WORDS,
@@ -335,7 +335,7 @@ def _defs() -> dict[str, Any]:
         ),
         "place": _obj(
             {
-                **{axis: _ref(f"position_{axis}") for axis in AXES},
+                **{axis: _ref(f"position_{axis}") for axis in IN_FACE_AXES},
                 "angle": _ref("angle"),
                 "turn": _ref("angle"),
                 "pattern": _ref("pattern"),
@@ -345,7 +345,7 @@ def _defs() -> dict[str, Any]:
             "where on the face; along an axis it doesn't give, an item is centred (an assumption)",
         ),
     }
-    for axis in AXES:
+    for axis in IN_FACE_AXES:
         defs[f"position_{axis}"] = {"oneOf": [
             _obj({"centred": _ref("stated")}, ("centred",)),
             _obj({"offset": _ref("signed_length")}, ("offset",), "from the face's centre to the item's"),
@@ -365,7 +365,7 @@ def _pattern_schema(kind: str) -> dict[str, Any]:
     properties.update({name: _ref("count") for name in counts})
     required = list(PATTERN_REQUIRED.get(kind, ()))
     if needs_axis:
-        properties["axis"] = _choice_schema(AXES)
+        properties["axis"] = _choice_schema(IN_FACE_AXES)
         required.append("axis")
     return _obj(
         {kind: _obj(properties, tuple(required))}, (kind,), PATTERN_WORDS[kind].meaning
@@ -660,11 +660,15 @@ confirming, so it must say plainly what the part won't have.
 
 "on" names the face an item stands on or cuts into: {{"item": "plate", \
 "face": "+z"}}. The first body has no "on": it sits on the origin. "place" \
-puts it on the face, along the face's two axes:
+puts it on the face, along the face's two axes: "u", its first, and "v", \
+its second ("schema_version": "1.4"), or the part's axes they run along \
+("x", "y", "z"), on a face whose axes are the part's; an item names them \
+one way. Its patterns' values ("inset_u", "pitch_v", ...), "along" and \
+"thickness_along" and "tilt_towards" ("+u", ...) name them the same way:
 - {{"centred": {{"words": [...]}}}}: centred along that axis;
 - {{"offset": size}}: its centre that far from the face's centre (negative \
 towards the minus side);
-- {{"side": "+x", "distance": size, "to": "centre"}}: measured in from that \
+- {{"side": "+u", "distance": size, "to": "centre"}}: measured in from that \
 edge of the face to the item's centre (or "to": "edge", to its near edge).
 An axis place doesn't give is centred, as an assumption Forge shows. On a \
 round side, place gives the position along the rod's axis and an "angle" \
@@ -675,8 +679,12 @@ slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \
 letters in the face's plane, from the face's first axis towards its second, \
 about its own point ("schema_version": "1.2" or later); its edges are then not along \
 the face's axes, so a position measured "to": "edge" is to its turned \
-outline's farthest point along that axis. A turned item's own faces take \
-nothing yet, and its edges aren't rounded.
+outline's farthest point along that axis. A turned block's, post's, \
+rib's or square tab's far face (its top, or a tab's end) takes items, \
+placed along its own axes, "u" and "v", turned with it ("schema_version": \
+"1.4"); there an item that isn't round turns with it, so a profile pushed \
+out of it waits for a later step. A turned item's other faces take nothing \
+yet, and its edges aren't rounded.
 
 A hole, a boss or a post on a flat face may lean: "tilt": angle (more than \
 0, at most 75 deg) from square to the face, towards "tilt_towards", one of \

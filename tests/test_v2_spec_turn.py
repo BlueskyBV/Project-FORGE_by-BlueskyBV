@@ -134,8 +134,11 @@ class WhatFollowsFromATurn(unittest.TestCase):
         half = (20.0 + 1.5) * math.cos(math.radians(45))
         self.assertAlmostEqual(copy_.hi[0] - copy_.lo[0], 2 * half, places=9)
         self.assertAlmostEqual(copy_.hi[2] - copy_.lo[2], 10.0, places=9)
-        self.assertEqual(report.layout.faces.get(("rib", 0), {}), {})
-        self.assertIn("+z", report.layout.closed[("rib", 0)])
+        # Its far face takes things, turned with it (schema 1.4): its own height and the plate's under it; its others
+        # are closed.
+        (top,) = report.layout.faces[("rib", 0)].values()
+        self.assertEqual((top.name, top.turn, top.half, top.depth_below), ("+z", 45.0, (20.0, 1.5), 10.0 + 8.0))
+        self.assertIn("+x", report.layout.closed[("rib", 0)])
 
     def test_a_turned_pockets_depth_and_floor(self) -> None:
         pocket = {"id": "pocket", "kind": "pocket", "words": cite(B, "pocket"), "on": {"item": "plate", "face": "+z"},
@@ -201,8 +204,10 @@ class WhatTurnsAndWhere(unittest.TestCase):
         c, s_ = math.cos(math.radians(60)), math.sin(math.radians(60))
         self.assertAlmostEqual(copy_.hi[0] - copy_.lo[0], 2 * (1.5 * c + 4.5 * s_), places=9)
         self.assertAlmostEqual(copy_.hi[2] - copy_.lo[2], 12.0, places=9)
-        for item in ("post", "tab"):
-            self.assertEqual(report.layout.faces.get((item, 0), {}), {})
+        # The post's far face takes things, turned with it; the round-ended tab's is curved: neither's others do.
+        self.assertEqual(list(report.layout.faces.get(("post", 0), {})), ["+z"])
+        self.assertEqual(report.layout.faces[("post", 0)]["+z"].turn, 30.0)
+        self.assertEqual(report.layout.faces.get(("tab", 0), {}), {})
 
     def test_letters_placed_by_their_line_fitted_by_their_ink(self) -> None:
         from forge_spec.font import text_width

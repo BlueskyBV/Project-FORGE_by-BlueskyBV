@@ -30,7 +30,17 @@ from typing import Any, Literal
 from .checks import SpecReport, check_draft
 from .compare import Difference
 from .problems import MAX_REASON, one_line
-from .schema import AXES, FACE_AXES, KINDS, FieldType, material_words
+from .schema import (
+    AXES,
+    DIRECTIONS,
+    FACE_AXES,
+    FACE_OWN_AXES,
+    FACE_SIDES,
+    IN_FACE_AXES,
+    KINDS,
+    FieldType,
+    material_words,
+)
 from .wire import to_wire
 from .words import ANSWER_PREFIXES, REPLACED_BY_ANSWER, NumberedBrief, number_words
 
@@ -277,12 +287,19 @@ def _target(parts: list[str], draft: Mapping[str, Any]) -> tuple[list[str], Mapp
                 if field is not None and depth == 3
                 else (_face_axes(item) if key == "axis" else ())
             )
+            chosen = node.get("choose")
+            if chosen in FACE_OWN_AXES:  # an axis of its face, named by the face's own names
+                choices = FACE_OWN_AXES
+            elif choices == IN_FACE_AXES:  # or by the part's
+                choices = AXES
+            elif choices == (*DIRECTIONS, *FACE_SIDES):  # a way along one, either way
+                choices = FACE_SIDES if chosen in FACE_SIDES else DIRECTIONS
             best = (parts[:depth], node, kind, choices)
     return best
 
 
 def _face_axes(item: Mapping[str, Any]) -> tuple[str, ...]:
-    """The axes a pattern can run along on the item's face: x or y on +z."""
+    """The axes a pattern, a slot or a rib can run along on the item's face, named by the part's: x or y on +z."""
     on = item.get("on")
     face = on.get("face") if isinstance(on, Mapping) else None
     return FACE_AXES.get(str(face), AXES)

@@ -20,6 +20,17 @@ a round-ended tab's broad face is measured as the rectangle round it.
 
 ## On a flat face
 
+A flat face has two axes in its plane, its first and its second (frame.md's
+table), named in a draft by the face's own names, `u` and `v` (schema 1.4),
+or by the part's axes they run along (`x`, `y`, `z`), on a face whose axes
+are the part's. On a turned face (a turned item's far face, below) only `u`
+and `v` name them: the part's axes don't run along them, and naming them so
+is a fault. An item names its face's axes one way, in its positions and
+their sides (`+u`, `-v`), its pattern's values, counts and axis (`inset_u`,
+`pitch_v`), its `along` or `thickness_along`, and the way it leans
+(`tilt_towards`); naming them both ways is a fault. Round a side, `u` and
+`v` name nothing: an item is placed along the side's axis and by angle.
+
 Each of the face's two axes takes one position, or none:
 
 - **none:** the item is centred along that axis (an assumption).
@@ -56,10 +67,32 @@ up across outward, as unturned letters do). A round footprint turns into
 itself, so a turn of a hole, a boss, a round pocket or any other kind is a
 fault, as is a turn on a round side or with `concentric`.
 
-For now, a turned item's own faces take nothing (nothing stands on them or
-is cut into them), its edges are not rounded or chamfered, and it is not
-hollowed: those come with oriented bodies (V2-stage4b-0c.md, 3.3, 1b's
-third move).
+For now, a turned item's edges are not rounded or chamfered, it is not
+hollowed, and of its own faces only its far face takes anything (below):
+the rest come with oriented bodies (V2-stage4b-0c.md, 3.3, 1b's third
+move).
+
+### A turned item's far face
+
+The face of a turned block, post, rib or square-ended tab opposite the one
+it stands on (its top, or a tab's end) faces the way its host's face does;
+its axes are turned in its plane with it, by its turn. On a turned face
+itself, a turn is the face's and the item's own together: turns in one
+plane add. What is placed on such a face is placed along its own axes, `u`
+and `v`, from its own edges and centre, and is turned with it: an item
+turned there turns by its own turn from the face's first axis, so by both
+from the part's. A round item (a hole, a boss, a round pocket, a cylinder)
+is the same turned, its own faces turned with it; an item whose outline
+isn't round and doesn't turn (an extrusion, a revolution, a region) waits
+for a later step there.
+
+Under it is the turned item's own height of material and, where its turned
+outline lies wholly on a host with the same material under all of it
+(frame.md), the host's too, under all of it: a cut right through goes
+through both and comes out where a cut through the host would. Where it
+stands partly off its host's face, or on a face without the same material
+under all of it, its far face takes nothing yet. Its other faces take
+nothing yet either, nor does a leaning item's.
 
 ### Leaning on the face (`tilt`)
 

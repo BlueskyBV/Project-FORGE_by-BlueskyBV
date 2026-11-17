@@ -52,6 +52,7 @@ from forge_spec.draft import (
     Place,
     Profile,
     Text,
+    axis_names,
 )
 from forge_spec.ends import ThroughAll, end_of
 from forge_spec.font import missing_letters, text_width
@@ -91,10 +92,12 @@ __all__ = [
     "Turned",
     "body_edges",
     "compare_layouts",
+    "in_axes",
     "least",
     "material_at",
     "most",
     "place",
+    "same_under",
     "section_of",
     "turn",
 ]
@@ -181,6 +184,16 @@ def turn(degrees: float) -> tuple[float, float]:
 
 def _add(a: Vec, b: Vec, scale: float = 1.0) -> Vec:
     return (a[0] + scale * b[0], a[1] + scale * b[1], a[2] + scale * b[2])
+
+
+def _scale(a: Vec, k: float) -> Vec:
+    return (k * a[0] + 0.0, k * a[1] + 0.0, k * a[2] + 0.0)
+
+
+def in_axes(name: str, axes: tuple[str, str]) -> str:
+    """An axis of a flat face as the frame names it: its own first, ``u``, and second, ``v``, are ``axes``' (place.md,
+    "On a flat face"); the part's names are themselves."""
+    return axes[0] if name == "u" else axes[1] if name == "v" else name
 
 
 def _on_axis(point: Vec, axis: str, value: float) -> Vec:
@@ -370,6 +383,22 @@ class Less:
 Material = Solid | Taper | Dome | Turned | Over | Less
 
 
+def same_under(face: FlatFace) -> float | None:
+    """The material under a flat face where it is the same under all of it (frame.md): its own, or a standing item's
+    own height and its host's, wholly over a host with the same under all of it; None where it isn't."""
+    material = face.material
+    if isinstance(material, Solid):
+        return material.depth
+    if (
+        isinstance(material, Over)
+        and isinstance(material.own, Solid)
+        and isinstance(material.host, Solid)
+        and any(face.outline.within(over) for over in material.over)
+    ):
+        return material.own.depth + material.host.depth
+    return None
+
+
 def material_at(material: Material, p: Point) -> float:
     """The material under one point of a face."""
     if isinstance(material, Solid):
@@ -443,6 +472,10 @@ class FlatFace:
     axes: tuple[str, str]
     outline: Outline
     material: Material
+    #: A turned item's far face, and what stands on or is cut in one (place.md, "A turned item's far face"): its axes
+    #: turned in its plane by this many degrees from the part's ``axes``, the first towards the second; its outline
+    #: and positions on it are along them.
+    turn: float = 0.0
 
     @property
     def half(self) -> Point:
@@ -450,8 +483,13 @@ class FlatFace:
 
     @functools.cached_property
     def frame(self) -> FaceFrame:
-        """Its centre, its first and second axes and its outward normal."""
-        return FaceFrame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+        """Its centre, its first and second axes and its outward normal, turned in its plane by its ``turn``."""
+        frame = FaceFrame.of_names(self.centre, self.axes[0], self.axes[1], self.normal)
+        if self.turn == 0.0:
+            return frame
+        c, s = turn(self.turn)
+        u, v = frame.u, frame.v
+        return FaceFrame(frame.origin, _add(_scale(u, c), v, s), _add(_scale(u, -s), v, c), frame.n)
 
     def frame_at(self, at: Point) -> FaceFrame:
         """The face's frame at the point of its plane at ``at`` (item 3a's placeable face)."""
@@ -954,7 +992,7 @@ def _lean(item: Item, axes: tuple[str, str]) -> _Lean | None:
     towards = item.get("tilt_towards")
     if not isinstance(towards, Choice):
         raise PlaceError(item.id, "a tilt says which way it leans")
-    axis, sign = towards.value[1], (1.0 if towards.value[0] == "+" else -1.0)
+    axis, sign = in_axes(towards.value[1], axes), (1.0 if towards.value[0] == "+" else -1.0)
     if axis not in axes:
         raise PlaceError(item.id, f"it leans towards {towards.value}, which isn't one of the face's axes {axes}")
     degrees = _angle(tilt)
@@ -1040,6 +1078,7 @@ def _sized(
 ) -> Outline:
     """A long box's footprint: ``long`` along ``along`` (one of the face's ``axes``), ``short`` across it."""
     a1, _ = axes
+    along = None if along is None else in_axes(along, axes)
     if along not in axes:
         raise PlaceError(
             item.id,
@@ -1210,6 +1249,8 @@ def _pattern_entry(mode: str) -> PatternPlace:
 def _flat_positions(item: Item, face: FlatFace, layout: _Layout) -> list[Point]:
     """Every copy's centre on a flat face, in the face's coordinates, in the order they are made."""
     place = _place(item)
+    if place is not None:
+        place = _named_by(place, face.axes)
     a1, a2 = face.axes
     axes_given = dict(place.axes) if place else {}
     pattern = place.pattern if place else None
@@ -1291,6 +1332,24 @@ def _flat_positions(item: Item, face: FlatFace, layout: _Layout) -> list[Point]:
     ]
 
 
+def _named_by(place: Place, axes: tuple[str, str]) -> Place:
+    """A place along a face's axes as the frame names them (:func:`in_axes`): its positions, their sides, and its
+    pattern's values, counts and axis."""
+
+    def name(n: str) -> str:
+        before, _, last = n.rpartition("_")
+        return n if last not in ("u", "v") else (before + "_" if before else "") + in_axes(last, axes)
+
+    pattern = place.pattern
+    if pattern is not None:
+        pattern = replace(pattern, values={name(k): v for k, v in pattern.values.items()},
+                          counts={name(k): c for k, c in pattern.counts.items()},
+                          axis=None if pattern.axis is None else in_axes(pattern.axis, axes))  # fmt: skip
+    positions = {in_axes(a, axes): replace(p, side=None if p.side is None else p.side[0] + in_axes(p.side[1:], axes))
+                 for a, p in place.axes.items()}  # fmt: skip
+    return replace(place, axes=positions, pattern=pattern)
+
+
 def _concentric(item: Item, face: FlatFace, host: tuple[str, int, str], host_copies: int,
                 layout: _Layout) -> list[Point]:  # fmt: skip
     """Where a concentric item goes: where its partner's axis passes through the face (place.md)."""
@@ -1355,6 +1414,7 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
                 item.id, f"{on.item}'s {on.face} can't take anything: {why}"
             )
         host = (on.item, host_copy.index, on.face)
+        _names_fit(item, face)
         made += _HOSTS[type(face)](item, face, host, len(hosts), layout, len(made))
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
@@ -1362,6 +1422,16 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
             item.id, f"its count is {count.n}, but it is placed {len(made)} times"
         )
     return tuple(made)
+
+
+def _names_fit(item: Item, face: Face) -> None:
+    """A turned face's axes are named only by its own, u and v; a round side's by neither (place.md, "Where on the
+    face")."""
+    named = {axis for _, axis in axis_names(item)}
+    if isinstance(face, FlatFace) and face.turn != 0.0 and named - {"u", "v"}:
+        raise PlaceError(item.id, f"its face is turned with what it is on: it names its axes by the part's {sorted(named)}")
+    if isinstance(face, RoundSide) and named & {"u", "v"}:
+        raise PlaceError(item.id, "u and v are a flat face's own axes, not a round side's")
 
 
 def _on_flat(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
@@ -1436,11 +1506,23 @@ def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_co
                 )
             )
         lean = _lean(item, face.axes)
+        degrees = _as_placed(item, face)
         if lean is not None:
-            made[-1] = replace(_leaning_copy(item, made[-1], face, lean, layout), turn=turned)
-        elif turned is not None:
-            made[-1] = _turned_copy(item, made[-1], face, (p1, p2), turned, layout)
+            made[-1] = replace(_leaning_copy(item, made[-1], face, lean, layout),
+                               turn=None if degrees is None else turn(degrees))  # fmt: skip
+        elif degrees is not None:
+            made[-1] = _turned_copy(item, made[-1], face, (p1, p2), degrees, layout)
     return made
+
+
+def _as_placed(item: Item, face: FlatFace) -> float | None:
+    """An item's turn as placed, in degrees from its face's axes as the part names them: its own (``place.turn``) and,
+    on a turned face, the face's besides (place.md, "A turned item's far face"); None if neither turns it."""
+    place = _place(item)
+    own = _angle(place.turn) if place is not None and place.turn is not None else None
+    if face.turn == 0.0:
+        return own
+    return face.turn + (own or 0.0)
 
 
 def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _Layout) -> Copy:
@@ -1449,12 +1531,11 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     past the far side: ``(T + r sin) / cos``); a standing one's box round its foot and its far end, and what it
     reaches back into the face from its foot (its half size along its lean times tan) held to ``T``. Every face it
     has is closed, as a turned item's is."""
-    material = face.material
-    if not isinstance(material, Solid):
+    thick = same_under(face)
+    if thick is None:
         raise PlaceError(item.id, "it leans on a face without the same material under all of it: not yet")
-    thick = material.depth
     n = face.frame.n
-    a1, a2 = unit("+" + face.axes[0]), unit("+" + face.axes[1])
+    a1, a2 = face.frame.u, face.frame.v
     w = tuple(lean.way[0] * a1[k] + lean.way[1] * a2[k] for k in range(3))
     u = (lean.c * n[0] + lean.s * w[0], lean.c * n[1] + lean.s * w[1], lean.c * n[2] + lean.s * w[2])
     key = (item.id, copy.index)
@@ -1496,30 +1577,72 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     return replace(copy, lean=u, lo=(lo[0], lo[1], lo[2]), hi=(hi[0], hi[1], hi[2]))
 
 
-def _turned_copy(
-    item: Item, copy: Copy, face: FlatFace, at: Point, by: Point, layout: _Layout
-) -> Copy:
-    """A copy turned in its face's plane: its turn kept, a standing one's box round its turned footprint, and every face
-    it has closed (what is put on a turned item's faces is a later move)."""
+def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: float, layout: _Layout) -> Copy:
+    """A copy turned in its face's plane by ``degrees`` as placed (its own turn and its face's): its turn kept, as on a
+    plane along the part's axes; a standing one's box round its footprint turned so. A round one is the same turned:
+    its faces turned with its face, its far face standing (place.md, "A turned item's far face"), its others closed. A
+    box's far face is turned with it, its own height of material under it and, wholly over a host with the same
+    material under all of it, the host's; anywhere else it is closed, as every other face of a turned item is."""
     key = (item.id, copy.index)
-    for name in list(layout.faces.get(key, {})) + [
-        n for n in KINDS[item.kind].faces if n not in layout.faces.get(key, {})
-    ]:
-        if name not in layout.closed.get(key, {}):
-            layout.close(
-                key,
-                name,
-                "it is turned in its face: nothing is placed on a turned item's faces, for now",
-            )
+    by = turn(degrees)
+    entry = _entry(item.kind)
+    faces = layout.faces.setdefault(key, {})
+    foot = entry.footprint(item, layout.diameters, face.axes)
+    round_ = not entry.turnable(item)
+    if round_ and foot.shape not in ("disc", "ring"):
+        raise PlaceError(item.id, "it is on a turned face, and its outline, which isn't round, doesn't turn yet")
+    up = direction_of(copy.direction)
+    far = _entry(item.kind).far(up) if up is not None and copy.lo is not None else None
+    kept: FlatFace | None = None
+    if entry.taken:
+        if round_:  # a round cut is the same turned: its floor is along its face's axes
+            for name, found in list(faces.items()):
+                if isinstance(found, FlatFace):
+                    faces[name] = replace(found, turn=face.turn)
+            return replace(copy, turn=by)
+    elif far is not None and isinstance(faces.get(far), FlatFace) and item.id not in layout.shells:
+        kept = _turned_far(item, faces[far], face, at, degrees, round_)  # type: ignore[arg-type]
+    for name in list(faces) + [n for n in KINDS[item.kind].faces if n not in faces]:
+        if (kept is None or name != kept.name) and name not in layout.closed.get(key, {}):
+            layout.close(key, name, "it is turned in its face: only a turned box's far face, or a round item's, takes "
+                         "anything, for now")  # fmt: skip
+    if kept is not None:
+        faces[kept.name] = kept
     if copy.lo is None or copy.hi is None:
         return replace(copy, turn=by)
-    foot = _footprint(item, layout.diameters, face.axes)
+    if not round_:
+        foot = _turned(item, foot, by)
     lo, hi = list(copy.lo), list(copy.hi)
+    middle = _in_plane(copy.point, face.axes)
     for k, axis in enumerate(face.axes):
         i = _INDEX[axis]
-        lo[i] = at[k] + foot.centre[k] - foot.half[k]
-        hi[i] = at[k] + foot.centre[k] + foot.half[k]
+        lo[i] = middle[k] + foot.centre[k] - foot.half[k]
+        hi[i] = middle[k] + foot.centre[k] + foot.half[k]
     return replace(copy, turn=by, lo=(lo[0], lo[1], lo[2]), hi=(hi[0], hi[1], hi[2]))
+
+
+def _turned_far(item: Item, far: FlatFace, face: FlatFace, at: Point, degrees: float, round_: bool) -> FlatFace | None:
+    """A turned item's far face, turned by ``degrees`` as it is: its outline moved to where its centre is along its
+    turned axes. A round item's keeps the material its host gives it (it is turned as its host's face is); a box's has
+    its own height and, wholly over a host with the same material under all of it, the host's too; else None."""
+    turned = replace(far, turn=degrees)
+    c1, c2 = turned.frame.plane(far.centre)
+    o1, o2 = far.outline.centre
+    outline = far.outline.moved(c1 - o1, c2 - o2)
+    if round_:
+        return replace(turned, outline=outline)
+    host = same_under(face)
+    if host is None:
+        return None
+    own = _turn_of(item)
+    foot = _entry(item.kind).footprint(item, {}, face.axes)
+    if own is not None:
+        foot = _turned(item, foot, own)
+    if not foot.moved(*at).within(face.outline):
+        return None
+    height = far.material.own if isinstance(far.material, Over) else far.material
+    assert isinstance(height, Solid)
+    return replace(turned, outline=outline, material=Solid(height.depth + host))
 
 
 # ----------------------------------------------------------------------
@@ -1847,6 +1970,7 @@ def _round_tab(item: Item, faces: dict[str, Face], key: tuple[str, int], point: 
     """A round-ended tab's faces (tab.md): its far end is curved, its narrow sides stop where
     the rounding starts, and its broad faces have the half-circle's outline."""
     thin = _choice(item, "thickness_along")
+    thin = None if thin is None else in_axes(thin, FLAT_AXES[up[1]])
     assert thin is not None and thin in sizes  # checked where its sizes were read
     wide = next(a for a in sizes if a != thin)
     radius = sizes[wide] / 2
@@ -2213,6 +2337,7 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
                     getattr(other, "inner_radius", None),
                 ),
                 ("corners", face.outline.corners, getattr(other, "corners", None)),
+                ("turn", face.turn, getattr(other, "turn", 0.0)),
             )
             if face.outline.shape == "profile" and _profile_gap(face, other) > SAME:
                 differ(

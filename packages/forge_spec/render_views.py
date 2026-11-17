@@ -100,7 +100,16 @@ from .items.views.pattern import PATTERN_VIEWS
 from .lean import ellipse, lean_of, leaning
 from .outline import Arc as OutlineArc
 from .outline import Shape
-from .placement import Instance, Layout, _along, _outline, _reaches, mm, turned_outline
+from .placement import (
+    Instance,
+    Layout,
+    _along,
+    _outline,
+    _reaches,
+    mm,
+    placed_spec,
+    turned_outline,
+)
 from .render import _line as item_line
 from .schema import FACE_AXES
 from .values import Count, Source, Value
@@ -928,8 +937,12 @@ class _Drawing:
     """One item drawn on every view: its outline, its dimensions, and the note that names it."""
 
     def __init__(self, item: Item, copies: Sequence[Instance], layout: Layout, canvases: Sequence[_Canvas],
-                 hiding: Mapping[int, _Occlusion]) -> None:  # fmt: skip
+                 hiding: Mapping[int, _Occlusion], own: Item | None = None) -> None:  # fmt: skip
+        #: The item as placed (:func:`~forge_spec.placement.as_placed`), which is drawn; ``own``, as the draft gives it,
+        #: whose fields are named.
         self.item = item
+        self.own = own or item
+        self.names = _own_names(self.own, item)
         self.copies = copies
         self.layout = layout
         self.canvases = canvases
@@ -943,7 +956,13 @@ class _Drawing:
         self.anchor: tuple[float, float] = (0.0, 0.0)
 
     # -- recording ----------------------------------------------------------
+    def named(self, fields: Sequence[str]) -> tuple[str, ...]:
+        """Fields as the draft names them (a place along a face's own u and v); none that only the item as placed has
+        (the turn of the turned face it is on)."""
+        return tuple(self.names.get(f, f) for f in fields if self.names.get(f, f) is not None)  # type: ignore[misc]
+
     def say(self, text: str, *fields: str) -> None:
+        fields = self.named(fields)
         self.said.append(text)
         self.said_fields += [f for f in fields if f not in self.said_fields]
         self.covered.update(fields)
@@ -951,6 +970,7 @@ class _Drawing:
     def line(self, canvas: _Canvas, along: str, a: float, b: float, feet: tuple[float, float], text: str,
              *fields: str, words: str | None = None) -> None:  # fmt: skip
         """A dimension line; where its ends meet, the note says it instead."""
+        fields = self.named(fields)
         if canvas.dimension(self.item.id, fields, along, a, b, feet, text):
             self.covered.update(fields)
         else:
@@ -1280,7 +1300,7 @@ class _Drawing:
                 f"concentric with {place.concentric}{_tag(place.concentric_provenance)}",
                 "place.concentric",
             )
-        if isinstance(face, FlatFace):
+        if isinstance(face, FlatFace) and face.turn == 0.0:
             self._on_flat(face, local, place, pattern)
         elif isinstance(face, SideFace):
             self._on_side(face, local, place)
@@ -1451,12 +1471,32 @@ class _Drawing:
             self.said_fields.insert(0, "count")
         elif len(self.copies) > 1:
             prefix = f"{len(self.copies)} x "
-        for path, words in _to_show(item).items():
+        for path, words in _to_show(self.own).items():
             if path not in self.covered:
                 self.say(words, path)
         assert self.home is not None
         self.home.note(item.id, tuple(dict.fromkeys(self.said_fields)), self.anchor,
                        f"{item.id}: {prefix}{', '.join(self.said)}")  # fmt: skip
+
+
+def _own_names(own: Item, placed: Item) -> dict[str, str | None]:
+    """What the views name each field of an item as placed by, as the draft names it: a position or a pattern's value
+    along a face's own u or v by it; the turn of a turned face it is on, by nothing where the draft gives it none."""
+    found: dict[str, str | None] = {}
+    mine, theirs = own.get("place"), placed.get("place")
+    if not isinstance(theirs, Place):
+        return found
+    if not isinstance(mine, Place):
+        return {"place.turn": None}
+    for a, b in zip(mine.axes, theirs.axes, strict=True):
+        found[f"place.{b}"] = f"place.{a}"
+    if mine.pattern is not None and theirs.pattern is not None:
+        for a, b in zip((*mine.pattern.values, *mine.pattern.counts),
+                        (*theirs.pattern.values, *theirs.pattern.counts), strict=True):  # fmt: skip
+            found[f"place.pattern.{b}"] = f"place.pattern.{a}"
+    if mine.turn is None and theirs.turn is not None:
+        found["place.turn"] = None
+    return found
 
 
 def _measured(axis: str, position: AxisPosition | None, centre: float, half: float, anchor: float,
@@ -1496,6 +1536,7 @@ def render_views(report: SpecReport) -> Views:
     spec, layout = report.spec, report.layout
     if spec is None:
         return Views((), (), (), None)
+    placed = {i.id: i for i in (placed_spec(spec, layout).items if layout is not None else spec.items)}
     words = tuple(Dimension(i.id, tuple(i.fields), item_line(i), "words")
                   for i in spec.items if not VIEWS[i.kind].drawable)  # fmt: skip
     drawable = [i for i in spec.items if VIEWS[i.kind].drawable]
@@ -1509,13 +1550,13 @@ def render_views(report: SpecReport) -> Views:
     canvases = [_Canvas(frame, scale / _SPAN_PX, decimals) for frame in _FRAMES]
     solids: list[_Solid] = [((i.item, i.index), *box) for item in drawable
                             if VIEWS[item.kind].hides
-                            for i in layout.instances.get(item.id, ()) for box in _inside(item, i, layout)]  # fmt: skip
-    windows = _windows(drawable, layout)
+                            for i in layout.instances.get(item.id, ()) for box in _inside(placed[item.id], i, layout)]  # fmt: skip
+    windows = _windows([placed[i.id] for i in drawable], layout)
     hiding = {c.w: _Occlusion(c, solids, windows, extent) for c in canvases}
     for item in drawable:
         copies = layout.instances.get(item.id, [])
         if copies:
-            _Drawing(item, copies, layout, canvases, hiding).draw()
+            _Drawing(placed[item.id], copies, layout, canvases, hiding, item).draw()
     _overall(canvases, lo, hi, size)
     views = tuple(
         View(c.frame.name, c.frame.caption, c.svg(), tuple(c.shown)) for c in canvases

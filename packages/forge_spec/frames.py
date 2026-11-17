@@ -19,10 +19,13 @@ applied by its products (item 1b's turned and tilted items).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import cached_property
 
-__all__ = ["Frame", "Vec", "axis", "name_of"]
+from forge_numeric import scalar as fs
+
+__all__ = ["Frame", "Vec", "axis", "cos_sin", "name_of"]
 
 Vec = tuple[float, float, float]
 
@@ -35,6 +38,18 @@ def axis(name: str) -> Vec:
     found = [0.0, 0.0, 0.0]
     found[_INDEX[name[-1]]] = sign
     return (found[0], found[1], found[2])
+
+
+def cos_sin(degrees: float) -> tuple[float, float]:
+    """The cosine and sine of an angle in degrees, exact where they are 0 or 1.
+
+    So copies a quarter turn apart sit exactly on the axes, not 1e-15 off them.
+    """
+    quarters = degrees / 90
+    if abs(quarters - round(quarters)) < 1e-12:
+        return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
+    t = math.radians(degrees)
+    return fs.cos(t), fs.sin(t)
 
 
 def _aligned(vector: Vec) -> tuple[int, bool] | None:
@@ -139,6 +154,11 @@ class Frame:
             vector[0] * self.v[0] + vector[1] * self.v[1] + vector[2] * self.v[2],
             vector[0] * self.n[0] + vector[1] * self.n[1] + vector[2] * self.n[2],
         )
+
+    def turned(self, c: float, s: float) -> Frame:
+        """The frame turned about its ``n`` by the angle whose cosine and sine are ``c`` and ``s``, ``u`` towards ``v``
+        (a turned item's far face, schema 1.4): aligned again on a quarter turn."""
+        return Frame(self.origin, self.radial(c, s), self.radial(-s, c), self.n)
 
     def radial(self, c: float, s: float) -> Vec:
         """``c u + s v``: round a side, the way out at the angle whose cosine and sine are ``c`` and ``s``."""

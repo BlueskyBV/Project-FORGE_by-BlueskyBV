@@ -19,6 +19,7 @@ from forge_checks.place import (
     _Layout,
     _mm,
     _sized,
+    in_axes,
 )
 
 
@@ -44,6 +45,7 @@ class Rib(PlaceKind):
              faces: dict[str, Face]) -> tuple[Vec, Vec]:  # fmt: skip
         a1, a2 = axes
         along = _choice(item, "along")
+        along = None if along is None else in_axes(along, axes)
         if along not in axes:
             raise PlaceError(
                 item.id,

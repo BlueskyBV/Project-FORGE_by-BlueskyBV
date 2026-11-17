@@ -2,8 +2,10 @@
 
 Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
 1b's first and second moves done (items turned in their face, schema 1.2;
-holes, bosses and posts leaning on it, schema 1.3); its third move
-(oriented bodies and item-local faces, schema 2.0) next. Companion to [V2-stage4b.md](V2-stage4b.md),
+holes, bosses and posts leaning on it, schema 1.3); its third move's first
+step done (positions along a face's own axes and a turned item's far face,
+schema 1.4), its second (a turned or leaning item's other faces, schema
+1.5) next. Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -457,6 +459,103 @@ spec grade's), `tests/test_v2_plan_lean.py` (built and judged on every face
 of a cube, both ways, a hole's side nowhere all round; a lean half a degree
 more, or the other way, fails face accounting; the second kernel agrees, the
 rigid motion included).
+
+**1b's third move, designed (revision 7, 17 November 2026): in four
+steps, each its own schema minor or major and proof.** A turned or leaning
+item's faces are closed today, and a body's axes are the part's. Each
+step opens a class of faces whose frame isn't the part's, and only the
+last changes what a draft means:
+
+1. **Positions along a face's own axes, and a turned item's far face
+   (schema 1.4).** `place.u` and `place.v` name a position along the
+   face's first and second axes, on any flat face; `x`, `y`, `z` stay its
+   aliases on a face whose axes are the part's, and are a fault on one
+   whose aren't. The face opposite the one a turned box stands on (a
+   block's, a post's, a rib's or a tab's far face) takes things: its
+   normal is its host face's, its axes turned in its plane with it
+   (`FlatFace.turn`, each program's own). What is placed on it is placed
+   in its frame and, as every other program reads it, is an item turned
+   by the face's turn and its own on an aligned plane: a round one is the
+   same turned; one whose outline isn't round and that doesn't turn (an
+   extrusion) is UNABLE there. Its material is the box's height and,
+   where its turned outline lies wholly on a host with the same material
+   under all of it, the host's; elsewhere it is closed for now.
+2. **A turned or leaning item's other faces (schema 1.5):** faces whose
+   normal is no frame axis. Every program places, measures depth and
+   builds along a face's frame: the solver's and the judge's faces carry a
+   `Frame`, the oracle's solids already do, the compiler aims along it,
+   the planner places by ForgeIR v2's rigid motions, the generator's truth
+   computes in frames.
+3. **Oriented bodies (schema 1.6):** `orientation` on a body, the first
+   included: a turn about each of its own axes in order. Its faces are its
+   own (`+x` is its own +x side), each with its frame, as step 2 places.
+4. **Schema 2.0:** a draft writes positions along `u` and `v` only; the
+   migration rewrites every `x`, `y`, `z` position to its face's axis,
+   proven on every draft Forge holds by `tests/v2_migrations.py`.
+
+**1b's third move, step 1, as built (revision 8, 17 November 2026).**
+Schema 1.4. A position and its side, a pattern's values, counts and axis,
+an `along`, a `thickness_along` and a lean's way name a flat face's axes by
+the face's own names, `u` (its first) and `v` (its second), or, on a face
+whose axes are the part's, by the part's (`x`, `y`, `z`): an item names them
+one way, the part's are a fault on a turned face, and `u` and `v` are a
+fault round a side (place.md, "On a flat face"). A turned block's, post's,
+rib's or square-ended tab's far face takes things: its axes turned in its
+plane with it, its own height and its host's material under it where its
+turned outline lies wholly on a host with the same material under all of
+it, closed elsewhere (place.md, "A turned item's far face"). In each
+program:
+
+- **The solver** places an item on a face named as the item names its axes
+  (`FlatFace.spelled`: `u` and `v`, its frame the same; on a turned face
+  always), so what it says and where it says it are the draft's own; and it
+  hands every program after it the item **as placed**
+  (`placement.as_placed`, `placed_spec`): named by the part's names for the
+  face's axes and, on a turned face, turned by the face's turn and its own,
+  an item turned on an aligned plane. So the planner, the views, the
+  comparison of drafts, and the solver's own exits, edge checks and order,
+  read an item on a turned face as move 1's turned item. `FlatFace.turn`
+  turns a face's frame (`Frame.turned`); what stands on a turned face
+  carries its turn to its far face (a round item's too, its other faces
+  closed); a round pocket's floor turns with its face; an item whose
+  outline neither turns nor is round is UNABLE there.
+- **The judge's placement** reads `u` and `v` as the face's axes
+  (`in_axes`), turns its own faces (`FlatFace.turn`), gives a copy on a
+  turned face its turn as placed (`Copy.turn`, both turns added in
+  degrees, so a quarter turn stays exact), and keeps a turned box's far
+  face by the same rule, the same material under a face read alike for a
+  turned far face and a lean (`same_under`: a standing item's far face
+  wholly over a host with the same material under all of it is such a
+  face). **The oracle** builds along the copy's turned axes; **the check
+  compiler** names each check and each note as the draft names its leaf
+  (`place.u`), tells a choice of axis from the others named the same way,
+  and leaves where an item on a turned face is to face accounting, as a
+  turned item's.
+- **The generator** puts an item on a turned box's far face from a stream
+  of its own (a hole, a slot, a pocket, a boss, a cylinder, a block, a post
+  or a rib, turned or leaning there too now and then), drafted along `u` and
+  `v`; and, from another, now and then names an item's face's axes by `u`
+  and `v` on any flat face. A seed that does neither is drawn as it was;
+  its truth is built in the turned face's frame (`_Flat.turn`). A draft
+  says schema 1.4 only when it names `u` or `v`.
+- **The guide** says `u` and `v` and the turned far face; **the views** draw
+  an item as placed and name each value as the draft does, saying in words
+  where an item on a turned face is.
+
+Found on the way and fixed: the judge refused a lean on a standing item's
+far face wholly over a host with the same material under all of it (a
+boss's on a plate), which the solver gives one (`same_under`).
+
+Tests: `tests/test_v2_spec_faceaxes.py` (read, written and cited; the same
+item said either way placed the same on every face; the far face's turn and
+material, the part's axes a fault there, turns adding, a round item the same
+turned, a face without the same material under all of it closed, an outline
+that doesn't turn UNABLE, leaning and in a pattern on it; the views),
+`tests/test_v2_plan_faceaxes.py` (built and judged: along `u` and `v` on the
+plate; on a turned post's or block's far face a hole through or blind, a
+slot along its own axis, a round pocket, a boss, a post turned again, a
+leaning hole and a row of holes; what is there turned half a degree more
+fails face accounting; the second kernel agrees).
 
 **1b, the ability:**
 
