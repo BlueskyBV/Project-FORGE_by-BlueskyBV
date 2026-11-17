@@ -363,10 +363,20 @@ class _Flat:
     #: A turned item's far face, and what stands on one (place.md, "A turned item's far face"): its axes turned in its
     #: plane by this many degrees from the part's ``axes``, the first towards the second.
     turn: float = 0.0
+    #: A turned item's other faces (place.md, "A turned item's faces"): its first and second axes on the part, its
+    #: ``axes`` naming them as they are with the item upright; its ``normal`` is the part's.
+    oriented: tuple[Vec, Vec] | None = None
+
+    @property
+    def turned(self) -> bool:
+        """Whether its axes aren't the part's: a turned item's face."""
+        return self.turn != 0.0 or self.oriented is not None
 
     @functools.cached_property
     def frame(self) -> _FaceFrame:
         """Its centre, its first and second axes and its outward normal, turned in its plane by its ``turn``."""
+        if self.oriented is not None:
+            return _FaceFrame(self.centre, self.oriented[0], self.oriented[1], _t(self.normal))
         e1, e2 = unit_of("+" + self.axes[0]), unit_of("+" + self.axes[1])
         if self.turn != 0.0:
             c, s = _cos_sin(self.turn)
@@ -893,6 +903,28 @@ def _turns_with(f: Feature, face: _Flat) -> bool:
     return type(entry).stand_flat is DrawKind.stand_flat
 
 
+def _turned_sides(part: _Part, item: str, index: int, p: Array, up: str, axes: tuple[str, str],
+                  sizes: tuple[float, float, float], turn: float) -> None:  # fmt: skip
+    """A turned box's sides (place.md, "A turned item's faces"): each its own face, named as with the box upright, its
+    axes turned with it, the box's own size across it under it, a cut through it coming out on the side across."""
+    c, s = _cos_sin(turn)
+    e1, e2 = _v(unit_of("+" + axes[0])), _v(unit_of("+" + axes[1]))
+    ways = {axes[0]: c * e1 + s * e2 + 0.0, axes[1]: c * e2 - s * e1 + 0.0, up[1]: _v(unit_of("+" + up[1]))}
+    length, width, height = sizes
+    extent = {axes[0]: length, axes[1]: width, up[1]: height}
+    n = _v(unit_of(up))
+    middle = p + height / 2 * n
+    for axis in axes:
+        for sign in ("+", "-"):
+            name, other = sign + axis, ("-" if sign == "+" else "+") + axis
+            d = (1.0 if sign == "+" else -1.0) * ways[axis]
+            b1, b2 = _flat_axes(name)
+            part.flats[(item, index, name)] = _Flat(
+                (item, index, name), middle + extent[axis] / 2 * d, d, (b1, b2), "rect",
+                (extent[b1] / 2, extent[b2] / 2), extent[axis], (item, index, other), level=True,
+                oriented=(_t(ways[b1]), _t(ways[b2])))  # fmt: skip
+
+
 def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
     """The box round an extrusion's outline or a revolution's half outline: its least and greatest coordinates."""
     assert f.outline is not None
@@ -1281,7 +1313,7 @@ def _on_flat(
             )
     if f.turn is not None and (f.on is None or not _draw(f.kind).turnable):
         raise DoesNotFitError(f"{f.id}: the generator turns a slot, a pocket, a rib, a tab, a block, a post or letters on a flat face")
-    if face.turn != 0.0 and not _turns_with(f, face):
+    if face.turned and not _turns_with(f, face):
         raise DoesNotFitError(f"{f.id}: on a turned face, the generator puts a hole, a slot, a pocket, a boss, a "
                               "cylinder, a block, a post or a rib")  # fmt: skip
     half, corner = _footprint(f, face.axes)
@@ -1290,7 +1322,7 @@ def _on_flat(
     spots = _flat_spots(f, face)
     feet = [_foot_of(f, face, at) for at in spots]
     # Turned, or on a turned face, it is wholly on its face, clear of its edges by the gap: flush with none, over none.
-    plain = f.turn is None and face.turn == 0.0
+    plain = f.turn is None and not face.turned
     flush = _flush(f, face) if plain else frozenset()
     beyond = _overhang(f, face, feet, strict) if plain else frozenset()
     if strict:
@@ -3863,7 +3895,7 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
             continue
         part = _build(tuple(plan), True)
         # Not on a turned item's far face: what goes there is drawn from a stream of its own (_onto_turned).
-        hosts = sorted(key for key, face in part.flats.items() if key[1] == 0 and face.turn == 0.0)
+        hosts = sorted(key for key, face in part.flats.items() if key[1] == 0 and not face.turned)
         for _ in range(tries if hosts else 0):
             key = rng.choice(hosts)
             candidates = draw(rng, _next_index(plan), key[0], part.flats[key])
@@ -3963,7 +3995,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
-            hosts = [key for key, face in part.flats.items() if key[1] == 0 and face.turn == 0.0] + [
+            hosts = [key for key, face in part.flats.items() if key[1] == 0 and not face.turned] + [
                 key for key in part.rounds if key[1] == 0
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
@@ -4057,7 +4089,7 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
     """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
     Whether one was added to the plan."""
-    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turn != 0.0]
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned]
     if not faces or rng.random() >= _ON_TURNED:
         return False
     key = rng.choice(faces)

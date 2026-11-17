@@ -102,6 +102,8 @@ class Context:
             raise PlanError(
                 f"its face {host}#{index} {name} isn't in the layout", item=copy.item
             )
+        if isinstance(found, FlatFace) and found.local is not None and copy.frame is None:
+            return found.upright()  # what is on a turned item's face is built as on it upright (moved.py)
         return found
 
     # What the families of kinds make their tools with (items/plan/_families.py).
@@ -306,7 +308,11 @@ def _inside_holds(ctx: Context, copy: Instance, face: SideFace, radius: float) -
 def carried_ways(
     chain: Chain, ctx: Context, item: Item, copy: Instance
 ) -> tuple[bool, bool]:
-    """Whether a cut's tool may be carried into the air past its mouth, and past its far side (5.2), on the part made so far."""
+    """Whether a cut's tool may be carried into the air past its mouth, and past its far side (5.2), on the part made so far.
+
+    Not on a turned item's face: it is built as its definition makes it, upright, then moved (moved.py)."""
+    if copy.frame is not None:
+        return False, False
     face = ctx.face(copy)
     if isinstance(face, FlatFace):
         mouth, far = air_boxes(ctx, item, copy)
@@ -371,6 +377,8 @@ def sink_box(
     made so far has a box meeting ``E``. A foot round a side, or a
     round-ended tab, is not offered.
     """
+    if copy.frame is not None:  # on a turned item's face: built as its definition makes it, then moved (moved.py)
+        return None
     face = ctx.face(copy)
     if not isinstance(face, FlatFace) or copy.host is None or copy.direction is not None:
         return None

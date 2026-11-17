@@ -58,6 +58,7 @@ from .draft import (
     axis_names,
 )
 from .ends import Blind, ThroughAll, end_of
+from .frames import Rigid
 from .geometry import (
     EPS,
     FlatFace,
@@ -183,6 +184,10 @@ class Instance:
     hi: Vec | None = None
     #: Leaning on its flat face (tilt; 1b's second move): its direction, the face's normal turned towards its lean.
     direction: Vec | None = None
+    #: On a face of a turned or leaning item (1b's third move, step 2): the motion that takes it, as it is placed on
+    #: that face upright (``local``), onto the part. Every program places, builds and judges it upright, then moves it.
+    frame: Rigid | None = None
+    local: Instance | None = None
 
 
 @dataclass
@@ -530,8 +535,18 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         faces.pop(name)  # a boss is always joined by its foot: its kind has no such face
     turn = _turn_value(item) if lean is None and item.id not in layout.shells else None
     top = _turned_far(faces, far, item, turn) if turn is not None and far in KINDS[item.kind].faces else None
+    joined = _opposite(up)
+    motion = _turned_motion(inst, (a1, a2), turn) if turn is not None else None
     for name in KINDS[item.kind].faces:
-        if top is None or name != far:
+        found = faces.get(name)
+        if top is not None and name == far:
+            continue
+        if motion is not None and name == joined and inst.host is not None:
+            layout.close(key, name, "fault", f"{item.id}'s {name} face is joined to {inst.host[0]}")
+        elif motion is not None and isinstance(found, FlatFace) and not name.startswith("inner "):
+            # Its other faces are its own, turned with it (1b's third move, step 2): placed on as upright, then turned.
+            faces[name] = _moved(found, motion)
+        else:
             layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
     if top is not None:
         _far_material(item, inst, top, host_face, layout)
@@ -539,6 +554,20 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         layout.issue("unable", at, f"Forge doesn't hollow a turned or leaning {item.kind} yet")
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
                     (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
+
+
+def _turned_motion(inst: Instance, axes: tuple[str, str], turn: Value) -> Rigid:
+    """A turned item's own motion: its turn about the line through its point square to its face, from the face's
+    first axis towards its second."""
+    e1, e2 = _axis_vec(axes[0]), _axis_vec(axes[1])
+    square = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+    return Rigid.turn_about(inst.origin, square, *_turn(degrees(turn)))
+
+
+def _moved(face: FlatFace, motion: Rigid) -> FlatFace:
+    """A face found upright, moved by its item's motion (after any it has of its own)."""
+    return replace(face, centre=motion.point(face.centre),
+                   local=motion if face.local is None else motion.after(face.local))  # fmt: skip
 
 
 def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | None, layout: Layout) -> None:
@@ -1311,9 +1340,14 @@ def _check_turned_edges(
         if not isinstance(edges, EdgeSet):
             continue
         target = layout.items.get(edges.of)
-        if target is not None and (leaning(target) or turned_outline(target, layout, ("x", "y")) is not None):
+        moved = target is not None and any(i.frame is not None for i in layout.instances.get(target.id, []))
+        if target is None:
+            continue
+        own = leaning(target) or turned_outline(target, layout, ("x", "y")) is not None
+        if own or moved:
+            how = "is turned in, or leans on, its face" if own else "is on a turned item's face"
             layout.issue("unable", pointer("items", position[item.id], "edges"),
-                         f"{edges.of} is turned in, or leans on, its face: Forge rounds and chamfers such an item's edges in a later move")  # fmt: skip
+                         f"{edges.of} {how}: Forge rounds and chamfers such an item's edges in a later move")  # fmt: skip
 
 
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
@@ -1741,7 +1775,7 @@ def solve(spec: PartSpec) -> Layout:
         if hosts is None or not _names_fit(item, on, hosts[0][1], layout, at):
             layout.unplaced.add(item.id)
             continue
-        placed = as_placed(item, hosts[0][1], layout)
+        placed = as_placed(item, _upright(hosts[0][1]), layout)
         layout.items[item.id] = placed
         made = _place_on_hosts(item, placed, on, hosts, layout, at)
         layout.instances[item.id] = made
@@ -1799,6 +1833,11 @@ def _in_its_axes(item: Item, face: FlatFace) -> FlatFace:
     return face
 
 
+def _upright(face: Face) -> Face:
+    """A face of a turned item's as it would be with its item upright; any other as it is."""
+    return face.upright() if isinstance(face, FlatFace) else face
+
+
 def _names_fit(item: Item, on: On, face: Face, layout: Layout, at: str) -> bool:
     """An item names a face's axes as the face has them: a turned face's only by its own, u and v; a round side's by
     neither (it is placed along its axis and by angle)."""
@@ -1806,10 +1845,10 @@ def _names_fit(item: Item, on: On, face: Face, layout: Layout, at: str) -> bool:
     if spelled is None:
         return True
     where = next(p for p, axis in axis_names(item) if (axis in FACE_OWN_AXES) == (spelled == "uv"))
-    if isinstance(face, FlatFace) and face.turn != 0.0 and spelled == "xyz":
+    if isinstance(face, FlatFace) and not face.axes_are_the_parts and spelled == "xyz":
         layout.issue("fault", at + where,
-                     f"face {on.face} of {on.item} is turned {face.turn:g}\u00b0 with it: name its axes by its own, "
-                     "u and v; the part's x, y and z don't run along them")  # fmt: skip
+                     f"face {on.face} of {on.item} is turned with it: name its axes by its own, u and v; the part's "
+                     "x, y and z don't run along them")  # fmt: skip
         return False
     if isinstance(face, SideFace) and spelled == "uv":
         layout.issue("fault", at + where,
@@ -1933,12 +1972,14 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
             host, index, face_name = cut.host
             far = (host, index, _ACROSS[face_name])
             faces = layout.faces.get((host, index), {})
-            near_face, far_face = faces.get(face_name), faces.get(far[2])
+            near_face, far_face = _upright(faces.get(face_name)), _upright(faces.get(far[2]))  # type: ignore[arg-type]
             if (
                 not (isinstance(near_face, FlatFace) and isinstance(far_face, FlatFace))
                 or far not in standing
             ):
                 continue
+            # On a turned item's faces, everything is held to it upright (its faces, and what is on them, alike).
+            cut = cut.local or cut
             # It comes out on the far face only where the material under its face is the body's whole thickness
             # (into a hollowed body it comes out into the hollow, short of it).
             normal = near_face.frame.n
@@ -1965,6 +2006,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                 square = sum(cut.direction[k] * normal[k] for k in range(3))
                 out_at = tuple(cut.origin[k] - across / square * cut.direction[k] for k in range(3))  # type: ignore[assignment]
             for other in standing[far]:
+                other = other.local or other
                 owner = layout.items[other.item]
                 over = _in_plane(
                     far_face, other.origin, _outline(owner, layout, far_face.axes)
@@ -2187,8 +2229,22 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
     """Every copy of an item, on every copy of its host, numbered in order: placed on each as the item names the face's
     axes, and standing as placed (:func:`as_placed`)."""
     copies: list[_Copy] = []
+    motions: list[Rigid | None] = []
     for host_index, face in hosts:
         host = (on.item, host_index, on.face)
+        motion = face.local if isinstance(face, FlatFace) else None
+        if motion is not None:
+            # A face of a turned item's (1b's third move, step 2): placed on as that item's face upright, then moved.
+            place = _place_of(item)
+            if place is not None and place.concentric:
+                layout.issue("unable", at + pointer("place", "concentric"),
+                             f"{on.item} is turned: Forge places an item concentric with another on its faces in a "
+                             "later step")  # fmt: skip
+                return []
+            if item.id in layout.shells:
+                layout.issue("unable", at, f"{on.item} is turned: Forge hollows what stands on its faces in a later step")
+                return []
+            face = _upright(face)
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face
         found = kind.copies(item, named, host, len(hosts), layout, at, len(copies))
@@ -2201,6 +2257,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal,
                               copy.instance.host, copy.instance.face_axes, direction=copy.instance.direction)  # fmt: skip
             kind.numbered(item, placed, face, host, copy, layout, at)
+            if motion is not None:
+                _moved_faces((item.id, index), motion, layout, item)
             copies.append(
                 _Copy(
                     placed,
@@ -2210,12 +2268,13 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                     copy.room_sources,
                 )
             )
+            motions.append(motion)
     if not SOLVE[item.kind].stands:
-        return [c.instance for c in copies]
+        return [_moved_instance(c.instance, m) for c, m in zip(copies, motions, strict=True)]
     standing: list[Instance] = []
     height = height_of(item)
     item = placed_item
-    for copy in copies:
+    for copy, motion in zip(copies, motions, strict=True):
         inst = copy.instance
         up = _direction_of(inst.normal)
         if up is None:
@@ -2229,12 +2288,36 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             layout.problem("question", at,
                            f"{item.id} ({height[0]:g} mm) rises past the far wall of the hollow it stands in "
                            f"({copy.room:g} mm)", [item.get(height[1]), *layout.values_of(copy.room_sources)])  # fmt: skip
-        placed = _standing(item, inst, up, layout, at, on.item, _host_face(inst, layout),
+        placed = _standing(item, inst, up, layout, at, on.item, _upright(_host_face(inst, layout)),
                            copy.depth_sources)  # fmt: skip
         if isinstance(_host_face(inst, layout), SideFace):
             _round_footed(item, layout, (item.id, placed.index), up)
+        if motion is not None:
+            _moved_faces((item.id, placed.index), motion, layout, item)
+            placed = _moved_instance(placed, motion)
         standing.append(placed)
     return standing
+
+
+def _moved_instance(inst: Instance, motion: Rigid | None) -> Instance:
+    """A copy placed upright on a face of a turned item's, moved by that item's motion (1b's third move, step 2)."""
+    if motion is None:
+        return inst
+    lo, hi = motion.box(inst.lo, inst.hi) if inst.lo is not None and inst.hi is not None else (None, None)
+    return replace(inst, origin=motion.point(inst.origin), normal=motion.vector(inst.normal), lo=lo, hi=hi,
+                   direction=None if inst.direction is None else motion.vector(inst.direction), frame=motion,
+                   local=inst)  # fmt: skip
+
+
+def _moved_faces(key: tuple[str, int], motion: Rigid, layout: Layout, item: Item) -> None:
+    """A copy's faces found upright, moved by its motion; a round side, which turns with it, takes nothing yet."""
+    faces = layout.faces.get(key, {})
+    for name, face in list(faces.items()):
+        if isinstance(face, FlatFace):
+            faces[name] = _moved(face, motion)
+        else:
+            layout.close(key, name, "unable",
+                         f"{item.id} is on a turned item's face: Forge places on its round side in a later step")  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -2265,7 +2348,8 @@ def _flat_numbered(item: Item, placed: Instance, face: Face, host: tuple[str, in
     item = layout.items[item.id]  # as placed
     key = (item.id, placed.index)
     if turned_outline(item, layout, face.part_axes) is not None:
-        _turned_floor(item, placed, face, copy, layout)
+        if SOLVE[item.kind].cut:  # a standing one's faces are its standing's (_standing_turned)
+            _turned_floor(item, placed, face, copy, layout)
         return
     SOLVE[item.kind].floor(item, placed, face, copy.material, key, layout)
     if face.turn != 0.0:

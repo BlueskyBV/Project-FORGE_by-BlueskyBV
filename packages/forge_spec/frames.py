@@ -25,7 +25,7 @@ from functools import cached_property
 
 from forge_numeric import scalar as fs
 
-__all__ = ["Frame", "Vec", "axis", "cos_sin", "name_of"]
+__all__ = ["Frame", "Rigid", "Vec", "axis", "cos_sin", "name_of"]
 
 Vec = tuple[float, float, float]
 
@@ -174,3 +174,80 @@ class Frame:
             c * self.u[1] + s * self.v[1],
             c * self.u[2] + s * self.v[2],
         )
+
+
+@dataclass(frozen=True)
+class Rigid:
+    """A rigid motion: a turn (its matrix, by rows) about the part's origin, then a shift; a point ``p`` goes to
+    ``R p + t`` (a turned or leaning item's own frame, V2-stage4b-0c.md 3.3, 1b's third move: what is on its faces
+    is placed as on an upright item's, then moved by it)."""
+
+    rows: tuple[Vec, Vec, Vec]
+    shift: Vec
+
+    @staticmethod
+    def identity() -> Rigid:
+        return Rigid(((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)), (0.0, 0.0, 0.0))
+
+    @staticmethod
+    def between(here: Frame, there: Frame) -> Rigid:
+        """The motion that takes ``here`` (its origin and its three axes) onto ``there``."""
+        cols_here, cols_there = (here.u, here.v, here.n), (there.u, there.v, there.n)
+        rows = tuple(
+            tuple(sum(cols_there[j][i] * cols_here[j][k] for j in range(3)) + 0.0 for k in range(3))
+            for i in range(3)
+        )
+        found = Rigid(rows, (0.0, 0.0, 0.0))  # type: ignore[arg-type]
+        moved = found.vector(here.origin)
+        return Rigid(found.rows, tuple(there.origin[i] - moved[i] + 0.0 for i in range(3)))  # type: ignore[arg-type]
+
+    @staticmethod
+    def turn_about(point: Vec, axis: Vec, c: float, s: float) -> Rigid:
+        """The turn about the line through ``point`` along the unit ``axis`` by the angle whose cosine and sine are
+        ``c`` and ``s`` (right-handed about it)."""
+        x, y, z = axis
+        k = 1.0 - c
+        rows = ((c + x * x * k, x * y * k - z * s, x * z * k + y * s),
+                (y * x * k + z * s, c + y * y * k, y * z * k - x * s),
+                (z * x * k - y * s, z * y * k + x * s, c + z * z * k))  # fmt: skip
+        found = Rigid(rows, (0.0, 0.0, 0.0))
+        moved = found.vector(point)
+        return Rigid(rows, (point[0] - moved[0], point[1] - moved[1], point[2] - moved[2]))
+
+    @property
+    def is_identity(self) -> bool:
+        return self == Rigid.identity()
+
+    def vector(self, d: Vec) -> Vec:
+        r = self.rows
+        return (r[0][0] * d[0] + r[0][1] * d[1] + r[0][2] * d[2] + 0.0,
+                r[1][0] * d[0] + r[1][1] * d[1] + r[1][2] * d[2] + 0.0,
+                r[2][0] * d[0] + r[2][1] * d[1] + r[2][2] * d[2] + 0.0)  # fmt: skip
+
+    def point(self, p: Vec) -> Vec:
+        d = self.vector(p)
+        return (d[0] + self.shift[0], d[1] + self.shift[1], d[2] + self.shift[2])
+
+    def frame(self, f: Frame) -> Frame:
+        return Frame(self.point(f.origin), self.vector(f.u), self.vector(f.v), self.vector(f.n))
+
+    def after(self, first: Rigid) -> Rigid:
+        """This motion after ``first``: a point goes by ``first``, then by this."""
+        r, q = self.rows, first.rows
+        rows = tuple(
+            tuple(sum(r[i][j] * q[j][k] for j in range(3)) + 0.0 for k in range(3)) for i in range(3)
+        )
+        return Rigid(rows, self.point(first.shift))  # type: ignore[arg-type]
+
+    def inverse(self) -> Rigid:
+        r = self.rows
+        rows = ((r[0][0], r[1][0], r[2][0]), (r[0][1], r[1][1], r[2][1]), (r[0][2], r[1][2], r[2][2]))
+        back = Rigid(rows, (0.0, 0.0, 0.0))
+        moved = back.vector(self.shift)
+        return Rigid(rows, (-moved[0] + 0.0, -moved[1] + 0.0, -moved[2] + 0.0))
+
+    def box(self, lo: Vec, hi: Vec) -> tuple[Vec, Vec]:
+        """The box round a box moved by it: round its eight corners."""
+        corners = [self.point((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
+        return (tuple(min(c[k] for c in corners) for k in range(3)),  # type: ignore[return-value]
+                tuple(max(c[k] for c in corners) for k in range(3)))  # fmt: skip

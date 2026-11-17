@@ -1300,7 +1300,7 @@ class _Drawing:
                 f"concentric with {place.concentric}{_tag(place.concentric_provenance)}",
                 "place.concentric",
             )
-        if isinstance(face, FlatFace) and face.turn == 0.0:
+        if isinstance(face, FlatFace) and face.axes_are_the_parts:
             self._on_flat(face, local, place, pattern)
         elif isinstance(face, SideFace):
             self._on_side(face, local, place)
@@ -1537,9 +1537,13 @@ def render_views(report: SpecReport) -> Views:
     if spec is None:
         return Views((), (), (), None)
     placed = {i.id: i for i in (placed_spec(spec, layout).items if layout is not None else spec.items)}
-    words = tuple(Dimension(i.id, tuple(i.fields), item_line(i), "words")
-                  for i in spec.items if not VIEWS[i.kind].drawable)  # fmt: skip
-    drawable = [i for i in spec.items if VIEWS[i.kind].drawable]
+    # An item on a turned item's face is said in words: it is moved off the views' axes (1b's third move, step 2).
+    moved = {i.id for i in spec.items if layout is not None
+             and any(c.frame is not None for c in layout.instances.get(i.id, ()))}  # fmt: skip
+    words = tuple(Dimension(i.id, tuple(dict.fromkeys((*i.fields, *(_to_show(i) if i.id in moved else ())))),
+                            item_line(i), "words")
+                  for i in spec.items if not VIEWS[i.kind].drawable or i.id in moved)  # fmt: skip
+    drawable = [i for i in spec.items if VIEWS[i.kind].drawable and i.id not in moved]
     extent = layout.extent() if layout is not None else None
     if layout is None or extent is None:
         return Views((), words, tuple(i.id for i in drawable), None)

@@ -25,6 +25,7 @@ from .edges import edge_reference
 from .errors import GapError, PlanError
 from .items.plan import PLAN
 from .letters import letters_step
+from .moved import moved_tools
 from .regions import (
     Stretch,
     box_like,
@@ -210,6 +211,8 @@ def _tools(
     """One copy's tool pieces, made ``how``: as the definition makes it, carried into the air (5.2), sunk (5.3) or a dome cut (5.4)."""
 
     def made(chain: Chain, copy: Instance) -> list[str]:
+        if copy.frame is not None:
+            return moved_tools(chain, ctx, item, copy)
         return PLAN[item.kind].tool(chain, ctx, item, copy, how)
 
     return made

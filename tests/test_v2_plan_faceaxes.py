@@ -1,15 +1,21 @@
-"""Items placed along a face's own axes, and on a turned item's far face, planned, built and judged (place.u, place.v;
-schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face" and "A turned item's far face").
+"""Items placed along a face's own axes, and on a turned item's faces, planned, built and judged (place.u, place.v;
+schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face", "A turned item's far face" and "A
+turned item's faces").
 
 - **What is built is what was placed.** On a face whose axes are the part's,
   an item placed along ``u`` and ``v``; on a turned post's or block's far
   face, a hole right through or blind, a slot along its own axis, a round
-  pocket, a boss, a post turned again, a leaning hole and a row of holes:
-  built by the build loop, every face of it is accounted for both ways and
-  every check its spec compiles to passes.
-- **A wrong turn is caught.** The same plan with what is on the far face
-  turned half a degree more fails the judge's face accounting.
-- **The second kernel agrees** with the exact part, point by point.
+  pocket, a boss, a post turned again, a leaning hole and a row of holes;
+  on a turned post's sides, a hole right through or blind, a slot, a round
+  pocket, a boss, a post turned in it, a leaning hole and a row of holes,
+  and a hole in the side of a post turned on a turned post's side: built by
+  the build loop, every face of it is accounted for both ways and every
+  check its spec compiles to passes.
+- **A wrong turn is caught.** The same plan with what is on the far face,
+  or on a side, turned half a degree more fails the judge's face
+  accounting.
+- **The second kernel agrees** with the exact part, point by point, and
+  names what it names: on a turned post's far face and on its sides.
 """
 
 from __future__ import annotations
@@ -42,9 +48,9 @@ def _post(b: Any, turn: float | None = 30.0, *, kind: str = "post", on: str = "p
     return found
 
 
-def _hole(b: Any, place: dict[str, Any] | None = None, *, on: str = "post", depth: float | None = None,
+def _hole(b: Any, place: dict[str, Any] | None = None, *, on: str = "post", depth: float | None = None, face: str = "+z",
           **fields: Any) -> dict[str, Any]:  # fmt: skip
-    found = {"id": "hole", "kind": "hole", "words": cite(b, "hole"), "on": {"item": on, "face": "+z"},
+    found = {"id": "hole", "kind": "hole", "words": cite(b, "hole"), "on": {"item": on, "face": face},
              "diameter": assumed("across", 6.0), **fields}  # fmt: skip
     found["depth"] = {"through": True, "from": {"assumed": "through"}} if depth is None else assumed("deep", depth)
     if place is not None:
@@ -80,6 +86,10 @@ def _right(u: float) -> dict[str, Any]:
     return {"u": {"offset": assumed("right", u)}}
 
 
+def _on(found: dict[str, Any], face: str, item: str = "post") -> dict[str, Any]:
+    return {**found, "on": {"item": item, "face": face}}
+
+
 #: Each part: what stands on the plate and what is on it.
 CASES: dict[str, Any] = {
     "along u and v on the plate": lambda b: [_hole(b, {"u": {"side": "-u", "distance": assumed("in", 20.0)},
@@ -110,6 +120,29 @@ CASES: dict[str, Any] = {
     "a row of holes": lambda b: [_post(b), _hole(b, {"pattern": {"row": {
         "count": {"count": 2, "from": {"assumed": "two"}}, "pitch": assumed("apart", 14.0),
         "axis": {"choose": "u", "from": {"assumed": "along"}}}}}, count={"count": 2, "from": {"assumed": "two"}})],
+    # On its sides (step 2): placed on them upright, then turned with it.
+    "a hole right through its side": lambda b: [_post(b), _hole(b, _right(2.0), face="+y")],
+    "a blind hole in its side": lambda b: [_post(b), _hole(b, {**_right(3.0), "v": {"offset": assumed("up", 1.0)}},
+                                                          depth=6.0, face="+x")],
+    "a slot in its side": lambda b: [_post(b), _on({
+        "id": "slot", "kind": "slot", "words": cite(b, "slot"), "width": assumed("wide", 3.0),
+        "length": assumed("long", 10.0), "depth": assumed("deep", 2.0), "along": {"choose": "u", "from": {"assumed": "a"}},
+        "ends": {"choose": "round", "from": {"assumed": "r"}}}, "-y")],
+    "a round pocket in its side": lambda b: [_post(b, 45.0), _on({
+        "id": "pocket", "kind": "pocket", "words": cite(b, "pocket"), "shape": {"choose": "circle", "from": {"assumed": "o"}},
+        "diameter": assumed("across", 5.0), "depth": assumed("deep", 3.0), "place": _right(-6.0)}, "-x")],
+    "a boss on its side": lambda b: [_post(b), _on({"id": "boss", "kind": "boss", "words": cite(b, "boss"),
+                                                    "diameter": assumed("across", 6.0), "height": assumed("tall", 5.0)}, "-x")],
+    "a post turned on its side": lambda b: [_post(b), _post(b, 20.0, on="post", item="upper", sizes=(6.0, 4.0, 5.0)) | {
+        "on": {"item": "post", "face": "+y"}}],
+    "a leaning hole in its side": lambda b: [_post(b), _hole(b, None, depth=5.0, face="-y", tilt=assumed("leaning", 20.0, "deg"),
+                                                            tilt_towards={"choose": "+u", "from": {"assumed": "that way"}})],
+    "a row of holes in its side": lambda b: [_post(b), _hole(b, {"pattern": {"row": {
+        "count": {"count": 2, "from": {"assumed": "two"}}, "pitch": assumed("apart", 12.0),
+        "axis": {"choose": "u", "from": {"assumed": "along"}}}}}, face="+x", count={"count": 2, "from": {"assumed": "two"}})],
+    "a hole in the side of a post turned on its side": lambda b: [
+        _post(b), _post(b, 20.0, on="post", item="upper", sizes=(8.0, 6.0, 5.0)) | {"on": {"item": "post", "face": "+x"}},
+        _hole(b, None, on="upper", face="+y", depth=3.0) | {"diameter": assumed("across", 2.0)}],
 }
 
 
@@ -170,21 +203,44 @@ class AWrongTurnIsCaught(unittest.TestCase):
                 self.assertIsNone(built.gap)
                 self.assertIs(accounting.verdict, Verdict.FAIL)
 
+    def test_what_is_on_its_side_turned_half_a_degree_more(self) -> None:
+        import forge_plan.moved as moved
+        from forge_checks.classes import Verdict
+
+        real = moved.transform_params
+
+        def more(motion: Any) -> dict[str, Any]:
+            """The motion onto the part of what is on a turned post's side, turned half a degree more."""
+            found = real(motion)
+            angle = found["rotate_angle"]
+            return {**found, "rotate_angle": {**angle, "magnitude": angle["magnitude"] + 0.5}}
+
+        for name in ("a hole right through its side", "a boss on its side"):
+            with self.subTest(name), mock.patch.object(moved, "transform_params", more):
+                built, accounting, _ = _judged(CASES[name])
+                self.assertIsNone(built.gap)
+                self.assertIs(accounting.verdict, Verdict.FAIL)
+
 
 @needs_occ
 class TheSecondKernelAgrees(unittest.TestCase):
-    def test_a_turned_post_and_what_is_on_it(self) -> None:
+    def test_a_turned_post_and_what_is_on_its_faces(self) -> None:
         from forge_occ.agreement import agree
         from forge_occ.planned import build_plan
 
         def make(b: Any) -> list[dict[str, Any]]:
             return [*CASES["a post turned again"](b), _hole(b, {"u": {"offset": assumed("left", -9.0)}})]
 
-        _, planned = _planned(make)
-        built = build_plan(planned)
-        self.assertIsNone(built.gap, built.refusals)
-        report = agree(planned.document(built.choice), "part", exact=built.result)
-        self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
+        # On its sides, what is cut or joined there is built upright and turned with it: the faces its tool had at
+        # its mouth, where they are once turned, are in the air.
+        for name, case in (("on its far face", make), ("on its sides", CASES["a hole right through its side"]),
+                           ("on a post turned on its side", CASES["a hole in the side of a post turned on its side"])):  # fmt: skip
+            with self.subTest(name):
+                _, planned = _planned(case)
+                built = build_plan(planned)
+                self.assertIsNone(built.gap, built.refusals)
+                report = agree(planned.document(built.choice), "part", exact=built.result)
+                self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
 
 
 if __name__ == "__main__":

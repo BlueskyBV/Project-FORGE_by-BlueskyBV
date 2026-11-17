@@ -66,6 +66,7 @@ from forge_spec.draft import (
 from forge_spec.ends import ThroughAll, end_of
 from forge_spec.schema import AXES, KINDS
 from forge_spec.values import Count, Value
+from forge_units.dimension import LENGTH
 from numpy.typing import NDArray
 
 from . import rounds
@@ -568,7 +569,20 @@ class _Compiler:
 
     # --- the item kinds -----------------------------------------------
     def item(self, item: Item) -> None:
+        if any(copy.frame is not None for copy in self.copies(item)):
+            self._moved(item)
+            return
         COMPILE[item.kind].checks(self, item)
+
+    def _moved(self, item: Item) -> None:
+        """An item on a turned item's face (place.md, "A turned item's faces"): made upright, then moved, its every
+        leaf is held by its faces, as the oracle builds them; its sizes are feature sizes where it is."""
+        for value in item.fields.values():
+            if isinstance(value, Value) and value.quantity.unit.dimension == LENGTH and value.made_in("mm") > 0:
+                self.size(item, value.made_in("mm"))
+        for name in leaves(item):
+            self.skip(item, name, "it is on a turned item's face: its sizes, where it is and its turn are held by "
+                      "where its faces are, as the oracle builds them", "face accounting")  # fmt: skip
 
     def copies(self, item: Item) -> tuple[Copy, ...]:
         return self.placed.copies.get(item.id, ())

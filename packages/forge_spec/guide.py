@@ -683,8 +683,12 @@ outline's farthest point along that axis. A turned block's, post's, \
 rib's or square tab's far face (its top, or a tab's end) takes items, \
 placed along its own axes, "u" and "v", turned with it ("schema_version": \
 "1.4"); there an item that isn't round turns with it, so a profile pushed \
-out of it waits for a later step. A turned item's other faces take nothing \
-yet, and its edges aren't rounded.
+out of it waits for a later step. A turned block's or post's sides take \
+items too, each named as with it upright (its "+x" side the end its length \
+runs out to along the face's first axis), placed along the side's own "u" \
+and "v" as with it upright, then turned with it; the face it is joined by \
+is none. A turned item's other faces take nothing yet, and neither its \
+edges nor those of what is on its faces are rounded.
 
 A hole, a boss or a post on a flat face may lean: "tilt": angle (more than \
 0, at most 75 deg) from square to the face, towards "tilt_towards", one of \

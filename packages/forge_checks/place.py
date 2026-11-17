@@ -283,6 +283,53 @@ class FaceFrame:
         return self._set(point, 2, level)
 
 
+@dataclass(frozen=True)
+class Motion:
+    """A rigid motion, the judge's own: a turn about the part's origin (its matrix, by rows), then a shift. A turned
+    item's faces, and what is on them, are placed as with the item upright, then moved by it (place.md, "A turned
+    item's faces")."""
+
+    rows: tuple[Vec, Vec, Vec]
+    shift: Vec
+
+    @staticmethod
+    def about(point: Vec, axis: Vec, by: Point) -> Motion:
+        """The turn about the line through ``point`` along the unit ``axis``, by the angle whose cosine and sine are
+        ``by``, right-handed about it."""
+        c, s = by
+        x, y, z = axis
+        k = 1.0 - c
+        rows = ((c + x * x * k, x * y * k - z * s, x * z * k + y * s),
+                (y * x * k + z * s, c + y * y * k, y * z * k - x * s),
+                (z * x * k - y * s, z * y * k + x * s, c + z * z * k))  # fmt: skip
+        turned = Motion(rows, (0.0, 0.0, 0.0)).vector(point)
+        return Motion(rows, (point[0] - turned[0], point[1] - turned[1], point[2] - turned[2]))
+
+    def vector(self, d: Vec) -> Vec:
+        r = self.rows
+        return (r[0][0] * d[0] + r[0][1] * d[1] + r[0][2] * d[2] + 0.0,
+                r[1][0] * d[0] + r[1][1] * d[1] + r[1][2] * d[2] + 0.0,
+                r[2][0] * d[0] + r[2][1] * d[1] + r[2][2] * d[2] + 0.0)  # fmt: skip
+
+    def point(self, p: Vec) -> Vec:
+        return _add(self.vector(p), self.shift)
+
+    def after(self, first: Motion) -> Motion:
+        """This motion after ``first``."""
+        r, q = self.rows, first.rows
+        rows = tuple(tuple(r[i][0] * q[0][k] + r[i][1] * q[1][k] + r[i][2] * q[2][k] + 0.0 for k in range(3))
+                     for i in range(3))  # fmt: skip
+        return Motion(rows, self.point(first.shift))  # type: ignore[arg-type]
+
+    def frame(self, f: FaceFrame) -> FaceFrame:
+        return FaceFrame(self.point(f.origin), self.vector(f.u), self.vector(f.v), self.vector(f.n))
+
+    def box(self, lo: Vec, hi: Vec) -> tuple[Vec, Vec]:
+        corners = [self.point((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
+        return ((min(c[0] for c in corners), min(c[1] for c in corners), min(c[2] for c in corners)),
+                (max(c[0] for c in corners), max(c[1] for c in corners), max(c[2] for c in corners)))  # fmt: skip
+
+
 # ----------------------------------------------------------------------
 # The material under a flat face (frame.md, "The material under a face")
 # ----------------------------------------------------------------------
@@ -476,10 +523,18 @@ class FlatFace:
     #: turned in its plane by this many degrees from the part's ``axes``, the first towards the second; its outline
     #: and positions on it are along them.
     turn: float = 0.0
+    #: A turned item's other faces, and those of what is on them (place.md, "A turned item's faces"): everything above
+    #: is the face with its item upright, and this motion moves it onto the part.
+    local: Motion | None = None
 
     @property
     def half(self) -> Point:
         return self.outline.half
+
+    @property
+    def placed_frame(self) -> FaceFrame:
+        """Its frame on the part: its own, moved by its item's motion where it has one."""
+        return self.frame if self.local is None else self.local.frame(self.frame)
 
     @functools.cached_property
     def frame(self) -> FaceFrame:
@@ -588,6 +643,10 @@ class Copy:
     #: Leaning from square to its flat face (``tilt``): its own direction, the face's normal turned towards the lean
     #: (``direction`` stays the face's); a cut's ``span`` is along it, from its point.
     lean: Vec | None = None
+    #: On a turned item's face (place.md, "A turned item's faces"): the motion that takes it as placed upright
+    #: (``local``) onto the part; its point, direction, box and lean are the part's.
+    frame: Motion | None = None
+    local: Copy | None = None
 
 
 @dataclass(frozen=True)
@@ -1415,7 +1474,17 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
             )
         host = (on.item, host_copy.index, on.face)
         _names_fit(item, face)
-        made += _HOSTS[type(face)](item, face, host, len(hosts), layout, len(made))
+        motion = face.local if isinstance(face, FlatFace) else None
+        if motion is None:
+            made += _HOSTS[type(face)](item, face, host, len(hosts), layout, len(made))
+            continue
+        # A turned item's face (place.md, "A turned item's faces"): placed on as with that item upright, then moved.
+        place = _place(item)
+        if (place is not None and place.concentric) or item.id in layout.shells:
+            raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
+        upright = replace(face, local=None)
+        for copy in _HOSTS[FlatFace](item, upright, host, len(hosts), layout, len(made)):
+            made.append(_moved_copy(copy, motion, layout))
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
         raise PlaceError(
@@ -1424,11 +1493,25 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
     return tuple(made)
 
 
+def _moved_copy(copy: Copy, motion: Motion, layout: _Layout) -> Copy:
+    """A copy placed upright on a turned item's face, moved by that item's motion: its point, direction, box and lean
+    on the part, and its own faces moved with it (a round side, which turns with it, takes nothing yet)."""
+    key = (copy.item, copy.index)
+    for name, found in list(layout.faces.get(key, {}).items()):
+        if isinstance(found, FlatFace):
+            layout.faces[key][name] = replace(found, local=motion if found.local is None else motion.after(found.local))
+        else:
+            layout.close(key, name, "it is on a turned item's face: nothing is placed round its side, yet")
+    lo, hi = motion.box(copy.lo, copy.hi) if copy.lo is not None and copy.hi is not None else (None, None)
+    return replace(copy, point=motion.point(copy.point), direction=motion.vector(copy.direction), lo=lo, hi=hi,
+                   lean=None if copy.lean is None else motion.vector(copy.lean), frame=motion, local=copy)  # fmt: skip
+
+
 def _names_fit(item: Item, face: Face) -> None:
     """A turned face's axes are named only by its own, u and v; a round side's by neither (place.md, "Where on the
     face")."""
     named = {axis for _, axis in axis_names(item)}
-    if isinstance(face, FlatFace) and face.turn != 0.0 and named - {"u", "v"}:
+    if isinstance(face, FlatFace) and (face.turn != 0.0 or face.local is not None) and named - {"u", "v"}:
         raise PlaceError(item.id, f"its face is turned with what it is on: it names its axes by the part's {sorted(named)}")
     if isinstance(face, RoundSide) and named & {"u", "v"}:
         raise PlaceError(item.id, "u and v are a flat face's own axes, not a round side's")
@@ -1603,10 +1686,21 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
         kept = _turned_floor(item, faces, face, degrees, layout)
     elif far is not None and isinstance(faces.get(far), FlatFace) and item.id not in layout.shells:
         kept = _turned_far(item, faces[far], face, at, degrees, round_)  # type: ignore[arg-type]
+    motion = None
+    if not entry.taken and not round_ and item.id not in layout.shells and copy.lo is not None:
+        # A turned box's other faces are its own, turned with it: kept as they are upright, moved by its turn.
+        e1, e2 = unit("+" + face.axes[0]), unit("+" + face.axes[1])
+        square = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+        motion = Motion.about(copy.point, square, by)
     for name in list(faces) + [n for n in KINDS[item.kind].faces if n not in faces]:
-        if (kept is None or name != kept.name) and name not in layout.closed.get(key, {}):
-            layout.close(key, name, "it is turned in its face: only a turned box's far face, or a round item's, takes "
-                         "anything, for now")  # fmt: skip
+        if (kept is not None and name == kept.name) or name in layout.closed.get(key, {}):
+            continue
+        found = faces.get(name)
+        if motion is not None and name != far and isinstance(found, FlatFace) and not name.startswith("inner "):
+            faces[name] = replace(found, local=motion)
+        else:
+            layout.close(key, name, "it is turned in its face: only a turned box's faces, or a round item's far face, "
+                         "take anything, for now")  # fmt: skip
     if kept is not None:
         faces[kept.name] = kept
     if copy.lo is None or copy.hi is None:
@@ -2340,8 +2434,11 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
             if not hasattr(other, "half"):
                 differ(here, "kind of face", "flat", type(other).__name__)
                 continue
+            placed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
             checks = (
-                ("centre", face.centre, getattr(other, "centre", None)),
+                ("centre", placed.origin, getattr(other, "centre", None)),
+                ("frame", (*placed.u, *placed.v, *placed.n),
+                 None if theirs_frame is None else (*theirs_frame.u, *theirs_frame.v, *theirs_frame.n)),
                 ("normal", face.normal, getattr(other, "normal", None)),
                 ("axes", face.axes, getattr(other, "axes", None)),
                 ("shape", _SHAPES[face.outline.shape], getattr(other, "shape", None)),

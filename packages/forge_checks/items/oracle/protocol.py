@@ -54,6 +54,21 @@ class OracleKind:
         found: list[Step] = []
         for copy in making.placed.copies[item.id]:
             face = making.placed.face(copy.host) if copy.host is not None else None
+            if copy.frame is not None and copy.local is not None:
+                # On a turned item's face: made upright, as on that face with its item upright, then moved
+                # (place.md, "A turned item's faces").
+                from dataclasses import replace
+
+                from forge_checks.moved import moved_node
+                from forge_checks.place import FlatFace
+
+                upright = replace(face, local=None) if isinstance(face, FlatFace) else face
+                found += [replace(s, node=moved_node(s.node, copy.frame))
+                          for s in self.copy_steps(item, copy.local, upright, making)]  # fmt: skip
+                key = (item.id, copy.index)
+                if key in making.made:
+                    making.made[key] = moved_node(making.made[key], copy.frame)
+                continue
             found += self.copy_steps(item, copy, face, making)
         return found
 

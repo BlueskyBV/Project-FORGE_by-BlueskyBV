@@ -136,9 +136,11 @@ class WhatFollowsFromATurn(unittest.TestCase):
         self.assertAlmostEqual(copy_.hi[2] - copy_.lo[2], 10.0, places=9)
         # Its far face takes things, turned with it (schema 1.4): its own height and the plate's under it; its others
         # are closed.
-        (top,) = report.layout.faces[("rib", 0)].values()
+        top = report.layout.faces[("rib", 0)]["+z"]
         self.assertEqual((top.name, top.turn, top.half, top.depth_below), ("+z", 45.0, (20.0, 1.5), 10.0 + 8.0))
-        self.assertIn("+x", report.layout.closed[("rib", 0)])
+        # Its sides take things too, turned with it (step 2); the face it stands by is joined to the plate.
+        self.assertEqual(sorted(report.layout.faces[("rib", 0)]), ["+x", "+y", "+z", "-x", "-y"])
+        self.assertIn("-z", report.layout.closed[("rib", 0)])
 
     def test_a_turned_pockets_depth_and_floor(self) -> None:
         pocket = {"id": "pocket", "kind": "pocket", "words": cite(B, "pocket"), "on": {"item": "plate", "face": "+z"},
@@ -206,10 +208,11 @@ class WhatTurnsAndWhere(unittest.TestCase):
         c, s_ = math.cos(math.radians(60)), math.sin(math.radians(60))
         self.assertAlmostEqual(copy_.hi[0] - copy_.lo[0], 2 * (1.5 * c + 4.5 * s_), places=9)
         self.assertAlmostEqual(copy_.hi[2] - copy_.lo[2], 12.0, places=9)
-        # The post's far face takes things, turned with it; the round-ended tab's is curved: neither's others do.
-        self.assertEqual(list(report.layout.faces.get(("post", 0), {})), ["+z"])
+        # The post's far face takes things, turned with it, and its sides; the round-ended tab's far end is curved, its
+        # sides take things.
+        self.assertEqual(sorted(report.layout.faces.get(("post", 0), {})), ["+x", "+y", "+z", "-x", "-y"])
         self.assertEqual(report.layout.faces[("post", 0)]["+z"].turn, 30.0)
-        self.assertEqual(report.layout.faces.get(("tab", 0), {}), {})
+        self.assertNotIn("+z", report.layout.faces.get(("tab", 0), {}))
 
     def test_letters_placed_by_their_line_fitted_by_their_ink(self) -> None:
         from forge_spec.font import text_width

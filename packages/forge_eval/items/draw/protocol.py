@@ -9,6 +9,7 @@ in today's order (V2-stage4b-0b.md, 3).
 
 from __future__ import annotations
 
+import math
 import random
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -41,6 +42,7 @@ from forge_eval.generator import (
     _t,
     _touches_falling_edges,
     _turned_ends,
+    _turned_sides,
     _under,
     outline_of,
 )
@@ -319,18 +321,24 @@ class DrawKind:
         up = _named(n)
         # Over an overhang, only its own height (frame.md): under its far face the least, and nothing through.
         under = 0.0 if beyond else _under(face, feet[k])
-        if f.turn is not None or face.turn != 0.0:
+        if f.turn is not None or face.turned:
             # Turned in its face, or on a face turned with what it is on, it is turned so (place.md, "A turned item's
-            # far face"): only its far face takes anything, turned with it, its own height and its host's material
-            # under it, where its host has the same material under all of it; else none is kept.
+            # far face"): its far face takes things, turned with it, its own height and its host's material under it,
+            # where its host has the same material under all of it; a box's sides take things, turned with it
+            # ("A turned item's faces"). On a turned item's side, the generator keeps none of its faces.
+            if face.oriented is not None:
+                return
             far = (f.id, copy_index, "+end" if self.round_far_end else up)
             turn = face.turn + (f.turn or 0.0)
             if self.round_far_end:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),
                                         height + under, face.exit, turn=turn)  # fmt: skip
-            elif face.level and face.dome <= 0 and face.flare[1] <= 0:
+                return
+            if face.level and face.dome <= 0 and face.flare[1] <= 0:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
                                         height + face.material, face.exit, level=True, turn=turn)  # fmt: skip
+            if face.hollow is None and math.isinf(face.room):
+                _turned_sides(part, f.id, copy_index, p, up, face.axes, (2 * h1, 2 * h2, height), turn)
             return
         if self.round_far_end:
             far = (f.id, copy_index, "+end")

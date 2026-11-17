@@ -639,12 +639,16 @@ def _thinnest(view: BrepView, cell: float) -> float:
 _MOVES = frozenset({"transform", "bend", "mirror"})
 
 
-def _moved_after(steps: Sequence[Any], owner: str) -> bool:
-    """Whether a step after ``owner`` moves what ``owner`` made: a move whose input is made from its product.
+def _moved_after(steps: Sequence[Any], owner: str, since: int = -1) -> bool:
+    """Whether a step after ``owner`` (and after the step at index ``since``) moves what ``owner`` made: a move whose
+    input is made from its product.
 
     A move of another solid only (a turned tab's stadium, turned on its own
     before it is kept and joined: V2-stage4b-0c.md 3.3, 1b's first move)
-    leaves the faces ``owner`` made where it made them.
+    leaves the faces ``owner`` made where it made them. A move before
+    ``since`` is behind a step that has them where it moved them (a tool
+    built upright and turned with what it is on, then cut: 1b's third move,
+    step 2).
     """
     inputs = {step.id: tuple(step.inputs) for step in steps}
     made_from: dict[str, bool] = {}
@@ -658,10 +662,10 @@ def _moved_after(steps: Sequence[Any], owner: str) -> bool:
         return made_from[step]
 
     after = False
-    for step in steps:
+    for k, step in enumerate(steps):
         if step.id == owner:
             after = True
-        elif after and step.op in _MOVES and from_owner(step.id):
+        elif after and k > since and step.op in _MOVES and from_owner(step.id):
             return True
     return False
 
@@ -724,8 +728,6 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
     """
     steps = document.steps(component)
     owner = entity.owning_feature
-    if _moved_after(steps, owner):
-        return None
     # The face as the last step that still has it left it (a tool's face cut down to the tool by the next step),
     # and the first step after that whose trace says it lost the name.
     suffix = entity.name.split(".")[-1]
@@ -737,7 +739,7 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
             here = product.names.faces_named(owner, suffix)
             if here:
                 made, last = here, k
-    if not made:
+    if not made or _moved_after(steps, owner, last):  # moved after: not where it is left
         return None
     losing = {t.step: t for t in exact.traces if entity.name in t.lost}
     lost_at = next((s.id for s in steps[last + 1 :] if s.id in losing), None)

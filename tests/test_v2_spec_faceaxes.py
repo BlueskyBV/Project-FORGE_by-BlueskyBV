@@ -1,5 +1,6 @@
-"""Positions along a face's own axes, and a turned item's far face, as the solver places them (place.u, place.v;
-schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face" and "A turned item's far face").
+"""Positions along a face's own axes, and a turned item's faces, as the solver places them (place.u, place.v;
+schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face", "A turned item's far face" and
+"A turned item's faces").
 
 - **The face's own axes are read, written and cited:** ``u`` and ``v`` in a
   position and its side, a pattern's values, counts and axis, an ``along``,
@@ -14,6 +15,11 @@ schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face" a
   is turned with it (as placed, an item turned by both turns on an aligned
   plane), turns add, a round item is the same turned, an outline that
   doesn't turn waits for a later step.
+- **A turned box's sides take things** (step 2): each turned with it, the
+  box's size across it under it, named as with the box upright; what is on
+  one is placed on it upright, then turned with the box: a hole (in a row,
+  leaning), a boss, a post turned in it again; the part's axes are a fault
+  there, and its joined face is no face.
 - **Every program reads it alike:** the judge's own placement agrees (every
   layout any test makes is held to it, tests/v2_layouts.py), and the views
   name what the draft names.
@@ -174,11 +180,11 @@ class ATurnedItemsFarFaceTakesThings(unittest.TestCase):
         report = _report(_post())
         self.assertEqual(_placing(report), [])
         faces = report.layout.faces[("post", 0)]
-        self.assertEqual(list(faces), ["+z"])
+        self.assertEqual(sorted(faces), ["+x", "+y", "+z", "-x", "-y"])  # its sides too: step 2, below
         top = faces["+z"]
         self.assertEqual((top.turn, top.half, top.depth_below), (30.0, (15.0, 10.0), 18.0))
         _close(self, top.frame.u, (C30, S30, 0.0))
-        self.assertIn("+x", report.layout.closed[("post", 0)])
+        self.assertIn("-z", report.layout.closed[("post", 0)])  # joined to the plate
 
     def test_placed_along_its_own_axes(self) -> None:
         report = _report(_post(), _hole({"u": {"offset": assumed("right", 8.0)}, "v": {"offset": assumed("up", -2.0)}}))
@@ -275,6 +281,68 @@ class ATurnedItemsFarFaceTakesThings(unittest.TestCase):
         _close(self, _origin(two, "hole", 1), (6 * C30, 6 * S30, 18.0))
 
 
+class ATurnedBoxsSidesTakeThings(unittest.TestCase):
+    def test_its_sides_turned_with_it(self) -> None:
+        report = _report(_post())
+        faces = report.layout.faces[("post", 0)]
+        side = faces["+x"]
+        self.assertEqual((side.part_axes, side.depth_below), (("y", "z"), 30.0))
+        _close(self, side.centre, (15 * C30, 15 * S30, 13.0))
+        _close(self, side.frame.n, (C30, S30, 0.0))
+        _close(self, side.frame.u, (-S30, C30, 0.0))
+        _close(self, faces["-y"].frame.n, (S30, -C30, 0.0))
+        self.assertEqual(faces["-y"].depth_below, 20.0)
+        self.assertEqual(report.layout.closed[("post", 0)], {"-z": ("fault", "post's -z face is joined to plate")})
+
+    def test_placed_on_it_upright_then_turned(self) -> None:
+        report = _report(_post(), _hole({"u": {"offset": assumed("right", 3.0)}, "v": {"offset": assumed("up", 1.0)}},
+                                        face="+x"))  # fmt: skip
+        self.assertEqual(_placing(report), [])
+        (copy_,) = report.layout.instances["hole"]
+        _close(self, copy_.origin, (15 * C30 - 3 * S30, 15 * S30 + 3 * C30, 14.0))
+        self.assertIsNotNone(copy_.frame)
+        _close(self, copy_.local.origin, (15.0, 3.0, 14.0))
+        row = {"pattern": {"row": {"count": {"count": 2, "from": {"assumed": "two"}}, "pitch": assumed("p", 12.0),
+                                   "axis": {"choose": "u", "from": {"assumed": "along"}}}}}  # fmt: skip
+        two = _report(_post(), _hole(row, face="-x", count={"count": 2, "from": {"assumed": "two"}}))
+        self.assertEqual(_placing(two), [])
+        _close(self, _origin(two, "hole", 0), (-15 * C30 + 6 * S30, -15 * S30 - 6 * C30, 13.0))
+        _close(self, _origin(two, "hole", 1), (-15 * C30 - 6 * S30, -15 * S30 + 6 * C30, 13.0))
+        lean = {"tilt": assumed("leaning", 20.0, "deg"), "tilt_towards": {"choose": "+v", "from": {"assumed": "up"}}}
+        leaning = _report(_post(), _hole(None, face="+y", depth=assumed("deep", 4.0), **lean))
+        self.assertEqual(_placing(leaning), [])
+        c, s = math.cos(math.radians(20)), math.sin(math.radians(20))
+        _close(self, leaning.layout.instances["hole"][0].direction, (-S30 * c, C30 * c, s))
+
+    def test_the_parts_axes_are_a_fault_there_and_its_joined_face_is_none(self) -> None:
+        self.assertIn("/items/2/place/y", _faults(_report(_post(), _hole({"y": {"offset": assumed("o", 3.0)}}, face="+x"))))
+        self.assertIn("/items/2/on/face", _faults(_report(_post(), _hole(None, face="-z"))))
+
+    def test_what_stands_on_one(self) -> None:
+        boss = {**_boss(), "on": {"item": "post", "face": "-y"}}
+        report = _report(_post(), boss)
+        self.assertEqual(_placing(report), [])
+        end = report.layout.faces[("boss", 0)]["+end"]
+        self.assertEqual(end.depth_below, 5.0 + 20.0)
+        _close(self, end.centre, (15 * S30, -15 * C30, 13.0))
+        _close(self, end.frame.n, (S30, -C30, 0.0))
+        # A post on a side, turned there too: its faces turned with it, then with the post.
+        upper = _post(20.0, on="post", item="upper", face="+x", sizes=(6.0, 4.0, 5.0))
+        report = _report(_post(), upper)
+        self.assertEqual(_placing(report), [])
+        faces = report.layout.faces[("upper", 0)]
+        self.assertEqual(faces["+x"].depth_below, 5.0 + 30.0)
+        c, s = math.cos(math.radians(20)), math.sin(math.radians(20))
+        _close(self, faces["+x"].frame.u, (-S30 * c, C30 * c, s))
+        _close(self, faces["-z"].frame.n, (-S30 * s, C30 * s, -c))
+        self.assertEqual(report.layout.closed[("upper", 0)], {"-x": ("fault", "upper's -x face is joined to post")})
+        # On a turned post's far face, turned again: its sides turned by both.
+        upper = _post(20.0, on="post", item="upper", sizes=(10.0, 6.0, 4.0))
+        side = _report(_post(), upper).layout.faces[("upper", 0)]["+x"]
+        _close(self, side.frame.n, (math.cos(math.radians(50)), math.sin(math.radians(50)), 0.0))
+        _close(self, side.centre, (5 * math.cos(math.radians(50)), 5 * math.sin(math.radians(50)), 20.0))
+
+
 class WhatTheViewsAndWordsSay(unittest.TestCase):
     def test_every_value_named_as_the_draft_names_it(self) -> None:
         from forge_spec.render_views import render_views
@@ -282,7 +350,8 @@ class WhatTheViewsAndWordsSay(unittest.TestCase):
 
         for items in ((_hole({"u": {"side": "-u", "distance": assumed("in", 9.0)}}, on="plate"),),
                       (_post(), _hole({"u": {"offset": assumed("right", 8.0)}})),
-                      (_post(), _slot("v", place={"turn": assumed("turned", 15.0, "deg")}))):  # fmt: skip
+                      (_post(), _slot("v", place={"turn": assumed("turned", 15.0, "deg")})),
+                      (_post(), _hole({"u": {"offset": assumed("right", 3.0)}}, face="-x"))):  # fmt: skip
             report = _report(*items)
             check_every_value_shown(self, report, render_views(report), items[-1]["id"])
 

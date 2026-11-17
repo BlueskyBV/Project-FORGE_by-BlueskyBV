@@ -94,8 +94,30 @@ through both and comes out where a cut through the host would. Under a
 turned pocket's floor is the material under its face less its depth, where
 that face has the same material under all of it. Where a turned item stands
 partly off its host's face, or on (or is cut into) a face without the same
-material under all of it, its far face or floor takes nothing yet. Its other
-faces take nothing yet either, nor does a leaning item's.
+material under all of it, its far face or floor takes nothing yet. A turned
+cut's other faces take nothing yet, nor do a leaning item's.
+
+### A turned item's faces
+
+A turned block's or post's sides are faces too, each turned with it. Each is named as it is with the item
+upright, by the axes of the face it stands on (its length's ends `+` and `-`
+the face's first axis, its width's the second), and faces the way that side
+faces once the item is turned; under it is the item's own size across it,
+and a cut right through it comes out on the side across. The face it is
+joined by is no face: placing on it is a fault.
+
+What is placed on such a face is placed along the face's own axes, `u` and
+`v` (the part's are a fault there), as it would be on that face with the
+item upright, then turned with the item: its positions, patterns, turns and
+leans are all the face's own, and what is placed is any item a face of that
+item upright takes (a hole, a counterbore, a slot, a pocket, letters, a
+boss, a post or a block, turned there too, a cylinder, a tube, a rib, a tab,
+an extrusion). What stands on it has its own faces, turned with it: a
+boss's far end, a post's far face and sides (turned again where it is
+turned there). A turned item's sides take things wherever it stands, as an
+upright item's do; a round item on one is the same turned, but its round
+side takes nothing yet; nor are a turned item's edges, or those of what is
+on its faces, rounded or chamfered yet, and nothing hollows it.
 
 ### Leaning on the face (`tilt`)
 

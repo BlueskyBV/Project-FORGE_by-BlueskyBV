@@ -37,7 +37,7 @@ from itertools import pairwise
 
 from forge_numeric import scalar as fs
 
-from .frames import Frame, cos_sin
+from .frames import Frame, Rigid, cos_sin
 from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
@@ -208,6 +208,10 @@ class FlatFace:
     turn_sources: tuple[Source, ...] = ()
     #: Named by its own axes, ``("u", "v")`` (an item that names them so): the part's names for them before its turn.
     named: tuple[str, str] | None = None
+    #: A face of a turned or leaning item, or of what is on one (V2-stage4b-0c.md 3.3, 1b's third move, step 2): the
+    #: motion that takes its item as it would stand upright onto the part. Its ``normal``, ``axes`` and ``turn`` are
+    #: then its own there (its ``centre`` is the part's): it is placed on as that upright face is, and moved so.
+    local: Rigid | None = None
 
     @property
     def sources(self) -> tuple[Source, ...]:
@@ -224,10 +228,24 @@ class FlatFace:
     @cached_property
     def frame(self) -> Frame:
         """Its centre, its first and second axes and its outward normal (:mod:`forge_spec.frames`): turned in its plane
-        by its ``turn``."""
+        by its ``turn``; a face of a turned or leaning item's, moved with it."""
+        if self.local is not None:
+            return self.local.frame(self.upright().frame)
         a1, a2 = self.part_axes
         frame = Frame.of_names(self.centre, a1, a2, self.normal)
         return frame if self.turn == 0.0 else frame.turned(*cos_sin(self.turn))
+
+    @property
+    def axes_are_the_parts(self) -> bool:
+        """Whether its axes run along the part's: not turned, nor a turned or leaning item's (``local``)."""
+        return self.turn == 0.0 and self.local is None
+
+    def upright(self) -> FlatFace:
+        """A face of a turned or leaning item as it would be with its item upright (``local`` undone); any other face
+        as it is."""
+        if self.local is None:
+            return self
+        return replace(self, centre=self.local.inverse().point(self.centre), local=None)
 
     def spelled(self, names: tuple[str, str]) -> FlatFace:
         """The face with its axes named ``names`` (``("u", "v")``), its frame unchanged."""

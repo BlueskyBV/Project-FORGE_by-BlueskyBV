@@ -4,8 +4,9 @@ Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
 1b's first and second moves done (items turned in their face, schema 1.2;
 holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
-schema 1.4), its second (a turned or leaning item's other faces, schema
-1.5) next. Companion to [V2-stage4b.md](V2-stage4b.md),
+schema 1.4) and its second (a turned box's sides, no schema minor);
+oriented bodies (schema 1.5) and schema 2.0 next, a leaning item's faces
+after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -558,6 +559,59 @@ plate; on a turned post's or block's far face a hole through or blind, a
 slot along its own axis, a round pocket, a boss, a post turned again, a
 leaning hole and a row of holes; a hole in a turned pocket's floor; what is there turned half a degree more
 fails face accounting; the second kernel agrees).
+
+**1b's third move, step 2, as built (revision 9, 17 November 2026).** No
+schema minor: no field is new, and what was UNABLE now builds, named as
+schema 1.4 names a turned face (along `u` and `v` only). So 1.5 is step 3's
+(oriented bodies), 2.0 stays step 4's, and a leaning item's faces wait for
+item 2b (depth by geometry: the material under a leaning item's far face
+isn't the same under all of it, and a cut right through it comes out on a
+face that isn't square to it). A turned block's or post's sides take things
+(place.md, "A turned item's faces"): each named as with the box upright, its
+own size across it under it, a cut through it coming out on the side across.
+What is on one is placed on it with the box upright, then moved by the box's
+own motion, its turn about the line through its point square to its face.
+In each program:
+
+- **The solver** keeps a turned box's sides as found upright, with the
+  motion that takes them onto the part (`FlatFace.local`, a
+  `frames.Rigid`, which composes, inverts and moves points, vectors, frames
+  and boxes); an item on one is placed on the upright face
+  (`FlatFace.upright`) and moved: each copy keeps the motion
+  (`Instance.frame`) and itself upright (`Instance.local`), its own faces
+  moved with it (turned again where it is turned there). Its exits are
+  checked upright. The face a box is joined by is a fault; a rounding of a
+  moved item's edges, what stands round a moved round side, a concentric
+  item and hollowing are UNABLE for now.
+- **The judge's placement** does the same in its own code (`Motion`,
+  `FlatFace.local`, `Copy.frame` and `Copy.local`), and every layout agrees,
+  motions included. **The oracle** builds a moved copy upright and moves its
+  solids (`forge_checks/moved.py`); **the check compiler** leaves where it
+  is to face accounting, as a turned item's.
+- **The planner** makes a moved copy's tools upright and moves each by a
+  `transform` step (ForgeIR v2's rigid motion, which keeps a tool's face
+  names on the moved faces), its boxes and the faces named by the way they
+  face moved with it (`forge_plan/moved.py`).
+- **The generator** keeps a turned box's sides (`_Flat.oriented`: their
+  axes on the part) and puts cuts and standing items on them from the
+  stream that puts items on turned faces; of their faces it keeps none.
+- **The views** say in words where an item on a turned item's side is.
+  **The second kernel's agreement** excuses a moved tool's faces at its
+  mouth as it does any tool's, where the last step that has them leaves
+  them, once moved.
+
+Found on the way and fixed: a turned box's open faces were also recorded
+closed (a turned pocket's floor rule ran on what stands as well).
+
+Tests: `tests/test_v2_spec_faceaxes.py` (a turned box's sides: their frames
+and material; placed on upright, then turned, in a row and leaning; the
+part's axes a fault there, its joined face none; a boss's far end and a
+post's faces on one; a post's sides turned by both turns on a turned post's
+far face; the views), `tests/test_v2_plan_faceaxes.py` (built and judged on
+a turned post's sides: a hole right through or blind, a slot, a round
+pocket, a boss, a post turned there, a leaning hole, a row of holes, a hole
+in the side of a post turned on its side; what is there turned half a degree
+more fails face accounting; the second kernel agrees and names alike).
 
 **1b, the ability:**
 
