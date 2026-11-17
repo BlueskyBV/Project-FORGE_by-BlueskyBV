@@ -23,14 +23,18 @@ from forge_eval.generator import (
     DoesNotFitError,
     Feature,
     Plan,
+    _cos_sin,
     _draw,
     _drop_covered,
     _earlier_vertical,
     _Flat,
     _flat_axes,
     _Foot,
+    _footprint,
     _margin,
+    _named,
     _Part,
+    _q,
     _round_box,
     _t,
     _v,
@@ -219,6 +223,90 @@ class Block(DrawKind):
                 other = "x" if a == "y" else "y"
                 _margin(part.flats[inner], other, -1.0, corner)
                 _margin(part.flats[inner], other, 1.0, corner)
+
+    def standing_shell(self, rng: random.Random, name: str, body: Feature, up: str) -> Feature | None:
+        """A shell of a block standing on a face, ``up`` the way it stands: sealed, or open on its far face (a box, a
+        cup standing on the part), its walls 1 mm thick or more, and now and then a floor of its own (the wall it
+        stands by)."""
+        s = body.sizes
+        least = min(s["length"], s["width"], s["height"])
+        opened = () if rng.random() < 0.4 else (up,)
+        sizes_ = {"thickness": _q(rng.uniform(1.0, max(1.2, least / 6)))}
+        if opened and rng.random() < 0.5:
+            sizes_["floor"] = _q(rng.uniform(1.0, max(1.2, s["height"] / 5)))
+        return Feature(name, "shell", sizes_, of=body.id, faces=opened)
+
+    def hollow_standing(self, f: Feature, body: Feature, plan: Plan, part: _Part, t: float, floor: float,
+                        opened: set[str], wall: Callable[[str], float]) -> None:  # fmt: skip
+        """A block standing on a flat face hollowed (shell.md; place.md, "Turned in the face"; V2-stage4b-0c.md,
+        step 5.1): every copy's hollow made as with it upright, then turned with it where it is turned; its walls
+        the material under its faces, a cut through one coming out on the inside face across the wall; its inside
+        faces turned with it. The generator hollows one standing wholly on a face of the part's axes, out of any
+        hollow, upright on it (not leaning), none of its edges rounded, sealed or open on its far face."""
+        if body.tilt is not None or any(_draw(g.kind).rounds_edges and g.of == body.id for g in plan):
+            raise DoesNotFitError(f"{f.id}: the generator hollows a standing block upright on its face, none of its "
+                                  "edges rounded")  # fmt: skip
+        height = body.sizes["height"]
+        for copy in part.copies.get(body.id, []):
+            k = copy.index
+            face = part.flats.get(copy.host) if copy.host is not None else None
+            if face is None or face.turned or face.hollow is not None or not math.isinf(face.room):
+                raise DoesNotFitError(f"{f.id}: the generator hollows a block standing on a face of the part's "
+                                      "axes, out of any hollow")  # fmt: skip
+            up = _named(face.normal)
+            n = _v(unit_of(up))
+            down = OPPOSITE[up]
+            if not np.array_equal(face.normal, n) or not opened <= {up}:
+                raise DoesNotFitError(f"{f.id}: the generator hollows a block standing on a face of the part's axes, "
+                                      "sealed or open on its far face")  # fmt: skip
+            (h1, h2), _ = _footprint(body, face.axes)
+            if not face.holds(face.foot(body, face.frame.plane(_v(copy.point))), GAP):
+                raise DoesNotFitError(f"{f.id}: the generator hollows a block standing wholly on its face")
+            axes = face.axes
+            c, s = _cos_sin(body.turn or 0.0)
+            e1, e2 = _v(unit_of("+" + axes[0])), _v(unit_of("+" + axes[1]))
+            # Its own ways on the part: a turned block's first two turned in the face (as _turned_sides has them).
+            ways = {axes[0]: c * e1 + s * e2 + 0.0, axes[1]: c * e2 - s * e1 + 0.0, up[1]: _v(unit_of("+" + up[1]))}
+            extent = {axes[0]: 2 * h1, axes[1]: 2 * h2, up[1]: height}
+            middle = _v(copy.point) + height / 2 * n
+            low = {a: -extent[a] / 2 + wall("-" + a) for a in "xyz"}
+            high = {a: extent[a] / 2 - wall("+" + a) for a in "xyz"}
+            if any(high[a] - low[a] < 2 * GAP + 1.0 for a in "xyz"):
+                raise DoesNotFitError(f"{f.id}'s walls leave too little hollow in {body.id}")
+            centre = middle + sum(((low[a] + high[a]) / 2 * ways[a] for a in "xyz"), _v((0.0, 0.0, 0.0)))
+            # The hollow as a prism along its up axis, carried on out through its far face where that is open.
+            axis = up[1]
+            first, second = TURN_AXES[axis]
+            span = (high[axis] - low[axis]) / 2
+            ends = (REACH if "-" + axis in opened else 0.0, REACH if "+" + axis in opened else 0.0)
+            part.steps.append(Step(f.id, k, False, Prism(_t(centre), _t(ways[first]), _t(ways[second]), _t(ways[axis]),
+                                                         ((high[first] - low[first]) / 2,
+                                                          (high[second] - low[second]) / 2), 0.0, -span, span),
+                                   ends))  # fmt: skip
+            turned = body.turn is not None and body.turn != 0.0
+            for name in self.openable:
+                outer = (body.id, k, name)
+                if name in opened:
+                    part.flats.pop(outer, None)
+                    continue
+                a, sign = name[1], (1.0 if name[0] == "+" else -1.0)
+                d = sign * ways[a]
+                inner = (body.id, k, f"inner {name}")
+                fa = _flat_axes(name)
+                own = None if name == down else part.flats.get(outer)
+                if own is None and name == up:
+                    # Turned on a face without the same material under all of it, its far face is its own top wall's.
+                    own = part.flats[outer] = _Flat(outer, middle + height / 2 * n, n.copy(), fa, "rect",
+                                                    (extent[fa[0]] / 2, extent[fa[1]] / 2), 0.0, None, level=True,
+                                                    turn=body.turn or 0.0)  # fmt: skip
+                if own is not None:
+                    own.material, own.exit = wall(name), inner
+                part.flats[inner] = _Flat(
+                    inner, centre + sign * (high[a] - low[a]) / 2 * ways[a], -d, fa, "rect",
+                    ((high[fa[0]] - low[fa[0]]) / 2, (high[fa[1]] - low[fa[1]]) / 2), wall(name),
+                    outer if own is not None else None,
+                    room=math.inf if OPPOSITE[name] in opened else high[a] - low[a], hollow=(body.id, k),
+                    oriented=(_t(ways[fa[0]]), _t(ways[fa[1]])) if turned else None)  # fmt: skip
 
     def most_rounding(self, target: Feature, which: str) -> tuple[str, float]:
         s = target.sizes

@@ -30,6 +30,7 @@ from forge_eval.generator import (
     _Foot,
     _footprint,
     _named,
+    _on_exit,
     _on_flat,
     _on_round,
     _overhanging,
@@ -408,7 +409,8 @@ class DrawKind:
         if not self.cut_out:
             return
         if f.depth is None and face.exit is not None:
-            part.flats[face.exit].taken.append(_Foot(at, half, corner))
+            out = part.flats[face.exit]
+            out.taken.append(_on_exit(face, out, _Foot(at, half, corner)))
         elif f.depth is not None:
             face.dug.append((_Foot(at, half, corner), f.depth))
 
@@ -458,6 +460,17 @@ class DrawKind:
         """Its hollow, taken away just after it is made (shell.md): ``t`` its walls' thickness, ``floor`` its floor's, ``wall`` each face's."""
         raise DoesNotFitError(
             f"{f.id}: the generator hollows a block, a cylinder or a dome, not a {body.kind}"
+        )
+
+    def standing_shell(self, rng: random.Random, name: str, body: Feature, up: str) -> Feature | None:
+        """A shell of it drawn standing on a face (V2-stage4b-0c.md, step 5.1), or None: a block's only."""
+        return None
+
+    def hollow_standing(self, f: Feature, body: Feature, plan: Plan, part: _Part, t: float, floor: float,
+                        opened: set[str], wall: Callable[[str], float]) -> None:  # fmt: skip
+        """Its hollow standing on a face (step 5.1): a block's only."""
+        raise DoesNotFitError(
+            f"{f.id}: the generator hollows its first body: a block, a cylinder or a dome"
         )
 
     def shell_opening(

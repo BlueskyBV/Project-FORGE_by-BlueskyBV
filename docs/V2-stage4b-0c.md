@@ -721,11 +721,24 @@ moved back upright (its own earlier roundings' edges and zones moved back
 with it) and moves the hollow onto the part; the check compiler measures
 each wall on the face as it is on the part; the planner makes the hollow's
 tool upright (following the body's roundings) and turns it with a
-`transform`. A leaning body's hollow waits for item 2b. Tests:
-`tests/test_v2_plan_turnedhollow.py` (its faces turned; built and judged:
-open at its top, a thicker floor, its vertical edges rounded first, a hole
-through an inside wall, its rim rounded; its hollow turned half a degree
-more fails; the second kernel agrees).
+`transform`. **The generator** hollows a block it has just stood on a face
+now and then (`DrawKind.standing_shell`, `hollow_standing`, from a stream
+of its own, so a seed that hollows nothing standing is drawn as it was):
+upright or turned in its face, sealed or open on its far face, its walls
+the material under its faces and its inside faces turned with it; until
+then it hollowed only the first body, so a box standing on the part was
+never hollowed in a generated part. And it reads where a cut right through
+a turned item's far face comes out at its place there, along that face's
+own axes (`_on_exit`): it had read it in the turned face's coordinates, so
+a hole through a turned tab could come out under a block standing on the
+far end (the exit run's seed 1436, the one part the judge could not
+conclude on). A leaning body's hollow waits for item 2b. Tests: `tests/test_v2_plan_turnedhollow.py` (its faces turned; built
+and judged: open at its top, a thicker floor, its vertical edges rounded
+first, a hole through an inside wall, its rim rounded; its hollow turned
+half a degree more fails; the second kernel agrees),
+`tests/test_v2_eval_truth.py` (each sort drawn now and then, its mesh its
+truth) and `tests/test_v2_plan_build_generated.py` (its first part built,
+judged and graded).
 
 **Step 5.2, as built (revision 13).** A round side keeps, as a flat face
 does, the motion that takes it onto the part (`SideFace.local`, the judge's

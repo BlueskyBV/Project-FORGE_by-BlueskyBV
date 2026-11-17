@@ -859,7 +859,8 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
                 raise DoesNotFitError(f"{f.id}'s counterbore is as deep as it is")
             if out is None:
                 raise DoesNotFitError(f"{f.id} would come out where {face.exit} is pressed against another")
-            for k, cover in enumerate(covers):
+            for k, near in enumerate(covers):
+                cover = _on_exit(face, out, near)
                 # Over its far face all the way, as on its own: none of it comes near the part's other sides.
                 if not out.holds(cover, GAP):
                     raise DoesNotFitError(f"{f.id} copy {k}, leaning, doesn't lie wholly over {face.exit}")
@@ -902,7 +903,7 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
         face.taken.append(covers[k])
         if cut and f.depth is None and out is not None:
             r = f.sizes["diameter"] / 2
-            out.taken.append(_lean_box(lean, at, -thick * lean.tan, r / lean.c, r))
+            out.taken.append(_on_exit(face, out, _lean_box(lean, at, -thick * lean.tan, r / lean.c, r)))
         elif cut:
             face.dug.append((covers[k], deepest))
     return made
@@ -1076,6 +1077,22 @@ def _flat_spots(f: Feature, face: _Flat) -> list[tuple[float, float]]:
 
 def _point(face: _Flat, at: tuple[float, float]) -> Array:
     return face.frame_at(at).origin
+
+
+def _on_exit(face: _Flat, out: _Flat, foot: _Foot) -> _Foot:
+    """A footprint on a face as the face a cut through it comes out on reads it: the same where their axes run the same
+    ways; else (a turned item's far face, its cuts coming out on its host's far face) at the same point along the
+    cut, the box round it along the far face's axes, a disc a disc (exit run 1436: a hole through a turned tab's far
+    face came out under a block standing on the far end, its place read in the tab's coordinates)."""
+    near, far = face.frame, out.frame
+    if near._u == far._u and near._v == far._v:
+        return foot
+    at = far.plane(near.point(foot.at))
+    if foot._disc():
+        return _Foot(at, foot.half, foot.corner)
+    (a1, a2, _), (b1, b2, _) = far.components(near.u), far.components(near.v)
+    h1, h2 = foot.half
+    return _Foot(at, (abs(a1) * h1 + abs(b1) * h2, abs(a2) * h1 + abs(b2) * h2), 0.0)
 
 
 def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes: tuple[str, str],
@@ -1408,7 +1425,7 @@ def _on_flat(
                     )
             elif strict and face.exit is not None:
                 out = part.flats[face.exit]
-                mine = _Foot(at, half, corner)
+                mine = _on_exit(face, out, _Foot(at, half, corner))
                 if through and not out.holds(mine):
                     raise DoesNotFitError(
                         f"{f.id} doesn't come out wholly on {face.exit}"
@@ -2400,7 +2417,7 @@ OPPOSITE = {
 
 
 def _shell(f: Feature, plan: Plan, part: _Part) -> None:
-    """A shell of the first body (shell.md): its hollow taken away just after it is made, before anything stands on it or cuts into it.
+    """A shell of the first body, or of a block standing on a face (shell.md; step 5.1): its hollow taken away just after it is made, before anything stands on it or cuts into it.
 
     Each closed face's wall is ``thickness`` thick, the floor (the wall
     opposite an open face) ``floor`` when given; the material under each
@@ -2411,9 +2428,9 @@ def _shell(f: Feature, plan: Plan, part: _Part) -> None:
     wall. A dome's flat face is its floor all across.
     """
     body = next((g for g in plan if g.id == f.of), None)
+    standing = body is not None and body.on is not None  # a block standing on a face (step 5.1)
     if (
         body is None
-        or body.on is not None
         or not _draw(body.kind).openable
         or not _draw(body.kind).may_hollow(body)
     ):
@@ -2434,6 +2451,9 @@ def _shell(f: Feature, plan: Plan, part: _Part) -> None:
     def wall(name: str) -> float:
         return 0.0 if name in opened else floor if OPPOSITE[name] in opened else t
 
+    if standing:
+        _draw(body.kind).hollow_standing(f, body, plan, part, t, floor, opened, wall)
+        return
     _draw(body.kind).hollow(f, body, plan, part, t, floor, opened, wall)
 
 
@@ -4030,6 +4050,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         outlined = not new and profiles.random() < _PROFILED
         if _onto_turned(onto, k, plan, part, len(plan) < size):
             continue
+        before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
@@ -4112,8 +4133,32 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             _round_now_and_then(seed, k, candidate, plan)
             break
         _spelled_now_and_then(spells, plan, part)
+        if len(plan) > before:
+            _hollowed_now_and_then(seed, k, plan[before], plan, part)
     _decorate(seed, plan, tries)
     return render(tuple(plan))
+
+
+#: How often a block just drawn standing on a face is hollowed (V2-stage4b-0c.md, step 5.1).
+_STANDING_SHELLED = 0.5
+
+
+def _hollowed_now_and_then(seed: int, k: int, body: Feature, plan: list[Feature], part: _Part) -> None:
+    """Now and then a block just drawn standing on a face hollowed, upright or turned in it (V2-stage4b-0c.md, step
+    5.1), from a stream of its own (a seed that hollows nothing standing stays as it was drawn): sealed or open on
+    its far face; kept where the part it makes is valid."""
+    rng = random.Random(f"forge-eval standing shells {seed} {k}")
+    face = part.flats.get((body.on[0], 0, body.on[1])) if body.on is not None else None
+    if face is None or rng.random() >= _STANDING_SHELLED:
+        return
+    shell = _draw(body.kind).standing_shell(rng, f"hollow{k}", body, _named(face.normal))
+    if shell is None:
+        return
+    try:
+        render((*plan, shell))
+    except DoesNotFitError:
+        return
+    plan.append(shell)
 
 
 # ----------------------------------------------------------------------

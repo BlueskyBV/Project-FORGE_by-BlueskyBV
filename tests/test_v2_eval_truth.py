@@ -128,12 +128,22 @@ WIDENED: dict[str, Callable[[Case], bool]] = {
         f.kind in ("boss", "post") and f.on is not None and f.on[1] == "side"
         for f in c.plan
     ),
+    # 4b.0c, 1b's third move, step 5.1: a block standing on a face hollowed, upright or turned in it.
+    "a block standing on a face hollowed": lambda c: _standing_hollowed(c, turned=False),
+    "a block turned in its face hollowed": lambda c: _standing_hollowed(c, turned=True),
 }
+
+
+def _standing_hollowed(c: Case, turned: bool) -> bool:
+    """Whether a shell hollows a block standing on a face, turned in it or not."""
+    by = {f.id: f for f in c.plan}
+    return any(f.kind == "shell" and by[f.of].on is not None and bool(by[f.of].turn) is turned
+               for f in c.plan if f.of in by)  # fmt: skip
 
 
 def _overhangs(c: Case) -> bool:
     """Whether a block standing on a face reaches past it (its truth's box past the face's edges)."""
-    from forge_eval.generator import _build, _foot_of, _overhang
+    from forge_eval.generator import _build, _overhang
 
     for i, f in enumerate(c.plan):
         if f.kind != "block" or f.on is None or f.pattern is not None:
@@ -144,7 +154,7 @@ def _overhangs(c: Case) -> bool:
         assert c.truth is not None
         point = c.truth.copies[f.id][0].point
         at = tuple(float(point["xyz".index(a)]) for a in face.axes)
-        if _overhang(f, face, [_foot_of(f, face, (at[0], at[1]))], False):
+        if _overhang(f, face, [face.foot(f, (at[0], at[1]))], False):
             return True
     return False
 
@@ -382,18 +392,34 @@ class PlansNowRefused(unittest.TestCase):
 
     def test_under_a_flared_cone_s_top(self) -> None:
         """3375's: on a cone's top wider than its base, past the base's radius only the cone is under it, down to its flank."""
-        from forge_eval.generator import _Flat, _Foot, _under
+        from forge_eval.generator import _Flat, _Foot
 
         # A cone 8 mm across at its base and 12 at its top, 6 mm long, on 10 mm of material.
         top = _Flat(("i0", 0, "+end"), np.array([0.0, 0.0, 16.0]), np.array([0.0, 0.0, 1.0]), ("x", "y"), "disc",
                     (6.0, 6.0), 16.0, None, flare=(4.0, 6.0))  # fmt: skip
         # Within the base's radius (a 1 mm hole 2 mm out: 3 mm at most): the cone and what is under it.
-        self.assertEqual(_under(top, _Foot((2.0, 0.0), (1.0, 1.0), 1.0)), 16.0)
+        self.assertEqual(top.material_under(_Foot((2.0, 0.0), (1.0, 1.0), 1.0)), 16.0)
         # 5 mm out at most (a 1 mm hole 4 mm out along x, its box's corner hypot(5, 1)): the flank is under it.
         widest = float(np.hypot(5.0, 1.0))
         self.assertAlmostEqual(
-            _under(top, _Foot((4.0, 0.0), (1.0, 1.0), 1.0)), 6.0 * (6.0 - widest) / 2.0
+            top.material_under(_Foot((4.0, 0.0), (1.0, 1.0), 1.0)), 6.0 * (6.0 - widest) / 2.0
         )
+
+    def test_a_cut_through_a_turned_far_face_comes_out_where_it_is(self) -> None:
+        """1436's: a footprint on a turned item's far face, as the face its cut comes out on reads it: at the same
+        point along the cut, the box round it along that face's axes, a disc a disc."""
+        from forge_eval.generator import _Flat, _Foot, _on_exit
+
+        near = _Flat(("i0", 0, "-z"), np.array([0.0, 0.0, -8.0]), np.array([0.0, 0.0, -1.0]), ("x", "y"), "rect",
+                     (6.0, 4.0), 18.0, ("body", 0, "+z"), turn=90.0)  # fmt: skip
+        far = _Flat(("body", 0, "+z"), np.array([0.0, 0.0, 10.0]), np.array([0.0, 0.0, 1.0]), ("x", "y"), "rect",
+                    (20.0, 20.0), 10.0, None)  # fmt: skip
+        # Turned a quarter turn, its first axis is the part's y and its second the part's -x.
+        moved = _on_exit(near, far, _Foot((3.0, 1.0), (2.0, 0.5), 0.0))
+        self.assertEqual((moved.at, moved.half, moved.corner), ((-1.0, 3.0), (0.5, 2.0), 0.0))
+        disc = _on_exit(near, far, _Foot((3.0, 1.0), (1.0, 1.0), 1.0))
+        self.assertEqual((disc.at, disc.half, disc.corner), ((-1.0, 3.0), (1.0, 1.0), 1.0))
+        self.assertIs(_on_exit(far, far, disc), disc)  # the same axes: as it is
 
     def test_a_cut_s_side_is_built(self) -> None:
         """3151's: a hole whose bore lies wholly in a pocket cut from another face is refused; partly in it, it stands."""

@@ -27,13 +27,16 @@ class Shell(DrawKind):
         self, f: Feature, plan: Plan
     ) -> Iterator[tuple[str, list[Feature]]]:
         # Sealed, opened on a face; opened, sealed or opened on the face across instead.
-        kind = next(g.kind for g in plan if g.id == f.of)
+        body = next(g for g in plan if g.id == f.of)
+        kind = body.kind
         now = tuple(f.faces or ())
         openings: list[tuple[str, ...]] = (
             [(o,) for o in _draw(kind).openable[-2:]]  # +z or -z; +end or -end; -end
             if not now
             else [(), *([(OPPOSITE[now[0]],)] if len(now) == 1 else [])]
         )
+        if body.on is not None:  # a block standing on a face (step 5.1): sealed, or open on its far face
+            openings = [()] if now else [(o,) for o in _draw(kind).openable]
         yield "open", [replace(f, faces=o) for o in openings]
 
 
