@@ -43,7 +43,6 @@ from forge_eval.generator import (
     _touches_falling_edges,
     _turned_ends,
     _turned_sides,
-    _under,
     outline_of,
 )
 from forge_eval.truth import Copy, Prism, Step, Turned
@@ -323,7 +322,7 @@ class DrawKind:
                 _touches_falling_edges(f, p, (e1, e2, n), h1, height, flush, part)
         up = _named(n)
         # Over an overhang, only its own height (frame.md): under its far face the least, and nothing through.
-        under = 0.0 if beyond else _under(face, feet[k])
+        under = 0.0 if beyond else face.material_under(feet[k])
         if f.turn is not None or face.turned:
             # Turned in its face, or on a face turned with what it is on, it is turned so (place.md, "A turned item's
             # far face"): its far face takes things, turned with it, its own height and its host's material under it,

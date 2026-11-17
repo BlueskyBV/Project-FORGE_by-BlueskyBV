@@ -54,7 +54,7 @@ def thread_step(chain: Chain, ctx: Context, item: Item, copy: Instance) -> None:
     long = threaded.made_in("mm") if isinstance(threaded, Value) else rod
     if chain.head is None:
         raise PlanError("a thread before any body", item=item.id)
-    o, u = copy.origin, copy.normal
+    o, u = copy.origin, copy.direction or copy.normal  # a leaning rod along its lean (step 5.4)
     chain.head = chain.step(
         f"{item.id}.{copy.index}.thread",
         "thread",

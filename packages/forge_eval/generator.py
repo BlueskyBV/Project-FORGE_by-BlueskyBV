@@ -391,6 +391,49 @@ class _Flat:
         frame = self.frame
         return _FaceFrame(frame.point(at), frame._u, frame._v, frame._n)
 
+    # Item 3a's placeable face, second part: what an item covers on it, and the material under that.
+    def foot(self, f: Feature, at: tuple[float, float]) -> _Foot:
+        """What a copy of ``f`` centred at ``at`` covers on the face: its outline; letters, their ink's box (it
+        reaches past the line's); a cone wider at its top than its base, its top's circle; turned, the box round its
+        turned outline (what is clear of that is clear of it)."""
+        if f.turn is not None:
+            return _Foot(at, _turned_half(f, self.axes, _draw(f.kind).foot_of(f, self, (0.0, 0.0))), 0.0)
+        return _draw(f.kind).foot_of(f, self, at)
+
+    def material_under(self, foot: _Foot) -> float:
+        """The least material under a footprint on the face: the face's; under a dome's flat face the dome's height
+        over the footprint's farthest point from its centre (frame.md); on a flared cone's top, past its base's
+        radius, the cone's own height over that point, from its flank up (generated part 3375).
+
+        The farthest point is bounded by the footprint's box's corner.
+        """
+        if self.dome <= 0 and self.flare[1] <= 0:
+            return self.material
+        cu, cv = self.coords()
+        widest = fs.hypot(abs(foot.at[0] - cu) + foot.half[0], abs(foot.at[1] - cv) + foot.half[1])
+        if self.flare[1] > 0:
+            base, length = self.flare
+            if widest <= base:
+                return self.material
+            top = self.half[0]
+            return length * max(top - widest, 0.0) / (top - base)
+        return math.sqrt(max(self.dome * self.dome - widest * widest, 0.0))
+
+    @property
+    def uniform(self) -> bool:
+        """Whether an item may lean on it: the same material under all of it (``level``), a rectangle or a disc, no
+        dome or flared cone under it, out of any hollow, a cut through it coming out on its far face."""
+        return (
+            self.level
+            and self.shape in ("rect", "disc")
+            and self.dome <= 0
+            and self.flare[1] <= 0
+            and self.hollow is None
+            and math.isinf(self.room)
+            and self.exit is not None
+            and not self.exit[2].startswith("inner")
+        )
+
     def holds(
         self,
         foot: _Foot,
@@ -731,19 +774,6 @@ def _leaning_foot(f: Feature, axes: tuple[str, str]) -> tuple[float, float]:
     return _lean_box(lean, (0.0, 0.0), 0.0, along / lean.c, across).half
 
 
-def _level(face: _Flat) -> bool:
-    """Whether an item may lean on a face: the same material under all of it (``level``), a rectangle or a disc, no
-    dome or flared cone under it, out of any hollow, a cut through it coming out on its far face."""
-    return (
-        face.level
-        and face.shape in ("rect", "disc")
-        and face.dome <= 0
-        and face.flare[1] <= 0
-        and face.hollow is None
-        and math.isinf(face.room)
-        and face.exit is not None
-        and not face.exit[2].startswith("inner")
-    )
 
 
 def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: bool) -> list[Copy]:
@@ -780,7 +810,7 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
     for axis in (f.pattern.axis if f.pattern is not None else None, *f.place):
         if axis and axis not in face.axes:
             raise DoesNotFitError(f"{f.id}: {axis} isn't one of {face.key}'s axes {face.axes}")
-    if not _level(face):
+    if not face.uniform:
         raise DoesNotFitError(f"{f.id} leans on {face.key}, which hasn't the same material under all of it")
     lean = _lean_of(f, face.axes)
     if strict and lean.tilt > _MOST_LEAN:
@@ -886,7 +916,7 @@ def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature
     None when it doesn't lean."""
     if rng.random() >= _LEANED or not _draw(f.kind).leans or f.on is None or f.on[1] == "side":
         return None
-    if not _level(face) or f.angle is not None or (f.recess is not None and f.recess[0] == "countersink"):
+    if not face.uniform or f.angle is not None or (f.recess is not None and f.recess[0] == "countersink"):
         return None
     tilt = rng.choice((10.0, 15.0, 20.0, 30.0, 45.0, 60.0)) if rng.random() < 0.5 else _q(rng.uniform(0.5, _MOST_LEAN), 0.5)
     towards = rng.choice(("+", "-")) + rng.choice(face.axes)
@@ -958,31 +988,8 @@ def _right(face: _Flat) -> Array:
     return np.asarray(np.cross(face.frame.v, face.normal), dtype=np.float64)
 
 
-def _foot_of(f: Feature, face: _Flat, at: tuple[float, float]) -> _Foot:
-    """What a copy centred at ``at`` covers on a flat face: its outline; letters, their ink's box (it reaches past the line's); a cone wider at its top than its base, its top's circle; turned, the box round its turned outline (what is clear of that is clear of it)."""
-    if f.turn is not None:
-        return _Foot(at, _turned_half(f, face.axes, _draw(f.kind).foot_of(f, face, (0.0, 0.0))), 0.0)
-    return _draw(f.kind).foot_of(f, face, at)
 
 
-def _under(face: _Flat, foot: _Foot) -> float:
-    """The least material under a footprint on a flat face: the face's; under a dome's flat face the dome's height over the footprint's farthest point from its centre (frame.md); on a flared cone's top, past its base's radius, the cone's own height over that point, from its flank up (generated part 3375).
-
-    The farthest point is bounded by the footprint's box's corner.
-    """
-    if face.dome <= 0 and face.flare[1] <= 0:
-        return face.material
-    cu, cv = face.coords()
-    widest = fs.hypot(
-        abs(foot.at[0] - cu) + foot.half[0], abs(foot.at[1] - cv) + foot.half[1]
-    )
-    if face.flare[1] > 0:
-        base, length = face.flare
-        if widest <= base:
-            return face.material
-        top = face.half[0]
-        return length * max(top - widest, 0.0) / (top - base)
-    return math.sqrt(max(face.dome * face.dome - widest * widest, 0.0))
 
 
 def _pattern_draw(mode: str) -> PatternDraw:
@@ -1321,7 +1328,7 @@ def _on_flat(
     if f.turn is not None:  # what it covers, as the generator keeps it: the box round its turned outline
         half, corner = _turned_half(f, face.axes), 0.0
     spots = _flat_spots(f, face)
-    feet = [_foot_of(f, face, at) for at in spots]
+    feet = [face.foot(f, at) for at in spots]
     # Turned, or on a turned face, it is wholly on its face, clear of its edges by the gap: flush with none, over none.
     plain = f.turn is None and not face.turned
     flush = _flush(f, face) if plain else frozenset()
@@ -1365,13 +1372,13 @@ def _on_flat(
                 strict
                 and f.depth is not None
                 and face.dome > 0
-                and f.depth > _under(face, _Foot(at, half, corner)) - GAP
+                and f.depth > face.material_under(_Foot(at, half, corner)) - GAP
             ):
                 # Under a dome's flat face the material is the dome's height over a point: least at the cut's
                 # farthest from the centre (its box's corner, a bound).
                 raise DoesNotFitError(f"{f.id} is deeper than the dome over it")
             if strict and face.flare[1] > 0:
-                room = _under(face, _Foot(at, half, corner))
+                room = face.material_under(_Foot(at, half, corner))
                 if f.depth is None and room < face.material:
                     # Past a flared cone's base, a line down comes out of its flank into the air under it, and
                     # in again further down: right through has no one meaning (generated part 3375).
@@ -1448,7 +1455,7 @@ def _on_flat(
                 (f"{f.id} {index + k}", *_box_over(face, foot, rise))
             )
     for at in spots:
-        face.taken.append(_foot_of(f, face, at))
+        face.taken.append(face.foot(f, at))
         _draw(f.kind).marks(f, face, at, half, corner, part)
     return made
 
@@ -2682,6 +2689,26 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     e1, e2 = (_v(unit_of("+" + a)) for a in axes)
     if host is not None:  # its own ways, turned with it where it is turned (edges.md, "A turned item's edges")
         e1, e2 = _turned_frame(target, host.frame.u, host.frame.v)
+    starts: dict[tuple[float, float], float] = {}
+    if copy.lean is not None:  # leaning (step 5.3): its ways leaned with it, its long edges from the face's plane
+        if which not in ("top", "vertical"):
+            raise DoesNotFitError(f"{f.id}: a leaning box's joint isn't rounded, for now")
+        u = _v(copy.lean)
+        hinge = np.asarray(np.cross(n, u), dtype=np.float64)
+        hinge = hinge / fs.hypot(fs.hypot(float(hinge[0]), float(hinge[1])), float(hinge[2]))
+        cos_t = float(fv.matmul(n, u))
+        sin_t = math.sqrt(max(1.0 - cos_t * cos_t, 0.0))
+
+        def leaned(d: Array) -> Array:
+            return d * cos_t + np.asarray(np.cross(hinge, d)) * sin_t + hinge * float(fv.matmul(hinge, d)) * (1.0 - cos_t) + 0.0
+
+        e1, e2 = leaned(e1), leaned(e2)
+        n0, n = n, u
+        half_ = (target.sizes["length"] / 2, target.sizes["width"] / 2)
+        for s1 in (-1.0, 1.0):
+            for s2 in (-1.0, 1.0):
+                off = s1 * half_[0] * e1 + s2 * half_[1] * e2
+                starts[(s1, s2)] = -float(fv.matmul(n0, off)) / cos_t
     s = target.sizes
     half = (s["length"] / 2, s["width"] / 2)
     height = s["height"]
@@ -2698,7 +2725,8 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     if "vertical" in sets:
         for s1 in (-1.0, 1.0):
             for s2 in (-1.0, 1.0):
-                part.late.append(Step(f.id, copy.index, False, Corner(_t(corner(s1, s2, 0.0)), _t(n), height,
+                t0 = starts.get((s1, s2), 0.0)  # leaning: where it meets the face's plane
+                part.late.append(Step(f.id, copy.index, False, Corner(_t(corner(s1, s2, t0)), _t(n), height - t0,
                                                                       _t(-s2 * e2), _t(-s1 * e1), size, round_),
                                       (REACH if host is None else 0.0, REACH)))  # fmt: skip
         for name in (up, down):
@@ -2741,7 +2769,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     if which == "joint":
         assert host is not None
         at = host.frame.plane(p)
-        old = _foot_of(target, host, (at[0], at[1]))
+        old = host.foot(target, (at[0], at[1]))
         if _flush(target, host) or _overhang(target, host, [old], False):
             # A side flush with the face's edge has no corner along it, and under an overhang the corner is
             # between the overhang and the host's side (edges.md): the generator doesn't round those, for now.
@@ -2815,6 +2843,10 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     """A rod's rims (cylinder.md, boss.md): ``top`` round its +end, ``bottom`` round its -end, ``both``; a boss's ``joint`` round its foot. Each a ring, exact."""
     round_ = not _draw(f.kind).bevels
     p, n = _v(copy.point), _v(copy.direction)
+    if copy.lean is not None:  # leaning (step 5.3): its rim round its far end, square to its lean; its joint waits
+        if which != "top":
+            raise DoesNotFitError(f"{f.id}: a leaning rod's rim is rounded at its far end only, for now")
+        n = _v(copy.lean)
     r = target.sizes["diameter"] / 2
     height = target.sizes[_draw(target.kind).rod_length]
     side = part.rounds.get((target.id, copy.index, "side"))
@@ -2852,7 +2884,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     if which == "joint":
         assert host is not None
         at = host.frame.plane(p)
-        old = _foot_of(target, host, (at[0], at[1]))
+        old = host.foot(target, (at[0], at[1]))
         _keep_clear(f, host, old, _Foot(old.at, (r + size, r + size), r + size), strict)
         part.late.append(
             Step(
@@ -2932,7 +2964,7 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     if which == "top":
         # Round a round corner, as far again out; at a sharp one the mouth's two roundings meet in a mitre, and
         # what they take may reach the corner of the box round them.
-        old = _foot_of(target, host, (at[0], at[1]))
+        old = host.foot(target, (at[0], at[1]))
         grown = old.corner + size if old.corner > 0 else 0.0
         _keep_clear(
             f,
@@ -4061,6 +4093,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                     leaned = None
                 else:
                     plan.append(leaned)
+                    _round_now_and_then(seed, k, leaned, plan)  # its far end's edges leaned with it (edges.md)
                     break
             if turned is not None:
                 try:

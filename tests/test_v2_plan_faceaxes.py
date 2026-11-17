@@ -90,6 +90,20 @@ def _on(found: dict[str, Any], face: str, item: str = "post") -> dict[str, Any]:
     return {**found, "on": {"item": item, "face": face}}
 
 
+def _rod(b: Any, kind: str, diameter: float, long: float) -> dict[str, Any]:
+    """A boss (``long`` its height) or a cylinder (its length), its id its kind's: boss or rod."""
+    return {"id": "boss" if kind == "boss" else "rod", "kind": kind, "words": cite(b, "boss"),
+            "diameter": assumed("across", diameter), ("height" if kind == "boss" else "length"): assumed("long", long)}  # fmt: skip
+
+
+def _round_hole(b: Any, on: str, degrees: float, depth: float | None = None) -> dict[str, Any]:
+    """A hole 2 mm across round the side of ``on``, at ``degrees`` round it: right through, or ``depth`` deep."""
+    found = {"id": "hole", "kind": "hole", "words": cite(b, "hole"), "on": {"item": on, "face": "side"},
+             "diameter": assumed("across", 2.0), "place": {"angle": assumed("round", degrees, "deg")}}  # fmt: skip
+    found["depth"] = {"through": True, "from": {"assumed": "through"}} if depth is None else assumed("deep", depth)
+    return found
+
+
 #: Each part: what stands on the plate and what is on it.
 CASES: dict[str, Any] = {
     "along u and v on the plate": lambda b: [_hole(b, {"u": {"side": "-u", "distance": assumed("in", 20.0)},
@@ -140,6 +154,15 @@ CASES: dict[str, Any] = {
     "a row of holes in its side": lambda b: [_post(b), _hole(b, {"pattern": {"row": {
         "count": {"count": 2, "from": {"assumed": "two"}}, "pitch": assumed("apart", 12.0),
         "axis": {"choose": "u", "from": {"assumed": "along"}}}}}, face="+x", count={"count": 2, "from": {"assumed": "two"}})],
+    # Round the side of what stands on its sides (step 5.2): placed on that side upright, then moved.
+    "a blind hole round a boss on its side": lambda b: [_post(b), _on(_rod(b, "boss", 8.0, 5.0), "+x"), _round_hole(b, "boss", 90.0, 1.5)],
+    "a hole through a rod on its side": lambda b: [_post(b), _on(_rod(b, "cylinder", 7.0, 12.0), "-y"), _round_hole(b, "rod", 45.0)],
+    "a boss round a rod on its side": lambda b: [_post(b), _on(_rod(b, "cylinder", 7.0, 12.0), "-y"), {
+        "id": "knob", "kind": "boss", "words": cite(b, "boss"), "on": {"item": "rod", "face": "side"},
+        "diameter": assumed("across", 3.0), "height": assumed("tall", 2.0), "place": {"angle": assumed("round", 90.0, "deg")}}],
+    "a hole through a tube's wall on its side": lambda b: [_post(b), _on({
+        "id": "rod", "kind": "tube", "words": cite(b, "post"), "outer_diameter": assumed("out", 12.0),
+        "inner_diameter": assumed("in", 6.0), "length": assumed("long", 10.0)}, "+y"), _round_hole(b, "rod", 0.0)],
     "a hole in the side of a post turned on its side": lambda b: [
         _post(b), _post(b, 20.0, on="post", item="upper", sizes=(8.0, 6.0, 5.0)) | {"on": {"item": "post", "face": "+x"}},
         _hole(b, None, on="upper", face="+y", depth=3.0) | {"diameter": assumed("across", 2.0)}],
@@ -234,7 +257,8 @@ class TheSecondKernelAgrees(unittest.TestCase):
         # On its sides, what is cut or joined there is built upright and turned with it: the faces its tool had at
         # its mouth, where they are once turned, are in the air.
         for name, case in (("on its far face", make), ("on its sides", CASES["a hole right through its side"]),
-                           ("on a post turned on its side", CASES["a hole in the side of a post turned on its side"])):  # fmt: skip
+                           ("on a post turned on its side", CASES["a hole in the side of a post turned on its side"]),
+                           ("round a rod on its side", CASES["a hole through a rod on its side"])):  # fmt: skip
             with self.subTest(name):
                 _, planned = _planned(case)
                 built = build_plan(planned)

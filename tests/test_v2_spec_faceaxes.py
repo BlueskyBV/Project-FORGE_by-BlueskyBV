@@ -15,6 +15,8 @@ schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face", 
   is turned with it (as placed, an item turned by both turns on an aligned
   plane), turns add, a round item is the same turned, an outline that
   doesn't turn waits for a later step.
+- **A round side on a turned box's side takes things** (step 5.2): placed
+  round it as upright, then moved.
 - **A turned box's sides take things** (step 2): each turned with it, the
   box's size across it under it, named as with the box upright; what is on
   one is placed on it upright, then turned with the box: a hole (in a row,
@@ -341,6 +343,22 @@ class ATurnedBoxsSidesTakeThings(unittest.TestCase):
         side = _report(_post(), upper).layout.faces[("upper", 0)]["+x"]
         _close(self, side.frame.n, (math.cos(math.radians(50)), math.sin(math.radians(50)), 0.0))
         _close(self, side.centre, (5 * math.cos(math.radians(50)), 5 * math.sin(math.radians(50)), 20.0))
+
+
+class ARoundSideOnATurnedBoxsSideTakesThings(unittest.TestCase):
+    def test_placed_round_it_upright_then_moved(self) -> None:
+        # Step 5.2: a boss on a turned post's +x side points along the side's normal; a hole round its side at 90
+        # degrees (round x: from y towards z) is on its top, as it would be upright, then turned with the post.
+        boss = {**_boss(), "on": {"item": "post", "face": "+x"}}
+        hole = {"id": "hole", "kind": "hole", "words": cite(B, "hole"), "on": {"item": "boss", "face": "side"},
+                "diameter": assumed("across", 2.0), "depth": assumed("deep", 1.5), "place": {"angle": assumed("up", 90.0, "deg")}}  # fmt: skip
+        report = _report(_post(), boss, hole)
+        self.assertEqual(_placing(report), [])
+        side = report.layout.faces[("boss", 0)]["side"]
+        _close(self, side.frame.n, (C30, S30, 0.0))
+        (copy_,) = report.layout.instances["hole"]
+        _close(self, copy_.local.origin, (15.0 + 2.5, 0.0, 13.0 + 4.0))
+        _close(self, copy_.origin, (17.5 * C30, 17.5 * S30, 17.0))
 
 
 class WhatTheViewsAndWordsSay(unittest.TestCase):

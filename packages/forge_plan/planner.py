@@ -212,7 +212,7 @@ def _tools(
 
     def made(chain: Chain, copy: Instance) -> list[str]:
         if copy.frame is not None:
-            return moved_tools(chain, ctx, item, copy)
+            return moved_tools(chain, ctx, item, copy, how)
         return PLAN[item.kind].tool(chain, ctx, item, copy, how)
 
     return made

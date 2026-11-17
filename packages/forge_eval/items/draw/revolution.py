@@ -16,7 +16,6 @@ from forge_eval.generator import (
     _Part,
     _profile_box,
     _standing_profile,
-    _under,
 )
 from forge_eval.items.draw.protocol import DrawKind
 
@@ -48,7 +47,7 @@ class Revolution(DrawKind):
     def stand_flat(self, f: Feature, copy_index: int, p: Array, n: Array, e1: Array, e2: Array, face: _Flat,
                    part: _Part, strict: bool, feet: list[_Foot], k: int, beyond: frozenset[tuple[int, float]],
                    flush: frozenset[tuple[int, float]]) -> None:  # fmt: skip
-        _standing_profile(f, copy_index, p, n, face, part, _under(face, feet[k]))
+        _standing_profile(f, copy_index, p, n, face, part, face.material_under(feet[k]))
 
 
 ENTRY = Revolution()

@@ -32,12 +32,13 @@ __all__ = ["moved_tools", "moved_where", "transform_params"]
 Vec = tuple[float, float, float]
 
 
-def moved_tools(chain: Chain, ctx: Context, item: Item, copy: Instance) -> list[str]:
-    """One copy's tool pieces, made upright and moved onto the part by its motion."""
+def moved_tools(chain: Chain, ctx: Context, item: Item, copy: Instance, how: str = "flush") -> list[str]:
+    """One copy's tool pieces, made upright ``how`` its construction makes them (carried into the air where that is
+    proven clear where it is moved to: tools.carried_ways), and moved onto the part by its motion."""
     assert copy.frame is not None and copy.local is not None
     motion, upright = copy.frame, copy.local
     marks = len(chain.added), len(chain.cut), len(chain.boxes.get(chain.planning, []))
-    tools = PLAN[item.kind].tool(chain, ctx, item, upright, "flush")
+    tools = PLAN[item.kind].tool(chain, ctx, item, upright, how)
     key = (item.id, copy.index)
     own = next((b for b in (*chain.added[marks[0]:], *chain.cut[marks[1]:]) if (b.item, b.copy) == key), None)
     moved = [chain.step(f"{tool}.moved", "transform", transform_params(motion), item=item.id, inputs=(tool,))
@@ -81,12 +82,12 @@ def moved_where(where: Mapping[str, Any], motion: Rigid) -> dict[str, Any]:
     moved box, its corners moved."""
     found = dict(where)
     if "axis" in where:
-        found["axis"] = _listed(motion.vector(tuple(where["axis"])))  # type: ignore[arg-type]
+        found["axis"] = _listed(motion.vector(tuple(where["axis"])))
     for name in ("through", "centre"):
         if name in where:
-            found[name] = _listed(motion.point(tuple(where[name])))  # type: ignore[arg-type]
+            found[name] = _listed(motion.point(tuple(where[name])))
     lo, hi = where["within"]
-    moved_lo, moved_hi = motion.box(tuple(lo), tuple(hi))  # type: ignore[arg-type]
+    moved_lo, moved_hi = motion.box(tuple(lo), tuple(hi))
     found["within"] = [_listed(moved_lo), _listed(moved_hi)]
     return found
 
@@ -103,4 +104,4 @@ def _moved_box(box: Box, motion: Rigid) -> Box:
 def _moved_ref(ref: Ref, motion: Rigid) -> Ref:
     if not ref.normal:
         return ref
-    return Ref(ref.step, ref.role, motion.vector(ref.normal))  # type: ignore[arg-type]
+    return Ref(ref.step, ref.role, motion.vector(ref.normal))

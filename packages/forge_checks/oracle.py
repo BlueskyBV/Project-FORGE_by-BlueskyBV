@@ -1458,7 +1458,8 @@ def _thread(item: Item, making: _Making) -> list[Step]:
         raise CannotMakeError(f"{item.id}: the thread is longer than {target.id}")
     found = []
     for copy in making.placed.copies[target.id]:
-        frame = Frame.along(copy.point, np.asarray(copy.direction, dtype=float))
+        # Along its axis: a leaning rod's lean (step 5.4), whose thread the solver keeps clear of its foot.
+        frame = Frame.along(copy.point, np.asarray(copy.lean or copy.direction, dtype=float))
         start = whole - length
         ring = Minus(
             Prism(frame, Disc(radius + depth), start, whole + depth),

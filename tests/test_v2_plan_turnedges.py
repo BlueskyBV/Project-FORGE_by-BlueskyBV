@@ -1,5 +1,6 @@
-"""A turned item's edges, and those of what is on a turned item's faces, rounded and chamfered (edges.md, "A turned
-item's edges"; V2-stage4b-0c.md, 3.3, 1b's third move, step 2c).
+"""A turned item's edges, those of what is on a turned item's faces, and a leaning item's far end's and those along its
+lean, rounded and chamfered (edges.md, "A turned item's edges", "A leaning item's edges"; V2-stage4b-0c.md, 3.3, 1b's
+third move, steps 2c and 5.3).
 
 - **What is built is what was asked.** A turned post's vertical, top and
   joint edges; a turned block's top edges bevelled and, turned a quarter
@@ -54,6 +55,19 @@ def _turned_cut(b: Any, kind: str) -> dict[str, Any]:
             "place": place}  # fmt: skip
 
 
+def _leaning(b: Any, kind: str, tilt: float = 20.0, way: str = "+x", turn: float | None = None) -> dict[str, Any]:
+    """A post, a block (12 by 8, 10 tall), a boss or a cylinder (10 across, 8 tall) leaning on the plate."""
+    found = {"id": "leaning", "kind": kind, "words": cite(b, "post"), "on": {"item": "plate", "face": "+z"},
+             "tilt": assumed("leaning", tilt, "deg"), "tilt_towards": {"choose": way, "from": {"assumed": "that way"}}}  # fmt: skip
+    if kind in ("post", "block"):
+        found |= {"length": assumed("long", 12.0), "width": assumed("wide", 8.0), "height": assumed("tall", 10.0)}
+    else:
+        found |= {"diameter": assumed("across", 10.0), ("height" if kind == "boss" else "length"): assumed("tall", 8.0)}
+    if turn is not None:
+        found["place"] = {"turn": assumed("turned", turn, "deg")}
+    return found
+
+
 #: Each part: what is turned, and what of it is rounded or bevelled.
 CASES: dict[str, Any] = {
     "a turned post's vertical edges": lambda b: [_post(b), _rounding(b, "post", "vertical")],
@@ -78,6 +92,15 @@ CASES: dict[str, Any] = {
         _post(b), _block(b, 15.0, on="post", face="-x", sizes=(6, 4, 3)), _rounding(b, "block", "top", size=0.5)],
     "a post turned on a turned post's far face, its vertical edges": lambda b: [
         _post(b), _post(b, 25.0, on="post", item="upper", sizes=(8.0, 5.0, 6.0)), _rounding(b, "upper", "vertical")],
+    # A leaning item's (step 5.3): its far end's edges, and a box's along its lean, found upright, then leaned.
+    "a leaning post's top edges": lambda b: [_leaning(b, "post"), _rounding(b, "leaning", "top", size=0.8)],
+    "a leaning, turned post's edges along its lean, bevelled": lambda b: [
+        _leaning(b, "post", 30.0, "-y", turn=40.0), _rounding(b, "leaning", "vertical", "chamfer", 0.6)],
+    "a leaning post's edges along its lean, then round its top": lambda b: [
+        _leaning(b, "post"), _rounding(b, "leaning", "vertical", size=1.5), {**_rounding(b, "leaning", "top", size=0.8), "id": "again"}],
+    "a leaning boss's rim": lambda b: [_leaning(b, "boss", 25.0, "-y"), _rounding(b, "leaning", "top")],
+    "a leaning block's top edges": lambda b: [_leaning(b, "block"), _rounding(b, "leaning", "top", size=0.8)],
+    "a leaning cylinder's rim": lambda b: [_leaning(b, "cylinder", 30.0, "-y"), _rounding(b, "leaning", "top")],
 }
 
 
@@ -107,7 +130,8 @@ class AnEdgeLeftSharpIsCaught(unittest.TestCase):
             found, named = real(*args, **kwargs)
             return {**found, "queries": found["queries"][:-1]}, named
 
-        for name in ("a turned post's vertical edges", "a block turned on a turned post's side, its top edges"):
+        for name in ("a turned post's vertical edges", "a block turned on a turned post's side, its top edges",
+                     "a leaning post's top edges", "a leaning, turned post's edges along its lean, bevelled"):  # fmt: skip
             with self.subTest(name), mock.patch.object(planner, "edge_reference", fewer):
                 built, accounting, failed = _judged(CASES[name])
                 self.assertIsNone(built.gap)
@@ -121,7 +145,7 @@ class TheSecondKernelAgrees(unittest.TestCase):
         from forge_occ.planned import build_plan
 
         for name in ("a turned post's vertical edges", "a block turned on a turned post's side, its top edges",
-                     "a hole's mouth on a turned post's side"):  # fmt: skip
+                     "a hole's mouth on a turned post's side", "a leaning post's top edges", "a leaning boss's rim"):  # fmt: skip
             with self.subTest(name):
                 _, planned = _planned(CASES[name])
                 built = build_plan(planned)

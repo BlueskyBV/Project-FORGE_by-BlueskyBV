@@ -9,6 +9,7 @@ edge, its section's boundaries in its own frame.
 
 from __future__ import annotations
 
+import math
 from dataclasses import fields, replace
 
 from . import rounds
@@ -37,8 +38,8 @@ def moved_node(node: Node, motion: Motion) -> Node:
         return replace(node, centre=motion.point(node.centre))
     if isinstance(node, Halfspace):
         return replace(node, point=motion.point(node.point), normal=motion.vector(node.normal))
-    if any(f.name == "frame" for f in fields(node)):
-        return replace(node, frame=moved_frame(node.frame, motion))  # type: ignore[call-arg, attr-defined]
+    if any(f.name == "frame" for f in fields(node)):  # type: ignore[arg-type]
+        return replace(node, frame=moved_frame(node.frame, motion))  # type: ignore[attr-defined, type-var]
     raise TypeError(f"the oracle doesn't move a {type(node).__name__} yet")
 
 
@@ -61,6 +62,14 @@ def upright(copy: Copy) -> tuple[Copy, Motion | None]:
     then the motion of the item whose face it is on."""
     base = copy.local if copy.local is not None else copy
     motion = None
+    lean = None
+    if base.lean is not None:  # leaning (step 5.3): about the line through its point in the face square to its lean
+        n, u = base.direction, base.lean
+        c = n[0] * u[0] + n[1] * u[1] + n[2] * u[2]
+        hinge = (n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0])
+        s = math.sqrt(hinge[0] * hinge[0] + hinge[1] * hinge[1] + hinge[2] * hinge[2])
+        lean = Motion.about(base.point, (hinge[0] / s, hinge[1] / s, hinge[2] / s), (c, s))
+        base = replace(base, lean=None)
     if base.turn is not None:
         assert base.axes is not None
         first, second = unit("+" + base.axes[0]), unit("+" + base.axes[1])
@@ -68,6 +77,8 @@ def upright(copy: Copy) -> tuple[Copy, Motion | None]:
                   first[0] * second[1] - first[1] * second[0])  # fmt: skip
         motion = Motion.about(base.point, square, base.turn)
         base = replace(base, turn=None)
+    if lean is not None:
+        motion = lean if motion is None else lean.after(motion)
     if copy.frame is not None:
         motion = copy.frame if motion is None else copy.frame.after(motion)
     return base, motion

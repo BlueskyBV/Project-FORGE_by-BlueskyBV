@@ -21,13 +21,11 @@ from forge_eval.generator import (
     Plan,
     _Flat,
     _Foot,
-    _foot_of,
     _letters,
     _line_length,
     _Part,
     _right,
     _t,
-    _under,
 )
 from forge_eval.items.draw.protocol import DrawKind
 from forge_eval.truth import Letters, Step, ink_box
@@ -70,7 +68,7 @@ class Text(DrawKind):
         # Engraved, into the face to its depth (its mouth carried on into the air); embossed, out of it
         # (its foot carried on into the face). Up is the face's second axis; they run along up x out.
         engraved, deep = f.choices["mode"] == "engrave", f.sizes["depth"]
-        if strict and engraved and deep > _under(face, feet[k]) - GAP:
+        if strict and engraved and deep > face.material_under(feet[k]) - GAP:
             raise DoesNotFitError(
                 f"{f.id} is engraved deeper than the material under {face.key}"
             )
@@ -102,7 +100,7 @@ class Text(DrawKind):
         part: _Part,
     ) -> None:
         if f.choices["mode"] == "engrave":
-            face.dug.append((_foot_of(f, face, at), f.sizes["depth"]))
+            face.dug.append((face.foot(f, at), f.sizes["depth"]))
 
     def limits(self, f: Feature) -> None:
         if not f.words or ink_box(f.words, f.sizes["height"]) is None:

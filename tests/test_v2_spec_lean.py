@@ -221,18 +221,23 @@ class UnderItAlongItsDirection(unittest.TestCase):
         self.assertAlmostEqual(copy_.hi[0], 12.0 * math.sin(t) + 5.0 * math.cos(t), places=9)
         self.assertAlmostEqual(copy_.hi[2], 8.0 + 12.0 * math.cos(t) + 5.0 * math.sin(t), places=9)
 
-    def test_its_edges_are_not_rounded_yet(self) -> None:
+    def test_its_far_end_is_rounded_its_joint_not_yet(self) -> None:
+        # Step 5.3: its far end's edges (and a box's along its lean) are rounded as upright, then leaned; its joint,
+        # where it meets its face, waits.
         fillet = {"id": "round", "kind": "fillet", "words": cite(B, "boss"),
                   "edges": {"of": "boss", "which": "top"}, "radius": assumed("small", 1.0)}  # fmt: skip
-        report = _report(_boss(), fillet)
-        self.assertTrue(_says(report, "Forge rounds and chamfers such an item's edges in a later move"))
+        self.assertFalse(_says(_report(_boss(), fillet), "Forge rounds and chamfers"))
+        joint = {**fillet, "edges": {"of": "boss", "which": "joint", "where_meets": "plate"}}
+        self.assertTrue(_says(_report(_boss(), joint), "where it meets its face, in a later step"))
 
-    def test_it_is_not_threaded_yet(self) -> None:
+    def test_threaded_from_its_far_end_clear_of_its_foot(self) -> None:
+        # Step 5.4: along its lean from its far end; all along it, it would reach where its side meets the face.
         thread = {"id": "thread", "kind": "thread", "words": cite(B, "boss"), "of": "boss",
                   "designation": {"text": "M10", "from": {"assumed": "M10"}},
                   "hand": {"choose": "right", "from": {"assumed": "right handed"}}}  # fmt: skip
-        report = _report(_boss(), thread)
-        self.assertTrue(_says(report, "Forge threads a leaning rod in a later move"))
+        self.assertTrue(_says(_report(_boss(), thread), "a thread on it runs from its far end, clear of its foot"))
+        short = {**thread, "length": assumed("short", 4.0)}
+        self.assertFalse(_says(_report(_boss(), short), "a thread on it runs from its far end"))
 
 
 class TwoDraftsCompareTheirLeans(unittest.TestCase):

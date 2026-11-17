@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from typing import Any
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Choice, Item, Place, Profile
@@ -452,6 +453,45 @@ def _leaning(copy: Instance, face: FlatFace) -> tuple[Vec, Vec, Vec, float, floa
     return u, n, w, c, s
 
 
+def _leaning_names(chain: Chain, item: Item, copy: Instance, face: FlatFace, upright: str, far_end: str,
+                   lean: tuple[float, float], hinge: Vec, height: float, back: float) -> None:  # fmt: skip
+    """A leaning box's far face and sides, each named as the extrusion has it, its sides by the way each faces leaning;
+    and the box round it as it stands upright and unturned, with the motion that turns and leans it: what its far end's
+    edges are found on (edges.md, "A leaning item's edges")."""
+    from forge_plan.items.plan import PLAN
+
+    k = copy.index
+    n = unit(face.normal)
+    a1, a2 = face.axes
+    e1, e2 = unit("+" + a1), unit("+" + a2)
+    halves, _ = PLAN[item.kind].section(item, face.axes)
+    motion = _leaning_motion(chain, item, copy, face, lean, hinge, height, halves, back)
+    up = ("+" if n["xyz".index(axis_of(n))] > 0 else "-") + axis_of(n)
+    chain.name(item.id, k, up, Ref(upright, far_end))
+    for axis, way in ((a1, e1), (a2, e2)):
+        for sign in (1.0, -1.0):
+            normal = motion.vector(tuple(sign * x + 0.0 for x in way))  # type: ignore[arg-type]
+            chain.name(item.id, k, ("+" if sign > 0 else "-") + axis, Ref(upright, "side", normal))
+
+
+def _leaning_motion(chain: Chain, item: Item, copy: Instance, face: FlatFace, lean: tuple[float, float], hinge: Vec,
+                    height: float, halves: Mapping[str, float], back: float) -> Any:  # fmt: skip
+    """The motion that turns a leaning copy in its face (its own turn) and leans it, about the line through its point
+    in the face square to its lean; kept with the box round it upright and unturned (Chain.motions), from ``back``
+    behind its point, where its tool starts, so that an edge along its lean is held to all of the line it lies on
+    out of the face (where it meets the face's plane differs from one edge to the next)."""
+    from forge_spec.frames import Rigid
+
+    w, n = copy.origin, unit(face.normal)
+    e1, e2 = unit("+" + face.axes[0]), unit("+" + face.axes[1])
+    c, s = turn_of(item) or (1.0, 0.0)
+    square = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+    motion = Rigid.turn_about(w, hinge, *lean).after(Rigid.turn_about(w, square, c, s))
+    lo, hi = _span_box(w, n, -back, height, halves)
+    chain.motions[(item.id, copy.index)] = (lo, hi, motion)
+    return motion
+
+
 def _keep(chain: Chain, item: Item, k: int, face: FlatFace, w: Vec, n: Vec, low: float, high: float, half: float,
           ) -> str:  # fmt: skip
     """A box square to the face round a leaning copy's point, from ``low`` to ``high`` along its outward normal and
@@ -498,7 +538,8 @@ def leaning_standing(chain: Chain, item: Item, copy: Instance, face: FlatFace, s
     out (its foot then lies in the face's plane, joined to it as an unleaning foot is). A boss is its cylinder; a post,
     its cross-section (``shape``, turned with it) pushed out square to the face and turned about the line through its
     point in the face square to its lean, by its tilt (a ``transform``, ForgeIR v2's rigid motion). Its faces take
-    nothing yet, so none is named; its box is the solver's."""
+    nothing yet; its far end and its sides are named, and the box round it upright and its lean kept, for its far
+    end's edges (edges.md, "A leaning item's edges"); its box is the solver's."""
     if chain.early.get(item.id):
         raise PlanError("a rounding of a leaning item's edges is made early", item=item.id)
     k, w = copy.index, copy.origin
@@ -510,6 +551,11 @@ def leaning_standing(chain: Chain, item: Item, copy: Instance, face: FlatFace, s
     back = reach * s / c + 1.0
     if shape is None:
         solid = chain.cylinder(_id(item.id, k, "rod"), add(w, u, -back), u, 2 * radius, back + height, item=item.id)
+        chain.name(item.id, k, "+end", Ref(solid, "top"))
+        chain.name(item.id, k, "side", Ref(solid, "lateral"))
+        hinge = (n[1] * way[2] - n[2] * way[1], n[2] * way[0] - n[0] * way[2], n[0] * way[1] - n[1] * way[0])
+        _leaning_motion(chain, item, copy, face, (c, s), hinge, height, {face.axes[0]: radius, face.axes[1]: radius},
+                        back)  # fmt: skip
     else:
         outline, axis, datum_sign = plane_outline(chain, item, k, face.axes, w, add(w, n, -back), shape)
         mode = "normal" if n["xyz".index(axis)] == datum_sign else "reverse"
@@ -519,6 +565,8 @@ def leaning_standing(chain: Chain, item: Item, copy: Instance, face: FlatFace, s
         solid = chain.step(_id(item.id, k, "leaning"), "transform", {
             "rotate_axis": direction(hinge), "rotate_angle": {"magnitude": num(tilt), "unit": "deg"},
             "rotate_origin": point(w)}, item=item.id, inputs=(upright,))  # fmt: skip
+        _leaning_names(chain, item, copy, face, upright, "end_face" if mode == "normal" else "start_face", (c, s),
+                       hinge, height, back)  # fmt: skip
     top = height * c + reach * s + 1.0
     half = height * s + reach / c + 1.0
     keep = _keep(chain, item, k, face, w, n, 0.0, top, half)

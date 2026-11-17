@@ -280,14 +280,16 @@ def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str,
             )
             mouth_lo, mouth_hi = _flat_at(box, copy)
             where: dict[str, Any] = {"within": _within(mouth_lo, mouth_hi)}
-            crossing = _crossing(chain, *(motion.box(mouth_lo, mouth_hi) if motion else (mouth_lo, mouth_hi)), key)
+            seen_lo, seen_hi = motion.box(mouth_lo, mouth_hi) if motion else (mouth_lo, mouth_hi)
+            crossing = _crossing(chain, seen_lo, seen_hi, key)
             queries.add(walls, host, where=where, count=(0, 2 * _pieces(target) + 2 * crossing))
         elif which == "bottom":
             if not PLAN[target.kind].floored:
                 raise PlanError(f"a {target.kind} has no bottom edges", item=target.id)
             floor = names.get("bottom", ())
             where = {"within": _within(box.lo, box.hi)}
-            crossing = _crossing(chain, *(motion.box(box.lo, box.hi) if motion else (box.lo, box.hi)), key)
+            seen_lo, seen_hi = motion.box(box.lo, box.hi) if motion else (box.lo, box.hi)
+            crossing = _crossing(chain, seen_lo, seen_hi, key)
             queries.add(names["wall"], floor, where=where, count=(0, 2 * _pieces(target) + 2 * crossing))
         else:
             raise PlanError(f"a {target.kind} has no {which!r} edges", item=target.id)

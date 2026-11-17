@@ -25,7 +25,6 @@ from forge_eval.generator import (
     _Part,
     _q,
     _t,
-    _under,
     _v,
 )
 from forge_eval.items.draw.protocol import DrawKind
@@ -76,7 +75,7 @@ class Sphere(DrawKind):
         if (
             strict
             and f.choices["portion"] == "whole"
-            and f.sizes["diameter"] / 2 > _under(face, feet[k]) - GAP
+            and f.sizes["diameter"] / 2 > face.material_under(feet[k]) - GAP
         ):
             raise DoesNotFitError(
                 f"{f.id}: its lower half would come out of the far side of {face.key}, here"

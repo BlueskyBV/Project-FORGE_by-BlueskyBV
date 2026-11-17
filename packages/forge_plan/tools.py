@@ -102,7 +102,7 @@ class Context:
             raise PlanError(
                 f"its face {host}#{index} {name} isn't in the layout", item=copy.item
             )
-        if isinstance(found, FlatFace) and found.local is not None and copy.frame is None:
+        if found.local is not None and copy.frame is None:
             return found.upright()  # what is on a turned item's face is built as on it upright (moved.py)
         return found
 
@@ -310,10 +310,20 @@ def carried_ways(
 ) -> tuple[bool, bool]:
     """Whether a cut's tool may be carried into the air past its mouth, and past its far side (5.2), on the part made so far.
 
-    Not on a turned item's face: it is built as its definition makes it, upright, then moved (moved.py)."""
+    On a turned item's face, or round the side of what stands on one: worked out as it is cut upright, each region then
+    moved onto the part with it, where the part made so far is (moved.py)."""
     if copy.frame is not None:
-        return False, False
+        assert copy.local is not None
+        motion, upright = copy.frame, copy.local
+        mouth, far = (air_boxes if isinstance(ctx.face(upright), FlatFace) else side_air_boxes)(ctx, item, upright)
+        assert upright.host is not None
+        standing = (upright.host[0], upright.host[1])
+        return (
+            mouth is not None and clear_of(chain, motion.box(*mouth), but=standing),
+            far is not None and clear_of(chain, motion.box(*far), but=standing),
+        )
     face = ctx.face(copy)
+    host: tuple[str, int] | None
     if isinstance(face, FlatFace):
         mouth, far = air_boxes(ctx, item, copy)
         host = None

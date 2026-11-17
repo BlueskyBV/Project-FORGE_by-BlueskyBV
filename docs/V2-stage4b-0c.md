@@ -6,8 +6,10 @@ holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
 schema 1.4), its second (a turned box's sides) and 2c (a turned item's
 edges, rounded), neither a schema minor, and its third (a body leans,
-schema 1.5): 1b done, its schema 2.0 made with item 2b (revision 12). 3a's
-second part next, then 3b, then 2b (a leaning item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
+schema 1.5): its schema 2.0 made with item 2b (revision 12). Step 5
+(revision 13: a turned box hollowed, round sides on a turned item's faces, a
+leaning item's edges, a thread on a leaning rod) next, then 3a's second
+part, then 3b, then 2b (a leaning item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -682,6 +684,74 @@ other names wherever the face's axes are the part's, as 1.4 reads them (a
 brief's "10 mm along X" is said as said), and a face whose axes aren't the
 part's (a turned item's) takes `u` and `v` only. So 1b's third move is done
 with step 3; 3a's second part is next, then 3b, then 2b with 2.0.
+
+**1b's third move, step 5, planned (revision 13, 17 November 2026): what a
+turned or leaning item still lacks.** Each refusal Forge still gives a
+turned or leaning item, and where it is lifted:
+
+1. **A turned box hollowed** (a shell of a turned block): its hollow made as
+   with it upright, then turned with it; its inside faces turned so. Now.
+2. **A round side on a turned item's face** (the side of a boss, a cylinder
+   or a tube standing on a turned box's side, or on anything moved there):
+   what is placed on it placed as on that side upright, then moved. Now.
+3. **A leaning item's edges**: its far end's (a post's or a block's top
+   edges, a boss's or a cylinder's rim) found as upright and moved by its
+   lean; a leaning box's edges along its lean the same, each running from
+   the face's plane, where it meets it. Now. Its joint (where it meets its
+   face: a leaning boss's an ellipse whose angle to the face changes all
+   round it) with 4b.0d1's certified face-face intersections.
+4. **A thread on a leaning rod**: threaded as upright from its far end,
+   moved by its lean, kept clear of its foot. Now.
+5. **A leaning item's faces** (its far face, a box's sides), **a leaning
+   body hollowed**, and **a turned item's far face over a host without the
+   same material under all of it**: the material under each isn't the same
+   under all of it, so each comes with item 2b, which measures depth on
+   the shape itself.
+
+Steps 5.1 to 5.4 come before 3a's second part, each proven as step 2 was
+(the judge's layout and oracle, the planner, the generator, the second
+kernel, the exit harness old against new).
+
+**Step 5.2, as built (revision 13).** A round side keeps, as a flat face
+does, the motion that takes it onto the part (`SideFace.local`, the judge's
+`RoundSide.local`), its axis and start as they are with its item upright;
+what is placed round it is placed so and moved, as on a turned box's side
+(step 2), and every layout agrees, each side's frame on the part included.
+A cut round it is carried into the air past its mouth (5.2's own
+construction) where that is proven clear where it is moved to
+(`tools.carried_ways`: the regions worked out upright, then moved). Tests:
+`tests/test_v2_spec_faceaxes.py` (a hole round a boss on a turned post's
+side, placed upright, then moved), `tests/test_v2_plan_faceaxes.py` (built
+and judged: a blind hole round a boss on its side, a hole through a rod
+and through a tube's wall on its sides, a boss round a rod on its side;
+the second kernel agrees).
+
+**Step 5.3, as built (revision 13).** A leaning item's far end's edges
+and a leaning box's edges along its lean are rounded and chamfered
+(edges.md, "A leaning item's edges"): the judge finds them on its solid
+moved back upright (`moved.upright` undoes its lean, about the line
+through its point in the face square to it, after its turn), then leans
+the chains; the planner names a leaning box's far face and sides (its sides
+by the way each faces leaning) and a leaning rod's end and side, and keeps
+the box round it upright, from where its tool starts behind its point, with
+the motion that turns and leans it, so each long edge's query holds all of
+the line it lies on out of the face. Its joint waits for 4b.0d1. Tests:
+`tests/test_v2_plan_turnedges.py` (a leaning post's top edges, a leaning
+turned post's long edges bevelled, a leaning post's long edges then round
+its top, a leaning boss's rim, a leaning block's top edges, a leaning
+cylinder's rim; an edge left out fails; the second kernel agrees),
+`tests/test_v2_spec_lean.py` (its joint still waits).
+
+**Step 5.4, as built (revision 13).** A thread on a leaning boss or
+cylinder runs along its lean from its far end (thread.md), in the oracle,
+the check compiler and the planner (each takes the copy's lean for its
+axis); the solver keeps it clear of the foot, where the rod's side meets
+the face's plane up to its radius times the tangent of its lean from its
+point: a thread longer than the rest of the rod (all of it, where no length
+is given) is a CAN'T that says how long it may be. Tests:
+`tests/test_v2_plan_leanbody.py` (a leaning boss and a leaning cylinder
+threaded, built and judged; threaded square to the face instead fails),
+`tests/test_v2_spec_lean.py` (all along it, a CAN'T; shorter, read).
 
 **1b, the ability:**
 

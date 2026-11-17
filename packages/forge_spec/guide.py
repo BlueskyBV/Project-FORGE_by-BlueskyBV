@@ -703,7 +703,10 @@ hole's way out of its mouth does, so it goes in leaning the other way. Its \
 height or depth is along it; its foot on the face is its section by the \
 face (a round one's an ellipse), which is what fits, overlaps and is \
 measured "to": "edge". It needs the same material under all of its face; \
-nothing goes on its own faces, and it isn't rounded or threaded, yet.
+nothing goes on its own faces yet; its far end's edges ("top") and a \
+box's along its lean ("vertical") are rounded as with it upright, not yet \
+its joint; a leaning rod is threaded along its lean from its far end, \
+clear of its foot (give the thread a length that leaves it so).
 
 Patterns place copies; the item's "count" is the whole part's number of \
 copies and must match:

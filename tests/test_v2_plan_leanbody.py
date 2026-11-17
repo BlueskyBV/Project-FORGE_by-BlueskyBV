@@ -14,6 +14,9 @@ third move, step 3; place.md, "Leaning on the face").
   passing.
 - **A wrong lean is caught:** the same plan leaning half a degree more fails
   the judge.
+- **A leaning rod is threaded along its lean** (step 5.4), from its far end
+  and clear of its foot; threaded square to its face instead, the judge's
+  checks fail.
 - **The second kernel agrees** with the exact part.
 """
 
@@ -137,6 +140,50 @@ class AWrongLeanIsCaught(unittest.TestCase):
                 built, accounting, _ = _judged(CASES[name])
                 self.assertIsNone(built.gap)
                 self.assertIs(accounting.verdict, Verdict.FAIL)
+
+
+def _thread(b: Any, of: str, long: float, size: str) -> dict[str, Any]:
+    return {"id": "thread", "kind": "thread", "words": cite(b, "post"), "of": of, "length": assumed("long", long),
+            "designation": {"text": size, "from": {"assumed": size}}, "hand": {"choose": "right", "from": {"assumed": "r"}}}  # fmt: skip
+
+
+#: A leaning rod threaded from its far end (step 5.4).
+THREADED: dict[str, Any] = {
+    "a leaning boss": lambda b: [{"id": "leaning", "kind": "boss", "words": cite(b, "boss"),
+                                  "on": {"item": "plate", "face": "+z"}, "diameter": assumed("across", 8.0),
+                                  "height": assumed("tall", 14.0), "tilt": assumed("leaning", 20.0, "deg"),
+                                  "tilt_towards": {"choose": "+y", "from": {"assumed": "that way"}}},
+                                 _thread(b, "leaning", 8.0, "M8")],
+    "a leaning cylinder": lambda b: [{**_cylinder(b), "diameter": assumed("across", 10.0)}, _thread(b, "leaning", 6.0, "M10")],
+}
+
+
+@needs_occ
+class ALeaningRodIsThreadedAlongItsLean(unittest.TestCase):
+    def test_built_as_asked(self) -> None:
+        from forge_checks.classes import Verdict
+
+        for name, make in THREADED.items():
+            with self.subTest(name):
+                built, accounting, failed = _judged(make)
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+                self.assertEqual(failed, [])
+
+    def test_threaded_square_to_its_face_is_caught(self) -> None:
+        from dataclasses import replace
+
+        import forge_plan.planner as planner
+
+        real = planner.thread_step
+
+        def square(chain: Any, ctx: Any, item: Any, copy: Any) -> Any:
+            return real(chain, ctx, item, replace(copy, direction=None))  # along its face's normal, not its lean
+
+        with mock.patch.object(planner, "thread_step", square):
+            built, _, failed = _judged(THREADED["a leaning boss"])
+        self.assertIsNone(built.gap)
+        self.assertTrue(failed)
 
 
 @needs_occ

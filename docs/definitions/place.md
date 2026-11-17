@@ -114,8 +114,9 @@ boss, a post or a block, turned there too, a cylinder, a tube, a rib, a tab,
 an extrusion). What stands on it has its own faces, turned with it: a
 boss's far end, a post's far face and sides (turned again where it is
 turned there). A turned item's sides take things wherever it stands, as an
-upright item's do; a round item on one is the same turned, but its round
-side takes nothing yet, and nothing hollows it. Its edges, and those of
+upright item's do; a round item on one is the same turned, and what is
+placed round its side is placed as round that side upright, then moved with
+it; nothing hollows a turned item yet. Its edges, and those of
 what is on its faces, are rounded and chamfered as an upright one's are
 (edges.md, "A turned item's edges").
 
@@ -157,9 +158,11 @@ A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
 `tilt_towards`, a way that isn't one of the face's axes, or a lean round a
 side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
 counterbored hole (not a countersunk one), and only on such a face, for now:
-anything else that leans is CAN'T. As with a turn, a leaning item's own faces
-take nothing, its edges are not rounded or chamfered, and it is not hollowed
-or threaded, for now.
+anything else that leans is CAN'T. A leaning item's own faces take nothing,
+and it is not hollowed, for now; a leaning rod is threaded along its lean
+from its far end, clear of its foot (thread.md); its far end's edges and a box's
+along its lean are rounded and chamfered as with it upright, not yet where
+it meets its face (edges.md, "A leaning item's edges").
 
 ## On a round side
 

@@ -23,7 +23,6 @@ from forge_eval.generator import (
     _profile_box,
     _standing_profile,
     _t,
-    _under,
     _widest,
     outline_of,
 )
@@ -40,7 +39,7 @@ class Extrusion(DrawKind):
     ) -> tuple[tuple[float, float], float]:
         (l1, l2), (h1, h2) = _profile_box(
             f
-        )  # the box round its outline (about the box's middle: _foot_of)
+        )  # the box round its outline (about the box's middle: _Flat.foot)
         return ((h1 - l1) / 2, (h2 - l2) / 2), 0.0
 
     def extent(
@@ -98,7 +97,7 @@ class Extrusion(DrawKind):
     def stand_flat(self, f: Feature, copy_index: int, p: Array, n: Array, e1: Array, e2: Array, face: _Flat,
                    part: _Part, strict: bool, feet: list[_Foot], k: int, beyond: frozenset[tuple[int, float]],
                    flush: frozenset[tuple[int, float]]) -> None:  # fmt: skip
-        _standing_profile(f, copy_index, p, n, face, part, _under(face, feet[k]))
+        _standing_profile(f, copy_index, p, n, face, part, face.material_under(feet[k]))
 
 
 ENTRY = Extrusion()

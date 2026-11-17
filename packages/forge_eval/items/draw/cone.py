@@ -18,7 +18,6 @@ from forge_eval.generator import (
     _Part,
     _q,
     _standing_cone,
-    _under,
 )
 from forge_eval.items.draw.protocol import DrawKind
 
@@ -51,7 +50,7 @@ class Cone(DrawKind):
     def stand_flat(self, f: Feature, copy_index: int, p: Array, n: Array, e1: Array, e2: Array, face: _Flat,
                    part: _Part, strict: bool, feet: list[_Foot], k: int, beyond: frozenset[tuple[int, float]],
                    flush: frozenset[tuple[int, float]]) -> None:  # fmt: skip
-        _standing_cone(f, copy_index, p, n, face, part, _under(face, feet[k]))
+        _standing_cone(f, copy_index, p, n, face, part, face.material_under(feet[k]))
 
     def limits(self, f: Feature) -> None:
         if not f.sizes["top_diameter"] >= 0:

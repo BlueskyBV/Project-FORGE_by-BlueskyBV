@@ -575,6 +575,14 @@ class RoundSide:
     radius: float
     outward: bool
     other: float
+    #: The side of an item standing on a turned item's face (place.md, "A turned item's faces"): kept as with that item
+    #: upright, and the motion onto the part.
+    local: Motion | None = None
+
+    @property
+    def placed_frame(self) -> FaceFrame:
+        """Its frame on the part: its own, moved by its item's motion where it has one."""
+        return self.frame if self.local is None else self.local.frame(self.frame)
 
     @functools.cached_property
     def frame(self) -> FaceFrame:
@@ -1481,16 +1489,17 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
             )
         host = (on.item, host_copy.index, on.face)
         _names_fit(item, face)
-        motion = face.local if isinstance(face, FlatFace) else None
+        motion = face.local
         if motion is None:
             made += _HOSTS[type(face)](item, face, host, len(hosts), layout, len(made))
             continue
-        # A turned item's face (place.md, "A turned item's faces"): placed on as with that item upright, then moved.
+        # A turned item's face, or the round side of what stands on one (place.md, "A turned item's faces"): placed on
+        # as with that face upright, then moved.
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
         upright = replace(face, local=None)
-        for copy in _HOSTS[FlatFace](item, upright, host, len(hosts), layout, len(made)):
+        for copy in _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made)):
             made.append(_moved_copy(copy, motion, layout))
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
@@ -1502,13 +1511,10 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
 
 def _moved_copy(copy: Copy, motion: Motion, layout: _Layout) -> Copy:
     """A copy placed upright on a turned item's face, moved by that item's motion: its point, direction, box and lean
-    on the part, and its own faces moved with it (a round side, which turns with it, takes nothing yet)."""
+    on the part, and its own faces, flat or round, moved with it."""
     key = (copy.item, copy.index)
     for name, found in list(layout.faces.get(key, {}).items()):
-        if isinstance(found, FlatFace):
-            layout.faces[key][name] = replace(found, local=motion if found.local is None else motion.after(found.local))
-        else:
-            layout.close(key, name, "it is on a turned item's face: nothing is placed round its side, yet")
+        layout.faces[key][name] = replace(found, local=motion if found.local is None else motion.after(found.local))
     lo, hi = motion.box(copy.lo, copy.hi) if copy.lo is not None and copy.hi is not None else (None, None)
     return replace(copy, point=motion.point(copy.point), direction=motion.vector(copy.direction), lo=lo, hi=hi,
                    lean=None if copy.lean is None else motion.vector(copy.lean), frame=motion, local=copy)  # fmt: skip
@@ -1702,9 +1708,9 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
     for name in list(faces) + [n for n in KINDS[item.kind].faces if n not in faces]:
         if (kept is not None and name == kept.name) or name in layout.closed.get(key, {}):
             continue
-        found = faces.get(name)
-        if motion is not None and name != far and isinstance(found, FlatFace) and not name.startswith("inner "):
-            faces[name] = replace(found, local=motion)
+        own = faces.get(name)
+        if motion is not None and name != far and isinstance(own, FlatFace) and not name.startswith("inner "):
+            faces[name] = replace(own, local=motion)
         else:
             layout.close(key, name, "it is turned in its face: only a turned box's faces, or a round item's far face, "
                          "take anything, for now")  # fmt: skip
@@ -2330,7 +2336,11 @@ def _show(v: object) -> str:
 
 
 def _from_point(copy: Copy) -> tuple[Vec, Vec] | None:
-    """A copy's box from where it stands, as the solver keeps it: without a foot that follows a rod's curve."""
+    """A copy's box from where it stands, as the solver keeps it: without a foot that follows a rod's curve; on a turned
+    item's face, its upright copy's so, moved (the box round that box moved)."""
+    if copy.local is not None and copy.frame is not None:
+        upright = _from_point(copy.local)
+        return None if upright is None else copy.frame.box(*upright)
     if copy.lo is None or copy.hi is None:
         return None
     lo, hi = list(copy.lo), list(copy.hi)
@@ -2441,10 +2451,10 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
             if not hasattr(other, "half"):
                 differ(here, "kind of face", "flat", type(other).__name__)
                 continue
-            placed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
+            framed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
             checks = (
-                ("centre", placed.origin, getattr(other, "centre", None)),
-                ("frame", (*placed.u, *placed.v, *placed.n),
+                ("centre", framed.origin, getattr(other, "centre", None)),
+                ("frame", (*framed.u, *framed.v, *framed.n),
                  None if theirs_frame is None else (*theirs_frame.u, *theirs_frame.v, *theirs_frame.n)),
                 ("normal", face.normal, getattr(other, "normal", None)),
                 ("axes", face.axes, getattr(other, "axes", None)),
@@ -2469,12 +2479,16 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
             if not hasattr(other, "radius"):
                 differ(here, "kind of face", "round", type(other).__name__)
                 continue
+            framed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
             checks = (
                 ("axis", face.axis, getattr(other, "axis", None)),
                 ("start", face.start, getattr(other, "start", None)),
                 ("length", face.length, getattr(other, "length", None)),
                 ("radius", face.radius, getattr(other, "radius", None)),
                 ("outward", face.outward, getattr(other, "outward", None)),
+                ("frame", (*framed.origin, *framed.u, *framed.v, *framed.n),
+                 None if theirs_frame is None else (*theirs_frame.origin, *theirs_frame.u, *theirs_frame.v,
+                                                    *theirs_frame.n)),
             )
         for what, a, b in checks:
             if (

@@ -41,7 +41,7 @@ class Thread(CompileKind):
         c.size(item, pitch / 2)
         for copy in c.copies(body):
             helix = Helix(
-                copy.point, copy.direction, radius, pitch, hand, (whole - length, whole)
+                copy.point, copy.lean or copy.direction, radius, pitch, hand, (whole - length, whole)
             )
             c.check(item, "designation", "thread", 0.0, general(helix.depth), Profile(helix), copy.index,
                        frozenset({Capability.COVERAGE}))  # fmt: skip

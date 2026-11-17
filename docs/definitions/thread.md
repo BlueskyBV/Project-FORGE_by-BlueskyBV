@@ -18,7 +18,11 @@ thread (ISO 68-1, 60 degrees):
   (0.541 × pitch);
 - it winds right-handed or left-handed, as `hand` says;
 - it runs `length` from the free end (the +end of a rod or boss), or along
-  the whole length when no length is given.
+  the whole length when no length is given;
+- on a rod leaning on its face (place.md, "Leaning on the face"), along its
+  lean, and clear of its foot: where its side meets the face's plane, up to
+  its radius times the tangent of its lean from its point, is no thread's;
+  a thread reaching there (all of it, where no length is given) is a CAN'T.
 
 ## Fields
 

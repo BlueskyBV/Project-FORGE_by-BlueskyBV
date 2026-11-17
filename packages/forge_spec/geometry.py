@@ -285,6 +285,13 @@ class SideFace:
     radius_sources: tuple[Source, ...] = ()
     length_sources: tuple[Source, ...] = ()
     depth_sources: tuple[Source, ...] = ()
+    #: The side of an item standing on a turned item's face (1b's third move, step 5.2): kept as it is with that item
+    #: upright, and the motion that takes it onto the part.
+    local: Rigid | None = None
+
+    def upright(self) -> SideFace:
+        """The side as it is with its item upright (``local`` undone): its axis and start are already so."""
+        return self if self.local is None else replace(self, local=None)
 
     @property
     def sources(self) -> tuple[Source, ...]:
@@ -300,9 +307,11 @@ class SideFace:
 
     @cached_property
     def frame(self) -> Frame:
-        """The centre of the end its axis starts from; ``u`` and ``v`` the ways out at 0 and 90 degrees round it, ``n`` its axis."""
+        """The centre of the end its axis starts from; ``u`` and ``v`` the ways out at 0 and 90 degrees round it, ``n`` its axis
+        (moved onto the part by ``local``, where its item stands on a turned item's face)."""
         u, v = self.reference
-        return Frame.of_names(self.start, u, v, self.axis)
+        found = Frame.of_names(self.start, u, v, self.axis)
+        return found if self.local is None else self.local.frame(found)
 
     def frame_at(self, turn: tuple[float, float], along: float) -> Frame:
         """The side's frame at a point on it (item 3a): ``turn`` the cosine and sine of its angle round the axis, ``along``
