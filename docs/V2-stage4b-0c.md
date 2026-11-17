@@ -323,6 +323,33 @@ its face, a hollow's walls) it reads in the copy's frame from 1b, when a
 copy can turn; the second kernel reads roles in each primitive's own
 frame already.
 
+**1b, in three moves (revision 4, 17 November 2026),** each switched on
+in every program at once and proven by the exit pair on all 10,000 seeds
+(the same endings; the generator's new draws a fraction, so today's
+distribution stays the bulk), with tests, mutants and near-misses of its
+own:
+
+1. **A turn about the face's normal** (`place.turn`, an angle from the
+   face's first axis, optional: schema 1.2, a minor step). What stands on
+   or is cut into a flat face may be turned in its plane: a slot, a
+   pocket, a rib, a tab, a block or a post, a line of letters. Its
+   footprint is its outline turned (the solver's fits, overlaps and edge
+   distances on the turned outline; a position measured to its edge, to
+   the turned outline's extent); the judge's placement and oracle build it
+   in the copy's turned frame, the compiler aims its probes along it; the
+   planner writes the copy's placement as a rigid motion (ForgeIR v2); the
+   generator draws a turn for some items and its truth builds them turned.
+   A turn of a round footprint (a hole, a boss) is refused as meaningless,
+   and a pattern's copies turn with the pattern.
+2. **A tilted direction** (`direction`: the default `normal`, a tilt from
+   it towards one of the face's axes, an item's axis): a hole or a post
+   at an angle to its face. Its mouth is the section of its shape by the
+   face (an ellipse for a round hole), which fits and overlaps use; the
+   material under it is measured along the direction (schema 1.3).
+3. **Oriented bodies and item-local faces** (`orientation`), and positions
+   keyed by face axes (`place.u`, `place.v`): the major step, 1.x to 2.0,
+   its migration proven by `tests/v2_migrations.py`.
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block
