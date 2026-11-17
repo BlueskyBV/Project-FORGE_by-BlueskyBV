@@ -21,6 +21,7 @@ from forge_checks.items.oracle._shapes import (
     _prism_of,
     _vec,
     box_chains,
+    copy_axes,
     standing_box,
 )
 from forge_checks.items.oracle.protocol import OracleKind
@@ -71,8 +72,10 @@ def _round_end_tab(copy: Copy, item: Item, face: FlatFace | RoundSide | None) ->
     span = length - bottom
     middle = np.asarray(copy.point) + u * (bottom + length) / 2
     r = width / 2
-    # In the section, a runs across the tab (its width) and b out along it: the round end is at +b.
-    frame = _frame(middle, _axis(wide), u)
+    # In the section, a runs across the tab (its width) and b out along it: the round end is at +b. Turned in its
+    # face's plane, its width runs along its own turned axis (1b's first move).
+    first, second = copy_axes(copy) if isinstance(face, FlatFace) else (_axis(copy.axes[0]), _axis(copy.axes[1]))
+    frame = _frame(middle, first if wide == copy.axes[0] else second, u)
     section = RoundRect(width / 2, span / 2, (r, r, 0.0, 0.0))
     prism = Prism(frame, section, -thickness / 2, thickness / 2)
     if isinstance(face, RoundSide):

@@ -81,11 +81,10 @@ _FRESH = 75
 
 
 def _spec(items: Iterable[dict[str, Any]]) -> Any:
+    from forge_eval.generator import draft_of
     from forge_spec.draft import read_draft
 
-    spec, problems = read_draft(
-        {"spec_format": 1, "name": "generated", "items": list(items)}
-    )
+    spec, problems = read_draft(draft_of(items))
     if spec is None or problems.faults:
         raise ValueError(
             f"the generated draft doesn't read: {[str(p) for p in problems.faults][:3]}"
@@ -250,14 +249,12 @@ def _mutant(seed: int, case: Any, judge: Any, record: dict[str, Any]) -> None:
 
 
 def _impossible(seed: int, record: dict[str, Any]) -> None:
-    from forge_eval.generator import impossible
+    from forge_eval.generator import draft_of, impossible
     from forge_spec.draft import read_draft
     from forge_spec.placement import solve
 
     case = impossible(seed)
-    spec, problems = read_draft(
-        {"spec_format": 1, "name": "generated", "items": list(case.items)}
-    )
+    spec, problems = read_draft(draft_of(case.items))
     said = [f"fault: {p}" for p in problems.faults]
     if spec is not None and not said:
         said = [f"{i.kind}: {i.message}" for i in solve(spec).issues]

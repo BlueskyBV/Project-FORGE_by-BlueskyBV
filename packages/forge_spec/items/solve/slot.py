@@ -45,6 +45,14 @@ class Slot(SolveKind):
             )
         return slot_outline(length, width, along_first=along_first)
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        length, width = _size(item, "length"), _size(item, "width")
+        h1, h2 = _oriented(axes, _choice_of(item, "along"), length / 2, width / 2)
+        round_ends = _choice_of(item, "ends") == "round" and length >= width
+        return h1, h2, width / 2 if round_ends else 0.0
+
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
         length, width = _size(item, "length"), _size(item, "width")
         if length < width - EPS:

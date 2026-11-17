@@ -34,6 +34,11 @@ class Post(SolveKind):
     ) -> tuple[Part, ...]:
         return (rect(_size(item, "length") / 2, _size(item, "width") / 2),)
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        return _size(item, "length") / 2, _size(item, "width") / 2, 0.0
+
     def stand(self, item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[str, int], layout: Layout,
               host: str | None, joined: str) -> tuple[Vec, Vec, str, dict[str, str]]:  # fmt: skip
         a1, a2 = axes

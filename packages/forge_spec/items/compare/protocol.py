@@ -27,10 +27,24 @@ class CompareKind:
 
     def features(self, n: int, item: Item, layout: Layout) -> list[Feature]:
         """Every shape the item builds: each placed copy's solid."""
+        from dataclasses import replace
+
+        from forge_spec.items.compare._common import turned_form
+
         found: list[Feature] = []
         for copy in layout.instances.get(item.id, ()):
             if copy.lo is not None and copy.hi is not None:
-                found += self.solid(n, item, copy)
+                made = self.solid(n, item, copy)
+                # Turned in its face, the box round it, its own way and its own sizes (1b's first move).
+                turned = (
+                    turned_form(item, layout, copy.face_axes)
+                    if copy.face_axes is not None and copy.host is not None
+                    else None
+                )
+                if turned is not None:
+                    ways, own = turned
+                    made = [replace(f, directions=(*f.directions, *ways), detail=(*f.detail, *own)) for f in made]
+                found += made
         return found
 
     def solid(self, n: int, item: Item, copy: Instance) -> list[Feature]:

@@ -65,6 +65,7 @@ from .geometry import (
     Source,
     Vec,
     _parts_overlap,
+    _point_in_parts,
     add_material,
     bbox,
     copies_overlap,
@@ -80,7 +81,10 @@ from .geometry import (
     outline_on_face,
     outline_within,
     reach,
+    shape_holds,
     shape_meets_face,
+    shape_on_face,
+    shapes_overlap,
     side_material,
     touches_edge,
     uniform,
@@ -106,7 +110,7 @@ from .items.solve._common import (
     route,
 )
 from .items.solve.pattern import PATTERN_SOLVE
-from .outline import Shape
+from .outline import Piece, Shape, boundary_within
 from .problems import pointer
 from .schema import DIRECTIONS, FACE_AXES, KINDS
 from .values import Count, Value
@@ -125,6 +129,7 @@ __all__ = [
     "mm",
     "route",
     "solve",
+    "turned_outline",
 ]
 
 #: The most copies of one item Forge places (a perforated sheet is a later stage).
@@ -405,6 +410,13 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
     lo, hi, far, fields = entry.stand(
         item, base, up, (a1, a2), key, layout, host, joined
     )
+    turned = (
+        turned_outline(item, layout, (a1, a2))
+        if isinstance(host_face, FlatFace)
+        else None
+    )
+    if turned is not None:
+        return _standing_turned(item, inst, up, layout, at, turned, lo, hi)
     faces = layout.faces[key]
     top_face = faces.get(far)
     hollowed = item.id in layout.shells and entry.body
@@ -449,6 +461,29 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
     return Instance(
         inst.item, inst.index, base, _dir(up), inst.host, inst.face_axes, lo, hi
     )
+
+
+#: Why a turned item's faces take nothing.
+_TURNED_FACES = "{} is turned in the face it is on: Forge places on a turned item's faces in a later move"
+
+
+def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: str, turned: Shape, lo: Vec,
+                     hi: Vec) -> Instance:  # fmt: skip
+    """A body or feature standing turned in its face's plane: its bounds the box round it turned, its faces closed."""
+    key = (item.id, inst.index)
+    a1, a2 = inst.face_axes or FACE_AXES[up]
+    (l1, l2), (h1, h2) = turned.box()
+    low, high = list(lo), list(hi)
+    for axis, (a, b) in ((a1, (l1, h1)), (a2, (l2, h2))):
+        k = _INDEX[axis]
+        low[k], high[k] = inst.origin[k] + a, inst.origin[k] + b
+    layout.faces.setdefault(key, {})
+    for name in KINDS[item.kind].faces:
+        layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
+    if item.id in layout.shells:
+        layout.issue("unable", at, f"Forge doesn't hollow a turned {item.kind} yet")
+    return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
+                    (low[0], low[1], low[2]), (high[0], high[1], high[2]))  # fmt: skip
 
 
 def _hollow(item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout: Layout,
@@ -547,12 +582,16 @@ def _along(
     return half - distance - hi
 
 
-def _face_position(place: Place | None, face: FlatFace, item: Item, layout: Layout,
-                   at: str) -> list[tuple[float, float]] | None:  # fmt: skip
-    """Positions on a flat face, in the face's axes, relative to its centre."""
+def _face_position(place: Place | None, face: FlatFace, item: Item, layout: Layout, at: str,
+                   turned: Shape | None = None) -> list[tuple[float, float]] | None:  # fmt: skip
+    """Positions on a flat face, in the face's axes, relative to its centre (a ``turned`` outline measured to its edge by
+    how far it reaches back and forth along each axis)."""
     a1, a2 = face.axes
     f1, f2 = bbox(_outline(item, layout, face.axes))
     reaches = _reaches(item)
+    if turned is not None:
+        (l1, l2), (h1, h2) = turned.box()
+        reaches = ((l1, h1), (l2, h2))
     axes = place.axes if place else {}
     pattern = place.pattern if place else None
     for axis in axes:
@@ -884,6 +923,8 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
         layout.issue("fault", at + pointer("place", "angle"),
                      "an angle places an item round a round side; on a flat face, place it along the face's axes")  # fmt: skip
         return []
+    if place is not None and place.turn is not None:
+        return _turned_copies(item, place, face, host, layout, at, first)
     if place is not None and place.concentric:
         found = _concentric_positions(item, place, face, host, host_count, layout, at)
     else:
@@ -918,6 +959,131 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
                      lambda mouth: min(least_material_under(face, mouth, p1, p2) for p1, p2 in positions),
                      layout, at, face.depth_sources)  # fmt: skip
     return out
+
+
+# ----------------------------------------------------------------------
+# Turned in the face's plane (V2-stage4b-0c.md, 3.3, 1b's first move)
+# ----------------------------------------------------------------------
+def turned_outline(item: Item, layout: Layout, axes: tuple[str, str]) -> Shape | None:
+    """An item's outline on a flat face, turned by its ``place.turn``, about its point; None if it isn't turned."""
+    place = _place_of(item)
+    if place is None or place.turn is None:
+        return None
+    sizes = SOLVE[item.kind].turnable(item, layout, axes)
+    if sizes is None:
+        return None
+    h1, h2, r = sizes
+    return Shape.rect((0.0, 0.0), (h1, h2), (r, r, r, r)).turned(
+        *_turn(degrees(place.turn))
+    )
+
+
+def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, int, str], layout: Layout, at: str,
+                   first: int) -> list[_Copy]:  # fmt: skip
+    """The copies of an item turned in the face's plane: placed, fitted to the face, held apart and its depth checked on
+    its outline turned."""
+    here = at + pointer("place", "turn")
+    if SOLVE[item.kind].turnable(item, layout, face.axes) is None:
+        what = "a round " + item.kind if item.kind == "pocket" else "a " + item.kind
+        layout.issue("fault", here,
+                     f"Forge turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
+        return []
+    if place.concentric:
+        layout.issue(
+            "fault",
+            here,
+            "a turned item is placed along the face's axes, not concentric with another",
+        )
+        return []
+    shape = turned_outline(item, layout, face.axes)
+    assert shape is not None
+    # Placed by its turned outline (a line of letters by its line's box); fitted, held apart and its depth held
+    # on what it covers turned with it (letters, their ink's box: text.md).
+    positions = _face_position(place, face, item, layout, at, shape)
+    if positions is None:
+        return []
+    entry = SOLVE[item.kind]
+    covered = _turned_covers(item, layout, face, place) or shape
+    turn = degrees(place.turn) if place.turn is not None else 0.0
+    values = [
+        *_item_values(item, *_outline_fields(item)),
+        *_place_values(item),
+        place.turn,
+    ]
+    for n, (p1, p2) in enumerate(positions):
+        if not shape_on_face(face, covered, p1, p2):
+            severs = entry.cut and _is_through(item)
+            layout.problem("question", at,
+                           f"{item.id} copy {first + n + 1}, turned {turn:g}\u00b0, runs off face {face.name}"
+                           + (": cut through, it could cut the part apart" if severs else ""),
+                           [*values, *layout.values_of(face.sources)])  # fmt: skip
+            return []
+    if not entry.body:
+        pair = turned_copies_overlap(covered, positions)
+        if pair is not None:
+            i, j = pair
+            layout.problem(
+                "question",
+                at,
+                f"copies {first + i + 1} and {first + j + 1} of {item.id} overlap",
+                values,
+            )
+    out = []
+    for p1, p2 in positions:
+        instance = Instance(
+            item.id, 0, face.frame_at((p1, p2)).origin, face.frame.n, host, face.axes
+        )
+        material = least_material_under(face, covered, p1, p2)
+        out.append(
+            _Copy(instance, material, face.depth_sources, face.room, face.room_sources)
+        )
+    if entry.cut and out:
+        _check_depth(item, (), lambda _mouth: min(least_material_under(face, covered, p1, p2) for p1, p2 in positions),
+                     layout, at, face.depth_sources)  # fmt: skip
+    return out
+
+
+def _turned_covers(item: Item, layout: Layout, face: FlatFace, place: Place) -> Shape | None:
+    """What a line of letters covers turned with it: its ink's box (off its line's middle where a letter's tail or
+    hook reaches past the line), turned about its point; None for anything else, which covers its outline."""
+    if not SOLVE[item.kind].lettered or place.turn is None:
+        return None
+    parts = _covered(item, layout, face)
+    if not parts:
+        return None
+    (ink,) = parts
+    return Shape.rect(ink.centre, ink.half).turned(*_turn(degrees(place.turn)))
+
+
+def turned_copies_overlap(
+    shape: Shape, positions: Sequence[tuple[float, float]]
+) -> tuple[int, int] | None:
+    """The first two copies of a turned outline, at these positions, whose insides meet, or None (touching is apart)."""
+    if len(positions) < 2:
+        return None
+    (l1, l2), (h1, h2) = shape.box()
+
+    def close(j: int, i: int) -> bool:
+        return shapes_overlap(shape.moved(*positions[j]), shape.moved(*positions[i]))
+
+    return first_close_pair(positions, range(len(positions)), (h1 - l1, h2 - l2), close)
+
+
+def _check_turned_edges(
+    spec: PartSpec, layout: Layout, position: Mapping[str, int]
+) -> None:
+    """A rounding or chamfer of a turned item's edges is a later move."""
+    for item in spec.items:
+        edges = item.get("edges")
+        if not isinstance(edges, EdgeSet):
+            continue
+        target = layout.items.get(edges.of)
+        if (
+            target is not None
+            and turned_outline(target, layout, ("x", "y")) is not None
+        ):
+            layout.issue("unable", pointer("items", position[item.id], "edges"),
+                         f"{edges.of} is turned in its face: Forge rounds and chamfers a turned item's edges in a later move")  # fmt: skip
 
 
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
@@ -1003,6 +1169,10 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                          + (" and a step" if PATTERN_SOLVE[kind].steps_round else "")
                          + f"; give the first one's angle as place.angle, not {extra}")  # fmt: skip
             return []
+    if place is not None and place.turn is not None:
+        layout.issue("fault", at + pointer("place", "turn"),
+                     "a turn turns an item in a flat face's plane; round a side, place.angle says where round it is")  # fmt: skip
+        return []
     position = place.axes.get(axis) if place else None
     if position is not None and position.mode == "side" and not position.to_given:
         layout.assume(at, f"{item.id}: measured from the {position.side} end to its centre, along {axis}; "
@@ -1366,6 +1536,7 @@ def solve(spec: PartSpec) -> Layout:
             if not any(i.at == at or i.at.startswith(at + "/") for i in layout.issues):
                 layout.issue("fault", at, f"{item.id} was not placed")
     _check_exits(spec, layout)
+    _check_turned_edges(spec, layout, position)
     # Once the bodies are placed: which of a hollowed body's edges border an
     # open face depends on the way it rises.
     layout.order = _make_order(spec, sequence, layout)
@@ -1455,19 +1626,39 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
             mouth = _in_plane(
                 near_face, cut.origin, _outline(item, layout, near_face.axes)
             )
+            mouth_turned = turned_outline(item, layout, near_face.axes)
             for other in standing[far]:
                 owner = layout.items[other.item]
                 over = _in_plane(
                     far_face, other.origin, _outline(owner, layout, far_face.axes)
                 )
-                if not any(
-                    _meet(m, o, far_face.axes, near_face.axes)
-                    for m in mouth
-                    for o in over
-                ):
+                over_turned = turned_outline(owner, layout, far_face.axes)
+                if mouth_turned is None and over_turned is None:
+                    met = any(
+                        _meet(m, o, far_face.axes, near_face.axes)
+                        for m in mouth
+                        for o in over
+                    )
+                else:
+                    near_shapes = _seen(
+                        mouth, mouth_turned, cut.origin, near_face.axes, near_face.axes
+                    )
+                    far_shapes = _seen(
+                        over, over_turned, other.origin, far_face.axes, near_face.axes
+                    )
+                    met = any(
+                        shapes_overlap(a, b) for a in near_shapes for b in far_shapes
+                    )
+                if not met:
                     continue
                 if SOLVE[owner.kind].bored and _inside_bore(
-                    mouth, near_face.axes, other, far_face, owner
+                    mouth,
+                    near_face.axes,
+                    other,
+                    far_face,
+                    owner,
+                    mouth_turned,
+                    cut.origin,
                 ):
                     continue
                 values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
@@ -1479,12 +1670,34 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                 break
 
 
+def _seen(parts: list[tuple[Part, dict[str, float]]], turned: Shape | None, origin: Vec, axes: tuple[str, str],
+          seen_axes: tuple[str, str]) -> list[Shape]:  # fmt: skip
+    """An outline on a face, in the part's coordinates along the two axes ``seen_axes`` names (the same two as ``axes``,
+    in either order): its turned outline, or each of its parts'."""
+    first, second = seen_axes
+    if turned is not None:
+        moved = turned.moved(origin[_INDEX[axes[0]]], origin[_INDEX[axes[1]]])
+        return [moved if axes == seen_axes else moved.swapped()]
+    found = []
+    for part, centre in parts:
+        c = (centre[first], centre[second])
+        half = part.half if axes == seen_axes else (part.half[1], part.half[0])
+        found.append(Shape.disc(c, part.half[0]) if part.disc else Shape.rect(c, half))
+    return found
+
+
 def _inside_bore(mouth: list[tuple[Part, dict[str, float]]], axes: tuple[str, str], tube: Instance,
-                 face: FlatFace, item: Item) -> bool:  # fmt: skip
-    """Whether a cut's mouth lies within the bore of a tube standing over it."""
+                 face: FlatFace, item: Item, turned: Shape | None = None, at: Vec | None = None) -> bool:  # fmt: skip
+    """Whether a cut's mouth lies within the bore of a tube standing over it (a turned mouth's turned outline)."""
     r = _size(item, "inner_diameter") / 2
     first, second = axes
     o1, o2 = tube.origin[_INDEX[first]], tube.origin[_INDEX[second]]
+    if turned is not None and at is not None:
+        bore = Shape.disc((o1, o2), r)
+        moved = turned.moved(at[_INDEX[first]], at[_INDEX[second]])
+        return boundary_within(
+            moved.pieces, lambda q: shape_holds(bore, q), bore.pieces
+        )
     for part, centre in mouth:
         c1, c2 = centre[first] - o1, centre[second] - o2
         reach = (
@@ -1504,6 +1717,36 @@ class _Print:
     parts: tuple[Part, ...]
     at: tuple[float, float]
     half: tuple[float, float]  # half the outline's box
+    #: A turned item's outline (its ``parts`` then the box round it, for finding it).
+    shape: Shape | None = None
+
+
+def _pieces_of(p: _Print) -> list[Piece]:
+    """A print's outline where it is: its turned outline, or each of its parts'."""
+    if p.shape is not None:
+        return list(p.shape.moved(*p.at).pieces)
+    found: list[Piece] = []
+    for part in p.parts:
+        c = (part.centre[0] + p.at[0], part.centre[1] + p.at[1])
+        found += (
+            Shape.disc(c, part.half[0]) if part.disc else Shape.rect(c, part.half)
+        ).pieces
+    return found
+
+
+def _print_within(inner: _Print, outer: _Print) -> bool:
+    """Whether one print lies wholly in another; exactly, for a turned one too."""
+    if inner.shape is None and outer.shape is None:
+        return outline_within(inner.parts, inner.at, outer.parts, outer.at)
+    pieces = _pieces_of(inner)
+    if outer.shape is not None:
+        region = outer.shape.moved(*outer.at)
+        return boundary_within(pieces, lambda q: shape_holds(region, q), region.pieces)
+    return boundary_within(
+        pieces,
+        lambda q: _point_in_parts(outer.parts, outer.at, q[0], q[1]),
+        _pieces_of(outer),
+    )
 
 
 class _Footprints:
@@ -1572,15 +1815,23 @@ def _check_over_openings(item: Item, copy: Instance, face: FlatFace, host: tuple
     (docs/definitions/frame.md): asked about, with the values that put them
     there. Letters are left out: their box isn't their shape.
     """
-    parts = _outline(item, layout, face.axes)
-    here = _Print(item.id, copy.index, parts, face.frame.on(copy.origin), bbox(parts))
+    turned = turned_outline(item, layout, face.axes)
+    if turned is None:
+        parts = _outline(item, layout, face.axes)
+        here = _Print(
+            item.id, copy.index, parts, face.frame.on(copy.origin), bbox(parts)
+        )
+    else:
+        (l1, l2), (h1, h2) = turned.box()
+        box = (Part(((l1 + h1) / 2, (l2 + h2) / 2), ((h1 - l1) / 2, (h2 - l2) / 2)),)
+        here = _Print(
+            item.id, copy.index, box, face.frame.on(copy.origin), bbox(box), turned
+        )
     cuts = SOLVE[item.kind].cut
     found = layout.footprints.setdefault(host, _Footprints(face))
     for other in found.standing_in(here) if cuts else found.cuts_round(here):
         standing, mouth = (other, here) if cuts else (here, other)
-        if not _boxed(standing, mouth) or not outline_within(
-            standing.parts, standing.at, mouth.parts, mouth.at
-        ):
+        if not _boxed(standing, mouth) or not _print_within(standing, mouth):
             continue
         owner = layout.items[other.item]
         values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
@@ -1671,6 +1922,12 @@ def _flat_numbered(item: Item, placed: Instance, face: Face, host: tuple[str, in
     assert isinstance(face, FlatFace)
     if not SOLVE[item.kind].lettered:
         _check_over_openings(item, placed, face, host, layout, at)
+    if turned_outline(item, layout, face.axes) is not None:
+        key = (item.id, placed.index)
+        layout.faces.setdefault(key, {})
+        for name in KINDS[item.kind].faces:
+            layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
+        return
     SOLVE[item.kind].floor(
         item, placed, face, copy.material, (item.id, placed.index), layout
     )

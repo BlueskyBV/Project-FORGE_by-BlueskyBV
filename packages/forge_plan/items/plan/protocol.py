@@ -20,6 +20,7 @@ from forge_plan.errors import PlanError
 if TYPE_CHECKING:
     from forge_spec.draft import Item
     from forge_spec.geometry import FlatFace, Part, SideFace
+    from forge_spec.outline import Shape
     from forge_spec.placement import Instance
 
     from forge_plan.items.plan._edges import Queries
@@ -125,6 +126,14 @@ class PlanKind:
         tool = _box_tool(chain, item, k, lo, hi, _up(u))
         chain.add_box(Box(*_span_box(w, u, 0.0, height, halves), item.id, k))
         return tool
+
+    def turned_tool(self, chain: Chain, item: Item, copy: Instance, axes: tuple[str, str], shape: Shape, height: float,
+                    behind: float) -> str:  # fmt: skip
+        """One copy of a standing feature turned in its flat face's plane (1b's first move): its turned outline
+        pushed out to its height, sunk ``behind`` into what it stands on."""
+        from forge_plan.items.plan._tools import turned_prism
+
+        return turned_prism(chain, item, copy, axes, shape, height, behind)
 
     def sinkable(self, item: Item) -> bool:
         """Whether its tool may be sunk into what it stands on (5.3)."""

@@ -100,6 +100,12 @@ class Tab(SolveKind):
             rect(*_oriented(axes, _choice_of(item, "thickness_along"), thin, wide)),
         )
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        (foot,) = self.outline(item, layout, axes)
+        return foot.half[0], foot.half[1], 0.0
+
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
         if _choice_of(item, "end") == "round":
             length, width = _size(item, "length"), _size(item, "width")

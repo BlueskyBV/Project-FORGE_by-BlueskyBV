@@ -70,7 +70,7 @@ from .values import (
     read_provenance,
     read_value,
 )
-from .versions import VersionError, migrate
+from .versions import CURRENT, VersionError, migrate
 from .words import WordRef
 
 __all__ = [
@@ -234,6 +234,9 @@ class Place:
     pattern: Pattern | None
     concentric: str | None
     concentric_provenance: Provenance | None
+    #: On a flat face, the item turned in the face's plane by this angle, from the face's first axis towards its second
+    #: (schema 1.2; V2-stage4b-0c.md, 3.3, 1b's first move).
+    turn: Value | None = None
 
 
 FieldValue = (
@@ -915,7 +918,11 @@ def _pattern(raw: Any, at: str, problems: Problems) -> Pattern | None:
 
 def _place(raw: Any, at: str, problems: Problems) -> Place | None:
     obj = _object(
-        raw, at, problems, "a placement", {*AXES, "angle", "pattern", "concentric"}
+        raw,
+        at,
+        problems,
+        "a placement",
+        {*AXES, "angle", "turn", "pattern", "concentric"},
     )
     if obj is None:
         return None
@@ -930,6 +937,9 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
         _angle(obj["angle"], at + pointer("angle"), problems)
         if "angle" in obj
         else None
+    )
+    turn = (
+        _angle(obj["turn"], at + pointer("turn"), problems) if "turn" in obj else None
     )
     pattern = (
         _pattern(obj["pattern"], at + pointer("pattern"), problems)
@@ -957,7 +967,7 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
                 )
     if len(problems.faults) > before:
         return None
-    return Place(axes, angle, pattern, concentric, concentric_provenance)
+    return Place(axes, angle, pattern, concentric, concentric_provenance, turn)
 
 
 def _counterbore(raw: Any, at: str, problems: Problems) -> Counterbore | None:
@@ -1120,8 +1130,9 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
     if not isinstance(raw, Mapping):
         problems.fault("", "a draft is a JSON object")
         return None, problems
+    version = CURRENT
     try:
-        raw, _version, _made = migrate(raw)
+        raw, version, _made = migrate(raw)
     except VersionError as error:
         problems.fault(pointer(error.field), str(error))
     unknown = unknown_keys(
@@ -1155,6 +1166,14 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
             item = _read_item(raw_item, pointer("items", n), problems, seen)
             if item is not None:
                 items.append(item)
+                place = item.get("place")
+                if (
+                    isinstance(place, Place)
+                    and place.turn is not None
+                    and version < (1, 2)
+                ):
+                    problems.fault(pointer("items", n, "place", "turn"),
+                                   'a turn is schema 1.2\'s: give the draft\'s "schema_version": "1.2"')  # fmt: skip
     for listed in ("not_modelled", "silent"):
         if not isinstance(raw.get(listed, []), list):
             problems.fault(pointer(listed), f"{listed} is a list")

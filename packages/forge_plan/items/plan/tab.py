@@ -10,14 +10,24 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
-from forge_spec.draft import Choice, Item
+from forge_spec.draft import Choice, Item, Place
+from forge_spec.items.solve._common import degrees
+from forge_spec.outline import Shape
 from forge_spec.placement import Instance
 from forge_spec.schema import DIRECTIONS
 
 from forge_plan.errors import GapError, PlanError
 from forge_plan.items.plan._edges import Queries, _choice, _count, _mm, circle_where
 from forge_plan.items.plan._families import StandingPlan
-from forge_plan.items.plan._tools import _SIDE_PAST, _axes, _id, _span_box
+from forge_plan.items.plan._tools import (
+    _SIDE_PAST,
+    _axes,
+    _id,
+    _span_box,
+    plane_outline,
+    turn_of,
+    turned_halves,
+)
 from forge_plan.write import (
     DATUMS,
     PLANE_AXES,
@@ -27,8 +37,11 @@ from forge_plan.write import (
     add,
     along,
     axis_of,
+    direction,
     dot,
     length,
+    num,
+    point,
     role_of,
     unit,
 )
@@ -103,6 +116,58 @@ def _round_tab(chain: Chain, item: Item, copy: Instance, halves: Mapping[str, fl
     return tool
 
 
+def _turned_round_tab(chain: Chain, item: Item, copy: Instance, axes: tuple[str, str], halves: Mapping[str, float],
+                      height: float) -> str:  # fmt: skip
+    """A round-ended tab turned in its face's plane (1b's first move): its stadium, pushed across its thickness, made
+    at its point as it stands unturned and turned about the line through its point square to the face, from the
+    face's first axis towards its second (a ``transform``, ForgeIR v2's rigid motion); kept within its foot's box
+    turned, from its foot's plane out past its end (each side of that box clear of the stadium's). The box is made
+    after the motion, in place: its foot's face is where it is built, and is lost on the part as an unturned tab's
+    keeping box's is. Its faces take nothing yet (a later move), so none is named; its box is the box round its
+    turned foot, its length out."""
+    if chain.early.get(item.id):
+        raise PlanError("a rounding of a turned item's edges is made early", item=item.id)
+    k, w, u = copy.index, copy.origin, copy.normal
+    thin = _choice(item, "thickness_along")
+    if thin is None:
+        raise PlanError("a tab says which way its thickness runs", item=item.id)
+    wide = next(a for a in halves if a != thin)
+    r, t = halves[wide], halves[thin]
+    behind = r + _SIDE_PAST  # the stadium's near end, behind its foot's plane
+    run = height + behind
+    middle = add(w, u, (height - behind) / 2)
+    plane = chain.datum(_id(item.id, k, "plane"), thin, along(w, thin), item=item.id)
+    base, _ = DATUMS[thin]
+    first, second = PLANE_AXES[base]
+    up = axis_of(u)
+    outline = chain.profile(_id(item.id, k, "outline"), "profile_slot", plane, {
+        "length": length(run), "width": length(2 * r),
+        "rotation": {"magnitude": 0.0 if up == first else 90.0, "unit": "deg"},
+        "center_u": length(along(middle, first)), "center_v": length(along(middle, second))},
+        item=item.id)  # fmt: skip
+    stadium = chain.extrude(_id(item.id, k, "stadium"), outline, 2 * t, "symmetric", item=item.id)
+    place = item.get("place")
+    assert isinstance(place, Place) and place.turn is not None
+    a, b = unit("+" + axes[0]), unit("+" + axes[1])
+    square = (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+    turned = chain.step(_id(item.id, k, "turned"), "transform", {
+        "rotate_axis": direction(square), "rotate_angle": {"magnitude": num(degrees(place.turn)), "unit": "deg"},
+        "rotate_origin": point(w)}, item=item.id, inputs=(stadium,))  # fmt: skip
+    turn = turn_of(item)
+    assert turn is not None
+    roomy = Shape.rect((0.0, 0.0), (halves[axes[0]] + _SIDE_PAST, halves[axes[1]] + _SIDE_PAST)).turned(*turn)
+    # Named after the motion's step, so it comes after it in the document's order (dependency order, ties
+    # alphabetical): no motion follows the box whose face is the tab's foot.
+    keep_outline, axis, datum_sign = plane_outline(chain, item, k, axes, w, w, roomy, "turned_keep_")
+    mode = "normal" if u["xyz".index(axis)] == datum_sign else "reverse"
+    keep = chain.extrude(_id(item.id, k, "turned_keep"), keep_outline, height + _SIDE_PAST, mode, item=item.id)
+    tool = chain.boolean(_id(item.id, k, "tab"), "intersect", [turned, keep], item=item.id)
+    foot = Shape.rect((0.0, 0.0), (halves[axes[0]], halves[axes[1]])).turned(*turn)
+    h1, h2 = turned_halves(foot)
+    chain.add_box(Box(*_span_box(w, u, 0.0, height, {axes[0]: h1, axes[1]: h2}), item.id, k))
+    return tool
+
+
 def _round_tab_edges(chain: Chain, queries: Queries, target: Item, copy: Instance,
                which: str) -> frozenset[frozenset[str]]:  # fmt: skip
     """A round-ended tab's ``top``: the two half-circles where its rounding meets its broad faces.
@@ -158,6 +223,12 @@ class Tab(StandingPlan):
             halves, height = self.section(item, _axes(copy))
             return _round_tab(chain, item, copy, halves, height, 0.0)
         return super().standing_tool(chain, item, copy, behind)
+
+    def turned_tool(self, chain: Chain, item: Item, copy: Instance, axes: tuple[str, str], shape: Shape, height: float,
+                    behind: float) -> str:  # fmt: skip
+        if _choice(item, "end") != "round":
+            return super().turned_tool(chain, item, copy, axes, shape, height, behind)
+        return _turned_round_tab(chain, item, copy, axes, self.section(item, axes)[0], height)
 
     def sinkable(self, item: Item) -> bool:
         return _choice(item, "end") != "round"

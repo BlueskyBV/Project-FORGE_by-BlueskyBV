@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import replace
 
+import numpy as np
+
 from forge_eval.generator import (
     GAP,
     REACH,
@@ -71,7 +73,9 @@ class Text(DrawKind):
                 f"{f.id} is engraved deeper than the material under {face.key}"
             )
         assert f.words is not None
-        letters = Letters(_t(p), _t(_right(face)), _t(e2), f.words, f.sizes["height"],
+        # Turned in the face's plane, up is its second axis turned (``e2``), and they run along it x out.
+        right = _right(face) if f.turn is None else np.asarray(np.cross(e2, n), dtype=np.float64) + 0.0
+        letters = Letters(_t(p), _t(right), _t(e2), f.words, f.sizes["height"],
                           -deep if engraved else 0.0, 0.0 if engraved else deep)  # fmt: skip
         part.steps.append(
             Step(

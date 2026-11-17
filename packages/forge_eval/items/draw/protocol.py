@@ -309,6 +309,8 @@ class DrawKind:
         up = _named(n)
         # Over an overhang, only its own height (frame.md): under its far face the least, and nothing through.
         under = 0.0 if beyond else _under(face, feet[k])
+        if f.turn is not None:
+            return  # turned in its face, its faces take nothing yet (a later move): none is kept
         if self.round_far_end:
             far = (f.id, copy_index, "+end")
             part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),

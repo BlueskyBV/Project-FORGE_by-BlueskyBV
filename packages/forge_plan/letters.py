@@ -18,6 +18,7 @@ from forge_spec.placement import Instance, mm
 from forge_spec.values import Value
 
 from .errors import PlanError
+from .items.plan._tools import turn_of
 from .tools import Context
 from .write import Box, Chain, Vec, add, direction, length, point, scale, unit
 
@@ -53,6 +54,10 @@ def letters_step(chain: Chain, ctx: Context, item: Item, copy: Instance) -> None
     if not isinstance(face, FlatFace):
         raise PlanError("letters go on flat faces only, for now", item=item.id)
     up, out = unit(face.axes[1]), copy.normal
+    turned = turn_of(item)
+    if turned is not None:  # turned in the face's plane, from its first axis towards its second (1b's first move)
+        c, s = turned
+        up = add(scale(unit(face.axes[0]), -s), up, c)
     right = _cross(up, out)
     h, d = mm(height), mm(depth)
     step = f"{item.id}.{copy.index}.letters"

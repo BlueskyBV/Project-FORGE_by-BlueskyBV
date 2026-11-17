@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
+from forge_spec.geometry import FlatFace
 from forge_spec.placement import Instance
 from forge_spec.schema import DIRECTIONS
 
@@ -17,7 +18,7 @@ from forge_plan.errors import PlanError
 from forge_plan.items.plan._edges import Queries, _mm, box_queries, opposite
 from forge_plan.items.plan._families import BodyPlan
 from forge_plan.items.plan._shells import _check_walls, _inner, _round, _walls
-from forge_plan.items.plan._tools import _box_tool, _up
+from forge_plan.items.plan._tools import _box_tool, _up, turned_on, turned_prism
 from forge_plan.write import Box, Chain, Done, Hollow, Ref, Vec, ordered, role_of
 
 if TYPE_CHECKING:
@@ -79,6 +80,11 @@ class Block(BodyPlan):
         self, chain: Chain, ctx: Context, item: Item, copy: Instance, dome_cut: bool
     ) -> str:
         k = copy.index
+        face = ctx.face(copy) if copy.host is not None else None
+        turned = turned_on(ctx.layout, item, face) if face is not None else None
+        if turned is not None:  # standing turned in its face's plane (1b's first move): its turned outline, pushed up
+            assert isinstance(face, FlatFace)
+            return turned_prism(chain, item, copy, face.axes, turned, _mm(item, "height"), 0.0)
         assert copy.lo is not None and copy.hi is not None
         tool = _box_tool(chain, item, k, copy.lo, copy.hi, _up(copy.normal))
         chain.add_box(Box(copy.lo, copy.hi, item.id, k))

@@ -45,7 +45,7 @@ from forge_checks.place import place
 from forge_checks.probes import draw
 from forge_checks.topology import judge_topology, judge_volume
 from forge_checks.view import ViewProxy
-from forge_eval.generator import Case, generate, mutants, render
+from forge_eval.generator import Case, draft_of, generate, mutants, render
 from forge_eval.truth import Truth
 from forge_spec.draft import read_draft
 from forge_units import Interval
@@ -154,9 +154,7 @@ class Report:
 
 
 def _spec(items: tuple[dict[str, Any], ...]) -> Any:
-    spec, problems = read_draft(
-        {"spec_format": 1, "name": "generated", "items": list(items)}
-    )
+    spec, problems = read_draft(draft_of(items))
     assert spec is not None and not problems.faults, [str(p) for p in problems.faults]
     return spec
 

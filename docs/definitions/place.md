@@ -37,6 +37,30 @@ Each of the face's two axes takes one position, or none:
 A position along an axis the face doesn't have is a fault, as is an angle on
 a flat face.
 
+### Turned in the face (`turn`)
+
+On a flat face, `place.turn` (an angle; schema 1.2) turns the item in the
+face's plane about its own point, from the face's first axis towards its
+second: turned 30 degrees on a `+z` face, what ran along x runs 30 degrees
+round from x towards y. None is no turn. Its footprint is its outline
+turned: what it covers, its fit on the face, its copies held apart and the
+material under it are all read on the turned outline, and a position
+measured `to` `edge` is to the turned outline's farthest point along that
+axis (its reach is half the size of the box round it there). A pattern's
+copies are placed as an unturned item's would be, each turned about its own
+point.
+
+What turns: a slot, a rectangular pocket, a rib, a tab, a block, a post and
+a line of letters (up the face's second axis turned; they read along their
+up across outward, as unturned letters do). A round footprint turns into
+itself, so a turn of a hole, a boss, a round pocket or any other kind is a
+fault, as is a turn on a round side or with `concentric`.
+
+For now, a turned item's own faces take nothing (nothing stands on them or
+is cut into them), its edges are not rounded or chamfered, and it is not
+hollowed: those come with oriented bodies (V2-stage4b-0c.md, 3.3, 1b's
+third move).
+
 ## On a round side
 
 On a round side, an item is placed by a position along the side's axis and

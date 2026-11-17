@@ -76,6 +76,8 @@ def _place(place: Place) -> dict[str, Any]:
     out: dict[str, Any] = {axis: _axis(pos) for axis, pos in place.axes.items()}
     if place.angle is not None:
         out["angle"] = value_to_wire(place.angle)
+    if place.turn is not None:
+        out["turn"] = value_to_wire(place.turn)
     if place.pattern is not None:
         body: dict[str, Any] = {
             name: value_to_wire(v) for name, v in place.pattern.values.items()

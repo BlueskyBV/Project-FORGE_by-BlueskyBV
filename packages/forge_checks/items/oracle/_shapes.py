@@ -107,6 +107,16 @@ def _axis(name: str) -> NDArray[np.float64]:
     return np.asarray(unit("+" + name), dtype=float)
 
 
+def copy_axes(copy: Copy) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """The two axes a copy's outline is drawn in: its face's, turned by the copy's ``place.turn`` where it has one."""
+    assert copy.axes is not None
+    first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
+    if copy.turn is None:
+        return first, second
+    c, s = copy.turn
+    return c * first + s * second, -s * first + c * second
+
+
 def _on_side(section: Prism, side: RoundSide) -> Node:
     """A feature standing round a side: its section's prism, on the open side of the side's surface."""
     axis = Frame.along(side.start, unit("+" + side.axis))
@@ -121,7 +131,7 @@ def _standing_prism(
     """A standing item's solid: its outline across its direction, from its point out to ``height``."""
     assert copy.axes is not None
     u = np.asarray(copy.direction, dtype=float)
-    first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
+    first, second = copy_axes(copy)
     frame = _frame(copy.point, first, second)
     sign = float(
         fv.matmul(np.asarray(frame.w), u)
@@ -518,7 +528,7 @@ def flat_cut_node(
     start, depth = copy.span
     inward = -np.asarray(copy.direction, dtype=float)
     assert isinstance(face, FlatFace) and copy.axes is not None
-    first, second = _axis(copy.axes[0]), _axis(copy.axes[1])
+    first, second = copy_axes(copy)
     flat = _frame(copy.point, first, second)
     sign = float(fv.matmul(np.asarray(flat.w), inward))
     t0, t1 = sorted((sign * start, sign * depth))
@@ -548,7 +558,7 @@ def flat_cut_chains(
     fill = which == "bottom"
     n_f = np.asarray(copy.direction, dtype=float)
     assert copy.axes is not None
-    flat = _frame(copy.point, _axis(copy.axes[0]), _axis(copy.axes[1]))
+    flat = _frame(copy.point, *copy_axes(copy))
     sign = float(fv.matmul(np.asarray(flat.w), n_f))
     depth = copy.span[1]
     z = -depth * sign if fill else 0.0
@@ -573,6 +583,10 @@ def box_chains(
     hollow: Hollow | None,
 ) -> tuple[list[rounds.Chain], list[tuple[rounds.Chain, frozenset[str]]]]:
     """A box-like body's edges a rounding names: all round one face, its corners as earlier roundings left them, or each edge alone (with a rim's inside edge where an open face meets the hollow's wall); and each single edge with its two faces."""
+    if copy.turn is not None:
+        raise OracleError(
+            f"{target.id} is turned in its face: its edges aren't rounded, for now"
+        )
     key = (target.id, copy.index)
     chains: list[rounds.Chain] = []
     single: list[tuple[rounds.Chain, frozenset[str]]] = []

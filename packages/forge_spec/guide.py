@@ -337,6 +337,7 @@ def _defs() -> dict[str, Any]:
             {
                 **{axis: _ref(f"position_{axis}") for axis in AXES},
                 "angle": _ref("angle"),
+                "turn": _ref("angle"),
                 "pattern": _ref("pattern"),
                 "concentric": _ref("concentric"),
             },
@@ -669,7 +670,13 @@ An axis place doesn't give is centred, as an assumption Forge shows. On a \
 round side, place gives the position along the rod's axis and an "angle" \
 round it (0 deg towards the next axis: for a rod along z, +x; along x, +y; \
 along y, +z). "concentric": {{"item": ..., "from": ...}} puts it on the axis \
-of a round item (a hole down a boss).
+of a round item (a hole down a boss). On a flat face, "turn": angle turns a \
+slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \
+letters in the face's plane, from the face's first axis towards its second, \
+about its own point ("schema_version": "1.2"); its edges are then not along \
+the face's axes, so a position measured "to": "edge" is to its turned \
+outline's farthest point along that axis. A turned item's own faces take \
+nothing yet, and its edges aren't rounded.
 
 Patterns place copies; the item's "count" is the whole part's number of \
 copies and must match:

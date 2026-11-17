@@ -181,7 +181,9 @@ class _Sections:
 
 
 def _draft(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
-    return {"spec_format": 1, "name": "generated", "items": list(items)}
+    from forge_eval.generator import draft_of
+
+    return draft_of(items)
 
 
 def _drafted(

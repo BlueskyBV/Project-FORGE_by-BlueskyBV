@@ -74,7 +74,7 @@ from .geometry import (
     side_material,
     side_most_material,
 )
-from .items.solve._common import degrees
+from .items.solve._common import _turn, degrees
 from .items.views import VIEWS
 from .items.views._common import (
     _AXES,
@@ -92,7 +92,9 @@ from .items.views._common import (
     _value,
 )
 from .items.views.pattern import PATTERN_VIEWS
-from .placement import Instance, Layout, _along, _outline, mm
+from .outline import Arc as OutlineArc
+from .outline import Shape
+from .placement import Instance, Layout, _along, _outline, mm, turned_outline
 from .render import _line as item_line
 from .schema import FACE_AXES
 from .values import Count, Source, Value
@@ -228,6 +230,8 @@ def _to_show(item: Item) -> dict[str, str]:
                 out[f"place.{axis}"] = _position_words(axis, position)
             if value.angle is not None:
                 out["place.angle"] = f"at {_value(value.angle)}"
+            if value.turn is not None:
+                out["place.turn"] = f"turned {_value(value.turn)}"
             if value.pattern is not None:
                 given: dict[str, Value | Count] = {
                     **value.pattern.values,
@@ -376,18 +380,20 @@ class _Canvas:
         self.path(((cu, cv - s), (cu, cv + s)), "centre", closed=False)
 
     def write(
-        self, centre: tuple[float, float], text: str, height: float, width: float
+        self, centre: tuple[float, float], text: str, height: float, width: float, angle: float = 0.0
     ) -> None:
-        """Engraved or embossed letters, a capital ``height`` tall, filling ``width`` about ``centre``.
+        """Engraved or embossed letters, a capital ``height`` tall, filling ``width`` about ``centre``; turned
+        ``angle`` degrees (as the drawing's own rotation: clockwise as drawn) where they are turned in their face.
 
         The width is the solver's estimate of the letters' outline, so they are
         drawn exactly where the checks took them to be.
         """
         cu, cv = centre
         size = height / 0.72  # a capital is about 0.72 of the type size
+        turned = f' transform="rotate({self._f(angle)} {self._f(cu)} {self._f(-cv)})"' if abs(angle) > EPS else ""
         self.letters.append(f'<text x="{self._f(cu)}" y="{self._f(-cv)}" font-size="{self._f(size)}" '
                             f'text-anchor="middle" dominant-baseline="central" textLength="{self._f(width)}" '
-                            f'lengthAdjust="spacingAndGlyphs">{html.escape(text)}</text>')  # fmt: skip
+                            f'lengthAdjust="spacingAndGlyphs"{turned}>{html.escape(text)}</text>')  # fmt: skip
 
     # -- what it shows ------------------------------------------------------
     def dimension(self, item: str, fields: tuple[str, ...], along: str, a: float, b: float,
@@ -611,6 +617,20 @@ _ZERO_ON = {"z": "x", "x": "y", "y": "z"}
 _Window = tuple[int, Vec, Vec]
 
 
+def _unit_axis(name: str) -> Vec:
+    k = _AXES.index(name)
+    return (1.0 if k == 0 else 0.0, 1.0 if k == 1 else 0.0, 1.0 if k == 2 else 0.0)
+
+
+def _cross_of(a: Vec, b: Vec) -> Vec:
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def _line_half(item: Item, layout: Layout, axes: tuple[str, str]) -> float:
+    """Half a line of letters' length: its line's box's (the solver's estimate of their outline)."""
+    return bbox(_outline(item, layout, axes))[0]
+
+
 def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
     """How far one copy of a cut goes into the material (embossed letters: out of it), and whether it comes out.
 
@@ -628,7 +648,10 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
     if isinstance(face, FlatFace):
         i1, i2 = (_AXES.index(a) for a in face.axes)
         p1, p2 = copy.origin[i1] - face.centre[i1], copy.origin[i2] - face.centre[i2]
-        mouth: tuple[Part, ...] = VIEWS[item.kind].cut_mouth(item, layout, face.axes)
+        turned = turned_outline(item, layout, face.axes)
+        mouth: tuple[Part, ...] | Shape = (
+            VIEWS[item.kind].cut_mouth(item, layout, face.axes) if turned is None else turned
+        )
         least = least_material_under(face, mouth, p1, p2)
         most = most_material_under(face, mouth, p1, p2)
     elif isinstance(face, SideFace):
@@ -882,8 +905,41 @@ class _Drawing:
                 canvas, canvas.at(lo), canvas.at(hi), near, (item.id, copy.index)
             )
             style = "hidden" if hidden else "visible"
-        VIEWS[item.kind].outline(self, canvas, copy, style, _axis_of(copy.normal))
+        turned = self.turned(copy)
+        up = _axis_of(copy.normal)
+        if turned is not None and canvas.w == up:  # looked at along its face's normal: its turned outline
+            canvas.path(self.on_canvas(canvas, copy, turned), style, closed=True)
+            return style
+        VIEWS[item.kind].outline(self, canvas, copy, style, up)
         return style
+
+    def turned(self, copy: Instance) -> Shape | None:
+        """A copy's outline turned in its flat face's plane (place.turn), about its point, in the face's axes; None if
+        it isn't turned."""
+        host = self.host_face(copy) if copy.host is not None else None
+        if not isinstance(host, FlatFace):
+            return None
+        return turned_outline(self.item, self.layout, host.axes)
+
+    def on_canvas(self, canvas: _Canvas, copy: Instance, shape: Shape) -> list[tuple[float, float]]:
+        """An outline in a copy's face's axes about its point, as points on a view (each arc by chords 3 degrees
+        round)."""
+        host = self.host_face(copy)
+        assert isinstance(host, FlatFace)
+        i1, i2 = (_AXES.index(a) for a in host.axes)
+        found = []
+        for q in shape.pieces:
+            if isinstance(q, OutlineArc):
+                steps = max(1, math.ceil(abs(q.sweep) / math.radians(3.0)))
+                ats = [q.at(k / steps) for k in range(steps)]
+            else:
+                ats = [q.a]
+            for x, y in ats:
+                p = list(copy.origin)
+                p[i1] += x
+                p[i2] += y
+                found.append(canvas.at((p[0], p[1], p[2])))
+        return found
 
     def _cavity(
         self, canvas: _Canvas, copy: Instance, cavity: tuple[Vec, Vec], style: str
@@ -926,11 +982,18 @@ class _Drawing:
                         canvas, copy, out, exits and not entry.lettered, (hu, hv)
                     )
                     c = canvas.at(copy.origin)
-                    canvas.rect((c[0] - hu, c[1] - hv), (c[0] + hu, c[1] + hv), _style(seen_in or seen_out),
-                                entry.corner_radius(item))  # fmt: skip
+                    turned = self.turned(copy)
+                    if turned is not None:  # turned in its face: its turned outline
+                        canvas.path(self.on_canvas(canvas, copy, turned), _style(seen_in or seen_out), closed=True)
+                    else:
+                        canvas.rect((c[0] - hu, c[1] - hv), (c[0] + hu, c[1] + hv), _style(seen_in or seen_out),
+                                    entry.corner_radius(item))  # fmt: skip
                     text = item.get("text")
                     if entry.lettered and seen_in and isinstance(text, Text):
-                        canvas.write(c, text.text, _length(item, "height"), 2 * hu)
+                        if turned is None:
+                            canvas.write(c, text.text, _length(item, "height"), 2 * hu)
+                        else:
+                            self._turned_letters(canvas, copy, turned, text.text)
                 elif halves is not None:
                     self._depth_box(canvas, copy, into, deep, halves, emboss)
         first = self.copies[0]
@@ -968,16 +1031,39 @@ class _Drawing:
         return clear(copy.origin, copy.normal), exits and clear(out, _neg(copy.normal))
 
     def _halves(self, copy: Instance) -> tuple[float, float, float] | None:
-        """A square-edged cut's half sizes along the frame axes, 0 along its own axis."""
+        """A square-edged cut's half sizes along the frame axes, 0 along its own axis: turned in its face, the box
+        round its turned outline's."""
         if copy.face_axes is None:
             return None  # pragma: no cover - only round holes go into a round side
-        h1, h2 = bbox(_outline(self.item, self.layout, copy.face_axes))
+        turned = self.turned(copy)
+        if turned is not None:
+            (l1, l2), (u1, u2) = turned.box()
+            h1, h2 = max(-l1, u1), max(-l2, u2)
+        else:
+            h1, h2 = bbox(_outline(self.item, self.layout, copy.face_axes))
         out = [0.0, 0.0, 0.0]
         out[_AXES.index(copy.face_axes[0])], out[_AXES.index(copy.face_axes[1])] = (
             h1,
             h2,
         )
         return out[0], out[1], out[2]
+
+    def _turned_letters(self, canvas: _Canvas, copy: Instance, turned: Shape, text: str) -> None:
+        """Turned letters on the view looking at their face: as wide as their line is long, turned on the drawing as
+        their reading way is from where unturned letters' is (up their face's second axis, turned with them; they
+        read along up across outward, text.md)."""
+        host = self.host_face(copy)
+        place = self.item.get("place")
+        assert isinstance(host, FlatFace) and isinstance(place, Place) and place.turn is not None
+        c, s = _turn(degrees(place.turn))
+        first, second = (_unit_axis(a) for a in host.axes)
+        out = copy.normal
+        up = (-s * first[0] + c * second[0], -s * first[1] + c * second[1], -s * first[2] + c * second[2])
+        reads, was = _cross_of(up, out), _cross_of(second, out)
+        angle = math.atan2(reads[canvas.v], reads[canvas.u]) - math.atan2(was[canvas.v], was[canvas.u])
+        line = 2 * _line_half(self.item, self.layout, host.axes)
+        canvas.write(canvas.at(copy.origin), text, _length(self.item, "height"), line,
+                     (-math.degrees(angle)) % 360.0)  # fmt: skip
 
     def _depth_box(self, canvas: _Canvas, copy: Instance, into: Vec, deep: float,
                    halves: tuple[float, float, float], emboss: bool) -> None:  # fmt: skip

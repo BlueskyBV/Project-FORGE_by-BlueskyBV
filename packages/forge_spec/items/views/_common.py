@@ -205,7 +205,12 @@ def box_body(d: _Drawing, first: Instance, title: str) -> None:
     assert first.lo is not None and first.hi is not None and home is not None
     lo, hi = first.lo, first.hi
     d.say(title)
+    turned = d.turned(first) is not None
+    up = _axis_of(first.normal)
     for k, name in d._box_fields(first).items():
+        if turned and k != up:  # turned in its face, its sizes across run along no frame axis: said, not drawn
+            d.say(f"{name} {_value(item.get(name))}", name)
+            continue
         canvas, along = d.canvases[_HOME[k][0]], _HOME[k][1]
         across = canvas.v if along == "u" else canvas.u
         d.line(

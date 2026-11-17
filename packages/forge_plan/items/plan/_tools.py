@@ -6,10 +6,17 @@ import math
 from collections.abc import Mapping
 
 from forge_numeric import scalar as fs
-from forge_spec.draft import Choice, Item, Profile
+from forge_spec.draft import Choice, Item, Place, Profile
 from forge_spec.ends import ThroughAll, end_of
-from forge_spec.geometry import FlatFace, Part, SideFace, most_material_under
-from forge_spec.placement import Instance
+from forge_spec.geometry import (
+    FlatFace,
+    Footprint,
+    SideFace,
+    most_material_under,
+)
+from forge_spec.items.solve._common import _turn, degrees
+from forge_spec.outline import Line, Shape
+from forge_spec.placement import Instance, Layout, turned_outline
 from forge_spec.schema import DIRECTIONS
 from forge_spec.values import Value
 
@@ -240,7 +247,7 @@ def _through(item: Item) -> bool:
     return isinstance(end_of(item), ThroughAll)
 
 
-def _cut_depth(item: Item, face: FlatFace, parts: tuple[Part, ...], w: Vec) -> float:
+def _cut_depth(item: Item, face: FlatFace, parts: Footprint, w: Vec) -> float:
     """How deep a cut on a flat face goes: its depth, or through the most material under its mouth."""
     if not _through(item):
         return _mm(item, "depth")
@@ -296,3 +303,105 @@ def _footprint_box(
     return _span_box(
         w, neg(unit(face.normal)), 0.0, depth, {a1: halves[0], a2: halves[1]}
     )
+
+
+# ----------------------------------------------------------------------
+# Turned in the face's plane (V2-stage4b-0c.md, 3.3, 1b's first move)
+# ----------------------------------------------------------------------
+def turned_on(layout: Layout, item: Item, face: FlatFace | SideFace) -> Shape | None:
+    """A copy's outline on its flat face turned by its ``place.turn``, about its point, in the face's axes; None if it
+    isn't turned. The solver's own outline (:func:`forge_spec.placement.turned_outline`), so what is built is what was
+    placed."""
+    if not isinstance(face, FlatFace):
+        return None
+    return turned_outline(item, layout, face.axes)
+
+
+def turn_of(item: Item) -> tuple[float, float] | None:
+    """The cosine and sine of an item's ``place.turn`` (exact on the quarter turns, as the solver takes them); None if
+    it isn't turned."""
+    place = item.get("place")
+    if not isinstance(place, Place) or place.turn is None:
+        return None
+    return _turn(degrees(place.turn))
+
+
+def turned_halves(shape: Shape) -> tuple[float, float]:
+    """The half sizes of the box round a turned outline, along the face's axes, about its point."""
+    (l1, l2), (h1, h2) = shape.box()
+    return max(-l1, h1), max(-l2, h2)
+
+
+def shape_points(shape: Shape, offset: tuple[float, float] = (0.0, 0.0)) -> list[list[float]]:
+    """An outline as a ``profile_outline``'s points, moved by ``offset``: its first piece's start, then each piece's end,
+    an arc's with its middle, the last written as the start so the outline closes exactly."""
+    ou, ov = offset
+
+    def at(p: tuple[float, float]) -> list[float]:
+        return [num(p[0] + ou), num(p[1] + ov)]
+
+    first = at(shape.pieces[0].ends()[0])
+    rows = [first]
+    for n, q in enumerate(shape.pieces):
+        end = first if n == len(shape.pieces) - 1 else at(q.ends()[1])
+        rows.append(end if isinstance(q, Line) else [*end, *at(q.at(0.5))])
+    return rows
+
+
+def plane_outline(chain: Chain, item: Item, k: int, axes: tuple[str, str], w: Vec, level: Vec, shape: Shape,
+                  name: str = "") -> tuple[str, str, float]:  # fmt: skip
+    """A turned outline drawn about ``w`` on the standard plane through ``level`` square to the face's normal axis: (the
+    outline's step, the axis, the plane's normal sign along it). ``name`` starts its steps' names."""
+    normal_axis = next(a for a in "xyz" if a not in axes)
+    base, datum_sign = DATUMS[normal_axis]
+    if tuple(axes) != PLANE_AXES[base]:
+        raise PlanError(f"its outline lies along {axes}, not the plane's {PLANE_AXES[base]}", item=item.id)
+    plane = chain.datum(_id(item.id, k, name + "plane"), normal_axis, along(level, normal_axis), item=item.id)
+    points = shape_points(shape, (along(w, axes[0]), along(w, axes[1])))
+    outline = chain.profile(_id(item.id, k, name + "outline"), "profile_outline", plane,
+                            {"points": {"points": points, "unit": "mm"}}, item=item.id)  # fmt: skip
+    return outline, normal_axis, datum_sign
+
+
+def turned_cut(chain: Chain, item: Item, copy: Instance, face: FlatFace, shape: Shape, mouth: float,
+               far: float) -> str:  # fmt: skip
+    """One copy of a slot or a rectangular pocket turned in its face's plane: its turned outline (straight sides and
+    true arcs) on the face's plane through its point, pushed into the material by its depth (4.4), carried ``mouth``
+    out from the face and ``far`` past a cut through's far side (5.2). Its wall and its floor (a pocket's bottom) are
+    named; its box is the box round its turned outline, the cut's depth deep."""
+    if chain.early.get(item.id):
+        raise PlanError("a rounding of a turned item's edges is made early", item=item.id)
+    k, w = copy.index, copy.origin
+    normal = unit(face.normal)
+    depth = _cut_depth(item, face, shape, w)
+    outline, axis, datum_sign = plane_outline(chain, item, k, face.axes, w, add(w, normal, mouth), shape)
+    inward = -normal["xyz".index(axis)]
+    mode = "normal" if inward == datum_sign else "reverse"
+    tool = chain.extrude(_id(item.id, k, "cut"), outline, mouth + depth + far, mode, item=item.id)
+    floor = "end_face" if mode == "normal" else "start_face"
+    chain.name(item.id, k, "wall", Ref(tool, "side"))
+    chain.name(item.id, k, "bottom" if item.kind == "pocket" else "floor", Ref(tool, floor))
+    a1, a2 = face.axes
+    h1, h2 = turned_halves(shape)
+    chain.cut_box(Box(*_span_box(w, neg(normal), 0.0, depth, {a1: h1, a2: h2}), item.id, k))
+    return tool
+
+
+def turned_prism(chain: Chain, item: Item, copy: Instance, axes: tuple[str, str], shape: Shape, height: float,
+                 behind: float) -> str:  # fmt: skip
+    """One copy of a rib or a block standing turned in its face's plane: its turned outline on the plane of its foot,
+    pushed ``height`` out along its face's normal (4.3, 4.5), sunk ``behind`` into what it stands on (5.3). Its far and
+    near ends are named by the way it rises; its box is the box round its turned outline, its height tall."""
+    if chain.early.get(item.id):
+        raise PlanError("a rounding of a turned item's edges is made early", item=item.id)
+    k, w, u = copy.index, copy.origin, copy.normal
+    outline, axis, datum_sign = plane_outline(chain, item, k, axes, w, add(w, u, -behind), shape)
+    mode = "normal" if u["xyz".index(axis)] == datum_sign else "reverse"
+    tool = chain.extrude(_id(item.id, k, "body"), outline, behind + height, mode, item=item.id)
+    near, far_end = ("start_face", "end_face") if mode == "normal" else ("end_face", "start_face")
+    up = ("+" if u["xyz".index(axis)] > 0 else "-") + axis
+    chain.name(item.id, k, up, Ref(tool, far_end))
+    chain.name(item.id, k, ("-" if up[0] == "+" else "+") + axis, Ref(tool, near))
+    h1, h2 = turned_halves(shape)
+    chain.add_box(Box(*_span_box(w, u, 0.0, height, {axes[0]: h1, axes[1]: h2}), item.id, k))
+    return tool

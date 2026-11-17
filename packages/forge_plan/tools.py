@@ -25,6 +25,7 @@ from forge_spec.draft import (
 from forge_spec.geometry import (
     EPS,
     FlatFace,
+    Footprint,
     SideFace,
     least_material_under,
     side_most_material,
@@ -44,6 +45,9 @@ from .items.plan._tools import (
     _through,
     _up,
     _vertical,
+    turned_cut,
+    turned_halves,
+    turned_on,
 )
 from .write import (
     Box,
@@ -199,6 +203,10 @@ def cut_tool(chain: Chain, ctx: Context, item: Item, copy: Instance, *,
             "a hole into a bore or a hollow starts at its axis: its mouth isn't carried",
             item=item.id,
         )
+    turned = turned_on(ctx.layout, item, face)
+    if turned is not None:
+        assert isinstance(face, FlatFace)
+        return [turned_cut(chain, item, copy, face, turned, mouth, far)]
     return PLAN[item.kind].cut_tool(chain, ctx, item, copy, face, mouth, far)
 
 
@@ -217,11 +225,16 @@ def air_boxes(
         return None, None
     w, d = copy.origin, neg(copy.normal)
     a1, a2 = face.axes
-    at_mouth, at_far, parts = PLAN[item.kind].air_outline(ctx, item, face)
+    turned = turned_on(ctx.layout, item, face)
+    if turned is not None:  # the box round its turned outline, past its mouth and its far side alike
+        at_mouth = at_far = turned_halves(turned)
+        depth_of: Footprint = turned
+    else:
+        at_mouth, at_far, depth_of = PLAN[item.kind].air_outline(ctx, item, face)
     mouth = _span_box(w, d, -CARRY, 0.0, {a1: at_mouth[0], a2: at_mouth[1]})
     if not _through(item):
         return mouth, None
-    depth = _cut_depth(item, face, parts, w)
+    depth = _cut_depth(item, face, depth_of, w)
     return mouth, _span_box(w, d, depth, depth + CARRY, {a1: at_far[0], a2: at_far[1]})
 
 
@@ -317,6 +330,10 @@ def standing_tool(
     if isinstance(face, SideFace):
         return _round_side(chain, item, copy, face)
     behind = CARRY if sink and sink_box(chain, ctx, item, copy) is not None else 0.0
+    turned = turned_on(ctx.layout, item, face)
+    if turned is not None:  # turned in its face's plane (1b's first move)
+        _, height = PLAN[item.kind].section(item, face.axes)
+        return PLAN[item.kind].turned_tool(chain, item, copy, face.axes, turned, height, behind)
     return PLAN[item.kind].standing_tool(chain, item, copy, behind)
 
 
@@ -342,7 +359,13 @@ def sink_box(
         return None
     w, u = copy.origin, copy.normal
     p1, p2 = _on_face(face, w)
-    parts, halves = PLAN[item.kind].sink_footprint(item, face, copy)
+    turned = turned_on(ctx.layout, item, face)
+    parts: Footprint
+    if turned is not None:  # its turned foot, and the box round it
+        h1, h2 = turned_halves(turned)
+        parts, halves = turned, {face.axes[0]: h1, face.axes[1]: h2}
+    else:
+        parts, halves = PLAN[item.kind].sink_footprint(item, face, copy)
     if least_material_under(face, parts, p1, p2) <= CARRY:
         return None
     region = _span_box(w, u, -CARRY, 0.0, halves)

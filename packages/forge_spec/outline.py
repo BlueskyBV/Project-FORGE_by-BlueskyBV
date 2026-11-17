@@ -289,6 +289,25 @@ class Shape:
         return Shape(tuple(Line(move(q.a), move(q.b)) if isinstance(q, Line)
                            else Arc(move(q.centre), q.radius, q.start, q.sweep) for q in self.pieces))  # fmt: skip
 
+    def turned(self, c: float, s: float) -> Shape:
+        """The outline turned about the origin, by the angle whose cosine and sine are ``c`` and ``s`` (1b's ``turn``)."""
+
+        def turn(p: Point) -> Point:
+            return (c * p[0] - s * p[1], s * p[0] + c * p[1])
+
+        angle = fs.atan2(s, c)
+        return Shape(tuple(Line(turn(q.a), turn(q.b)) if isinstance(q, Line)
+                           else Arc(turn(q.centre), q.radius, q.start + angle, q.sweep) for q in self.pieces))  # fmt: skip
+
+    def swapped(self) -> Shape:
+        """The outline with its two coordinates swapped: seen from a face that names the same two axes the other way round."""
+
+        def swap(p: Point) -> Point:
+            return (p[1], p[0])
+
+        return Shape(tuple(Line(swap(q.a), swap(q.b)) if isinstance(q, Line)
+                           else Arc(swap(q.centre), q.radius, math.pi / 2 - q.start, -q.sweep) for q in self.pieces))  # fmt: skip
+
     # --- its box and area --------------------------------------------------------------
     def box(self) -> tuple[Point, Point]:
         points = [p for q in self.pieces for p in q.extremes()]

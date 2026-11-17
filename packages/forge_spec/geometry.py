@@ -662,6 +662,61 @@ def _parts_overlap(
     return fs.hypot(g1, g2) < disc_.half[0] - EPS
 
 
+def _off_corners(shape: Shape, p: tuple[float, float]) -> tuple[float, float]:
+    """``p``, or a point 1e-8 mm above it where it is at the height of one of the outline's corners or its arcs' tops.
+
+    There, the crossing rule (:meth:`~forge_spec.outline.Shape.inside`) can
+    count a corner twice, as it can where the corners of copies of one
+    outline line up; a point that far off is on the same side of an outline
+    it is more than :data:`EPS` from.
+    """
+    heights = [e[1] for q in shape.pieces for e in q.ends()]
+    heights += [
+        q.centre[1] + k * q.radius
+        for q in shape.pieces
+        if isinstance(q, Arc)
+        for k in (-1.0, 1.0)
+    ]
+    y = p[1]
+    while any(abs(y - h) < 1e-9 for h in heights):
+        y += 1e-8
+    return (p[0], y)
+
+
+def shape_holds(shape: Shape, p: tuple[float, float], tol: float = EPS) -> bool:
+    """Whether a point is in an outline, or within ``tol`` of it."""
+    return shape.distance(p) <= tol or shape.inside(_off_corners(shape, p))
+
+
+def shapes_overlap(a: Shape, b: Shape) -> bool:
+    """Whether two outlines' insides share some area (touching, along a side or at a point, keeps them apart).
+
+    So they do when a point of either's outline is inside the other by more
+    than :data:`EPS` (each piece split where it meets the other's, its ends
+    and the middle of each stretch asked), or the middle of either's box is
+    (one wholly within the other, or the two the same).
+    """
+
+    def deep_in(shape: Shape, p: tuple[float, float]) -> bool:
+        return shape.distance(p) > EPS and shape.inside(_off_corners(shape, p))
+
+    for x, y in ((a, b), (b, a)):
+        for q in x.pieces:
+            cuts = sorted(
+                {0.0, 1.0, *(q.param(m) for w in y.pieces for m in meet(q, w))}
+            )
+            asked = [
+                *cuts,
+                *((t0 + t1) / 2 for t0, t1 in pairwise(cuts) if t1 - t0 > 1e-12),
+            ]
+            if any(deep_in(y, q.at(t)) for t in asked):
+                return True
+        (l1, l2), (h1, h2) = x.box()
+        if deep_in(y, ((l1 + h1) / 2, (l2 + h2) / 2)):
+            return True
+    return False
+
+
 def first_close_pair(points: Sequence[tuple[float, float]], owners: Sequence[int], cells: tuple[float, float],
                      close: Callable[[int, int], bool], *, wrap: float | None = None) -> tuple[int, int] | None:  # fmt: skip
     """The first two owners with points close to each other, or None: (j, i), j < i, i as small as can be.

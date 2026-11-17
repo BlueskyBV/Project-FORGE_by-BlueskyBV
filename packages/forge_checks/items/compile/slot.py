@@ -11,7 +11,7 @@ from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Position, RoundEdge
 from forge_checks.kinds.size import Between
 from forge_checks.kinds.surfaces import Plane, Round
-from forge_checks.place import Copy, unit
+from forge_checks.place import Copy
 
 if TYPE_CHECKING:
     from forge_checks.items.compile._context import CompileContext
@@ -28,9 +28,9 @@ class Slot(CompileKind):
         c.size(item, width / 2)
         for copy in c.copies(item):
             assert copy.axes is not None and copy.span is not None
-            a, n = _v(unit("+" + along)), _v(copy.direction)
+            a, n = _v(c.along(copy, along)), _v(copy.direction)
             across_axis = copy.axes[1] if along == copy.axes[0] else copy.axes[0]
-            across = _v(unit("+" + across_axis))
+            across = _v(c.along(copy, across_axis))
             depth = copy.span[1]
             straight = (length - width) / 2 if round_ends else length / 2
             circle = c._round_ends(item, copy, across_axis)
@@ -81,9 +81,9 @@ class Slot(CompileKind):
             return None
         if c._round_ends(item, copy, axis) is not None:
             return None
-        a = _v(unit("+" + axis))
+        a = _v(c.along(copy, axis))
         across = _v(
-            unit("+" + (copy.axes[1] if axis == copy.axes[0] else copy.axes[0]))
+            c.along(copy, (copy.axes[1] if axis == copy.axes[0] else copy.axes[0]))
         )
         along = c._choice_value(item, "along")
         half = _mm(item.get("length" if axis == along else "width")) / 2
@@ -108,7 +108,7 @@ class Slot(CompileKind):
         width, length = _mm(item.get("width")), _mm(item.get("length"))
         if axis != along and length - width >= _STRAIGHT:
             return None
-        ahead = _v(unit("+" + str(along)))
+        ahead = _v(c.along(copy, str(along)))
         ends = [Round(_t(_v(copy.point) + s * (length - width) / 2 * ahead), _t(-n), width / 2, 0.0,
                       copy.span[1], True) for s in (-1, 1)]  # fmt: skip
         return ends[0], ends[1]

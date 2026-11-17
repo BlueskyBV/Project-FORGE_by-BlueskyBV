@@ -52,6 +52,14 @@ class Pocket(SolveKind):
         h1, h2 = _size(item, "length") / 2, _size(item, "width") / 2
         return rounded_rect(h1, h2, min(_size(item, "corner_radius"), h1, h2))
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        if _choice_of(item, "shape") == "circle":
+            return None  # a round pocket turned is the same pocket
+        h1, h2 = _size(item, "length") / 2, _size(item, "width") / 2
+        return h1, h2, min(_size(item, "corner_radius"), h1, h2)
+
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
         if _choice_of(item, "shape") == "rectangle":
             radius = _length_of(item, "corner_radius")

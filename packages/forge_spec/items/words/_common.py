@@ -97,6 +97,8 @@ def _place(place: Place | None) -> str:
     parts = [_axis(axis, pos, kind) for axis, pos in sorted(place.axes.items())]
     if place.angle is not None:
         parts.append(f"at {_v(place.angle)} around the axis")
+    if place.turn is not None:
+        parts.append(f"turned {_v(place.turn)} in the face")
     pattern = place.pattern
     if pattern is not None:
         v, n = pattern.values, pattern.counts

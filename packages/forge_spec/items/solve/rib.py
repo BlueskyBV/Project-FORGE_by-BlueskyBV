@@ -42,6 +42,17 @@ class Rib(SolveKind):
         return (rect(*_oriented(axes, _choice_of(item, "along"), _size(item, "length") / 2,
                                 _size(item, "thickness") / 2)),)  # fmt: skip
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        h1, h2 = _oriented(
+            axes,
+            _choice_of(item, "along"),
+            _size(item, "length") / 2,
+            _size(item, "thickness") / 2,
+        )
+        return h1, h2, 0.0
+
     def stand(self, item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[str, int], layout: Layout,
               host: str | None, joined: str) -> tuple[Vec, Vec, str, dict[str, str]]:  # fmt: skip
         a1, a2 = axes

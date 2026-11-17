@@ -12,7 +12,7 @@ from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Centre, Position, Ref, RoundEdge
 from forge_checks.kinds.size import Between
 from forge_checks.kinds.surfaces import Plane, Round
-from forge_checks.place import Copy, unit
+from forge_checks.place import Copy
 
 if TYPE_CHECKING:
     from forge_checks.items.compile._context import CompileContext
@@ -42,13 +42,13 @@ class Pocket(CompileKind):
                 else 0.0
             )
             for name, axis in sizes.items():
-                a = _v(unit("+" + axis))
+                a = _v(c.along(copy, axis))
                 other_axis = copy.axes[1] if axis == copy.axes[0] else copy.axes[0]
                 other = half["width" if name == "length" else "length"]
                 ends = c._round_ends(item, copy, axis)
                 span: Between | Position
                 if ends is None:
-                    across = _v(unit("+" + other_axis))
+                    across = _v(c.along(copy, other_axis))
                     walls = [
                         c.cut_wall(copy, s * a, half[name], across, other - corner)
                         for s in (1, -1)
@@ -62,7 +62,10 @@ class Pocket(CompileKind):
                 c.check(item, name, "size", 2 * half[name], c.tol(item.get(name)), span, copy.index)  # fmt: skip
                 c.size(item, half[name])
             if corner > 0:
-                e1, e2 = _v(unit("+" + copy.axes[0])), _v(unit("+" + copy.axes[1]))
+                e1, e2 = (
+                    _v(c.along(copy, copy.axes[0])),
+                    _v(c.along(copy, copy.axes[1])),
+                )
                 for k, (s1, s2) in enumerate(((1, 1), (-1, 1), (-1, -1), (1, -1))):
                     centre = (
                         _v(copy.point)
@@ -95,9 +98,9 @@ class Pocket(CompileKind):
             return None
         if c._round_ends(item, copy, axis) is not None:
             return None
-        a = _v(unit("+" + axis))
+        a = _v(c.along(copy, axis))
         across = _v(
-            unit("+" + (copy.axes[1] if axis == copy.axes[0] else copy.axes[0]))
+            c.along(copy, (copy.axes[1] if axis == copy.axes[0] else copy.axes[0]))
         )
         first = axis == copy.axes[0]
         half = _mm(item.get("length" if first else "width")) / 2
@@ -117,7 +120,7 @@ class Pocket(CompileKind):
             return None
         assert copy.axes is not None
         n = _v(copy.direction)
-        a = _v(unit("+" + axis))
+        a = _v(c.along(copy, axis))
         corner = item.get("corner_radius")
         if c._choice_value(item, "shape") == "circle" or corner is None:
             return None
@@ -128,7 +131,7 @@ class Pocket(CompileKind):
         if r <= 0 or 2 * (other - r) >= _STRAIGHT:
             return None
         # Each end's corner on the +other side (both reach the end alike).
-        b = _v(unit("+" + (copy.axes[1] if first else copy.axes[0])))
+        b = _v(c.along(copy, (copy.axes[1] if first else copy.axes[0])))
         ends = [Round(_t(_v(copy.point) + s * (half - r) * a + (other - r) * b), _t(-n), r, 0.0, copy.span[1],
                       True) for s in (-1, 1)]  # fmt: skip
         return ends[0], ends[1]

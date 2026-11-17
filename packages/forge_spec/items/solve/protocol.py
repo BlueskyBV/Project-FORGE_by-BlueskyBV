@@ -137,6 +137,13 @@ class SolveKind:
         """What of a profiled body meets the face it stands on."""
         return None
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        """Its outline on a flat face as a rounded rectangle about its point, before any turn: its half sizes along the
+        face's two axes and its corners' radius; None for a kind ``place.turn`` doesn't turn (1b's first move)."""
+        return None
+
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
         """What can't be true of its own sizes, wherever it is placed."""
 

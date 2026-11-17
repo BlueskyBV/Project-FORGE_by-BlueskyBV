@@ -38,7 +38,7 @@ from __future__ import annotations
 import functools
 import math
 import random
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from functools import cache
 from typing import TYPE_CHECKING, Any
@@ -182,6 +182,10 @@ class Feature:
     of: str | None = None
     #: A shell's open faces (none: sealed).
     faces: tuple[str, ...] | None = None
+    #: How far it is turned in its flat face's plane, from the face's first axis towards its second (degrees;
+    #: ``place.turn``, V2-stage4b-0c.md 3.3, 1b's first move): a slot, a rectangular pocket, a rib, a tab, a block, a
+    #: post or a line of letters.
+    turn: float | None = None
 
 
 Plan = tuple[Feature, ...]
@@ -558,6 +562,75 @@ def _footprint(f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], 
     return _draw(f.kind).footprint(f, axes)
 
 
+def _turn_of(f: Feature) -> tuple[float, float] | None:
+    """The cosine and sine of an item's turn in its face's plane, exact on the quarter turns; None if it isn't turned."""
+    if f.turn is None:
+        return None
+    quarters = f.turn / 90.0
+    if abs(quarters - round(quarters)) < 1e-12:
+        return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[round(quarters) % 4]
+    t = math.radians(f.turn)
+    return fs.cos(t), fs.sin(t)
+
+
+def _turned_half(
+    f: Feature, axes: tuple[str, str], foot: _Foot | None = None
+) -> tuple[float, float]:
+    """The half sizes, along the face's axes, of the box about its point round a turned item's outline (its
+    footprint), or round ``foot`` (what it covers, placed at its point: letters' ink's box, off their line's
+    middle): its rectangle's corners' circles' centres turned, and their radius past them (a rounded rectangle
+    is its inner rectangle widened by its corner's radius all round)."""
+    if foot is None:
+        (h1, h2), r = _footprint(f, axes)
+        m1, m2 = 0.0, 0.0
+    else:
+        (h1, h2), r, (m1, m2) = foot.half, foot.corner, foot.at
+    turn = _turn_of(f)
+    assert turn is not None
+    c, s = turn
+    reach = [0.0, 0.0]
+    for q1 in (-1.0, 1.0):
+        for q2 in (-1.0, 1.0):
+            x, y = m1 + q1 * (h1 - r), m2 + q2 * (h2 - r)
+            reach = [max(reach[0], abs(c * x - s * y)), max(reach[1], abs(s * x + c * y))]
+    return reach[0] + r, reach[1] + r
+
+
+def _turned_frame(f: Feature, e1: Array, e2: Array) -> tuple[Array, Array]:
+    """An item's own first and second ways on its face, turned from the face's first axis towards its second."""
+    turn = _turn_of(f)
+    if turn is None:
+        return e1, e2
+    c, s = turn
+    return c * e1 + s * e2 + 0.0, c * e2 - s * e1 + 0.0
+
+
+#: The kinds the generator turns in a flat face's plane, and how often it turns one that can be.
+_TURNABLE = ("slot", "pocket", "rib", "tab", "block", "post", "text")
+_TURNED = 0.2
+
+
+def _turned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
+    """Now and then a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters on a flat face turned in
+    its plane (place.turn), from a stream of its own: a share of turns by quarters' halves, the rest anywhere on a
+    half-degree grid, between 0 and 180 degrees (each outline is the same turned half a turn), or for letters all
+    the way round (upside down, they read otherwise); None when it isn't turned. A disc (a slot as long as it is
+    wide) isn't: it is the same turned."""
+    if rng.random() >= _TURNED or f.kind not in _TURNABLE or f.on is None or f.on[1] == "side":
+        return None
+    if f.kind == "pocket" and f.choices.get("shape") == "circle":
+        return None
+    (h1, h2), corner = _footprint(f, face.axes)
+    if h1 == h2 == corner:
+        return None
+    if f.kind == "text":
+        nice, most = (30.0, 45.0, 90.0, 180.0, 270.0, 315.0), 359.5
+    else:
+        nice, most = (30.0, 45.0, 60.0, 120.0, 135.0, 150.0), 179.5
+    turn = rng.choice(nice) if rng.random() < 0.5 else _q(rng.uniform(0.5, most), 0.5)
+    return replace(f, turn=turn)
+
+
 def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
     """The box round an extrusion's outline or a revolution's half outline: its least and greatest coordinates."""
     assert f.outline is not None
@@ -567,7 +640,10 @@ def _profile_box(f: Feature) -> tuple[tuple[float, float], tuple[float, float]]:
 def _extent(
     f: Feature, axes: tuple[str, str]
 ) -> tuple[tuple[float, float], tuple[float, float]]:
-    """How far an item reaches back and forth along a face's two axes from the point it is placed by (place.md): an extrusion's outline, from its point (0, 0); anything else, its footprint about its centre."""
+    """How far an item reaches back and forth along a face's two axes from the point it is placed by (place.md): an extrusion's outline, from its point (0, 0); anything else, its footprint about its centre; turned, the box round its turned outline."""
+    if f.turn is not None:
+        h1, h2 = _turned_half(f, axes)
+        return (-h1, h1), (-h2, h2)
     return _draw(f.kind).extent(f, axes)
 
 
@@ -585,7 +661,9 @@ def _right(face: _Flat) -> Array:
 
 
 def _foot_of(f: Feature, face: _Flat, at: tuple[float, float]) -> _Foot:
-    """What a copy centred at ``at`` covers on a flat face: its outline; letters, their ink's box (it reaches past the line's); a cone wider at its top than its base, its top's circle."""
+    """What a copy centred at ``at`` covers on a flat face: its outline; letters, their ink's box (it reaches past the line's); a cone wider at its top than its base, its top's circle; turned, the box round its turned outline (what is clear of that is clear of it)."""
+    if f.turn is not None:
+        return _Foot(at, _turned_half(f, face.axes, _draw(f.kind).foot_of(f, face, (0.0, 0.0))), 0.0)
     return _draw(f.kind).foot_of(f, face, at)
 
 
@@ -934,11 +1012,16 @@ def _on_flat(
             raise DoesNotFitError(
                 f"{f.id}: {axis} isn't one of {face.key}'s axes {face.axes}"
             )
+    if f.turn is not None and (f.on is None or f.kind not in _TURNABLE):
+        raise DoesNotFitError(f"{f.id}: the generator turns a slot, a pocket, a rib, a tab, a block, a post or letters on a flat face")
     half, corner = _footprint(f, face.axes)
+    if f.turn is not None:  # what it covers, as the generator keeps it: the box round its turned outline
+        half, corner = _turned_half(f, face.axes), 0.0
     spots = _flat_spots(f, face)
     feet = [_foot_of(f, face, at) for at in spots]
-    flush = _flush(f, face)
-    beyond = _overhang(f, face, feet, strict)
+    # Turned, it is wholly on its face, clear of its edges by the gap: flush with none, over none.
+    flush = _flush(f, face) if f.turn is None else frozenset()
+    beyond = _overhang(f, face, feet, strict) if f.turn is None else frozenset()
     if strict:
         for k, foot in enumerate(feet):
             if not face.holds(foot, GAP, flush, beyond):
@@ -956,7 +1039,7 @@ def _on_flat(
         _stays_in_room(f, face, feet, rise, part)
     before = set(part.flats)
     n = face.normal
-    e1, e2 = face.frame.u, face.frame.v
+    e1, e2 = _turned_frame(f, face.frame.u, face.frame.v)
     made = []
     first = len(part.steps)
     for k, at in enumerate(spots):
@@ -1608,7 +1691,13 @@ def _standing_tube(
 
 
 def _round_tab(
-    f: Feature, index: int, base: Array, n: Array, face: _Flat, part: _Part
+    f: Feature,
+    index: int,
+    base: Array,
+    n: Array,
+    face: _Flat,
+    part: _Part,
+    turned: tuple[Array, Array] | None = None,
 ) -> None:
     """A round-ended tab (tab.md): seen along its thickness a rectangle ``length`` out from the face, its far corners rounded to half its width; its broad faces with that outline, its narrow sides as far as its rounding starts, no far face.
 
@@ -1626,9 +1715,14 @@ def _round_tab(
         )
     up = _named(n)
     e_thin, e_other = _v(unit_of("+" + thin)), _v(unit_of("+" + other))
+    if turned is not None:  # turned in its face's plane: its own axes, the face's turned (1b's first move)
+        e1, e2 = turned
+        e_thin, e_other = (e1, e2) if thin == face.axes[0] else (e2, e1)
     centre = base + (length - REACH) / 2 * n
     part.steps.append(Step(f.id, index, True, Prism(_t(centre), _t(n), _t(e_other), _t(e_thin), ((length + REACH) / 2, r),
                                                     r, -t / 2, t / 2, (True, False, False, True))))  # fmt: skip
+    if turned is not None:
+        return  # its faces take nothing yet (a later move): none is kept
     size = {thin: t, other: w, up[1]: length}
     for sign in (1.0, -1.0):
         name = ("+" if sign > 0 else "-") + thin
@@ -1851,6 +1945,9 @@ def _place_said(f: Feature, w: Writer) -> dict[str, Any]:
     if f.angle is not None:
         w.say(", ")
         place["angle"] = _mm(w, f.angle, before="at ", after=" round the side", unit="deg")  # fmt: skip
+    if f.turn is not None:
+        w.say(", ")
+        place["turn"] = _mm(w, f.turn, before="turned ", after=" in its face", unit="deg")
     p = f.pattern
     if p is None:
         return place
@@ -2866,6 +2963,16 @@ def render(plan: Plan, strict: bool = True) -> Case:
     return Case(plan, brief, items, truth)
 
 
+def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
+    """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
+    1.2 where an item is turned in its face (place.turn), else the first, so a part that turns nothing is read,
+    and its spec's digest made, as it always was."""
+    found = list(items)
+    if any(isinstance(item.get("place"), Mapping) and "turn" in item["place"] for item in found):
+        return {"schema_version": "1.2", "name": name, "items": found}
+    return {"spec_format": 1, "name": name, "items": found}
+
+
 # ----------------------------------------------------------------------
 # Choosing a plan
 # ----------------------------------------------------------------------
@@ -3380,6 +3487,7 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
     only if the part it makes is valid.
     """
     rng = random.Random(f"forge-eval decorations {seed}")
+    turns = random.Random(f"forge-eval decorations turned {seed}")
     lettered, studded = rng.random() < _LETTERED, rng.random() < _STUDDED
     for wanted, draw in ((studded, _stud), (lettered, _lettering)):
         if not wanted:
@@ -3389,6 +3497,18 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
         for _ in range(tries if hosts else 0):
             key = rng.choice(hosts)
             candidates = draw(rng, _next_index(plan), key[0], part.flats[key])
+            # A line of letters turned in its face now and then: tried first, and where it doesn't fit, as drawn.
+            turned = [_turned_now_and_then(turns, c, part.flats[key]) if draw is _lettering else None
+                      for c in candidates]  # fmt: skip
+            if any(t is not None for t in turned):
+                chosen = [t or c for t, c in zip(turned, candidates, strict=True)]
+                try:
+                    render((*plan, *chosen))
+                except DoesNotFitError:
+                    pass
+                else:
+                    plan.extend(chosen)
+                    break
             try:
                 render((*plan, *candidates))
             except DoesNotFitError:
@@ -3463,6 +3583,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         hang = random.Random(f"forge-eval overhang {seed} {k}")
         touch = random.Random(f"forge-eval tangent {seed} {k}")
         around = random.Random(f"forge-eval round standing {seed} {k}")
+        turns = random.Random(f"forge-eval turns {seed} {k}")
         outlined = not new and profiles.random() < _PROFILED
         for _ in range(tries):
             hosts = [key for key, face in part.flats.items() if key[1] == 0] + [
@@ -3472,12 +3593,15 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                 break
             key = rng.choice(hosts)
             standing_ok = _draw(part.kinds[key[0]]).hosts_standing and len(plan) < size
+            turned = None
             if key in part.rounds:
                 candidate = _side_hole(rng, k, key[0], part.rounds[key])
                 if standing_ok and around.random() < _AROUND:
                     candidate = _side_standing(around, k, key[0], part.rounds[key])
             else:
                 candidate = _feature(rng, k, key[0], part.flats[key], standing_ok)
+                # Flush with a side, over one or touching one, it isn't turned: it is placed by that side.
+                plain = True
                 if (
                     _draw(candidate.kind).drawn_flush
                     and candidate.pattern is None
@@ -3485,6 +3609,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                     and flush.random() < _FLUSH
                 ):
                     candidate = _flushed(flush, candidate, part.flats[key])
+                    plain = False
                 elif (
                     _draw(candidate.kind).drawn_overhung
                     and candidate.pattern is None
@@ -3492,6 +3617,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                     and hang.random() < _OVERHUNG
                 ):
                     candidate = _overhung(hang, candidate, part.flats[key])
+                    plain = False
                 elif (
                     _draw(candidate.kind).drawn_tangent
                     and candidate.pattern is None
@@ -3499,11 +3625,25 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                     and touch.random() < _TANGENT
                 ):
                     candidate = _flushed(touch, candidate, part.flats[key])
+                    plain = False
                 # Drawn as stage 2 would, then one of the new kinds in its place.
                 if new and standing_ok:
                     candidate = _standing_new(slot, k, key[0], part.flats[key])
+                    plain = True
                 elif outlined and standing_ok:
                     candidate = _standing_profiled(profiles, k, key[0], part.flats[key])
+                # Turned in its face now and then, from a stream of its own: tried first, and where it
+                # doesn't fit, the item as drawn (a seed that turns nothing stays as it was drawn).
+                if plain:
+                    turned = _turned_now_and_then(turns, candidate, part.flats[key])
+            if turned is not None:
+                try:
+                    render((*plan, turned))
+                except DoesNotFitError:
+                    turned = None
+                else:
+                    plan.append(turned)
+                    break
             try:
                 render((*plan, candidate))
             except DoesNotFitError:
@@ -3524,7 +3664,7 @@ def impossible(seed: int) -> Case:
     for attempt in range(40):
         case = generate(seed * 1000 + attempt, 4)
         cuts = [f for f in case.plan if _draw(f.kind).misfits and f.on is not None and f.pattern is None
-                and f.on[1] != "side"]  # fmt: skip
+                and f.on[1] != "side" and f.turn is None]  # fmt: skip
         if not cuts:
             continue
         f = rng.choice(cuts)
@@ -3712,6 +3852,11 @@ def _changes(f: Feature, plan: Plan) -> Iterator[tuple[str, list[Feature]]]:
         else:  # centred, said or assumed: moved off the centre
             moved = [Position("offset", _q(d)) for d in _by(0.0)]
         yield f"place.{axis}", [replace(f, place={**f.place, axis: m}) for m in moved]
+    if f.turn is not None:
+        # Turned a little more or less in its face, or a quarter turn (unless it is the same so turned).
+        turned = [f.turn + d for d in (5.0, -5.0, 20.0, -20.0)]
+        most = 360.0 if f.kind == "text" else 180.0
+        yield "place.turn", [replace(f, turn=_q(t, 0.5)) for t in turned if 0.0 < t < most]
     if f.angle is not None:
         # A hole turned a little round its side; something standing round it, a quarter or a half.
         turned = _draw(f.kind).turned(f.angle)

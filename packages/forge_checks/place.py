@@ -544,6 +544,8 @@ class Copy:
     hi: Vec | None = None
     span: tuple[float, float] | None = None
     foot: float = 0.0
+    #: Turned in its face's plane (``place.turn``): the cosine and sine of the turn from the face's first axis.
+    turn: Point | None = None
 
 
 @dataclass(frozen=True)
@@ -907,11 +909,47 @@ def _first_body(item: Item, layout: _Layout) -> Copy:
 def _footprint(
     item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
 ) -> Outline:
-    """The item's outline on a flat face with these axes, centred on the origin of the face's coordinates.
+    """The item's outline on a flat face with these axes, centred on the origin of the face's coordinates (turned by its
+    ``place.turn``).
 
     For a hole, its widest circle (its counterbore's or countersink's).
     """
-    return _entry(item.kind).footprint(item, diameters, axes)
+    found = _entry(item.kind).footprint(item, diameters, axes)
+    turned = _turn_of(item)
+    return found if turned is None else _turned(item, found, turned)
+
+
+#: What a turn turns (place.md): a slot, a rectangular pocket, a rib, a tab, a block, a post and a line of letters.
+_TURNABLE = frozenset({"slot", "pocket", "rib", "tab", "block", "post", "text"})
+
+
+def _turn_of(item: Item) -> Point | None:
+    """The cosine and sine of an item's ``place.turn`` in its face's plane; None if it has none."""
+    place = _place(item)
+    if place is None or place.turn is None:
+        return None
+    if item.kind not in _TURNABLE or (
+        item.kind == "pocket" and _choice(item, "shape") == "circle"
+    ):
+        raise PlaceError(
+            item.id,
+            "a turn turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in its face's plane",
+        )
+    return turn(_angle(place.turn))
+
+
+def _turned(item: Item, outline: Outline, by: Point) -> Outline:
+    """An outline turned about the origin of the face's coordinates: its sides and arcs, each turned."""
+    if outline.shape != "rect":
+        raise PlaceError(item.id, "only a rectangle, rounded or not, is turned")
+    c, s = by
+    angle = fs.atan2(s, c)
+
+    def at(p: Point) -> Point:
+        return (c * p[0] - s * p[1], s * p[0] + c * p[1])
+
+    return Outline.profile([Segment(at(q.a), at(q.b)) if isinstance(q, Segment)
+                            else Arc(at(q.centre), q.radius, q.start + angle, q.sweep) for q in outline.pieces()])  # fmt: skip
 
 
 def _sized(
@@ -1005,7 +1043,11 @@ def _covering(
     (docs/V2-stage4.md, 7.1). The letters run left to right along up (the
     face's second axis) cross outward.
     """
-    return _entry(item.kind).covers(item, diameters, face)
+    found = _entry(item.kind).covers(item, diameters, face)
+    turned = _turn_of(item)
+    if found is None or turned is None or found.shape == "profile":  # a kind's covering made of its footprint is turned
+        return found
+    return _turned(item, found, turned)
 
 
 def _text_length(item: Item) -> float:
@@ -1089,6 +1131,10 @@ def _flat_positions(item: Item, face: FlatFace, layout: _Layout) -> list[Point]:
     if place is not None and place.angle is not None:
         raise PlaceError(
             item.id, "an angle places an item round a round side, not on a flat face"
+        )
+    if place is not None and place.turn is not None and place.concentric:
+        raise PlaceError(
+            item.id, "a turned item is placed along the face's axes, not concentric"
         )
     for axis in axes_given:
         if axis not in face.axes:
@@ -1280,7 +1326,12 @@ def _lies_on(item: Item, face: FlatFace, at: Point, layout: _Layout) -> None:
 def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_copies: int,
                  layout: _Layout, first: int) -> list[Copy]:  # fmt: skip
     place = _place(item)
+    turned = _turn_of(item)
     if place is not None and place.concentric:
+        if turned is not None:
+            raise PlaceError(
+                item.id, "a turned item is placed along the face's axes, not concentric"
+            )
         positions = _concentric(item, face, host, host_copies, layout)
     else:
         positions = _flat_positions(item, face, layout)
@@ -1299,7 +1350,35 @@ def _flat_copies(item: Item, face: FlatFace, host: tuple[str, int, str], host_co
                     item, face, host, index, point, face.normal, face.axes, layout
                 )
             )
+        if turned is not None:
+            made[-1] = _turned_copy(item, made[-1], face, (p1, p2), turned, layout)
     return made
+
+
+def _turned_copy(
+    item: Item, copy: Copy, face: FlatFace, at: Point, by: Point, layout: _Layout
+) -> Copy:
+    """A copy turned in its face's plane: its turn kept, a standing one's box round its turned footprint, and every face
+    it has closed (what is put on a turned item's faces is a later move)."""
+    key = (item.id, copy.index)
+    for name in list(layout.faces.get(key, {})) + [
+        n for n in KINDS[item.kind].faces if n not in layout.faces.get(key, {})
+    ]:
+        if name not in layout.closed.get(key, {}):
+            layout.close(
+                key,
+                name,
+                "it is turned in its face: nothing is placed on a turned item's faces, for now",
+            )
+    if copy.lo is None or copy.hi is None:
+        return replace(copy, turn=by)
+    foot = _footprint(item, layout.diameters, face.axes)
+    lo, hi = list(copy.lo), list(copy.hi)
+    for k, axis in enumerate(face.axes):
+        i = _INDEX[axis]
+        lo[i] = at[k] + foot.centre[k] - foot.half[k]
+        hi[i] = at[k] + foot.centre[k] + foot.half[k]
+    return replace(copy, turn=by, lo=(lo[0], lo[1], lo[2]), hi=(hi[0], hi[1], hi[2]))
 
 
 # ----------------------------------------------------------------------
@@ -1383,6 +1462,10 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
             f"only holes, bosses, posts, tabs and ribs go on a round side, not a {item.kind}",
         )
     place = _place(item)
+    if place is not None and place.turn is not None:
+        raise PlaceError(
+            item.id, "a turn turns an item in a flat face's plane, not round a side"
+        )
     axis = side.axis
     if place is not None and place.concentric:
         raise PlaceError(item.id, "nothing is concentric on a round side, for now")

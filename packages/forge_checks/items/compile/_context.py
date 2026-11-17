@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from forge_checks.classes import Tolerance
     from forge_checks.kinds.position import Ref
     from forge_checks.kinds.surfaces import Ball, Plane, Round
-    from forge_checks.place import Copy, FlatFace, Placed, RoundSide
+    from forge_checks.place import Copy, FlatFace, Placed, RoundSide, Vec
     from forge_checks.telling import Alternative
     from forge_checks.view import Capability
 
@@ -57,6 +57,8 @@ class CompileContext(Protocol):
     def _wall_spot(self, face: FlatFace, wall: float) -> Array: ...
     def face_plane(self, face: FlatFace, reach: float = ...) -> Plane: ...
     def face_rect(self, face: FlatFace) -> Plane: ...
+    @staticmethod
+    def along(copy: Copy, axis: str) -> Vec: ...
     @staticmethod
     def cut_wall(
         copy: Copy, way: Array, at: float, across: Array, half: float

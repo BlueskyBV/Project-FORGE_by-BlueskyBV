@@ -46,6 +46,12 @@ class Text(SolveKind):
         )
         return (rect(width / 2, height / 2),)
 
+    def turnable(
+        self, item: Item, layout: Layout, axes: tuple[str, str]
+    ) -> tuple[float, float, float] | None:
+        (line,) = self.outline(item, layout, axes)
+        return line.half[0], line.half[1], 0.0
+
     def covers(self, item: Item, layout: Layout, face: FlatFace) -> tuple[Part, ...]:
         """Letters cover their ink's box: placed by their box (text.md), their ink reaches past it (a j's tail, an f's hook).
 

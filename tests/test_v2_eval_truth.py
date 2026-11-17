@@ -49,6 +49,7 @@ from forge_checks.view import Side, ViewProxy
 from forge_eval.generator import (
     Case,
     DoesNotFitError,
+    draft_of,
     generate,
     impossible,
     mutants,
@@ -208,9 +209,7 @@ def unsaid(x: Any) -> Any:
 
 
 def spec_of(items: tuple[dict[str, Any], ...]) -> Any:
-    spec, problems = read_draft(
-        {"spec_format": 1, "name": "generated", "items": list(items)}
-    )
+    spec, problems = read_draft(draft_of(items))
     assert spec is not None and not problems.faults, [str(p) for p in problems.faults]
     return spec
 
@@ -463,8 +462,7 @@ class ThreePlacements(unittest.TestCase):
 
         for seed in range(150):
             c = generated(seed)
-            report = check_draft(number_words(c.brief), {"spec_format": 1, "name": "generated",
-                                                         "items": list(c.items)}, strict=True)  # fmt: skip
+            report = check_draft(number_words(c.brief), draft_of(c.items), strict=True)
             with self.subTest(seed=seed):
                 self.assertEqual([str(p) for p in report.problems], [])
                 self.assertEqual([str(p) for p in report.caveats], [])
@@ -489,12 +487,9 @@ class ThreePlacements(unittest.TestCase):
             c = impossible(seed)
             with self.subTest(seed=seed, why=c.cant):
                 self.assertIsNone(c.truth)
-                spec, problems = read_draft(
-                    {"spec_format": 1, "name": "generated", "items": list(c.items)}
-                )
+                spec, problems = read_draft(draft_of(c.items))
                 self.assertTrue(spec is None or problems.faults or solve(spec).issues)
-                report = check_draft(number_words(c.brief), {"spec_format": 1, "name": "generated",
-                                                             "items": list(c.items)}, strict=True)  # fmt: skip
+                report = check_draft(number_words(c.brief), draft_of(c.items), strict=True)
                 kinds = {p.kind for p in report.problems}
                 self.assertNotIn("fault", kinds, report.problems)
                 said = [
@@ -516,13 +511,7 @@ class ThreePlacements(unittest.TestCase):
             c = generated(seed)
             for (item, leaf), mutant in mutants(c):
                 with self.subTest(seed=seed, item=item, leaf=leaf):
-                    spec, problems = read_draft(
-                        {
-                            "spec_format": 1,
-                            "name": "generated",
-                            "items": list(mutant.items),
-                        }
-                    )
+                    spec, problems = read_draft(draft_of(mutant.items))
                     self.assertFalse(problems.faults, [str(p) for p in problems.faults])
                     assert spec is not None
                     self.assertEqual([str(i) for i in solve(spec).issues], [])
@@ -611,8 +600,7 @@ class TheBriefs(unittest.TestCase):
         c = generated(1)
         items = [dict(d) for d in c.items]
         items[0]["length"] = {**items[0]["length"], "value": 107.8}
-        report = check_draft(number_words(c.brief), {"spec_format": 1, "name": "generated", "items": items},
-                             strict=True)  # fmt: skip
+        report = check_draft(number_words(c.brief), draft_of(items), strict=True)
         self.assertEqual(
             [(p.kind, p.at) for p in report.problems if p.kind == "fault"],
             [("fault", "/items/0/length")],

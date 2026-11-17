@@ -350,6 +350,49 @@ own:
    keyed by face axes (`place.u`, `place.v`): the major step, 1.x to 2.0,
    its migration proven by `tests/v2_migrations.py`.
 
+**1b's first move, as built (revision 5, 17 November 2026).** `place.turn`
+(schema 1.2) turns a slot, a rectangular pocket, a rib, a tab, a block, a
+post or a line of letters in its flat face's plane, from the face's first
+axis towards its second, about its point; a round footprint (a hole, a
+boss, a round pocket), a round side and `concentric` refuse it as a fault
+(place.md, "Turned in the face"). In each program:
+
+- **The solver** fits, holds apart and measures the material under each
+  copy on its turned outline (letters on their ink's box turned with them),
+  measures a position `to` `edge` to the turned outline's extent, and asks
+  where what stands on the far face meets a turned cut's mouth, or where
+  something stands wholly over one, on the exact turned outlines; a turned
+  item's own faces are closed ("a later move"), and a rounding of its edges
+  or a shell of it is UNABLE.
+- **The judge's placement and oracle** build each copy in its turned axes
+  (`Copy.turn`); **the check compiler** measures a turned box's sizes
+  between its turned sides, a turned cut's floor and a round-ended tab's
+  end along them, and leaves a turned copy's position to the two
+  placements' agreement and face accounting.
+- **The planner** writes a turned prism or cut as its turned outline, a
+  `profile_outline` of straight sides and true arcs on the face's plane,
+  pushed out or in (the same numbers as the solver's outline); letters as
+  their `text` step with `up` and `right` turned; a round-ended tab (its
+  stadium lies in a plane square to the face) by ForgeIR v2's rigid motion,
+  a `transform` of its unturned stadium, kept within its turned foot's box
+  made after the motion. Every box it proves things by is the box round the
+  turned outline, which holds for any proof made with it.
+- **The generator** turns one in five of the items that can be, each from a
+  stream of its own (a seed that turns nothing draws what it drew before;
+  where a turned item doesn't fit, the item as drawn is tried); its truth
+  is built in the turned axes; its fits use the box round the turned
+  outline; its mutants include the turn moved by 5 and 20 degrees. A draft
+  says schema 1.2 only when it turns something (`draft_of`), so every other
+  spec keeps its digest.
+- **The comparison of two drafts** reads a turned outline by the box round
+  it, its own longer way (unsigned) and its own sizes: drafts turned alike
+  agree, turned otherwise they differ.
+
+Tests: `tests/test_v2_spec_turn.py` (the solver's and the comparison's),
+`tests/test_v2_plan_turn.py` (built and judged on every face of a cube and
+both ways round; a turn half a degree off, or a copy 0.05 mm off, fails face
+accounting; the second kernel agrees, the rigid motion included).
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block

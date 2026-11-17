@@ -49,7 +49,7 @@ class Tab(DrawKind):
                 f, copy_index, p, n, e1, e2, face, part, strict, feet, k, beyond, flush
             )
             return
-        _round_tab(f, copy_index, p, n, face, part)
+        _round_tab(f, copy_index, p, n, face, part, None if f.turn is None else (e1, e2))
 
     def limits(self, f: Feature) -> None:
         s = f.sizes

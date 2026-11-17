@@ -11,11 +11,11 @@ import itertools
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
-from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item
+from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item, Place
 from forge_spec.ends import Blind, ThroughAll, end_of
 from forge_spec.geometry import EPS, FlatFace, SideFace, Vec, bbox, material_at
-from forge_spec.items.solve._common import degrees
-from forge_spec.placement import Instance, Layout, _outline, mm
+from forge_spec.items.solve._common import _turn, degrees
+from forge_spec.placement import Instance, Layout, _outline, mm, turned_outline
 from forge_spec.values import Value
 
 _INDEX = {"x": 0, "y": 1, "z": 2}
@@ -156,6 +156,48 @@ def cut_material(copy: Instance, layout: Layout) -> float | None:
     return material
 
 
+def turned_form(item: Item, layout: Layout, axes: tuple[str, str]) -> tuple[tuple[tuple[Vec, bool], ...], tuple[object, ...]] | None:  # fmt: skip
+    """How a turned item's outline turns with the part (1b's first move): its own longer way in its face, unsigned
+    (each outline is the same turned half a turn), and its own sizes, longer first, with its corners' radius; None if
+    it isn't turned, or is by quarter turns (an outline along the face's axes, which the box round it reads).
+
+    Two drafts turned alike are one shape; one turned another way, or not at all, is another. A square turned a
+    quarter more is the same square, read as another: the person answers it.
+    """
+    place = item.get("place")
+    if not isinstance(place, Place) or place.turn is None or turned_outline(item, layout, axes) is None:
+        return None
+    turn = degrees(place.turn)
+    if abs(turn / 90 - round(turn / 90)) < 1e-12:
+        return None
+    sizes = _turned_sizes(item, layout, axes)
+    if sizes is None:
+        return None
+    h1, h2, r = sizes
+    c, s = _turn(turn)
+    e1, e2 = _axis(_INDEX[axes[0]]), _axis(_INDEX[axes[1]])
+    first = _add(_add((0.0, 0.0, 0.0), e1, c), e2, s)
+    second = _add(_add((0.0, 0.0, 0.0), e1, -s), e2, c)
+    if h2 > h1:
+        first, h1, h2 = second, h2, h1
+    return ((first, False),), (_r(2 * h1), _r(2 * h2), _r(r))
+
+
+def _turned_sizes(item: Item, layout: Layout, axes: tuple[str, str]) -> tuple[float, float, float] | None:
+    from forge_spec.items.solve import SOLVE
+
+    return SOLVE[item.kind].turnable(item, layout, axes)
+
+
+def turned_box(item: Item, layout: Layout, axes: tuple[str, str]) -> tuple[float, float] | None:
+    """The half sizes along the face's axes of the box round a turned item's outline; None if it isn't turned."""
+    shape = turned_outline(item, layout, axes)
+    if shape is None:
+        return None
+    (l1, l2), (u1, u2) = shape.box()
+    return max(-l1, u1), max(-l2, u2)
+
+
 def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: float,
                  diameter: float | None, corner: Callable[[float, float], float]) -> list[Feature]:  # fmt: skip
     """A cut by its mouth and depth, or right through by its line; its counterbore and countersink at the mouth.
@@ -175,7 +217,7 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
         shape, sizes, head, tail = "round cut", (0.0, 0.0, 0.0), (_r(diameter),), ()
     else:  # a rectangle, a slot: its outline across the face, and how its corners are rounded
         assert copy.face_axes is not None
-        h1, h2 = bbox(_outline(item, layout, copy.face_axes))
+        h1, h2 = turned_box(item, layout, copy.face_axes) or bbox(_outline(item, layout, copy.face_axes))
         extent = [0.0, 0.0, 0.0]
         extent[_INDEX[copy.face_axes[0]]], extent[_INDEX[copy.face_axes[1]]] = (
             2 * h1,
@@ -187,13 +229,19 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
             (),
             (_r(corner(h1, h2)),),
         )
+    turned = (
+        turned_form(item, layout, copy.face_axes)
+        if diameter is None and copy.face_axes is not None
+        else None
+    )
+    ways, own = turned if turned is not None else ((), ())
     field = "diameter" if shape == "round cut" else ""
     found = [
-        Feature(n, item.id, kind, shape, sizes, mouth, (*head, "through", *tail), ((into, False),), line=True,
-                field=field)
+        Feature(n, item.id, kind, shape, sizes, mouth, (*head, "through", *tail, *own), ((into, False), *ways),
+                line=True, field=field)
         if through
-        else Feature(n, item.id, kind, shape, sizes, mouth, (*head, "blind", _r(deep), *tail), ((into, True),),
-                     field=field)
+        else Feature(n, item.id, kind, shape, sizes, mouth, (*head, "blind", _r(deep), *tail, *own),
+                     ((into, True), *ways), field=field)
     ]  # fmt: skip
     bore, sink = item.get("counterbore"), item.get("countersink")
     if isinstance(bore, Counterbore):

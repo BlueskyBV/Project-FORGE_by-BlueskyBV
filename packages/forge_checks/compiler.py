@@ -45,7 +45,7 @@ smallest feature whose item is there, and never more than 0.5 mm
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
 import numpy as np
@@ -124,6 +124,7 @@ from .place import (
     FlatFace,
     Placed,
     RoundSide,
+    _entry,
     material_at,
     section_of,
     unit,
@@ -516,6 +517,19 @@ class _Compiler:
         return RoundEdge(surface, -1.0)
 
     @staticmethod
+    def along(copy: Copy, axis: str) -> Vec:
+        """The way one of the frame's axes runs for a copy: one of its face's two axes turned by its ``place.turn`` (1b's
+        first move); the axis itself for any other copy, or the face's normal axis."""
+        base = unit("+" + axis)
+        if copy.turn is None or copy.axes is None or axis not in copy.axes:
+            return base
+        c, s = copy.turn
+        u, v = unit("+" + copy.axes[0]), unit("+" + copy.axes[1])
+        if axis == copy.axes[0]:
+            return (c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2])
+        return (-s * u[0] + c * v[0], -s * u[1] + c * v[1], -s * u[2] + c * v[2])
+
+    @staticmethod
     def cut_wall(
         copy: Copy, way: Array, at: float, across: Array, half: float
     ) -> Plane:
@@ -617,6 +631,9 @@ class _Compiler:
         """
         for copy in self.copies(item):
             assert copy.lo is not None and copy.hi is not None
+            if copy.turn is not None:
+                self._turned_box(item, copy, sizes(copy), height)
+                continue
             lo, hi = _v(copy.lo), _v(copy.hi)
             middle = (lo + hi) / 2
             extent = (hi - lo) / 2
@@ -777,6 +794,66 @@ class _Compiler:
             self._place(item)
 
     # Cuts -------------------------------------------------------------
+    def _turned_box(
+        self,
+        item: Item,
+        copy: Copy,
+        sizes: Mapping[str, tuple[str, float]],
+        height: str | None,
+    ) -> None:
+        """A block, post, rib or tab turned in its face's plane: each size between its two sides, each side's own
+        rectangle (its foot's size across, and as far out of the face as it rises), along the copy's turned axes; its
+        height from the face it stands on to its far face."""
+        assert copy.axes is not None and copy.lo is not None and copy.hi is not None
+        up = _v(copy.direction)
+        h = _mm(item.get(height)) if height is not None else 0.0
+        k_up = int(np.argmax(np.abs(up)))
+        rise = copy.hi[k_up] - copy.lo[k_up]  # the box round it is its own along its face's normal
+        middle = _v(copy.point) + rise / 2 * up
+        foot = _entry(item.kind).footprint(item, {}, copy.axes)  # before it is turned: along its own axes
+        across = {copy.axes[0]: 2 * foot.half[0], copy.axes[1]: 2 * foot.half[1]}
+        for name, (axis, value) in sizes.items():
+            a = _v(self.along(copy, axis))
+            other = copy.axes[1] if axis == copy.axes[0] else copy.axes[0]
+            b = self.along(copy, other)
+            half = (across[other] / 2, rise / 2)
+            plus = Plane(_t(middle + value / 2 * a), _t(a), first=b, half=half)
+            minus = Plane(_t(middle - value / 2 * a), _t(-a), first=b, half=half)
+            if not (self.seen(plus, half) and self.seen(minus, half)):
+                self.skip(
+                    item,
+                    name,
+                    Buried(f"its {axis} faces aren't both on the part's surface"),
+                )
+                continue
+            self.check(
+                item,
+                name,
+                "size",
+                value,
+                self.tol(item.get(name)),
+                Between(plus, minus, _t(a)),
+                copy.index,
+            )
+            self.size(item, value)
+        if height is None:
+            return
+        first, second = copy.axes
+        reach = (across[first] / 2, across[second] / 2)
+        top = Plane(
+            _t(_v(copy.point) + h * up),
+            _t(up),
+            first=self.along(copy, first),
+            half=reach,
+        )
+        self.size(item, h)
+        if not self.seen(top, reach):
+            self.skip(
+                item, height, Buried("its far face is nowhere on the part's surface")
+            )
+            return
+        self._height(item, height, copy, top, None, h, max(reach))
+
     def _cut_depth(
         self,
         item: Item,
@@ -798,7 +875,9 @@ class _Compiler:
             return
         at = _t(_v(copy.point) - depth * _v(copy.direction))
         floor = (
-            Plane(at, copy.direction, first=unit("+" + outline[0]), half=outline[1:])
+            Plane(
+                at, copy.direction, first=self.along(copy, outline[0]), half=outline[1:]
+            )
             if outline is not None
             else Plane(at, copy.direction, reach)
         )
@@ -1034,7 +1113,7 @@ class _Compiler:
         r = width / 2
         out = _v(copy.point) + (length - r) * _v(copy.direction)
         return Round(
-            _t(out), unit("+" + str(thin)), r, -thickness / 2, thickness / 2, False
+            _t(out), self.along(copy, str(thin)), r, -thickness / 2, thickness / 2, False
         )
 
     def _outline_edge_ref(self, face: FlatFace, axis: str, sign: float) -> Ref | str:
@@ -1175,6 +1254,12 @@ class _Compiler:
                 if name.startswith("place."):
                     self.skip(item, name, "its side is threaded all along: the thread's profile is held about its axis",
                               "its thread's check")  # fmt: skip
+            return
+        if any(copy.turn is not None for copy in copies):
+            for name in leaves(item):
+                if name.startswith("place."):
+                    self.skip(item, name, "it is turned in its face: where it is, and its turn, are as the definitions "
+                              "place it, the solver's placement agreeing", "the two placements' agreement")  # fmt: skip
             return
         given = item.get("place")
         place = given if isinstance(given, Place) else Place({}, None, None, None, None)

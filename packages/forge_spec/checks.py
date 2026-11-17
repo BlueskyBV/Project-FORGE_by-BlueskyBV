@@ -192,6 +192,8 @@ def _provenances(
             yield at + pointer(axis), position, None
         if raw.angle is not None:
             yield at + pointer("angle"), raw.angle, None
+        if raw.turn is not None:
+            yield at + pointer("turn"), raw.turn, None
         if raw.pattern is not None:
             here = at + pointer("pattern", raw.pattern.kind)
             if raw.pattern.axis is not None and raw.pattern.axis_provenance is not None:
