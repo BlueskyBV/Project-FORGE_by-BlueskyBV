@@ -232,6 +232,18 @@ class ATurnedItemsFarFaceTakesThings(unittest.TestCase):
         report = _report(_boss(on="plate"), _post(on="boss", face="+end", sizes=(4.0, 3.0, 2.0)))
         self.assertEqual(report.layout.faces[("post", 0)]["+z"].depth_below, 2.0 + 5.0 + 8.0)
 
+    def test_a_turned_pockets_floor(self) -> None:
+        # Turned with it, the material under its face less its depth under it; a hole there placed along its axes.
+        pocket = {"id": "pocket", "kind": "pocket", "words": cite(B, "slot"), "on": {"item": "plate", "face": "+z"},
+                  "shape": {"choose": "rectangle", "from": {"assumed": "square"}}, "length": assumed("long", 30.0),
+                  "width": assumed("wide", 16.0), "corner_radius": assumed("round", 2.0), "depth": assumed("deep", 3.0),
+                  "place": {"turn": assumed("turned", 30.0, "deg")}}  # fmt: skip
+        report = _report(pocket, _hole({"u": {"offset": assumed("right", 6.0)}}, on="pocket", face="bottom"))
+        self.assertEqual(_placing(report), [])
+        floor = report.layout.faces[("pocket", 0)]["bottom"]
+        self.assertEqual((floor.turn, floor.half, floor.depth_below, floor.less), (30.0, (15.0, 8.0), 5.0, None))
+        _close(self, _origin(report, "hole"), (6 * C30, 6 * S30, 5.0))
+
     def test_an_outline_that_doesnt_turn_waits(self) -> None:
         extrusion = {"id": "ridge", "kind": "extrusion", "words": cite(B, "post"), "on": {"item": "post", "face": "+z"},
                      "length": assumed("out", 3.0),

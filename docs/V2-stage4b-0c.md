@@ -517,14 +517,15 @@ program:
   read an item on a turned face as move 1's turned item. `FlatFace.turn`
   turns a face's frame (`Frame.turned`); what stands on a turned face
   carries its turn to its far face (a round item's too, its other faces
-  closed); a round pocket's floor turns with its face; an item whose
-  outline neither turns nor is round is UNABLE there.
+  closed); a pocket's floor turns with its face, and a turned pocket's
+  takes things too, on a face with the same material under all of it; an
+  item whose outline neither turns nor is round is UNABLE there.
 - **The judge's placement** reads `u` and `v` as the face's axes
   (`in_axes`), turns its own faces (`FlatFace.turn`), gives a copy on a
   turned face its turn as placed (`Copy.turn`, both turns added in
   degrees, so a quarter turn stays exact), and keeps a turned box's far
-  face by the same rule, the same material under a face read alike for a
-  turned far face and a lean (`same_under`: a standing item's far face
+  face and a turned pocket's floor by the same rule, the same material
+  under a face read alike for those and a lean (`same_under`: a standing item's far face
   wholly over a host with the same material under all of it is such a
   face). **The oracle** builds along the copy's turned axes; **the check
   compiler** names each check and each note as the draft names its leaf
@@ -550,11 +551,12 @@ Tests: `tests/test_v2_spec_faceaxes.py` (read, written and cited; the same
 item said either way placed the same on every face; the far face's turn and
 material, the part's axes a fault there, turns adding, a round item the same
 turned, a face without the same material under all of it closed, an outline
-that doesn't turn UNABLE, leaning and in a pattern on it; the views),
+that doesn't turn UNABLE, leaning and in a pattern on it, a turned
+pocket's floor; the views),
 `tests/test_v2_plan_faceaxes.py` (built and judged: along `u` and `v` on the
 plate; on a turned post's or block's far face a hole through or blind, a
 slot along its own axis, a round pocket, a boss, a post turned again, a
-leaning hole and a row of holes; what is there turned half a degree more
+leaning hole and a row of holes; a hole in a turned pocket's floor; what is there turned half a degree more
 fails face accounting; the second kernel agrees).
 
 **1b, the ability:**

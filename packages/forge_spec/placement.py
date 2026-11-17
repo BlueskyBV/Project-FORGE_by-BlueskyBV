@@ -2265,9 +2265,7 @@ def _flat_numbered(item: Item, placed: Instance, face: Face, host: tuple[str, in
     item = layout.items[item.id]  # as placed
     key = (item.id, placed.index)
     if turned_outline(item, layout, face.part_axes) is not None:
-        layout.faces.setdefault(key, {})
-        for name in KINDS[item.kind].faces:
-            layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
+        _turned_floor(item, placed, face, copy, layout)
         return
     SOLVE[item.kind].floor(item, placed, face, copy.material, key, layout)
     if face.turn != 0.0:
@@ -2275,6 +2273,21 @@ def _flat_numbered(item: Item, placed: Instance, face: Face, host: tuple[str, in
         for name, found in list(faces.items()):
             if isinstance(found, FlatFace):
                 faces[name] = replace(found, turn=face.turn, turn_sources=face.turn_sources)
+
+
+def _turned_floor(item: Item, placed: Instance, face: FlatFace, copy: _Copy, layout: Layout) -> None:
+    """A turned pocket's floor (schema 1.4): turned with it, the material under its face less its depth under it, where
+    its face has the same material under all of it; closed on any other face, as a turned cut's other faces are."""
+    key = (item.id, placed.index)
+    layout.faces.setdefault(key, {})
+    SOLVE[item.kind].floor(item, placed, face, copy.material, key, layout)
+    turn = _turn_value(item)
+    for name in KINDS[item.kind].faces:
+        found = layout.faces[key].get(name)
+        if isinstance(found, FlatFace) and uniform(face) and turn is not None:
+            layout.faces[key][name] = replace(found, less=None, turn=degrees(turn), turn_sources=((item.id, "place"),))
+        elif name not in layout.closed.get(key, {}):
+            layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
 
 
 def _side_copies(item: Item, face: Face, host: tuple[str, int, str], host_count: int, layout: Layout, at: str,

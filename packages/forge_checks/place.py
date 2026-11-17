@@ -1600,6 +1600,7 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
                 if isinstance(found, FlatFace):
                     faces[name] = replace(found, turn=face.turn)
             return replace(copy, turn=by)
+        kept = _turned_floor(item, faces, face, degrees, layout)
     elif far is not None and isinstance(faces.get(far), FlatFace) and item.id not in layout.shells:
         kept = _turned_far(item, faces[far], face, at, degrees, round_)  # type: ignore[arg-type]
     for name in list(faces) + [n for n in KINDS[item.kind].faces if n not in faces]:
@@ -1619,6 +1620,20 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
         lo[i] = middle[k] + foot.centre[k] - foot.half[k]
         hi[i] = middle[k] + foot.centre[k] + foot.half[k]
     return replace(copy, turn=by, lo=(lo[0], lo[1], lo[2]), hi=(hi[0], hi[1], hi[2]))
+
+
+def _turned_floor(item: Item, faces: dict[str, Face], face: FlatFace, degrees: float, layout: _Layout) -> FlatFace | None:
+    """A turned pocket's floor (pocket.md, place.md "A turned item's far face"): turned with it, its outline along its
+    own axes about its centre, the material under its face less its depth under it, where its face has the same
+    material under all of it; else None (closed)."""
+    floor = faces.get("bottom")
+    host = same_under(face)
+    if not isinstance(floor, FlatFace) or host is None or not isinstance(floor.material, Less):
+        return None
+    turned = replace(floor, turn=degrees)
+    c1, c2 = turned.frame.plane(floor.centre)
+    foot = _entry(item.kind).footprint(item, layout.diameters, face.axes).moved(c1, c2)
+    return replace(turned, outline=foot, material=Solid(host - floor.material.depth))
 
 
 def _turned_far(item: Item, far: FlatFace, face: FlatFace, at: Point, degrees: float, round_: bool) -> FlatFace | None:

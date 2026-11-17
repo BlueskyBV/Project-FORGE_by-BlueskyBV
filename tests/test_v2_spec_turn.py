@@ -147,7 +147,9 @@ class WhatFollowsFromATurn(unittest.TestCase):
                   "place": {"turn": {"value": 30, "unit": "deg", "from": said(B, "30 degrees")}}}  # fmt: skip
         report = _report(pocket)
         self.assertEqual(_placing(report), [])
-        self.assertIn("bottom", report.layout.closed[("pocket", 0)])
+        # Its floor takes things, turned with it (schema 1.4): the plate's 8 mm less its 5 under it.
+        floor = report.layout.faces[("pocket", 0)]["bottom"]
+        self.assertEqual((floor.turn, floor.half, floor.depth_below), (30.0, (10.0, 5.0), 3.0))
         deep = copy.deepcopy(pocket)
         deep["depth"] = assumed("too deep", 12.0)
         self.assertTrue(_says(_report(deep), "deep in 8 mm of material"))

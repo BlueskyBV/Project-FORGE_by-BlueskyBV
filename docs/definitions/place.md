@@ -75,8 +75,9 @@ move).
 ### A turned item's far face
 
 The face of a turned block, post, rib or square-ended tab opposite the one
-it stands on (its top, or a tab's end) faces the way its host's face does;
-its axes are turned in its plane with it, by its turn. On a turned face
+it stands on (its top, or a tab's end), and a turned pocket's floor, face
+the way its host's face does; its axes are turned in its plane with it, by
+its turn. On a turned face
 itself, a turn is the face's and the item's own together: turns in one
 plane add. What is placed on such a face is placed along its own axes, `u`
 and `v`, from its own edges and centre, and is turned with it: an item
@@ -89,10 +90,12 @@ for a later step there.
 Under it is the turned item's own height of material and, where its turned
 outline lies wholly on a host with the same material under all of it
 (frame.md), the host's too, under all of it: a cut right through goes
-through both and comes out where a cut through the host would. Where it
-stands partly off its host's face, or on a face without the same material
-under all of it, its far face takes nothing yet. Its other faces take
-nothing yet either, nor does a leaning item's.
+through both and comes out where a cut through the host would. Under a
+turned pocket's floor is the material under its face less its depth, where
+that face has the same material under all of it. Where a turned item stands
+partly off its host's face, or on (or is cut into) a face without the same
+material under all of it, its far face or floor takes nothing yet. Its other
+faces take nothing yet either, nor does a leaning item's.
 
 ### Leaning on the face (`tilt`)
 

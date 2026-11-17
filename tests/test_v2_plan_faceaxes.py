@@ -101,6 +101,12 @@ CASES: dict[str, Any] = {
     "a block turned": lambda b: [_post(b, 20.0, kind="block", sizes=(30.0, 20.0, 10.0)), _hole(b, _right(-7.0))],
     "a leaning hole": lambda b: [_post(b), _hole(b, None, depth=5.0, tilt=assumed("leaning", 20.0, "deg"),
                                                  tilt_towards={"choose": "-v", "from": {"assumed": "that way"}})],
+    "a hole in a turned pocket's floor": lambda b: [{
+        "id": "pocket", "kind": "pocket", "words": cite(b, "pocket"), "on": {"item": "plate", "face": "+z"},
+        "shape": {"choose": "rectangle", "from": {"assumed": "square"}}, "length": assumed("long", 30.0),
+        "width": assumed("wide", 16.0), "corner_radius": assumed("round", 2.0), "depth": assumed("deep", 3.0),
+        "place": {"turn": assumed("turned", 30.0, "deg")}},
+        {**_hole(b, _right(6.0), on="pocket"), "on": {"item": "pocket", "face": "bottom"}}],
     "a row of holes": lambda b: [_post(b), _hole(b, {"pattern": {"row": {
         "count": {"count": 2, "from": {"assumed": "two"}}, "pitch": assumed("apart", 14.0),
         "axis": {"choose": "u", "from": {"assumed": "along"}}}}}, count={"count": 2, "from": {"assumed": "two"}})],
