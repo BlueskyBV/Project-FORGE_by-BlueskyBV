@@ -321,6 +321,13 @@ class Motion:
                      for i in range(3))  # fmt: skip
         return Motion(rows, self.point(first.shift))  # type: ignore[arg-type]
 
+    def inverse(self) -> Motion:
+        """The motion back: its turn's transpose, then back by its shift turned so."""
+        r = self.rows
+        rows = ((r[0][0], r[1][0], r[2][0]), (r[0][1], r[1][1], r[2][1]), (r[0][2], r[1][2], r[2][2]))
+        back = Motion(rows, (0.0, 0.0, 0.0)).vector(self.shift)
+        return Motion(rows, (-back[0] + 0.0, -back[1] + 0.0, -back[2] + 0.0))
+
     def frame(self, f: FaceFrame) -> FaceFrame:
         return FaceFrame(self.point(f.origin), self.vector(f.u), self.vector(f.v), self.vector(f.n))
 

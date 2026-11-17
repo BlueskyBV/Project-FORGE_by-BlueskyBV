@@ -687,8 +687,10 @@ out of it waits for a later step. A turned block's or post's sides take \
 items too, each named as with it upright (its "+x" side the end its length \
 runs out to along the face's first axis), placed along the side's own "u" \
 and "v" as with it upright, then turned with it; the face it is joined by \
-is none. A turned item's other faces take nothing yet, and neither its \
-edges nor those of what is on its faces are rounded.
+is none. A turned item's other faces take nothing yet. A turned item's \
+edges, and those of what is on its faces, are rounded and chamfered as with \
+it upright (a turned post's "vertical" edges are its own four, turned with \
+it); a leaning item's aren't yet.
 
 A hole, a boss or a post on a flat face may lean: "tilt": angle (more than \
 0, at most 75 deg) from square to the face, towards "tilt_towards", one of \

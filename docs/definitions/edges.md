@@ -44,6 +44,17 @@ position or by number.
   shape is worked out from the spec, before anything is built, and you are
   asked.
 
+### A turned item's edges
+
+A turned item's edge sets (place.md, "Turned in the face"), and those of
+what is on a turned item's faces ("A turned item's faces"), are the edges
+they are with it upright and unturned, turned with it: a turned post's
+`vertical` edges are its four upright edges, each turned about the line
+through its point; a hole's `top` edge on a turned post's side is its rim
+there. Each is rounded or chamfered as it would be upright, every rule
+above holding as it does there. A leaning item's edges are not rounded or
+chamfered yet.
+
 ### `joint`
 
 The inside corner where the item meets the item named in `where_meets`. One

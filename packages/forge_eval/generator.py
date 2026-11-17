@@ -2679,6 +2679,8 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     p, n = _v(copy.point), _v(copy.direction)
     axes = copy.axes or ("x", "y")
     e1, e2 = (_v(unit_of("+" + a)) for a in axes)
+    if host is not None:  # its own ways, turned with it where it is turned (edges.md, "A turned item's edges")
+        e1, e2 = _turned_frame(target, host.frame.u, host.frame.v)
     s = target.sizes
     half = (s["length"] / 2, s["width"] / 2)
     height = s["height"]
@@ -2897,7 +2899,7 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     else:
         axes = copy.axes
         assert axes is not None
-        e1, e2 = (_v(unit_of("+" + x)) for x in axes)
+        e1, e2 = _turned_frame(target, host.frame.u, host.frame.v)  # turned with it, where it is turned
         (h1, h2), rc = _footprint(target, axes)
         if which == "bottom" and strict and (size > min(h1, h2) / 2 or 0 < rc < size):
             # Round a rounded corner, a floor's rounding is no bigger than the corner (its ball can't reach
@@ -4063,6 +4065,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                     turned = None
                 else:
                     plan.append(turned)
+                    _round_now_and_then(seed, k, turned, plan)  # its edges turned with it (edges.md)
                     break
             try:
                 render((*plan, candidate))

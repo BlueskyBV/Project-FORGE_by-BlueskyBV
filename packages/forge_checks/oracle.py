@@ -83,6 +83,7 @@ from . import rounds
 from .convex import Side as OutlineSide
 from .convex import sides_in_turn
 from .csg import Inter, Minus, Node, Union, bound, box, leaves, toward, toward_all
+from .csg import box as csg_box
 from .items.oracle import ORACLE
 from .items.oracle._shapes import (
     Array,
@@ -98,6 +99,7 @@ from .items.oracle._shapes import (
     _vec,
 )
 from .letters import Letters2D
+from .moved import moved_chain, moved_node, upright
 from .outlines import Arc as OutlineArc
 from .outlines import Segment as OutlineSegment
 from .place import (
@@ -1162,14 +1164,21 @@ def _edge_chains(
     if entry.taken:
         return (*entry.cut_chains(target, copy, which, making.placed, size), [])
     key = (target.id, copy.index)
-    up = direction_of(copy.direction)
+    whole = making.made[key]
+    # A turned one's, or one's on a turned item's face: found as it stands upright and unturned, then moved (edges.md,
+    # "A turned item's edges").
+    base, motion = upright(copy)
+    up = direction_of(base.direction)
     assert up is not None
     if pairs is None:
         pairs = body_edges(kind, which, up)
-    whole = making.made[key]
     hollow = making.placed.hollows.get(key) if key in making.hollowed else None
-    chains, single = entry.rim_chains(target, copy, which, pairs, making, whole, hollow)
-    return chains, False, [], whole, single
+    if motion is None:
+        chains, single = entry.rim_chains(target, copy, which, pairs, making, whole, hollow)
+        return chains, False, [], whole, single
+    found, single = entry.rim_chains(target, base, which, pairs, making, moved_node(whole, motion.inverse()), hollow)
+    moved = {id(chain): moved_chain(chain, motion) for chain in found}
+    return [moved[id(c)] for c in found], False, [], whole, [(moved[id(c)], faces) for c, faces in single]
 
 
 def _extrusion_chains(
@@ -1324,17 +1333,15 @@ def _joint_chains(
             yield copy.index, [], [_joint_band(standing, copy, face, size)], None
             continue
         box = None if copy.lo is None or copy.hi is None else (copy.lo, copy.hi)
-        yield (
-            copy.index,
-            [
-                ORACLE[standing.kind].footprint_chain(
-                    standing, copy, making.corners.get((standing.id, copy.index), {})
-                ),
-                *_face_chains(face, copy),
-            ],
-            [],
-            box,
-        )
+        corners = making.corners.get((standing.id, copy.index), {})
+        base, motion = upright(copy)
+        if motion is None:
+            foot = ORACLE[standing.kind].footprint_chain(standing, copy, corners)
+        else:  # turned, or on a turned item's face: found as it stands upright and unturned, then moved (edges.md)
+            lo, hi = csg_box(moved_node(making.made[(standing.id, copy.index)], motion.inverse()))
+            foot = moved_chain(ORACLE[standing.kind].footprint_chain(standing, replace(base, lo=lo, hi=hi), corners),
+                               motion)  # fmt: skip
+        yield copy.index, [foot, *_face_chains(face, copy)], [], box
 
 
 def _by_the_copy(result: rounds.Made, box: tuple[Vec, Vec], size: float) -> rounds.Made:

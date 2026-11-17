@@ -67,10 +67,9 @@ up across outward, as unturned letters do). A round footprint turns into
 itself, so a turn of a hole, a boss, a round pocket or any other kind is a
 fault, as is a turn on a round side or with `concentric`.
 
-For now, a turned item's edges are not rounded or chamfered, it is not
-hollowed, and of its own faces only its far face takes anything (below):
-the rest come with oriented bodies (V2-stage4b-0c.md, 3.3, 1b's third
-move).
+A turned item's edges are rounded and chamfered as an upright one's are
+(edges.md, "A turned item's edges"); it is not hollowed, for now. Its far
+face and, a box's, its sides take things (below).
 
 ### A turned item's far face
 
@@ -116,8 +115,9 @@ an extrusion). What stands on it has its own faces, turned with it: a
 boss's far end, a post's far face and sides (turned again where it is
 turned there). A turned item's sides take things wherever it stands, as an
 upright item's do; a round item on one is the same turned, but its round
-side takes nothing yet; nor are a turned item's edges, or those of what is
-on its faces, rounded or chamfered yet, and nothing hollows it.
+side takes nothing yet, and nothing hollows it. Its edges, and those of
+what is on its faces, are rounded and chamfered as an upright one's are
+(edges.md, "A turned item's edges").
 
 ### Leaning on the face (`tilt`)
 

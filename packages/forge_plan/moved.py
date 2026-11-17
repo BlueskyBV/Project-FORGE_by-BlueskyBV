@@ -15,6 +15,8 @@ are proven on the part's own boxes.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
+from typing import Any
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Item
@@ -25,7 +27,7 @@ from .items.plan import PLAN
 from .tools import Context
 from .write import Box, Chain, Ref, direction, num, point
 
-__all__ = ["moved_tools", "transform_params"]
+__all__ = ["moved_tools", "moved_where", "transform_params"]
 
 Vec = tuple[float, float, float]
 
@@ -36,13 +38,19 @@ def moved_tools(chain: Chain, ctx: Context, item: Item, copy: Instance) -> list[
     motion, upright = copy.frame, copy.local
     marks = len(chain.added), len(chain.cut), len(chain.boxes.get(chain.planning, []))
     tools = PLAN[item.kind].tool(chain, ctx, item, upright, "flush")
+    key = (item.id, copy.index)
+    own = next((b for b in (*chain.added[marks[0]:], *chain.cut[marks[1]:]) if (b.item, b.copy) == key), None)
     moved = [chain.step(f"{tool}.moved", "transform", transform_params(motion), item=item.id, inputs=(tool,))
              for tool in tools]  # fmt: skip
     for found, mark in ((chain.added, marks[0]), (chain.cut, marks[1]), (chain.boxes.setdefault(chain.planning, []), marks[2])):
         found[mark:] = [_moved_box(box, motion) for box in found[mark:]]
-    key = (item.id, copy.index)
     for face, refs in list(chain.faces.get(key, {}).items()):
         chain.faces[key][face] = tuple(sorted({_moved_ref(ref, motion) for ref in refs}))
+    # Its edges are found as it stands upright (and unturned, where it is turned there too), then moved: on the box
+    # round it so (a cut's, the box its tool takes up).
+    standing = (upright.lo, upright.hi) if own is None else (own.lo, own.hi)
+    lo, hi, first = chain.motions.get(key, (*standing, None))
+    chain.motions[key] = (lo, hi, motion if first is None else motion.after(first))
     return moved
 
 
@@ -66,6 +74,25 @@ def transform_params(motion: Rigid) -> dict[str, object]:
     found.update({"rotate_axis": direction(axis), "rotate_angle": {"magnitude": num(angle), "unit": "deg"},
                   "rotate_origin": point((0.0, 0.0, 0.0))})  # fmt: skip
     return found
+
+
+def moved_where(where: Mapping[str, Any], motion: Rigid) -> dict[str, Any]:
+    """An edge query's ``where`` (a line or a circle, and the box it lies within) moved by ``motion``: the box round the
+    moved box, its corners moved."""
+    found = dict(where)
+    if "axis" in where:
+        found["axis"] = _listed(motion.vector(tuple(where["axis"])))  # type: ignore[arg-type]
+    for name in ("through", "centre"):
+        if name in where:
+            found[name] = _listed(motion.point(tuple(where[name])))  # type: ignore[arg-type]
+    lo, hi = where["within"]
+    moved_lo, moved_hi = motion.box(tuple(lo), tuple(hi))  # type: ignore[arg-type]
+    found["within"] = [_listed(moved_lo), _listed(moved_hi)]
+    return found
+
+
+def _listed(v: Vec) -> list[float]:
+    return [num(c) for c in v]
 
 
 def _moved_box(box: Box, motion: Rigid) -> Box:

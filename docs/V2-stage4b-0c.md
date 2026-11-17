@@ -4,9 +4,9 @@ Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
 1b's first and second moves done (items turned in their face, schema 1.2;
 holes, bosses and posts leaning on it, schema 1.3); its third move's first
 step done (positions along a face's own axes and a turned item's far face,
-schema 1.4) and its second (a turned box's sides, no schema minor);
-oriented bodies (schema 1.5) and schema 2.0 next, a leaning item's faces
-after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
+schema 1.4), its second (a turned box's sides) and 2c (a turned item's
+edges, rounded), neither a schema minor; oriented bodies (schema 1.5)
+and schema 2.0 next, a leaning item's faces after item 2b. Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -612,6 +612,36 @@ a turned post's sides: a hole right through or blind, a slot, a round
 pocket, a boss, a post turned there, a leaning hole, a row of holes, a hole
 in the side of a post turned on its side; what is there turned half a degree
 more fails face accounting; the second kernel agrees and names alike).
+
+**1b's third move, step 2c, as built (revision 10, 17 November 2026): a
+turned item's edges.** No schema minor (what was UNABLE now builds). A
+rounding or chamfer of a turned item's edge set, or of what is on a turned
+item's faces, rounds the edges the set names with the item upright and
+unturned, turned with it (edges.md, "A turned item's edges"); a leaning
+item's stay a later move. In each program:
+
+- **The solver** no longer refuses them (its edge sets are by face names,
+  the same either way).
+- **The judge's oracle** finds a copy's edges as it stands upright and
+  unturned (`forge_checks.moved.upright`: its turn in its face, then the
+  motion of what it is on; `Motion.inverse`), on its solid moved back, then
+  moves each chain onto the part (`moved_chain`); a joint's foot the same.
+  What it rounds is then found on the part as any rounding's is.
+- **The planner** names a turned box's sides by the way each faces turned
+  (an extrusion's `side` faces) and keeps, for a turned box and for what is
+  built upright on a turned item's face, the box round it upright and the
+  motion onto the part (`Chain.motions`); its edge queries are found on that
+  box, then moved (`moved_where`), each counted where it is.
+- **The generator** rounds a turned item now and then from the stream that
+  rounds the rest, its truth in the item's turned frame (`_round_box`,
+  `_round_cut`).
+
+Tests: `tests/test_v2_plan_turnedges.py` (built and judged: a turned post's
+vertical, top and joint edges, a turned block's top edges bevelled and its
+vertical edges a quarter turn round, a turned rib's top edges, a turned
+pocket's floor, a turned slot's mouth, a boss's rim and a hole's mouth on a
+turned post's side and on its far face, a block turned on its side, a post
+turned on its far face; an edge left out fails; the second kernel agrees).
 
 **1b, the ability:**
 

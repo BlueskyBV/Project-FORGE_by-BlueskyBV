@@ -406,7 +406,32 @@ def turned_prism(chain: Chain, item: Item, copy: Instance, axes: tuple[str, str]
     chain.name(item.id, k, ("-" if up[0] == "+" else "+") + axis, Ref(tool, near))
     h1, h2 = turned_halves(shape)
     chain.add_box(Box(*_span_box(w, u, 0.0, height, {axes[0]: h1, axes[1]: h2}), item.id, k))
+    _turned_sides(chain, item, copy, axes, height, tool)
     return tool
+
+
+def _turned_sides(chain: Chain, item: Item, copy: Instance, axes: tuple[str, str], height: float, tool: str) -> None:
+    """A turned box's sides, each named by the way it faces as it is turned (an extrusion's ``side`` faces), and the box
+    round it as it stands unturned with the turn that moves it onto the part: what its edges are found on (edges.md,
+    "A turned item's edges")."""
+    from forge_spec.frames import Rigid
+
+    from forge_plan.items.plan import PLAN
+
+    turn = turn_of(item)
+    if turn is None:
+        return
+    c, s = turn
+    e1, e2 = unit("+" + axes[0]), unit("+" + axes[1])
+    ways = {axes[0]: tuple(c * e1[i] + s * e2[i] + 0.0 for i in range(3)),
+            axes[1]: tuple(c * e2[i] - s * e1[i] + 0.0 for i in range(3))}  # fmt: skip
+    for axis, way in ways.items():
+        chain.name(item.id, copy.index, "+" + axis, Ref(tool, "side", way))  # type: ignore[arg-type]
+        chain.name(item.id, copy.index, "-" + axis, Ref(tool, "side", tuple(-x + 0.0 for x in way)))  # type: ignore[arg-type]
+    halves, _ = PLAN[item.kind].section(item, axes)
+    lo, hi = _span_box(copy.origin, copy.normal, 0.0, height, halves)
+    square = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+    chain.motions[(item.id, copy.index)] = (lo, hi, Rigid.turn_about(copy.origin, square, c, s))
 
 
 # ----------------------------------------------------------------------

@@ -273,6 +273,10 @@ class Chain:
     early: dict[str, list[Early]] = field(default_factory=dict)
     #: Each rounding made early, on each copy (by its index).
     made_early: set[tuple[str, int]] = field(default_factory=set)
+    #: A copy made upright and unturned, then moved onto the part (a turned box; what is on a turned item's face): the
+    #: box round it as it stands so (None for a cut), and the motion (a ``forge_spec.frames.Rigid``) that moves it.
+    #: Its edges are found so, then moved (edges.md, "A turned item's edges").
+    motions: dict[tuple[str, int], tuple[Vec | None, Vec | None, Any]] = field(default_factory=dict)
 
     # -- steps -----------------------------------------------------------------------------
     def step(self, step_id: str, op: str, params: Mapping[str, Any], *, item: str,

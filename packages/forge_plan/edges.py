@@ -25,6 +25,7 @@ tangent closure the build makes adds nothing unnamed.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import replace
 from typing import Any
 
 from forge_spec.draft import EdgeSet, Faces, Item
@@ -147,15 +148,38 @@ def _open_faces(shell: Item | None) -> set[str]:
     return set(opened.faces) if isinstance(opened, Faces) else set()
 
 
+class _Moved(Queries):
+    """Queries found on a copy as it stands upright and unturned, each moved onto the part with it (edges.md, "A
+    turned item's edges")."""
+
+    def __init__(self, queries: Queries, motion: Any, chain: Chain, key: tuple[str, int]) -> None:
+        super().__init__(queries.found)
+        self.motion, self.chain, self.key = motion, chain, key
+
+    def add(self, a: Sequence[Ref], b: Sequence[Ref], *, where: Mapping[str, Any], count: tuple[int, int]) -> None:
+        from .moved import moved_where
+
+        moved = moved_where(where, self.motion)
+        if count == _count(self.chain, where, self.key):  # counted where it stands upright: count it where it is
+            count = _count(self.chain, moved, self.key)
+        super().add(a, b, where=moved, count=count)
+
+
 def _own(chain: Chain, queries: Queries, target: Item, copy: Instance, which: str,
          shell: Item | None, part: str | None) -> frozenset[frozenset[str]]:  # fmt: skip
-    """An item's own edges (not a joint): a box-like item's, a round item's rims, a dome's, a round tab's."""
+    """An item's own edges (not a joint): a box-like item's, a round item's rims, a dome's, a round tab's; a turned
+    one's, or one's on a turned item's face, found as it stands upright and unturned, then moved."""
     names = chain.names_of(target.id, copy.index)
     key = (target.id, copy.index)
     kind = target.kind
     open_faces = _open_faces(shell)
+    motion = None
+    if key in chain.motions:
+        lo, hi, motion = chain.motions[key]
+        copy = replace(copy.local or copy, lo=lo, hi=hi)
+        queries = _Moved(queries, motion, chain, key)
     if PLAN[kind].box_like(target):
-        box = _box(chain, key)
+        box = _box(chain, key) if motion is None else Box(copy.lo, copy.hi, target.id, copy.index)  # type: ignore[arg-type]
         pairs = pairs_for(target, copy, which)
         if part is not None:
             pairs = [p for p in pairs if bool(open_faces & set(p)) == (part == "after")]
@@ -240,6 +264,11 @@ def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str,
             raise PlanError(
                 f"{target.id}#{copy.index} has no box in the part", item=target.id
             )
+        motion = None
+        if key in chain.motions:  # on a turned item's face: found as it is cut upright, then moved
+            lo, hi, motion = chain.motions[key]
+            box, copy = Box(lo, hi, target.id, copy.index), copy.local or copy  # type: ignore[arg-type]
+            queries = _Moved(queries, motion, chain, key)
         if copy.host is None:
             raise PlanError("a cut is on a face", item=target.id)
         host = chain.names_of(copy.host[0], copy.host[1]).get(copy.host[2], ())
@@ -251,29 +280,15 @@ def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str,
             )
             mouth_lo, mouth_hi = _flat_at(box, copy)
             where: dict[str, Any] = {"within": _within(mouth_lo, mouth_hi)}
-            queries.add(
-                walls,
-                host,
-                where=where,
-                count=(
-                    0,
-                    2 * _pieces(target) + 2 * _crossing(chain, mouth_lo, mouth_hi, key),
-                ),
-            )
+            crossing = _crossing(chain, *(motion.box(mouth_lo, mouth_hi) if motion else (mouth_lo, mouth_hi)), key)
+            queries.add(walls, host, where=where, count=(0, 2 * _pieces(target) + 2 * crossing))
         elif which == "bottom":
             if not PLAN[target.kind].floored:
                 raise PlanError(f"a {target.kind} has no bottom edges", item=target.id)
             floor = names.get("bottom", ())
             where = {"within": _within(box.lo, box.hi)}
-            queries.add(
-                names["wall"],
-                floor,
-                where=where,
-                count=(
-                    0,
-                    2 * _pieces(target) + 2 * _crossing(chain, box.lo, box.hi, key),
-                ),
-            )
+            crossing = _crossing(chain, *(motion.box(box.lo, box.hi) if motion else (box.lo, box.hi)), key)
+            queries.add(names["wall"], floor, where=where, count=(0, 2 * _pieces(target) + 2 * crossing))
         else:
             raise PlanError(f"a {target.kind} has no {which!r} edges", item=target.id)
 

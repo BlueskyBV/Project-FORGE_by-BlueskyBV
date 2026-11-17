@@ -618,11 +618,15 @@ def box_chains(
     whole: Node,
     hollow: Hollow | None,
 ) -> tuple[list[rounds.Chain], list[tuple[rounds.Chain, frozenset[str]]]]:
-    """A box-like body's edges a rounding names: all round one face, its corners as earlier roundings left them, or each edge alone (with a rim's inside edge where an open face meets the hollow's wall); and each single edge with its two faces."""
-    if copy.turn is not None:
-        raise OracleError(
-            f"{target.id} is turned in its face: its edges aren't rounded, for now"
-        )
+    """A box-like body's edges a rounding names: all round one face, its corners as earlier roundings left them, or each edge alone (with a rim's inside edge where an open face meets the hollow's wall); and each single edge with its two faces.
+
+    A turned one's, or one's on a turned item's face, are found as with it
+    upright and unturned (:func:`forge_checks.oracle._edge_chains`), then
+    moved onto the part with it (edges.md, "A turned item's edges").
+    """
+    if copy.lean is not None:
+        raise OracleError(f"{target.id} leans on its face: its edges aren't rounded, for now")
+    assert copy.turn is None and copy.frame is None, "found as it stands upright and unturned (_edge_chains)"
     key = (target.id, copy.index)
     chains: list[rounds.Chain] = []
     single: list[tuple[rounds.Chain, frozenset[str]]] = []

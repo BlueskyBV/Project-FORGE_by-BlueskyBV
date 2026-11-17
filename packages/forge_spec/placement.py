@@ -1330,7 +1330,8 @@ def turned_copies_overlap(
 def _check_turned_edges(
     spec: PartSpec, layout: Layout, position: Mapping[str, int]
 ) -> None:
-    """A rounding or chamfer of a turned or leaning item's edges is a later move; so is a thread on a leaning rod."""
+    """A rounding or chamfer of a leaning item's edges is a later move; so is a thread on a leaning rod. A turned
+    item's edges, and those of what is on a turned item's faces, are rounded as with it upright (edges.md)."""
     for item in spec.items:
         of = item.get("of")
         if SOLVE[item.kind].threads and isinstance(of, str) and leaning(layout.items.get(of) or item):
@@ -1340,14 +1341,9 @@ def _check_turned_edges(
         if not isinstance(edges, EdgeSet):
             continue
         target = layout.items.get(edges.of)
-        moved = target is not None and any(i.frame is not None for i in layout.instances.get(target.id, []))
-        if target is None:
-            continue
-        own = leaning(target) or turned_outline(target, layout, ("x", "y")) is not None
-        if own or moved:
-            how = "is turned in, or leans on, its face" if own else "is on a turned item's face"
+        if target is not None and leaning(target):
             layout.issue("unable", pointer("items", position[item.id], "edges"),
-                         f"{edges.of} {how}: Forge rounds and chamfers such an item's edges in a later move")  # fmt: skip
+                         f"{edges.of} leans on its face: Forge rounds and chamfers such an item's edges in a later move")  # fmt: skip
 
 
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
