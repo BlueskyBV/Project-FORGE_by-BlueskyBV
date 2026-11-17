@@ -105,6 +105,7 @@ from .outlines import Segment as OutlineSegment
 from .place import (
     Copy,
     FlatFace,
+    Motion,
     Placed,
     RoundSide,
     body_edges,
@@ -1063,7 +1064,10 @@ def _hollows(shell: Item, making: _Making) -> list[Step]:
     for copy in making.placed.copies[body.id]:
         key = (body.id, copy.index)
         hollow = making.placed.hollows[key]
-        bands = ORACLE[body.kind].wall_bands(body, copy, making.placed)
+        # A turned body (step 5.1): hollowed as it stands upright, its hollow then turned with it.
+        upright_copy, motion = upright(copy)
+        back = None if motion is None else motion.inverse()
+        bands = ORACLE[body.kind].wall_bands(body, upright_copy, making.placed)
         off: dict[str, list[Node]] = {face: [] for face in bands}
         reaches: list[Node] = []
         zones: list[Node] = []
@@ -1071,9 +1075,10 @@ def _hollows(shell: Item, making: _Making) -> list[Step]:
         extent = 4 * float(max(np.array(copy.hi) - np.array(copy.lo))) + 10
         deepest = max(hollow.walls.values())
         for result in making.own.get(key, []):
-            zones += [_grown(zone, deepest) for zone in result.zones]
-            for _, edge, a, b in result.pieces:
-                faces = (_face_of(body, copy, edge, 1), _face_of(body, copy, edge, 2))
+            zones += [_grown(zone if back is None else moved_node(zone, back), deepest) for zone in result.zones]
+            for _, moved_edge, a, b in result.pieces:
+                edge = moved_edge if back is None else moved_chain(rounds.Chain((moved_edge,)), back).edges[0]
+                faces = (_face_of(body, upright_copy, edge, 1), _face_of(body, upright_copy, edge, 2))
                 for side, face in ((1, faces[0]), (2, faces[1])):
                     if face not in bands:
                         raise OracleError(
@@ -1095,19 +1100,25 @@ def _hollows(shell: Item, making: _Making) -> list[Step]:
             for face, band in bands.items()
         ]
         reach = _union([*walls, *reaches])
-        whole = making.made[key]
+        whole = making.made[key] if back is None else moved_node(making.made[key], back)
+
         cut: Node = Minus(whole, reach)
         if zones:
             zone = _union(zones)
-            found.append(Step(shell.id, copy.index, False, Minus(cut, zone)))
+            found.append(Step(shell.id, copy.index, False, _placed_by(Minus(cut, zone), motion)))
             found.append(
-                Step(shell.id, copy.index, False, Inter((whole, zone)), INNER, True)
+                Step(shell.id, copy.index, False, _placed_by(Inter((whole, zone)), motion), INNER, True)
             )
         else:
-            found.append(Step(shell.id, copy.index, False, cut))
-        making.made[key] = Inter((whole, reach))
+            found.append(Step(shell.id, copy.index, False, _placed_by(cut, motion)))
+        making.made[key] = _placed_by(Inter((whole, reach)), motion)
         making.hollowed.add(key)
     return found
+
+
+def _placed_by(node: Node, motion: Motion | None) -> Node:
+    """A node made as its body stands upright, moved onto the part (none: as it is)."""
+    return node if motion is None else moved_node(node, motion)
 
 
 def _union(nodes: Sequence[Node]) -> Node:

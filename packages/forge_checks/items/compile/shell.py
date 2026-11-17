@@ -43,12 +43,12 @@ class Shell(CompileKind):
             for name, wall in hollow.walls.items():
                 face = faces.get(name)
                 if isinstance(face, FlatFace):
-                    n = _v(unit(face.normal))
+                    n = _v(face.placed_frame.n)  # on the part: a turned body's moved (step 5.1)
                     spot = c._wall_spot(face, wall)
-                    outer = Plane(_t(spot), unit(face.normal), _WALL_REACH)
+                    outer = Plane(_t(spot), _t(n), _WALL_REACH)
                     inner = Plane(_t(spot - wall * n), _t(-n), _WALL_REACH)
                     if c.seen(outer) and c.seen(inner):
-                        walls.append((wall, Between(outer, inner, unit(face.normal))))
+                        walls.append((wall, Between(outer, inner, _t(n))))
                 elif name == "surface":
                     main = c._main(body, c.copies(body)[index])
                     if isinstance(main, BallCentre):

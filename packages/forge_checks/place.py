@@ -1700,8 +1700,10 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
     elif far is not None and isinstance(faces.get(far), FlatFace) and item.id not in layout.shells:
         kept = _turned_far(item, faces[far], face, at, degrees, round_)  # type: ignore[arg-type]
     motion = None
-    if not entry.taken and not round_ and item.id not in layout.shells and copy.lo is not None:
-        # A turned box's other faces are its own, turned with it: kept as they are upright, moved by its turn.
+    hollowed = item.id in layout.shells
+    if not entry.taken and not round_ and copy.lo is not None:
+        # A turned box's other faces are its own, turned with it: kept as they are upright, moved by its turn; hollowed
+        # (step 5.1), its hollow made as it stands upright, its far face and its inside faces turned so too.
         e1, e2 = unit("+" + face.axes[0]), unit("+" + face.axes[1])
         square = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
         motion = Motion.about(copy.point, square, by)
@@ -1709,7 +1711,7 @@ def _turned_copy(item: Item, copy: Copy, face: FlatFace, at: Point, degrees: flo
         if (kept is not None and name == kept.name) or name in layout.closed.get(key, {}):
             continue
         own = faces.get(name)
-        if motion is not None and name != far and isinstance(own, FlatFace) and not name.startswith("inner "):
+        if motion is not None and isinstance(own, FlatFace) and (hollowed or (name != far and not name.startswith("inner "))):
             faces[name] = replace(own, local=motion)
         else:
             layout.close(key, name, "it is turned in its face: only a turned box's faces, or a round item's far face, "

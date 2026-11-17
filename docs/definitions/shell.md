@@ -43,8 +43,11 @@ So, by kind:
   (`thickness` when no floor is given), or none when the flat face is left
   open.
 
-The shell hollows its body alone, never what stands on it. Tubes are hollow
-already, and other kinds can't be hollowed, for now.
+The shell hollows its body alone, never what stands on it. A block turned
+in its face (place.md, "Turned in the face") is hollowed as it stands
+unturned, its walls, floor and inside faces then turned with it; a body
+leaning on its face isn't hollowed yet. Tubes are hollow already, and other
+kinds can't be hollowed, for now.
 
 ## Fields
 

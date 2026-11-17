@@ -429,7 +429,7 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
         else None
     )
     if turned is not None:
-        return _standing_turned(item, inst, up, layout, at, turned, lo, hi, far, host_face)
+        return _standing_turned(item, inst, up, layout, at, turned, lo, hi, far, host_face, fields)
     faces = layout.faces[key]
     top_face = faces.get(far)
     hollowed = item.id in layout.shells and entry.body
@@ -514,11 +514,13 @@ def _turned_far(faces: dict[str, Face], far: str, item: Item, turn: Value) -> Fl
 
 
 def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: str, turned: Shape, lo: Vec,
-                     hi: Vec, far: str = "", host_face: Face | None = None) -> Instance:  # fmt: skip
+                     hi: Vec, far: str = "", host_face: Face | None = None,
+                     fields: Mapping[str, str] | None = None) -> Instance:  # fmt: skip
     """A body or feature standing turned in its face's plane, or leaning on it: its bounds the box round it turned, or
     round it leaning (its foot's section and its far end's cross-section), its faces closed but a turned one's far face
     (schema 1.4): turned with it, its height of material under it and, wholly over a host with the same material under
-    all of it, the host's too; partly off it, or on any other, it is closed for now."""
+    all of it, the host's too; partly off it, or on any other, it is closed for now. A turned block hollowed (step 5.1):
+    hollowed as it stands upright, then every face of it, its far face and its inside faces too, turned with it."""
     key = (item.id, inst.index)
     a1, a2 = inst.face_axes or FACE_AXES[up]
     lean = lean_of(item, (a1, a2)) if leaning(item) else None
@@ -533,25 +535,28 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
     faces = layout.faces.setdefault(key, {})
     for name in [name for name in faces if name not in KINDS[item.kind].faces]:
         faces.pop(name)  # a boss is always joined by its foot: its kind has no such face
-    turn = _turn_value(item) if lean is None and item.id not in layout.shells else None
-    top = _turned_far(faces, far, item, turn) if turn is not None and far in KINDS[item.kind].faces else None
+    turn = _turn_value(item) if lean is None else None
+    hollowed = turn is not None and item.id in layout.shells and SOLVE[item.kind].body
+    if hollowed:  # step 5.1: its hollow made as it stands upright (its faces so), all of it then turned below
+        _hollow(item, key, lo, hi, up, layout, dict(fields or {}))
+    top = _turned_far(faces, far, item, turn) if turn is not None and far in faces and not hollowed else None
     joined = _opposite(up)
     motion = _turned_motion(inst, (a1, a2), turn) if turn is not None else None
     for name in KINDS[item.kind].faces:
         found = faces.get(name)
-        if top is not None and name == far:
+        if (top is not None and name == far) or name in layout.closed.get(key, {}):
             continue
         if motion is not None and name == joined and inst.host is not None:
             layout.close(key, name, "fault", f"{item.id}'s {name} face is joined to {inst.host[0]}")
-        elif motion is not None and isinstance(found, FlatFace) and not name.startswith("inner "):
+        elif motion is not None and isinstance(found, FlatFace) and (hollowed or not name.startswith("inner ")):
             # Its other faces are its own, turned with it (1b's third move, step 2): placed on as upright, then turned.
             faces[name] = _moved(found, motion)
         else:
             layout.close(key, name, "unable", _TURNED_FACES.format(item.id))
     if top is not None:
         _far_material(item, inst, top, host_face, layout)
-    if item.id in layout.shells:
-        layout.issue("unable", at, f"Forge doesn't hollow a turned or leaning {item.kind} yet")
+    if item.id in layout.shells and not hollowed:
+        layout.issue("unable", at, f"Forge doesn't hollow a leaning {item.kind} yet")
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
                     (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
 

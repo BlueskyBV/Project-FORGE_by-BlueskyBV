@@ -362,9 +362,10 @@ class _Compiler:
         a grid over the face, inset by the disc's reach; at each, points over
         both discs, the part's surface where the oracle has them on it.
         """
-        n = _v(face.frame.n)
-        e1, e2 = (_v(face.frame.u), _v(face.frame.v))
-        centre = _v(face.centre)
+        frame = face.placed_frame  # on the part: a turned body's face moved (step 5.1)
+        n = _v(frame.n)
+        e1, e2 = (_v(frame.u), _v(frame.v))
+        centre = _v(frame.origin)
         r = _WALL_REACH
         ring = np.array([(0.0, 0.0)] + [(f * r * fs.cos(t), f * r * fs.sin(t))
                                         for f in (0.5, 0.95) for t in np.linspace(0, 2 * math.pi, 12, endpoint=False)])  # fmt: skip

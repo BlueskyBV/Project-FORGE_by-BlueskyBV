@@ -75,6 +75,14 @@ def _block(
         if walls[d] > 0.0:
             chain.name(body.id, copy.index, f"inner {d}", *names[d])
     chain.hollows[key] = Hollow(lo, hi, rounded=tuple(made))
+    if key in chain.motions:  # a turned body (step 5.1): its hollow made as it stands upright, then turned with it
+        from forge_plan.moved import transform_params
+
+        motion = chain.motions[key][2]
+        tool = chain.step(f"{box}.moved", "transform", transform_params(motion), item=shell.id, inputs=(tool,))
+        moved_lo, moved_hi = motion.box(lo, hi)
+        chain.cut_box(Box(moved_lo, moved_hi, shell.id, copy.index))
+        return tool
     chain.cut_box(Box(lo, hi, shell.id, copy.index))
     return tool
 

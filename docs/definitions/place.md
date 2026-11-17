@@ -68,7 +68,9 @@ itself, so a turn of a hole, a boss, a round pocket or any other kind is a
 fault, as is a turn on a round side or with `concentric`.
 
 A turned item's edges are rounded and chamfered as an upright one's are
-(edges.md, "A turned item's edges"); it is not hollowed, for now. Its far
+(edges.md, "A turned item's edges"). A turned block is hollowed as it
+stands upright, its walls, floor and inside faces then turned with it
+(shell.md). Its far
 face and, a box's, its sides take things (below).
 
 ### A turned item's far face
@@ -116,7 +118,7 @@ boss's far end, a post's far face and sides (turned again where it is
 turned there). A turned item's sides take things wherever it stands, as an
 upright item's do; a round item on one is the same turned, and what is
 placed round its side is placed as round that side upright, then moved with
-it; nothing hollows a turned item yet. Its edges, and those of
+it. Its edges, and those of
 what is on its faces, are rounded and chamfered as an upright one's are
 (edges.md, "A turned item's edges").
 

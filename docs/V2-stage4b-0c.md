@@ -8,8 +8,9 @@ schema 1.4), its second (a turned box's sides) and 2c (a turned item's
 edges, rounded), neither a schema minor, and its third (a body leans,
 schema 1.5): its schema 2.0 made with item 2b (revision 12). Step 5
 (revision 13: a turned box hollowed, round sides on a turned item's faces, a
-leaning item's edges, a thread on a leaning rod) next, then 3a's second
-part, then 3b, then 2b (a leaning item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
+leaning item's edges, a thread on a leaning rod) done but for what waits
+for item 2b and 4b.0d1; 3a's second part next, then 3b, then 2b (a leaning
+item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -711,6 +712,20 @@ turned or leaning item, and where it is lifted:
 Steps 5.1 to 5.4 come before 3a's second part, each proven as step 2 was
 (the judge's layout and oracle, the planner, the generator, the second
 kernel, the exit harness old against new).
+
+**Step 5.1, as built (revision 13).** A turned block is hollowed as it
+stands upright, then every face of it, its far face and its inside faces
+too, turned with it: the solver hollows it on its upright box and moves its
+faces; the judge's placement does the same; the oracle hollows its solid
+moved back upright (its own earlier roundings' edges and zones moved back
+with it) and moves the hollow onto the part; the check compiler measures
+each wall on the face as it is on the part; the planner makes the hollow's
+tool upright (following the body's roundings) and turns it with a
+`transform`. A leaning body's hollow waits for item 2b. Tests:
+`tests/test_v2_plan_turnedhollow.py` (its faces turned; built and judged:
+open at its top, a thicker floor, its vertical edges rounded first, a hole
+through an inside wall, its rim rounded; its hollow turned half a degree
+more fails; the second kernel agrees).
 
 **Step 5.2, as built (revision 13).** A round side keeps, as a flat face
 does, the motion that takes it onto the part (`SideFace.local`, the judge's
