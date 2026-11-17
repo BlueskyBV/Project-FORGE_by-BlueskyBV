@@ -220,6 +220,18 @@ class EveryValueIsShown(unittest.TestCase):
             views, report = views_of(*items)
             check_every_value_shown(self, report, views, kind)
 
+    def test_on_generated_parts_measured_to_an_edge(self) -> None:
+        """Generated parts with items measured to an edge that is no symmetric box's: turned in their face (seeds 6, 10,
+        33, 60), and an extrusion's or a revolution's outline, which reaches back and forth from its point unevenly
+        (39, 117). Each line from an edge to an item's edge is drawn to where the solver measured it."""
+        from forge_eval.generator import draft_of, generate
+        from forge_spec.words import number_words
+
+        for seed in (6, 10, 33, 39, 60, 117):
+            case = generate(seed)
+            report = check_draft(number_words(case.brief), draft_of(case.items), strict=True)
+            check_every_value_shown(self, report, render_views(report), seed)
+
     def test_on_the_corpus_drafts(self) -> None:
         for make in (plate_draft, flange_draft, bracket_draft):
             brief, raw = make()

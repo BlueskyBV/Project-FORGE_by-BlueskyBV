@@ -94,7 +94,7 @@ from .items.views._common import (
 from .items.views.pattern import PATTERN_VIEWS
 from .outline import Arc as OutlineArc
 from .outline import Shape
-from .placement import Instance, Layout, _along, _outline, mm, turned_outline
+from .placement import Instance, Layout, _along, _outline, _reaches, mm, turned_outline
 from .render import _line as item_line
 from .schema import FACE_AXES
 from .values import Count, Source, Value
@@ -1129,6 +1129,14 @@ class _Drawing:
         canvas = self.canvas_along(_AXES.index(face.normal[1]))
         index = (_AXES.index(face.axes[0]), _AXES.index(face.axes[1]))
         feet = bbox(_outline(self.item, self.layout, face.axes))
+        # How far it reaches back and forth from its point along each axis, as the solver measures to an edge: an
+        # extrusion's or a revolution's outline; turned in its face, the box round its turned outline.
+        shape = turned_outline(self.item, self.layout, face.axes)
+        reaches = _reaches(self.item)
+        if shape is not None:
+            (l1, l2), (u1, u2) = shape.box()
+            reaches = ((l1, u1), (l2, u2))
+        extents = reaches or ((-feet[0], feet[0]), (-feet[1], feet[1]))
         concentric = place is not None and bool(place.concentric)
         # What a place is measured to (docs/definitions/place.md): the copy
         # the solver placed; for a row, grid or rectangle measured from an
@@ -1178,8 +1186,10 @@ class _Drawing:
             if concentric:
                 continue
             position = place.axes.get(a) if place is not None else None
+            low, high = extents[k]
+            foot = -low if position is not None and (position.side or "+").startswith("-") else high
             ref, target, text, fields = _measured(
-                a, position, face.centre[i], face.half[k], anchors[k], feet[k]
+                a, position, face.centre[i], face.half[k], anchors[k], foot
             )
             self.line(canvas, along, ref, target, (edge_foot, anchors[other]), text, *fields,
                       words=_position_words(a, position) if position is not None else None)  # fmt: skip
