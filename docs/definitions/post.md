@@ -44,12 +44,22 @@ Its size along the face's second axis.
 
 How far it rises out of the face.
 
-### `tilt` and `tilt_towards`
+### `tilt`
 
-How far it leans from square to its flat face, and towards which of the
-face's axes (turned with it, so it leans along its own length or width:
-[place.md](place.md), "Leaning on the face"); its `height` is then along its
-lean. Schema 1.3.
+How far it leans from square to its flat face, towards `tilt_towards`
+([place.md](place.md), "Leaning on the face"): more than 0, and at most 75
+degrees for now; its `height` is then along its lean. Schema 1.3.
+
+### `tilt_towards`
+
+Which way it leans: one of its face's two axes, + or - (turned with it,
+so it leans along its own length or width).
+
+- `+x`, `-x`: towards +X or -X.
+- `+y`, `-y`: towards +Y or -Y.
+- `+z`, `-z`: towards +Z or -Z.
+
+Only the face's two axes are ways it may lean (on a `+z` face, `x` or `y`).
 
 ### `count`
 

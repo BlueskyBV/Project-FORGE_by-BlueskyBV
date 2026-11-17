@@ -1,7 +1,9 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
-Status: item 0 built and in its proof (16 November 2026); items 1 to 3
-and 14 to be designed here next. Companion to [V2-stage4b.md](V2-stage4b.md),
+Status (17 November 2026): items 0, 14, 1a, 2a and 3a's first part done;
+1b's first and second moves done (items turned in their face, schema 1.2;
+holes, bosses and posts leaning on it, schema 1.3); its third move
+(oriented bodies and item-local faces, schema 2.0) next. Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 

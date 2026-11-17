@@ -218,7 +218,10 @@ kind modules on the same foundation, never as a rebuild of it.
   (six machines equal on 200 seeds; every one of the 10,000 counted seeds
   passing old and new); item 14 done (schema 1.1); item 1a done for the
   solver, the judge and the generator (byte-identical), the planner's and
-  the second kernel's with 1b.
+  the second kernel's with 1b; 2a (end conditions) and 3a's first part
+  (placeable faces) done; 1b's first move (items turned in their face,
+  schema 1.2) and second (holes, bosses and posts leaning on it, schema
+  1.3) done, its third (oriented bodies, schema 2.0) next.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and
