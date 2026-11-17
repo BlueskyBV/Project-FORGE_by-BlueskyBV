@@ -85,7 +85,10 @@ def sample() -> list[int]:
 ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_Print", "shape"),
                    ("Instance", "direction"), ("Copy", "lean"), ("Feature", "tilt"),
                    ("FlatFace", "turn"), ("FlatFace", "turn_sources"), ("FlatFace", "named"), ("_Flat", "turn"),
-                   ("Feature", "own_axes")})  # fmt: skip
+                   ("Feature", "own_axes"),
+                   # 1b's third move, step 2: a turned box's sides, and what is on them, upright and moved.
+                   ("FlatFace", "local"), ("Instance", "frame"), ("Instance", "local"), ("Copy", "frame"),
+                   ("Copy", "local"), ("_Flat", "oriented")})  # fmt: skip
 
 
 def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:
