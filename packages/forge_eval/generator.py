@@ -1743,7 +1743,10 @@ def _along(pos: Position, side: _Round, half: float) -> float:
 
 
 def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: bool) -> list[Copy]:  # fmt: skip
-    """A boss or a post standing round a rod's side (place.md): out along the radius at 0, 90, 180 or 270 degrees (or a circle of them), its length round the side and its width along its axis; one copy, or a circle.
+    """A boss or a post standing round a rod's side (place.md): out along the radius at any angle (item 3b's first step;
+    at 0, 90, 180 or 270 degrees before it), or a circle of them, its length round the side and its width along its
+    axis; one copy, or a circle. At an angle that isn't a frame axis's, its far face is named as at the frame axis at
+    or below it, its axes turned with it (``oriented``).
 
     Its height is from its point on the side's surface. Its truth runs on
     into the rod past where the side curves away under its foot (the
@@ -1772,10 +1775,6 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     )
     carry = sag + REACH
     if strict:
-        if any(abs(a / 90.0 - round(a / 90.0)) > 1e-9 for a in angles):
-            raise DoesNotFitError(
-                f"{f.id} stands round a side only where its direction is a frame axis"
-            )
         if (
             along - wide < GAP + side.margin[0]
             or along + wide > side.length - GAP - side.margin[1]
@@ -1801,12 +1800,22 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     beside.add(side.key[0])
     made = []
     for k, a in enumerate(angles):
+        square = abs(a / 90.0 - round(a / 90.0)) <= 1e-9
+        below = a if square else 90.0 * math.floor(a / 90.0)
         u = (
-            np.round(fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter)
+            np.round(fs.cos(math.radians(below)) * zero + fs.sin(math.radians(below)) * quarter)
             + 0.0
         )
         third = "xyz"[int(np.argmax(np.abs(np.cross(u, w))))]
         e = _v(unit_of("+" + third))
+        up = _named(u)
+        oriented: tuple[Vec, Vec] | None = None
+        if not square:  # its own ways turned with the side about its axis by the rest (item 3b's first step)
+            sign = float(fv.dot(e, np.cross(u, w)))
+            u = fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter + 0.0
+            e = sign * np.asarray(np.cross(u, w), dtype=np.float64) + 0.0
+            ways = {third: e, side.axis: w}
+            oriented = (_t(ways[_flat_axes(up)[0]]), _t(ways[_flat_axes(up)[1]]))
         p = side.frame_at(u, along).origin
         copy_index = index + k
         if entry.round_foot:
@@ -1830,7 +1839,6 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
         )
         made.append(Copy(f.id, copy_index, side.key, _t(p), _t(u), (third, side.axis)))
         # Only its far face takes anything (place.md, for now), over its own height.
-        up = _named(u)
         fa = _flat_axes(up)
         if entry.round_far_end:
             far = (f.id, copy_index, "+end")
@@ -1843,12 +1851,13 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
                 (rounded, rounded),
                 height,
                 None,
+                oriented=oriented,
             )
         else:
             far = (f.id, copy_index, up)
             half = {third: rounded, side.axis: wide}
             part.flats[far] = _Flat(far, p + height * u, u.copy(), fa, "rect", (half[fa[0]], half[fa[1]]), height,
-                                    None)  # fmt: skip
+                                    None, oriented=oriented)  # fmt: skip
     side.taken += [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
     side.standing.append((along - wide, along + wide))
     return made
@@ -3859,6 +3868,21 @@ def _side_standing(rng: random.Random, k: int, host: str, side: _Round) -> Featu
                    rng.choice([0.0, 90.0, 180.0, 270.0]), pattern)  # fmt: skip
 
 
+#: How often a boss or a post drawn standing round a rod's side is put at any angle round it (item 3b's first step).
+_ANGLED = 0.5
+
+
+def _angled_now_and_then(rng: random.Random, f: Feature) -> Feature | None:
+    """Now and then a boss or a post standing round a rod's side at any angle round it, on a half-degree grid, and now
+    and then a circle of three, five or six of them (item 3b's first step), from a stream of its own; None when it is
+    left as drawn (at 0, 90, 180 or 270 degrees)."""
+    if rng.random() >= _ANGLED:
+        return None
+    angle = _q(rng.uniform(0.0, 360.0), 0.5)
+    pattern = Pattern("circle", {}, {"count": rng.choice([3, 5, 6])}) if rng.random() < 0.3 else f.pattern
+    return replace(f, angle=angle, pattern=pattern)
+
+
 def _side_hole(rng: random.Random, k: int, host: str, side: _Round) -> Feature:
     r = _q(rng.uniform(0.75, max(0.8, min(side.radius / 2.5, side.length / 6))))
     depth = None if rng.random() < 0.5 else _q(rng.uniform(0.5, side.radius * 0.8))
@@ -4047,6 +4071,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         leans = random.Random(f"forge-eval leans {seed} {k}")
         onto = random.Random(f"forge-eval turned faces {seed} {k}")
         spells = random.Random(f"forge-eval own axes {seed} {k}")
+        angling = random.Random(f"forge-eval round angles {seed} {k}")
         outlined = not new and profiles.random() < _PROFILED
         if _onto_turned(onto, k, plan, part, len(plan) < size):
             continue
@@ -4066,6 +4091,9 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
                 candidate = _side_hole(rng, k, key[0], part.rounds[key])
                 if standing_ok and around.random() < _AROUND:
                     candidate = _side_standing(around, k, key[0], part.rounds[key])
+                    # At any angle round it now and then, from a stream of its own (item 3b's first step): tried
+                    # first, and where it doesn't fit, as drawn.
+                    turned = _angled_now_and_then(angling, candidate)
             else:
                 candidate = _feature(rng, k, key[0], part.flats[key], standing_ok)
                 # Flush with a side, over one or touching one, it isn't turned: it is placed by that side.

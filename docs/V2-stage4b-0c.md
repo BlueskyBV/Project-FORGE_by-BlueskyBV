@@ -1,16 +1,18 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
-Status (17 November 2026): items 0, 14, 1a, 2a and 3a done;
-1b's first and second moves done (items turned in their face, schema 1.2;
-holes, bosses and posts leaning on it, schema 1.3); its third move's first
-step done (positions along a face's own axes and a turned item's far face,
-schema 1.4), its second (a turned box's sides) and 2c (a turned item's
-edges, rounded), neither a schema minor, and its third (a body leans,
-schema 1.5): its schema 2.0 made with item 2b (revision 12). Step 5
-(revision 13: a turned box hollowed, round sides on a turned item's faces, a
-leaning item's edges, a thread on a leaning rod) done but for what waits
-for item 2b and 4b.0d1; 3b next, then 2b (a leaning
-item's faces with it). Companion to [V2-stage4b.md](V2-stage4b.md),
+Status (17 November 2026): items 0, 14, 1a, 2a and 3a done, and 3b's first
+step (a standing item round a side at any angle); 1b's first and second
+moves done (items turned in their face, schema 1.2; holes, bosses and posts
+leaning on it, schema 1.3); its third move's first step done (positions
+along a face's own axes and a turned item's far face, schema 1.4), its
+second (a turned box's sides) and 2c (a turned item's edges, rounded),
+neither a schema minor, and its third (a body leans, schema 1.5): its
+schema 2.0 made with item 2b (revision 12). Step 5 (revision 13: a turned
+box hollowed, round sides on a turned item's faces, a leaning item's edges,
+a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
+3b's second step (a ball's or a dome's surface) next, then the rest of 3b,
+then 2b (a leaning item's faces with it).
+Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
 
@@ -869,6 +871,60 @@ meridian), the default direction is the surface normal, and the foot is
 computed exactly (a cylinder's circle on a sphere is a circle of the
 sphere; on a cone or torus, an intersection curve the oracle certifies,
 item 4). Freeform hosts wait for 4b.0d3.
+
+**3b, planned (revision 14, 17 November 2026): one host at a time, the
+most asked for first.** Each step is proven as 1b's were (each program's
+layout, the oracle, the planner, the generator's draws, the second kernel,
+the exit harness old against new) before the next starts.
+
+1. **A standing item round a side at any angle.** A boss, a post, a tab
+   or a rib round a rod, a tube or a bore, at any `place.angle`, and a
+   circle of any count of them (three bosses 120 degrees apart): today
+   one stands only where it faces along a frame axis, so a circle of three
+   is refused. It is placed as at the frame axis at or below its angle,
+   then turned with the side about its axis by the rest (the motion
+   pattern of 1b's third move: its faces, its edges and what stands on
+   them moved with it). No schema change: `place.angle` already takes any
+   angle.
+2. **A ball's or a dome's round surface.** A hole into it, a boss or a
+   post on it, at a latitude and a longitude from a stated pole and zero
+   meridian; the default direction the surface normal; the foot exact (a
+   round item's foot on a sphere is a circle of the sphere). A schema
+   minor (the surface's name, the position's fields).
+3. **A cone's side.** At an angle round it and a distance along it; the
+   default direction the surface normal; the foot the curve where the
+   item meets the cone, certified by the oracle (item 4).
+4. **A round-ended tab's end** (half a cylinder): as a round side over
+   its half.
+5. **A torus** (a rounded edge's face): with 4b.0d1's certified
+   face-face intersections.
+
+**3b's first step, as built (revision 14).** A boss, a post, a tab or a
+rib stands round a rod's, a tube's or a bore's side at any angle, and a
+circle of any count of them. At an angle that isn't a frame axis's it is
+placed as at the frame axis at or below it, then turned with the side
+about its axis by the rest: **the solver** gives such a copy that turn
+(`_Copy.motion`) and places it on, before its host's own motion where the
+side is moved (`_then`), so its faces, its edges and what is on its far
+face are moved with it as a turned item's are; **the judge** turns the
+copy so (`Motion.about`), a copy moved already moved on by its host's
+motion, its box the upright copy's moved by both (`_moved_copy`); **the
+planner** builds it upright and moves its tools (`moved_tools`, as for a
+turned item), unchanged; **the generator** draws a boss or a post round a
+side at any angle on a half-degree grid now and then, and now and then a
+circle of three, five or six (`_angled_now_and_then`, a stream of its
+own), its far face's axes turned with it; **the second kernel's
+agreement** tells a tool's face lost before the tool is moved (a standing
+item's foot trimmed to the side, then turned round it) on the part of the
+step that lost it (`_gone_inside`; a kept plan, 24's). The guide says so
+(and its version is 7: its text changed with 1b's third move and the
+version didn't). Tests: `tests/test_v2_plan_roundangle.py` (placed as at
+the axis below, then turned; every program's layout agrees; built and
+judged: a boss at 30 degrees, a post at 200, a circle of three bosses, a
+tab, a rib along the rod, a boss round a rod lying along x, a boss in a
+tube's bore, a hole in its far face, its rim rounded, a post's top edges
+bevelled; turned half a degree more fails; the second kernel agrees, a
+kept generated part's too).
 
 ### 3.5 Item 2: depth by geometry
 

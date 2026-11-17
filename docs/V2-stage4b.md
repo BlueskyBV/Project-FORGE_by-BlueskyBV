@@ -226,8 +226,9 @@ kind modules on the same foundation, never as a rebuild of it.
   sides), 2c (a turned item's edges rounded) and third (a body leans,
   schema 1.5) done, its schema 2.0 made with item 2b's (V2-stage4b-0c.md,
   revision 12); its step 5 (revision 13: what a turned or leaning item
-  still lacked) done but for what waits for 2b and 4b.0d1. 3b next, then
-  2b.
+  still lacked) done but for what waits for 2b and 4b.0d1; 3b's first
+  step (a standing item round a side at any angle) done. The rest of 3b
+  next, then 2b.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and

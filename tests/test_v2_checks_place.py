@@ -487,20 +487,14 @@ class RoundSides(unittest.TestCase):
                     },
                 ),
             )
-        with self.assertRaises(
-            PlaceError
-        ):  # a standing feature only where it faces a frame axis
-            placed(
-                ROD,
-                item(
-                    "b",
-                    "boss",
-                    on=on("rod", "side"),
-                    diameter=a(3),
-                    height=a(2),
-                    place={"angle": a(45, "deg")},
-                ),
-            )
+        # A standing feature at an angle that isn't a frame axis's (item 3b's first step): placed as at the one at or
+        # below it, then turned with the side about its axis by the rest.
+        (boss,) = placed(ROD, item("b", "boss", on=on("rod", "side"), diameter=a(3), height=a(2),
+                                   place={"angle": a(45, "deg")})).copies["b"]  # fmt: skip
+        for got, want in zip(boss.direction, (math.sqrt(0.5), math.sqrt(0.5), 0.0), strict=True):
+            self.assertAlmostEqual(got, want, places=12)
+        assert boss.local is not None and boss.frame is not None
+        self.assertEqual(boss.local.direction, (1.0, 0.0, 0.0))
 
 
 class Concentric(unittest.TestCase):

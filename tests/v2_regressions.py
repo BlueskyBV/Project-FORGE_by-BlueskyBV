@@ -9,6 +9,72 @@ from forge_eval.generator import Feature, Pattern, Plan, Position
 
 #: By the seed that made it: what it found, and its plan.
 REGRESSIONS: dict[int, tuple[str, Plan]] = {
+    24: (
+        "two bosses round a drum at 302.5 and 122.5 degrees (item 3b's first step), a hole down its end: the second kernel lost their tools' bases trimming them to the drum, before they were turned round it, and the agreement could not tell (it asked only whether they were moved after)",
+        (
+            Feature(
+                id="body",
+                kind="cylinder",
+                sizes={
+                    "diameter": 80.388,
+                    "length": 17.304,
+                },
+                on=None,
+                depth=None,
+                choices={},
+                recess=None,
+                place={},
+                angle=None,
+                pattern=None,
+                outline=None,
+                words=None,
+                of=None,
+                faces=None,
+            ),
+            Feature(
+                id="i0",
+                kind="hole",
+                sizes={
+                    "diameter": 3.278,
+                },
+                on=("body", "+end"),
+                depth=13.567,
+                choices={},
+                recess=None,
+                place={
+                    "x": Position(mode="none", distance=0.0, side="", to="centre"),
+                    "y": Position(mode="offset", distance=-1.555, side="", to="centre"),
+                },
+                angle=None,
+                pattern=None,
+                outline=None,
+                words=None,
+                of=None,
+                faces=None,
+            ),
+            Feature(
+                id="i1",
+                kind="boss",
+                sizes={
+                    "diameter": 3.537,
+                    "height": 9.409,
+                },
+                on=("body", "side"),
+                depth=None,
+                choices={},
+                recess=None,
+                place={
+                    "z": Position(mode="side", distance=3.094, side="+z", to="edge"),
+                },
+                angle=302.5,
+                pattern=Pattern(kind="circle", values={}, counts={"count": 2}, axis=""),
+                outline=None,
+                words=None,
+                of=None,
+                faces=None,
+            ),
+        ),
+    ),
     27: (
         "a blind hole's floor mostly cut away by a deeper hole from the far face",
         (

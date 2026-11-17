@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 6
+GUIDE_VERSION = 7
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -673,7 +673,11 @@ edge of the face to the item's centre (or "to": "edge", to its near edge).
 An axis place doesn't give is centred, as an assumption Forge shows. On a \
 round side, place gives the position along the rod's axis and an "angle" \
 round it (0 deg towards the next axis: for a rod along z, +x; along x, +y; \
-along y, +z). "concentric": {{"item": ..., "from": ...}} puts it on the axis \
+along y, +z). A boss, a post, a tab or a rib stands round it at any angle; \
+at one that isn't 0, 90, 180 or 270 deg its faces and axes are named as at \
+the one of those at or below it, turned with the side about its axis, and \
+what goes on its far face is placed along that face's own "u" and "v". \
+"concentric": {{"item": ..., "from": ...}} puts it on the axis \
 of a round item (a hole down a boss). On a flat face, "turn": angle turns a \
 slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \
 letters in the face's plane, from the face's first axis towards its second, \
@@ -687,10 +691,11 @@ out of it waits for a later step. A turned block's or post's sides take \
 items too, each named as with it upright (its "+x" side the end its length \
 runs out to along the face's first axis), placed along the side's own "u" \
 and "v" as with it upright, then turned with it; the face it is joined by \
-is none. A turned item's other faces take nothing yet. A turned item's \
+is none. A shell hollows a turned block as with it upright, its inside \
+faces turned with it; a turned item's other faces take nothing yet. A turned item's \
 edges, and those of what is on its faces, are rounded and chamfered as with \
 it upright (a turned post's "vertical" edges are its own four, turned with \
-it); a leaning item's aren't yet.
+it); a leaning item's as below.
 
 A hole, a boss or a post on a flat face may lean, and so may a block or a \
 cylinder standing on one: "tilt": angle (more than \

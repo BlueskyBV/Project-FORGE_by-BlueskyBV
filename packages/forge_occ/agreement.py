@@ -639,9 +639,9 @@ def _thinnest(view: BrepView, cell: float) -> float:
 _MOVES = frozenset({"transform", "bend", "mirror"})
 
 
-def _moved_after(steps: Sequence[Any], owner: str, since: int = -1) -> bool:
-    """Whether a step after ``owner`` (and after the step at index ``since``) moves what ``owner`` made: a move whose
-    input is made from its product.
+def _moved_after(steps: Sequence[Any], owner: str, since: int = -1, until: int | None = None) -> bool:
+    """Whether a step after ``owner`` (and after the step at index ``since``, before the one at ``until``) moves what
+    ``owner`` made: a move whose input is made from its product.
 
     A move of another solid only (a turned tab's stadium, turned on its own
     before it is kept and joined: V2-stage4b-0c.md 3.3, 1b's first move)
@@ -665,7 +665,7 @@ def _moved_after(steps: Sequence[Any], owner: str, since: int = -1) -> bool:
     for k, step in enumerate(steps):
         if step.id == owner:
             after = True
-        elif after and k > since and step.op in _MOVES and from_owner(step.id):
+        elif after and k > since and (until is None or k < until) and step.op in _MOVES and from_owner(step.id):
             return True
     return False
 
@@ -739,10 +739,15 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
             here = product.names.faces_named(owner, suffix)
             if here:
                 made, last = here, k
-    if not made or _moved_after(steps, owner, last):  # moved after: not where it is left
+    if not made:
         return None
     losing = {t.step: t for t in exact.traces if entity.name in t.lost}
     lost_at = next((s.id for s in steps[last + 1 :] if s.id in losing), None)
+    # Moved after it is left: not where it is left, unless the step that lost it came first (a standing item's tool
+    # trimmed to the side it stands round, then turned round it: item 3b), whose part is where it left it.
+    until = next(k for k, s in enumerate(steps) if s.id == lost_at) if lost_at is not None else None
+    if _moved_after(steps, owner, last, until):
+        return None
     reach = max(float(solid.envelope.diagonal) * 1e-3, 1e-6)
     clear = _clear_inside(made, 2 * reach)
     if not len(clear):

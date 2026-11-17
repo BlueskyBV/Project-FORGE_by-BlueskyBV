@@ -191,9 +191,15 @@ an angle round it.
   standing feature stands out along it.
 - A standing feature round a side has its length running round the side
   (along the third frame axis, the one that is neither the side's axis nor
-  its own direction) and its width along the side's axis. For now it stands
-  only at angles where its direction is a frame axis (0, 90, 180, 270
-  degrees).
+  its own direction) and its width along the side's axis. It stands at any
+  angle: at one where its direction isn't a frame axis (not 0, 90, 180 or
+  270 degrees) it is placed as at the frame axis at or below its angle (30
+  degrees: as at 0; 200: as at 180), then turned with the side about its
+  axis by the rest, its faces, its edges and what is on them turned with
+  it. Its faces and its axes are named as at that frame axis (a rib's
+  `along` and a tab's `thickness_along` name the axis it runs along there,
+  or the side's axis), and what is put on its far face is placed along
+  that face's own axes, `u` and `v`, as on a turned item's faces.
 - Only holes, bosses, posts, tabs and ribs go on a round side, for now, and
   only one at a place or a `circle` or `arc` of them: no other pattern, and
   nothing `concentric`.

@@ -1534,13 +1534,15 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
 
 def _moved_copy(copy: Copy, motion: Motion, layout: _Layout) -> Copy:
     """A copy placed upright on a turned item's face, moved by that item's motion: its point, direction, box and lean
-    on the part, and its own faces, flat or round, moved with it."""
+    on the part, and its own faces, flat or round, moved with it. A copy moved already (one standing round a side at
+    an angle, item 3b) is moved on: its motion this one after its own, its box the upright copy's moved by both."""
     key = (copy.item, copy.index)
     for name, found in list(layout.faces.get(key, {}).items()):
         layout.faces[key][name] = replace(found, local=motion if found.local is None else motion.after(found.local))
-    lo, hi = motion.box(copy.lo, copy.hi) if copy.lo is not None and copy.hi is not None else (None, None)
+    frame, upright = (motion, copy) if copy.frame is None or copy.local is None else (motion.after(copy.frame), copy.local)
+    lo, hi = frame.box(upright.lo, upright.hi) if upright.lo is not None and upright.hi is not None else (None, None)
     return replace(copy, point=motion.point(copy.point), direction=motion.vector(copy.direction), lo=lo, hi=hi,
-                   lean=None if copy.lean is None else motion.vector(copy.lean), frame=motion, local=copy)  # fmt: skip
+                   lean=None if copy.lean is None else motion.vector(copy.lean), frame=frame, local=upright)  # fmt: skip
 
 
 def _names_fit(item: Item, face: Face) -> None:
@@ -1923,6 +1925,19 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
             if side.outward
             else (-radial[0] + 0.0, -radial[1] + 0.0, -radial[2] + 0.0)
         )
+        motion: Motion | None = None
+        if not entry.taken and direction_of(direction) is None:
+            # Standing at an angle that isn't a frame axis's (item 3b's first step; place.md, "Round a side"): placed
+            # as at the frame axis at or below it, then turned with the side about its axis by the rest.
+            below = 90.0 * math.floor(angle / 90.0)
+            motion = Motion.about(side.frame.origin, side.frame.n, turn(angle - below))
+            c, s = turn(below)
+            radial = _add(_add((0.0, 0.0, 0.0), zero, c), quarter, s)
+            direction = (
+                radial
+                if side.outward
+                else (-radial[0] + 0.0, -radial[1] + 0.0, -radial[2] + 0.0)
+            )
         up, axes, reach_along = entry.round_frame(item, direction, axis, layout)
         along = _anchor(
             item, positions.get(axis), side.length / 2, (-reach_along, reach_along)
@@ -1934,11 +1949,8 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
             )
         point = side.frame_at((c, s), along).origin
         index = first + n
-        made.append(
-            entry.round_copy(
-                item, side, host, index, point, direction, up, axes, layout
-            )
-        )
+        copy = entry.round_copy(item, side, host, index, point, direction, up, axes, layout)
+        made.append(copy if motion is None else _moved_copy(copy, motion, layout))
     return made
 
 

@@ -1034,6 +1034,9 @@ class _Copy:
     depth_sources: tuple[Source, ...] = ()
     room: float = math.inf
     room_sources: tuple[Source, ...] = ()
+    #: A copy standing round a side at an angle that isn't a frame axis's (item 3b's first step): placed as at the
+    #: frame axis at or below its angle, and this turn about the side's axis by the rest takes it where it is.
+    motion: Rigid | None = None
 
 
 def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host_count: int,
@@ -1497,6 +1500,16 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         r = face.frame.radial(*turn)
         outward = r if face.outward else (-r[0], -r[1], -r[2])
         face_axes: tuple[str, str] | None = None
+        motion: Rigid | None = None
+        if entry.adds and _direction_of(outward) is None:
+            # Standing at an angle that isn't a frame axis's (item 3b's first step): placed as at the frame axis at or
+            # below it, then turned with the side about its axis by the rest (as a turned item's faces are moved).
+            below = 90.0 * math.floor(angle / 90.0)
+            turn = _turn(below)
+            r = face.frame.radial(*turn)
+            outward = r if face.outward else (-r[0], -r[1], -r[2])
+            frame = face.frame
+            motion = Rigid.turn_about(frame.origin, frame.n, *_turn(angle - below))
         if entry.adds:
             up = _direction_of(outward)
             if up is None:
@@ -1541,6 +1554,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 Instance(item.id, 0, origin, outward, host, face_axes),
                 face.wall,
                 face.depth_sources,
+                motion=motion,
             )
         )
     if position is None:
@@ -2272,8 +2286,9 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal,
                               copy.instance.host, copy.instance.face_axes, direction=copy.instance.direction)  # fmt: skip
             kind.numbered(item, placed, face, host, copy, layout, at)
-            if motion is not None:
-                _moved_faces((item.id, index), motion, layout, item)
+            moving = _then(motion, copy.motion)
+            if moving is not None:
+                _moved_faces((item.id, index), moving, layout, item)
             copies.append(
                 _Copy(
                     placed,
@@ -2283,7 +2298,7 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                     copy.room_sources,
                 )
             )
-            motions.append(motion)
+            motions.append(moving)
     if not SOLVE[item.kind].stands:
         return [_moved_instance(c.instance, m) for c, m in zip(copies, motions, strict=True)]
     standing: list[Instance] = []
@@ -2313,6 +2328,13 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             placed = _moved_instance(placed, motion)
         standing.append(placed)
     return standing
+
+
+def _then(outer: Rigid | None, inner: Rigid | None) -> Rigid | None:
+    """``inner``, then ``outer``: a copy's own turn round a side (item 3b), then its host's motion onto the part."""
+    if inner is None:
+        return outer
+    return inner if outer is None else outer.after(inner)
 
 
 def _moved_instance(inst: Instance, motion: Rigid | None) -> Instance:
