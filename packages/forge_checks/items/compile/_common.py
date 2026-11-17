@@ -86,8 +86,8 @@ def leaves(item: Item) -> tuple[str, ...]:
     """The item's leaf fields, as checks name them: a counterbore's or countersink's values one by one, and a place's.
 
     A place's leaves are its position along each axis (side, distance and
-    ``to`` together: where the item is), its angle, what it is concentric
-    with, and its pattern's values, counts and axis
+    ``to`` together: where the item is), its angle, its turn in its face,
+    what it is concentric with, and its pattern's values, counts and axis
     (``place.pattern.<kind>.<name>``). Every other field is one leaf: a fit
     (its kind, size and grade give one size), an edge set, a face, a choice.
     """
@@ -101,6 +101,8 @@ def leaves(item: Item) -> tuple[str, ...]:
             found += [f"place.{axis}" for axis in value.axes]
             if value.angle is not None:
                 found.append("place.angle")
+            if value.turn is not None:
+                found.append("place.turn")
             if value.concentric is not None:
                 found.append("place.concentric")
             pattern = value.pattern

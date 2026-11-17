@@ -54,6 +54,8 @@ class PlanKind:
     #: Published: a cut whose rims a rounding names (a hole's, a slot's, a pocket's); one with a floor (a pocket's).
     rimmed_cut = False
     floored = False
+    #: The name its floor takes: a pocket's ``bottom``; a slot's, a hole's ``floor``.
+    floor_name = "floor"
     #: Published: a box whose bottom edges a rounding may name, and all twelve (a block's).
     bottom_edges = False
     #: It goes into a round side (a hole).

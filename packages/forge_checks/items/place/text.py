@@ -24,6 +24,9 @@ from forge_checks.place import (
 class Text(PlaceKind):
     key = "text"
 
+    def turnable(self, item: Item) -> bool:
+        return True
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

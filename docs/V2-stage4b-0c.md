@@ -367,8 +367,11 @@ boss, a round pocket), a round side and `concentric` refuse it as a fault
 - **The judge's placement and oracle** build each copy in its turned axes
   (`Copy.turn`); **the check compiler** measures a turned box's sizes
   between its turned sides, a turned cut's floor and a round-ended tab's
-  end along them, and leaves a turned copy's position to the two
-  placements' agreement and face accounting.
+  end along them, and holds a turned copy's position and its turn (a leaf,
+  `place.turn`) by face accounting: its faces are where the oracle builds
+  them, or it fails (the two placements agreeing besides). What turns, and
+  how far round, is each kind's own to say in each program's registry
+  (`turnable`), as 4b.0b's ratchet holds every kind's choice.
 - **The planner** writes a turned prism or cut as its turned outline, a
   `profile_outline` of straight sides and true arcs on the face's plane,
   pushed out or in (the same numbers as the solver's outline); letters as

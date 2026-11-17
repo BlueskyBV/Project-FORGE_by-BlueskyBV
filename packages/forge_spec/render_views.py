@@ -1060,7 +1060,7 @@ class _Drawing:
         out = copy.normal
         up = (-s * first[0] + c * second[0], -s * first[1] + c * second[1], -s * first[2] + c * second[2])
         reads, was = _cross_of(up, out), _cross_of(second, out)
-        angle = math.atan2(reads[canvas.v], reads[canvas.u]) - math.atan2(was[canvas.v], was[canvas.u])
+        angle = fs.atan2(reads[canvas.v], reads[canvas.u]) - fs.atan2(was[canvas.v], was[canvas.u])
         line = 2 * _line_half(self.item, self.layout, host.axes)
         canvas.write(canvas.at(copy.origin), text, _length(self.item, "height"), line,
                      (-math.degrees(angle)) % 360.0)  # fmt: skip

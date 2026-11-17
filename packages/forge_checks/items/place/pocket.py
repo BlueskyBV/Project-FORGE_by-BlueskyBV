@@ -23,6 +23,9 @@ from forge_checks.place import (
 class Pocket(PlaceKind):
     key = "pocket"
 
+    def turnable(self, item: Item) -> bool:
+        return _choice(item, "shape") != "circle"  # a round one turns into itself
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

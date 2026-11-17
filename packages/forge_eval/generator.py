@@ -605,8 +605,7 @@ def _turned_frame(f: Feature, e1: Array, e2: Array) -> tuple[Array, Array]:
     return c * e1 + s * e2 + 0.0, c * e2 - s * e1 + 0.0
 
 
-#: The kinds the generator turns in a flat face's plane, and how often it turns one that can be.
-_TURNABLE = ("slot", "pocket", "rib", "tab", "block", "post", "text")
+#: How often the generator turns in a flat face's plane an item that can be (DrawKind.turnable).
 _TURNED = 0.2
 
 
@@ -616,14 +615,12 @@ def _turned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature
     half-degree grid, between 0 and 180 degrees (each outline is the same turned half a turn), or for letters all
     the way round (upside down, they read otherwise); None when it isn't turned. A disc (a slot as long as it is
     wide) isn't: it is the same turned."""
-    if rng.random() >= _TURNED or f.kind not in _TURNABLE or f.on is None or f.on[1] == "side":
-        return None
-    if f.kind == "pocket" and f.choices.get("shape") == "circle":
+    if rng.random() >= _TURNED or not _draw(f.kind).turnable or f.on is None or f.on[1] == "side":
         return None
     (h1, h2), corner = _footprint(f, face.axes)
-    if h1 == h2 == corner:
+    if h1 == h2 == corner:  # a disc (a round pocket's, a slot as long as it is wide): the same turned
         return None
-    if f.kind == "text":
+    if _draw(f.kind).turns_all_round:
         nice, most = (30.0, 45.0, 90.0, 180.0, 270.0, 315.0), 359.5
     else:
         nice, most = (30.0, 45.0, 60.0, 120.0, 135.0, 150.0), 179.5
@@ -1012,7 +1009,7 @@ def _on_flat(
             raise DoesNotFitError(
                 f"{f.id}: {axis} isn't one of {face.key}'s axes {face.axes}"
             )
-    if f.turn is not None and (f.on is None or f.kind not in _TURNABLE):
+    if f.turn is not None and (f.on is None or not _draw(f.kind).turnable):
         raise DoesNotFitError(f"{f.id}: the generator turns a slot, a pocket, a rib, a tab, a block, a post or letters on a flat face")
     half, corner = _footprint(f, face.axes)
     if f.turn is not None:  # what it covers, as the generator keeps it: the box round its turned outline
@@ -3855,7 +3852,7 @@ def _changes(f: Feature, plan: Plan) -> Iterator[tuple[str, list[Feature]]]:
     if f.turn is not None:
         # Turned a little more or less in its face, or a quarter turn (unless it is the same so turned).
         turned = [f.turn + d for d in (5.0, -5.0, 20.0, -20.0)]
-        most = 360.0 if f.kind == "text" else 180.0
+        most = 360.0 if _draw(f.kind).turns_all_round else 180.0
         yield "place.turn", [replace(f, turn=_q(t, 0.5)) for t in turned if 0.0 < t < most]
     if f.angle is not None:
         # A hole turned a little round its side; something standing round it, a quarter or a half.

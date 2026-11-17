@@ -126,8 +126,8 @@ def _turned_side(d: _Drawing, canvas: _Canvas, copy: Instance, up: int, r: float
         if abs(b) <= EPS:
             return straight + r
         lo, hi = sorted(((h - h0 - abs(a) * t) / b, (h - h0 + abs(a) * t) / b))
-        nearest = 0.0 if lo <= 0.0 <= hi else min(abs(lo), abs(hi))
-        return straight + math.sqrt(max(r * r - min(nearest, r) ** 2, 0.0))
+        nearest = min(0.0 if lo <= 0.0 <= hi else min(abs(lo), abs(hi)), r)
+        return straight + math.sqrt(max(r * r - nearest * nearest, 0.0))
 
     runs = [h0 - reach + 2 * reach * k / 64 for k in range(65)]
     return [point(h0 - reach, 0.0), *(point(h, top(h)) for h in runs), point(h0 + reach, 0.0)]

@@ -15,6 +15,7 @@ from forge_eval.items.draw.protocol import DrawKind
 
 class Slot(DrawKind):
     key = "slot"
+    turnable = True
     flat_weight = 1
     flat_rank = 2
     cut_out = True

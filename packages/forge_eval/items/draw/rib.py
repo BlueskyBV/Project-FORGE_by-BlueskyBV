@@ -15,6 +15,7 @@ from forge_eval.items.draw.protocol import DrawKind
 
 class Rib(DrawKind):
     key = "rib"
+    turnable = True
     new_weight = 2
     new_rank = 0
     stand_height = "height"

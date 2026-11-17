@@ -1258,8 +1258,8 @@ class _Compiler:
         if any(copy.turn is not None for copy in copies):
             for name in leaves(item):
                 if name.startswith("place."):
-                    self.skip(item, name, "it is turned in its face: where it is, and its turn, are as the definitions "
-                              "place it, the solver's placement agreeing", "the two placements' agreement")  # fmt: skip
+                    self.skip(item, name, "it is turned in its face: where it is, and its turn, are held by where its "
+                              "faces are, as the oracle builds them", "face accounting")  # fmt: skip
             return
         given = item.get("place")
         place = given if isinstance(given, Place) else Place({}, None, None, None, None)

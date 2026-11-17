@@ -14,6 +14,9 @@ from forge_checks.place import Face, Material, Vec, _box_body, _box_edges, _Layo
 class Post(PlaceKind):
     key = "post"
 
+    def turnable(self, item: Item) -> bool:
+        return True
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

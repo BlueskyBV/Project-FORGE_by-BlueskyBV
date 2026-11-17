@@ -16,6 +16,7 @@ from forge_eval.items.draw.protocol import DrawKind
 
 class Pocket(DrawKind):
     key = "pocket"
+    turnable = True
     round_rim = True
     flat_weight = 2
     flat_rank = 1

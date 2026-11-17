@@ -99,6 +99,11 @@ class DrawKind:
     new_rank = 0
     #: Sizes it may have as 0 (a cone's top).
     may_be_zero: frozenset[str] = frozenset()
+    #: It turns in its flat face's plane (place.turn): a slot, a pocket (a round one turns into itself), a rib, a tab,
+    #: a block, a post, a line of letters; ``turns_all_round``: all the way round (letters read otherwise upside
+    #: down), else half a turn (each other outline is the same turned half a turn).
+    turnable = False
+    turns_all_round = False
 
     # ------------------------------------------------------------------
     # Its own

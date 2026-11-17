@@ -56,6 +56,11 @@ class PlaceKind:
     rims: ClassVar[Mapping[str, Edges]] = {}
     both_ends = False
 
+    def turnable(self, item: Item) -> bool:
+        """Whether a ``place.turn`` turns it in its face's plane (place.md): a slot, a rectangular pocket, a rib, a tab, a
+        block, a post and a line of letters."""
+        return False
+
     @property
     def made(self) -> bool:
         """It is made, not a change to another (a modifier)."""

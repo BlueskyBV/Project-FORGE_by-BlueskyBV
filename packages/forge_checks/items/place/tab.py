@@ -26,6 +26,9 @@ from forge_checks.place import (
 class Tab(PlaceKind):
     key = "tab"
 
+    def turnable(self, item: Item) -> bool:
+        return True
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

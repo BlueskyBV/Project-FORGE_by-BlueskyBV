@@ -919,18 +919,12 @@ def _footprint(
     return found if turned is None else _turned(item, found, turned)
 
 
-#: What a turn turns (place.md): a slot, a rectangular pocket, a rib, a tab, a block, a post and a line of letters.
-_TURNABLE = frozenset({"slot", "pocket", "rib", "tab", "block", "post", "text"})
-
-
 def _turn_of(item: Item) -> Point | None:
     """The cosine and sine of an item's ``place.turn`` in its face's plane; None if it has none."""
     place = _place(item)
     if place is None or place.turn is None:
         return None
-    if item.kind not in _TURNABLE or (
-        item.kind == "pocket" and _choice(item, "shape") == "circle"
-    ):
+    if not _entry(item.kind).turnable(item):
         raise PlaceError(
             item.id,
             "a turn turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in its face's plane",

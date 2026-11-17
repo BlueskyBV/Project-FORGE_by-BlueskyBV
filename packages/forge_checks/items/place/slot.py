@@ -14,6 +14,9 @@ from forge_checks.place import PlaceError, _choice, _mm, _sized
 class Slot(PlaceKind):
     key = "slot"
 
+    def turnable(self, item: Item) -> bool:
+        return True
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

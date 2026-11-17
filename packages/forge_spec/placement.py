@@ -984,7 +984,8 @@ def _turned_copies(item: Item, place: Place, face: FlatFace, host: tuple[str, in
     its outline turned."""
     here = at + pointer("place", "turn")
     if SOLVE[item.kind].turnable(item, layout, face.axes) is None:
-        what = "a round " + item.kind if item.kind == "pocket" else "a " + item.kind
+        parts = SOLVE[item.kind].outline(item, layout, face.axes)
+        what = f"a {item.kind}" + (" with a round outline" if len(parts) == 1 and parts[0].disc else "")
         layout.issue("fault", here,
                      f"Forge turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
         return []

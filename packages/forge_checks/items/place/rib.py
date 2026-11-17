@@ -25,6 +25,9 @@ from forge_checks.place import (
 class Rib(PlaceKind):
     key = "rib"
 
+    def turnable(self, item: Item) -> bool:
+        return True
+
     def footprint(
         self, item: Item, diameters: Mapping[str, float], axes: tuple[str, str]
     ) -> Outline:

@@ -24,6 +24,7 @@ from forge_eval.truth import Copy
 
 class Post(DrawKind):
     key = "post"
+    turnable = True
     flat_weight = 1
     flat_rank = 4
     drawn_flush = True

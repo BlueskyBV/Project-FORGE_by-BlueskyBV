@@ -364,7 +364,7 @@ def plane_outline(chain: Chain, item: Item, k: int, axes: tuple[str, str], w: Ve
 
 
 def turned_cut(chain: Chain, item: Item, copy: Instance, face: FlatFace, shape: Shape, mouth: float,
-               far: float) -> str:  # fmt: skip
+               far: float, floor_name: str = "floor") -> str:  # fmt: skip
     """One copy of a slot or a rectangular pocket turned in its face's plane: its turned outline (straight sides and
     true arcs) on the face's plane through its point, pushed into the material by its depth (4.4), carried ``mouth``
     out from the face and ``far`` past a cut through's far side (5.2). Its wall and its floor (a pocket's bottom) are
@@ -380,7 +380,7 @@ def turned_cut(chain: Chain, item: Item, copy: Instance, face: FlatFace, shape: 
     tool = chain.extrude(_id(item.id, k, "cut"), outline, mouth + depth + far, mode, item=item.id)
     floor = "end_face" if mode == "normal" else "start_face"
     chain.name(item.id, k, "wall", Ref(tool, "side"))
-    chain.name(item.id, k, "bottom" if item.kind == "pocket" else "floor", Ref(tool, floor))
+    chain.name(item.id, k, floor_name, Ref(tool, floor))
     a1, a2 = face.axes
     h1, h2 = turned_halves(shape)
     chain.cut_box(Box(*_span_box(w, neg(normal), 0.0, depth, {a1: h1, a2: h2}), item.id, k))

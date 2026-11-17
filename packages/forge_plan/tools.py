@@ -206,7 +206,7 @@ def cut_tool(chain: Chain, ctx: Context, item: Item, copy: Instance, *,
     turned = turned_on(ctx.layout, item, face)
     if turned is not None:
         assert isinstance(face, FlatFace)
-        return [turned_cut(chain, item, copy, face, turned, mouth, far)]
+        return [turned_cut(chain, item, copy, face, turned, mouth, far, PLAN[item.kind].floor_name)]
     return PLAN[item.kind].cut_tool(chain, ctx, item, copy, face, mouth, far)
 
 

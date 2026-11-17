@@ -24,6 +24,7 @@ from forge_eval.items.draw.protocol import DrawKind
 
 class Tab(DrawKind):
     key = "tab"
+    turnable = True
     flat_weight = 1
     flat_rank = 6
 

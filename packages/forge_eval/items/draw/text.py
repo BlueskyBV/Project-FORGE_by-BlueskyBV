@@ -35,6 +35,8 @@ from forge_eval.truth import Letters, Step, ink_box
 
 class Text(DrawKind):
     key = "text"
+    turnable = True
+    turns_all_round = True
 
     def footprint(
         self, f: Feature, axes: tuple[str, str]

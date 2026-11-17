@@ -41,6 +41,7 @@ from forge_eval.truth import Copy, Outline2, Prism, Pushed, Step, unit_of
 
 class Block(DrawKind):
     key = "block"
+    turnable = True
     flat_weight = 1
     flat_rank = 5
     openable = ("+x", "-x", "+y", "-y", "+z", "-z")

@@ -93,6 +93,7 @@ class Pocket(CutPlan):
     key = "pocket"
 
     floored = True
+    floor_name = "bottom"
 
     def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
                  mouth: float, far: float) -> list[str]:  # fmt: skip
