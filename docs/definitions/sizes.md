@@ -125,9 +125,18 @@ deep along its axis where it is moved to: out through a leaning boss's
 far face and on through the plate it leans on; down through a turned post
 and the plate; across it from its side.
 
-For now through everything and up to a face are cut square to a flat face
-only, not on a turned or leaning item's face, and none of the three
-leaning, or from inside a bore: Forge says it can't, and why.
+A cut goes **through everything** from those faces too (item 2b's third
+step): a hole round a rod's side, on a ball's or a dome's surface, on a
+cone's side, and any cut on a turned item's face or a leaning item's far
+face or side, on along its axis until it has passed everything the part
+reaches behind its point there, each copy from its own point: round a
+rod and on past what is beside it; through a ball seated in a plate and
+the plate; out through a leaning boss and the plate it leans on. A body
+made after it in its way would close it, and Forge asks.
+
+For now up to a face is cut square to a flat face only, not on a turned or
+leaning item's face, and none of the three leaning, or from inside a bore:
+Forge says it can't, and why.
 
 ## Sizes from standard tables
 

@@ -8,8 +8,8 @@ V2-stage4b-0c.md, 3.5, item 2b's first step; schema 1.7).
   before it behind its mouth; up to a face, to its plane less the offset;
   every program's layout agrees.
 - **What isn't so is said:** a face not behind the mouth, one not parallel,
-  no such item or face, an item with two copies, a leaning cut, one round a
-  side, one deeper than the material under it, a counterbore as deep as the
+  no such item or face, an item with two copies, a leaning cut, one up to a
+  face round a side, one deeper than the material under it, a counterbore as deep as the
   hole goes; a body made after a cut through everything in its way is
   asked about (made before it, it is cut through).
 - **What is built is what was placed.** Through everything a hollow box's
@@ -238,7 +238,8 @@ class WhatIsntSoIsSaid(unittest.TestCase):
             (lambda b: [_box(b), _row({**_ledge(b), "kind": "post", "place": {}}), _hole(b, _up_to("ledge", "+z"), face="-z")],
              "unable", "has 2 copies"),
             (lambda b: [_box(b), {**_hole(b, ALL), **leaning}], "unable", "a leaning item through everything"),
-            (lambda b: [_box(b), _boss(b), _hole(b, ALL, on="rod", face="side")], "unable", "not round a side"),
+            (lambda b: [_box(b), _boss(b), _hole(b, _up_to("box", "-z"), on="rod", face="side")], "unable",
+             "not round a side"),
             (lambda b: [_box(b), _hollow(b), _hole(b, _up_to("box", "-z", 4.0))], "fault", "mm of material"),
             (lambda b: [_box(b), {**_hole(b, _up_to("box", "-z", 26.0)), "counterbore": {
                 "diameter": assumed("across", 10.0), "depth": assumed("deep", 5.0)}}], "fault",

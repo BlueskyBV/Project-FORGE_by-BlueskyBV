@@ -1519,14 +1519,31 @@ def _next_on(item: Item) -> float | None:
 
 
 def _curved_end(item: Item, layout: Layout, at: str, where: str) -> bool:
-    """Round a side from outside, on a ball's surface or on a cone's side, a cut goes through the next face as on a
-    flat one, how deep as the preview finds it (item 2b's third step); through everything or up to a face only from a
-    flat face, for now: whether this one isn't such a cut (False: the problem is said)."""
-    if SOLVE[item.kind].cut and isinstance(end_of(item), (ThroughEverything, UpToFace)):
+    """Round a side from outside, on a ball's surface or on a cone's side, and on a turned or leaning item's face, a
+    cut goes through the next face as on a flat one, how deep as the preview finds it, and through everything, as far
+    as everything made before it reaches along its axis from its point (item 2b's third step); up to a face only from
+    a flat face, for now: whether this one isn't such a cut (False: the problem is said)."""
+    if SOLVE[item.kind].cut and isinstance(end_of(item), UpToFace):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts through everything or up to a face from a flat face, for now, not {where}")  # fmt: skip
+                     f"Forge cuts up to a face from a flat face, for now, not {where}")  # fmt: skip
         return False
     return True
+
+
+def _everything_from(point: Vec, out: Vec, layout: Layout) -> float:
+    """How deep a cut through everything goes from a point, into the part along ``-out``: as far as everything made
+    so far reaches behind it (each copy's box), and on past it by :data:`THROUGH_PAST` (item 2b; as :func:`_end_depth`
+    on a flat face, from each copy's own point and way where they differ: round a side, on a ball or a cone, on a
+    turned or leaning item's face)."""
+    level = sum(point[k] * out[k] for k in range(3))
+    reach = 0.0
+    for copies in layout.instances.values():
+        for copy in copies:
+            if copy.lo is None or copy.hi is None:
+                continue
+            for corner in itertools.product(*zip(copy.lo, copy.hi, strict=True)):
+                reach = max(reach, level - sum(corner[k] * out[k] for k in range(3)))
+    return reach + THROUGH_PAST
 
 
 def _flat_end_only(item: Item, layout: Layout, at: str, where: str) -> bool:
@@ -1969,10 +1986,10 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
                        f"{item.id}, {spread:g}\u00b0 round the ball from its point at latitude {latitude:g}\u00b0, "
                        f"runs {where}", [*sizes, *([place.latitude] if place is not None else [])])  # fmt: skip
         return []
-    if severs and (face.standing or face.dome) and not isinstance(end_of(item), ThroughNext):
+    if severs and (face.standing or face.dome) and not isinstance(end_of(item), (ThroughNext, ThroughEverything)):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts right through a whole ball only, standing on nothing, for now: go through the next face, or give the hole into "
-                     f"{host[0]} a depth")  # fmt: skip
+                     "Forge cuts right through a whole ball only, standing on nothing, for now: go through the next "
+                     f"face, or through everything, or give the hole into {host[0]} a depth")  # fmt: skip
         return []
     if entry.cut:
         _check_depth(item, outline, lambda mouth: face.material_under(mouth, (angles[0], latitude)), layout, at,
@@ -2046,10 +2063,11 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
     if position is not None and position.mode == "side" and not position.to_given:
         layout.assume(at, f"{item.id}: measured from the {position.side} end to its centre, along {axis}; "
                       "the brief doesn't say to its centre or its near edge")  # fmt: skip
-    if entry.cut and _is_through(item) and not isinstance(end_of(item), ThroughNext):
+    if entry.cut and _is_through(item) and not isinstance(end_of(item), (ThroughNext, ThroughEverything)):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts a blind hole into a cone's side, or one through the next face, for now: give the "
-                     f"hole into {host[0]} a depth, or go through the next face")  # fmt: skip
+                     "Forge cuts a blind hole into a cone's side, or one through the next face or through "
+                     f"everything, for now: give the hole into {host[0]} a depth, or go through the next face or "
+                     "through everything")  # fmt: skip
         return []
     if place and place.angle is not None:
         angles = [degrees(place.angle)]
@@ -2508,6 +2526,11 @@ def _check_closed(spec: PartSpec, layout: Layout) -> None:
     made: dict[str, int] = {}
     for k, item_id in enumerate(layout.order):
         made.setdefault(item_id, k)
+
+    def owners_after(item: Item) -> list[Item]:
+        return [owner for owner in spec.items if SOLVE[owner.kind].solid and owner.id not in layout.unplaced
+                and made.get(owner.id, -1) > made.get(item.id, -1)]  # fmt: skip
+
     for item in spec.items:
         end = end_of(item)
         if not SOLVE[item.kind].cut or not isinstance(end, (ThroughEverything, ThroughNext)) or item.id in layout.unplaced:
@@ -2517,7 +2540,13 @@ def _check_closed(spec: PartSpec, layout: Layout) -> None:
         how = "goes through the next face" if isinstance(end, ThroughNext) else "goes through everything made before it"
         for cut in layout.instances.get(item.id, []):
             face = layout.faces.get(cut.host[:2], {}).get(cut.host[2]) if cut.host is not None else None
-            if cut.depth is None or not isinstance(face, FlatFace):
+            if cut.depth is None:
+                continue
+            if not isinstance(face, FlatFace) or (face.local is not None and isinstance(end, ThroughEverything)):
+                # Round a side, on a ball or a cone, or on a turned or leaning item's face, through everything (item
+                # 2b's third step): the box round all it sweeps, as wide as its mouth's widest every way.
+                if isinstance(end, ThroughEverything):
+                    _check_closed_swept(item, cut, owners_after(item), layout, position[item.id], how)
                 continue
             n = face.frame.n
             level = sum(cut.origin[k] * n[k] for k in range(3))
@@ -2543,6 +2572,33 @@ def _check_closed(spec: PartSpec, layout: Layout) -> None:
                                    f"made after it, stands in its way: should {owner.id} be cut through too (made "
                                    f"first), or {item.id} stop short of it?", values)  # fmt: skip
                     break
+
+
+def _check_closed_swept(item: Item, cut: Instance, owners: Sequence[Item], layout: Layout, position: int,
+                        how: str) -> None:  # fmt: skip
+    """A cut through everything from a curved face, or a turned or leaning item's (:func:`_check_closed`): a body made
+    after it whose box meets the box round all the cut sweeps, from its point to its depth along its way, as wide as
+    its mouth's widest every way, is asked about."""
+    assert cut.depth is not None
+    hole = layout.diameters.get(item.id)
+    wide = hole / 2 if hole is not None else max(fs.hypot(abs(p.centre[0]) + p.half[0], abs(p.centre[1]) + p.half[1])
+                                                 for p in _outline(item, layout, ("x", "y")))  # fmt: skip
+    end = tuple(cut.origin[k] - cut.depth * cut.normal[k] for k in range(3))
+    lo = tuple(min(cut.origin[k], end[k]) - wide for k in range(3))
+    hi = tuple(max(cut.origin[k], end[k]) + wide for k in range(3))
+    for owner in owners:
+        for other in layout.instances.get(owner.id, []):
+            if other.lo is None or other.hi is None:
+                continue
+            if any(other.hi[k] <= lo[k] + EPS or other.lo[k] >= hi[k] - EPS for k in range(3)):
+                continue
+            values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
+                      *_item_values(owner, *_outline_fields(owner)), *_place_values(owner)]  # fmt: skip
+            layout.problem("question", pointer("items", position),
+                           f"{item.id} copy {cut.index + 1} {how}, and {owner.id} copy {other.index + 1}, made after "
+                           f"it, stands in its way: should {owner.id} be cut through too (made first), or {item.id} "
+                           "stop short of it?", values)  # fmt: skip
+            return
 
 
 def _in_its_way(outline: Sequence[Part], mouth_turned: Shape | None, cut: Instance, face: FlatFace, owner: Item,
@@ -2864,6 +2920,7 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
     axes, and standing as placed (:func:`as_placed`)."""
     copies: list[_Copy] = []
     motions: list[Rigid | None] = []
+    rounded: list[bool] = []  # each copy's host face curved (round a side, on a ball or a cone)
     for host_index, face in hosts:
         host = (on.item, host_index, on.face)
         motion = face.local
@@ -2924,8 +2981,15 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                 )
             )
             motions.append(moving)
+            rounded.append(not isinstance(face, FlatFace))
     if not SOLVE[item.kind].stands:
-        return [_moved_instance(c.instance, m) for c, m in zip(copies, motions, strict=True)]
+        found_cuts = [_moved_instance(c.instance, m) for c, m in zip(copies, motions, strict=True)]
+        if isinstance(end_of(item), ThroughEverything):
+            # Through everything from a curved face, or a turned or leaning item's (item 2b's third step): from each
+            # copy's own point along its own way, where it is on the part.
+            found_cuts = [cut if m is None and not curved else _deep(cut, _everything_from(cut.origin, cut.normal, layout))
+                          for cut, m, curved in zip(found_cuts, motions, rounded, strict=True)]  # fmt: skip
+        return found_cuts
     standing: list[Instance] = []
     height = height_of(item)
     item = placed_item
@@ -2955,6 +3019,11 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             placed = _moved_instance(placed, motion)
         standing.append(placed)
     return standing
+
+
+def _deep(cut: Instance, depth: float) -> Instance:
+    """A cut's copy as deep as ``depth``, and the upright one it was placed as, where it was moved."""
+    return replace(cut, depth=depth, local=None if cut.local is None else replace(cut.local, depth=depth))
 
 
 def _then(outer: Rigid | None, inner: Rigid | None) -> Rigid | None:

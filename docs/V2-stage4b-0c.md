@@ -20,9 +20,9 @@ it), and a leaning item's far face (revision 16); what the exit pairs
 found is fixed, and a ball's or a cone's seam is kept clear of what is on
 it (revision 16), and a hole goes through the next face on a round side, a
 ball or a cone, and a cut on a turned or a leaning item's face (2b's third
-step, revision 16), and a leaning item's sides, flat and round, take cuts
-(revision 16); next, the rest of 2b's third step and its fourth (schema
-2.0).
+step, revision 16), and through everything there too, and a leaning
+item's sides, flat and round, take cuts (revision 16); next, 2b's fourth
+step (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1417,6 +1417,49 @@ generator's part 0 draws one; `tests/test_v2_plan_build_generated.py`
 keeps part 184). The exit harness's per-seed proof on 0, 3, 7, 67, 85,
 117, 129, 149, 175, 184 and 186, which draw one: all passed, every mutant
 caught.
+
+**And through everything there (revision 16).** A cut goes through
+everything (`{"through_all": true}`) from the same faces: a hole round a
+rod's side, on a ball's or a dome's surface, on a cone's side, and any cut
+on a turned item's face or a leaning item's far face or side (sizes.md,
+"Through the next face"): on along its axis until it has passed everything
+the part reaches behind its point there, each copy from its own point and
+way where it is on the part. **The solver** works that out as on a flat
+face, from every copy's box (`_everything_from`), once each copy is where
+it is (a ball's copies are moved round it, a turned or leaning item's
+face's copies moved with it, the upright copy kept as deep, `_deep`); a
+body made after it whose box meets the box round all it sweeps, as wide as
+its mouth every way, is asked about (`_check_closed_swept`). **The judge**
+does the same on its own boxes (`_everything_at`), and finds a cut through
+the next face round the side of what stands on a turned item's face where
+it is moved to as well (`_next_round` after the move; upright, it waits).
+**The planner** cuts to that depth, carried past both ends where that is
+proven clear. **The generator** turns a hole just drawn round a side, on a
+ball or on a cone, or a cut on a turned item's face or a leaning box's
+side, into one through everything now and then (`_everything_now_and_then`,
+stream "forge-eval through everything round", 0.3), as deep as its own
+solids reach behind each copy and its own margin on (`_everything_round`
+on a curved face: past where it first comes out of what it is cut into all
+across, what it goes through lies all across it or not at all, and its way
+is kept clear of what is made after; on a flat one as any cut through
+everything, where it comes out on faces it keeps). Up to a face from there,
+and anything through the next face or everything from inside a bore, is
+still said. Tests: `tests/test_v2_plan_throughnext.py` (round a rod, on a
+dome and a ball seated in a plate, a cone's side, out through a leaning
+boss and the plate, down through a turned post and the plate: as deep as
+every box reaches, every program's layout agreeing, built and judged; a
+boss made after it under the plate asked about, made before it not; the
+second kernel agrees; the generator's draws), and the refusals moved to
+up to a face (`tests/test_v2_plan_throughall.py`). The exit harness's
+per-seed proof on 0, 16, 26, 29, 31, 57, 84, 85, 106, 115, 118, 196, 209,
+229 and 248 (the fifteen of the first 300 that cut so: round a side, on a
+ball, on a cone, on a turned item's face): all passed, every mutant
+caught; part 31 first held, a counterbore at the middle of a dome's flat
+face cut where a hole through everything from its surface had gone through
+it, and the generator takes such a crossing on any flat face it keeps.
+Generator digests on seeds 0-149, old against new: only the eleven of
+those that draw one differ, and the impossible parts 97, 104, 110, 114,
+119 and 128.
 
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new

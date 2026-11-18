@@ -1694,9 +1694,8 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
-        if isinstance(end_of(item), (ThroughEverything, UpToFace)):
-            raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut through everything or up to "
-                             "a face, yet")  # fmt: skip
+        if isinstance(end_of(item), UpToFace):
+            raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut up to a face, yet")
         if (isinstance(face, RoundSide) or (isinstance(face, FlatFace) and not isinstance(face.material, Slant))) \
                 and isinstance(layout.items[on.item].get("tilt"), Value) \
                 and (not _entry(item.kind).taken or isinstance(item.get("tilt"), Value)):  # fmt: skip
@@ -1713,6 +1712,13 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
             if isinstance(end_of(item), ThroughNext) and _entry(item.kind).taken and isinstance(upright, FlatFace):
                 # Through the next face (item 2b's third step): where it comes out, along its axis where it is moved.
                 moved = _with_depth(moved, _next_moved(item, upright, copy.point, motion, layout))
+            elif isinstance(end_of(item), ThroughNext) and _entry(item.kind).taken:
+                # Round the side of what stands on one: from where it is moved to, round its mouth.
+                moved = _with_depth(moved, _next_round(item, moved.point, moved.direction,
+                                                       layout.diameters[item.id] / 2, layout))  # fmt: skip
+            elif isinstance(end_of(item), ThroughEverything) and _entry(item.kind).taken:
+                # Through everything (item 2b's third step): as far as everything reaches from where it is moved to.
+                moved = _with_depth(moved, _everything_at(moved.point, moved.direction, layout))
             made.append(moved)
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
@@ -2102,6 +2108,20 @@ def _end_depth(item: Item, face: FlatFace, point: Vec, layout: _Layout) -> float
     return depth
 
 
+def _everything_at(point: Vec, direction: Vec, layout: _Layout) -> float:
+    """How deep a cut through everything goes from a point along ``-direction`` (item 2b): as far as everything placed
+    so far reaches behind it (each copy's box), and on past it, as :func:`_end_depth` on a flat face; from each copy's
+    own point and way where they differ (round a side, on a ball or a cone, on a turned or leaning item's face)."""
+    level = sum(point[k] * direction[k] for k in range(3))
+    reach = 0.0
+    for copies in layout.copies.values():
+        for copy in copies:
+            if copy.lo is not None and copy.hi is not None:
+                for corner in itertools.product(*zip(copy.lo, copy.hi, strict=True)):
+                    reach = max(reach, level - sum(corner[k] * direction[k] for k in range(3)))
+    return reach + _THROUGH_PAST
+
+
 #: How far apart the judge asks along a cut through the next face whether its mouth is out of the part all across
 #: (mm), and how close it then finds where it first is (by halving).
 _NEXT_STEP, _NEXT_CLOSE = 0.05, 1e-6
@@ -2440,7 +2460,7 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
     for n, angle in enumerate(angles):
         index = first + n
         if entry.taken:
-            if isinstance(end_of(item), ThroughNext):
+            if isinstance(end_of(item), (ThroughNext, ThroughEverything)):
                 depth = 0.0  # found where it is (item 2b's third step), below
             elif _through(item):
                 if ball.standing or ball.dome:
@@ -2454,9 +2474,11 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
         if abs(latitude - 90.0) > TOL or abs(math.remainder(angle, 360.0)) > TOL:
             down = Motion.about(frame.origin, frame.v, turn(90.0 - latitude))
             copy = _moved_copy(copy, Motion.about(frame.origin, frame.n, turn(angle)).after(down), layout)
-        if entry.taken and isinstance(end_of(item), ThroughNext):
+        if entry.taken and isinstance(end_of(item), ThroughNext) and not layout.upright:  # upright: where moved to
             copy = _with_depth(copy, _next_round(item, copy.point, copy.direction, layout.diameters[item.id] / 2,
                                                  layout))  # fmt: skip
+        elif entry.taken and isinstance(end_of(item), ThroughEverything) and not layout.upright:
+            copy = _with_depth(copy, _everything_at(copy.point, copy.direction, layout))
         made.append(copy)
     return made
 
@@ -2482,7 +2504,8 @@ def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout
     if pattern is not None and not _pattern_entry(pattern.kind).round:
         raise PlaceError(item.id, f"round a cone, only a circle or arc of copies, not a {pattern.kind}")
     if entry.taken and _through(item) and not isinstance(end_of(item), ThroughNext):
-        raise PlaceError(item.id, "a hole into a cone's side is blind, or through the next face, for now")
+        raise PlaceError(item.id, "a hole into a cone's side is blind, through the next face or through everything, "
+                         "for now")  # fmt: skip
     start = _angle(place.angle) if place is not None and place.angle is not None else 0.0
     angles = [start]
     if pattern is not None:
@@ -2514,8 +2537,11 @@ def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout
         index = first + n
         if entry.taken:
             here = cone.frame_at(turn(angle), along)
-            depth = (_next_round(item, here.origin, here.n, layout.diameters[item.id] / 2, layout)
-                     if isinstance(end_of(item), ThroughNext) else _mm(item, "depth"))  # fmt: skip
+            depth = (1.0 if layout.upright and isinstance(end_of(item), (ThroughNext, ThroughEverything))  # where moved
+                     else _next_round(item, here.origin, here.n, layout.diameters[item.id] / 2, layout)
+                     if isinstance(end_of(item), ThroughNext)
+                     else _everything_at(here.origin, here.n, layout) if isinstance(end_of(item), ThroughEverything)
+                     else _mm(item, "depth"))  # fmt: skip
             made.append(Copy(item.id, index, host, here.origin, here.n, None, span=(0.0, depth)))
             continue
         below = 90.0 * math.floor(angle / 90.0 + 1e-9)
@@ -2545,10 +2571,17 @@ def _with_depth(copy: Copy, depth: float) -> Copy:
 def _round_hole(item: Item, side: RoundSide, host: tuple[str, int, str], index: int, point: Vec,
                 direction: Vec, layout: _Layout) -> Copy:  # fmt: skip
     radius = layout.diameters[item.id] / 2
-    if isinstance(end_of(item), ThroughNext):  # item 2b's third step: where it comes out, on the oracle's shape
+    end = end_of(item)
+    if isinstance(end, (ThroughNext, ThroughEverything)):  # item 2b's third step: on the oracle's shape, or its boxes
         if not side.outward:
-            raise PlaceError(item.id, "from inside a bore, nothing goes through the next face, for now")
-        depth = _next_round(item, point, direction, radius, layout)
+            raise PlaceError(item.id, "from inside a bore, nothing goes through the next face or through everything, "
+                             "for now")  # fmt: skip
+        if layout.upright:  # round the side of what stands on a turned item's face: found where it is moved to
+            depth = (end.reaches or 1.0) if isinstance(end, ThroughNext) else 1.0
+        elif isinstance(end, ThroughNext):
+            depth = _next_round(item, point, direction, radius, layout)
+        else:
+            depth = _everything_at(point, direction, layout)
     else:
         depth = _side_through(item, side, radius) if _through(item) else _mm(item, "depth")
     begins = (

@@ -21,6 +21,7 @@ from forge_eval.generator import (
     Feature,
     Position,
     _along,
+    _everything_round,
     _Flat,
     _holes_apart,
     _Part,
@@ -71,6 +72,10 @@ class Hole(DrawKind):
             raise DoesNotFitError(
                 f"{f.id}: round a side, a plain hole placed along its axis, here"
             )
+        # Through everything (item 2b's third step): from its point along its radius, through what is behind it too.
+        everything = f.end is not None and f.end.face is None and not f.end.next
+        if f.end is not None and not everything:
+            raise DoesNotFitError(f"{f.id}: round a side, a hole is blind, right through it or through everything")
         r = f.sizes["diameter"] / 2
         w = side.frame.n
         zero, quarter = side.frame.u, side.frame.v
@@ -78,6 +83,11 @@ class Hole(DrawKind):
         n = f.pattern.counts["count"] if f.pattern is not None else 1
         angles = [start + k * 360.0 / n for k in range(n)]
         along = _along(f.place.get(side.axis, Position("none")), side, r)
+        if everything and (side.half is not None or side.bore > 0):
+            raise DoesNotFitError(f"{f.id}: through everything round a rod's whole side, here")
+        radials = [fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter for a in angles]
+        alls = (_everything_round(f, [(side.frame_at(u, along).origin, u, w, np.asarray(np.cross(u, w), dtype=np.float64))
+                                      for u in radials], r, part, strict) if everything else None)  # fmt: skip
         if strict:
             side.on_half(f, angles, r)
         # Through a tube's wall: until it is in the bore all across its mouth (hole.md); a solid rod's, across it.
@@ -125,12 +135,11 @@ class Hole(DrawKind):
                             f"{f.id} meets another hole round the side"
                         )
         made = []
-        for k, a in enumerate(angles):
-            radial = fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter
+        for k, radial in enumerate(radials):
             p = side.frame_at(radial, along).origin
             copy_index = index + k
             made.append(Copy(f.id, copy_index, side.key, _t(p), _t(radial), None))
-            depth = 2 * side.radius if deep is None else deep
+            depth = alls[k] if alls is not None else 2 * side.radius if deep is None else deep
             e1 = w
             e2 = np.asarray(np.cross(radial, w), dtype=np.float64)
             part.steps.append(Step(f.id, copy_index, False, Prism(_t(p), _t(e1), _t(e2), _t(radial), (r, r), r, -depth, 0.0),

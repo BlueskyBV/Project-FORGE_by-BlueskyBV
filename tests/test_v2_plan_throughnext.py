@@ -27,14 +27,22 @@ face"; V2-stage4b-0c.md, 3.5, item 2b's second step; schema 1.8).
   along its axis, its mouth a disc square to it: a rod right across, a
   tube's wall into its bore, a dome out of its flat face, a ball seated in
   a plate on through it, a cone's side, one standing on a plate; built and
-  judged; through everything there, and from inside a bore, still said;
-  the generator draws it on a ball or a cone.
+  judged; up to a face there, and from inside a bore, still said; the
+  generator draws it on a ball or a cone.
 - **On a turned or a leaning item's face** (item 2b's third step): placed
   as with the face upright, how deep along its axis where it is moved to:
   a hole and a pocket out through a leaning boss's or post's far face and
   on through the plate it leans on, a hole down through a turned post and
   the plate, one across it from its side; built and judged; the generator
   draws a hole so.
+- **And through everything there** (item 2b's third step): as far as
+  everything made before it reaches along its axis from its point, each
+  copy from its own: round a rod, on a dome and a ball seated in a plate,
+  a cone's side, out through a leaning boss and the plate, down through a
+  turned post and the plate; every program's layout agrees, built and
+  judged; a body made after it in its way is asked about; the second
+  kernel agrees; the generator draws it round a side, on a ball or a
+  cone, and on a turned item's face.
 """
 
 from __future__ import annotations
@@ -388,9 +396,9 @@ class RoundASideOnABallOrACone(unittest.TestCase):
         from forge_spec.checks import check_draft
         from forge_spec.words import number_words
 
-        everything = {"through_all": True, "from": {"assumed": "through it"}}
+        up_to = {"up_to": {"item": "ball", "face": "surface"}, "from": {"assumed": "down to it"}}
         for make, words in (
-            (lambda b: [_ball(b), {**_round_hole(b, "ball", "surface", **_round(b, 45.0, 30.0)), "depth": everything}],
+            (lambda b: [_ball(b), {**_round_hole(b, "ball", "surface", **_round(b, 45.0, 30.0)), "depth": up_to}],
              "from a flat face, for now, not on a ball's surface"),
             (lambda b: [_tube(b), {**_round_hole(b, "rod", "bore"), "depth": _next()}], "the inside of a bore"),
         ):  # fmt: skip
@@ -502,6 +510,125 @@ class OnATurnedOrALeaningItemsFace(unittest.TestCase):
                  and (face := part.flats.get((f.on[0], 0, f.on[1]))) is not None and face.turned]  # fmt: skip
         self.assertTrue(found)
         self.assertTrue(all("through_next" in item["depth"] for item in case.items if item["id"] in {f.id for f in found}))
+
+
+ALL = {"through_all": True, "from": {"assumed": "through everything"}}
+
+
+def _everything_cases() -> dict[str, tuple[Any, str, float]]:
+    """Through everything from a curved face, or a turned or leaning item's: each part, whether its draft is the round
+    or the moved kind, and how deep its hole goes from its point as the solver places it (mm): as far as every item's
+    box reaches behind it along its axis, and a millimetre on."""
+    from test_v2_plan_faceaxes import _hole as _on_post
+    from test_v2_plan_faceaxes import _post
+    from test_v2_plan_leanfar import _hole as _on_lean
+    from test_v2_plan_leanfar import _leaning
+
+    return {
+        # 15 mm to the rod's axis, and its box's corner 15 (cos 30 + sin 30) mm on.
+        "round a rod": (lambda b: [_rod(b), {**_round_hole(b, "rod", "side", angle=assumed("round", 30.0, "deg"),
+                                                           z={"offset": assumed("off", 5.0)}), "depth": ALL}],
+                        "round", 15.0 + 15.0 * (3 ** 0.5 / 2 + 0.5) + 1.0),
+        "a dome": (lambda b: [_ball(b, "upper_half"), {**_round_hole(b, "ball", "surface", **_round(b, 45.0, 30.0)),
+                                                       "depth": ALL}], "round", 40.318517),
+        "a ball seated in a plate": (
+            lambda b: [_plate(b), _ball(b, on="plate", across=30.0),
+                       {**_round_hole(b, "ball", "surface", **_round(b, 50.0, 100.0)), "depth": ALL}], "round", 46.699967),
+        "a cone's side": (lambda b: [_cone(b), {**_round_hole(b, "cone", "side", angle=assumed("round", 30.0, "deg")),
+                                                "depth": ALL}], "round", 34.669132),
+        "out through a leaning boss and the plate": (lambda b: [_leaning(b), {**_on_lean(b, "+end"), "depth": ALL}],
+                                                     "moved", 45.618548),
+        # 10 mm of post and 8 of plate under its top, and a millimetre on.
+        "down through a turned post and the plate": (lambda b: [_post(b), {**_on_post(b), "depth": ALL}], "moved", 19.0),
+    }  # fmt: skip
+
+
+def _everything_report(make: Any, kind: str) -> Any:
+    from forge_spec.checks import check_draft
+    from forge_spec.words import number_words
+    from test_v2_plan_faceaxes import _TEXT as _FACES
+
+    found, text = (_round_draft(make), _ROUND) if kind == "round" else (_moved_draft(make), _FACES)
+    return check_draft(number_words(text), found, strict=False), number_words(text)
+
+
+class ThroughEverythingFromACurvedOrAMovedFace(unittest.TestCase):
+    def test_as_deep_as_everything_reaches(self) -> None:
+        from forge_checks.place import compare_layouts, place
+        from forge_spec.placement import solve
+
+        for name, (make, kind, deep) in _everything_cases().items():
+            with self.subTest(name):
+                report, _ = _everything_report(make, kind)
+                self.assertEqual(report.problems, ())
+                (hole,) = report.layout.instances["hole"]
+                self.assertAlmostEqual(hole.depth, deep, places=5)
+                self.assertEqual(compare_layouts(place(report.spec), solve(report.spec)), ())
+
+    def test_a_body_made_after_in_its_way_is_asked(self) -> None:
+        # A boss under the plate, made after the hole through the seated ball and the plate, stands in its way; made
+        # before it, it is cut through.
+        def boss(b: Any) -> dict[str, Any]:
+            return {"id": "under", "kind": "boss", "words": cite(b, "rod"), "on": {"item": "plate", "face": "-z"},
+                    "diameter": assumed("across", 30.0), "height": assumed("tall", 10.0)}  # fmt: skip
+
+        hole = _everything_cases()["a ball seated in a plate"][0]
+        for make, asked in ((lambda b: [*hole(b), boss(b)], True), (lambda b: [*hole(b)[:2], boss(b), hole(b)[2]], False)):
+            with self.subTest(asked=asked):
+                report, _ = _everything_report(make, "round")
+                said = [p for p in report.problems if "stands in its way" in p.message]
+                self.assertEqual(bool(said), asked, [(p.kind, p.message) for p in report.problems])
+
+
+@needs_occ
+class ThroughEverythingBuiltAsPlaced(unittest.TestCase):
+    def test_every_case(self) -> None:
+        from forge_checks.classes import Verdict
+        from forge_plan import plan
+        from forge_spec.lock import lock
+        from test_v2_plan_build import judged_plan
+
+        for name, (make, kind, _) in _everything_cases().items():
+            with self.subTest(name):
+                report, brief = _everything_report(make, kind)
+                spec = lock(report, brief, by="draft", strict=False)
+                built, accounting, failed = judged_plan(spec.spec, plan(spec))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+                self.assertEqual(failed, [])
+
+    def test_the_second_kernel_agrees(self) -> None:
+        from forge_occ.agreement import agree
+        from forge_occ.planned import build_plan
+        from forge_plan import plan
+        from forge_spec.lock import lock
+
+        for name in ("round a rod", "out through a leaning boss and the plate"):
+            with self.subTest(name):
+                make, kind, _ = _everything_cases()[name]
+                report, brief = _everything_report(make, kind)
+                planned = plan(lock(report, brief, by="draft", strict=False))
+                built = build_plan(planned)
+                self.assertIsNone(built.gap, built.refusals)
+                report_ = agree(planned.document(built.choice), "part", exact=built.result)
+                self.assertTrue(report_.holds, (report_.disagreements, report_.notes, report_.names, report_.topology))
+
+
+class TheGeneratorDrawsThroughEverythingThere(unittest.TestCase):
+    def test_round_a_side_on_a_ball_or_a_cone_and_on_a_turned_face(self) -> None:
+        from forge_eval.generator import _build, generate
+
+        found = set()
+        for seed in (0, 16, 29, 85):
+            case = generate(seed)
+            part = _build(case.plan, False)
+            for f in case.plan:
+                if f.on is None or f.end is None or f.end.face is not None or f.end.next:
+                    continue
+                key = (f.on[0], 0, f.on[1])
+                found.add("round" if key in part.rounds else "ball" if key in part.balls else "cone" if key in part.cones
+                          else "turned" if key in part.flats and part.flats[key].turned else "flat")  # fmt: skip
+        self.assertTrue({"round", "ball", "cone", "turned"} <= found, found)
 
 
 if __name__ == "__main__":
