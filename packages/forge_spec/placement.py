@@ -2946,13 +2946,19 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             # how deep along its axis where it is moved to. Round the side of what stands on one, as round any side.
             face = _upright(face)
             host_item = layout.items.get(on.item)
-            if (isinstance(face, SideFace) or (isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant))) \
-                    and host_item is not None and leaning(host_item) and (not SOLVE[item.kind].cut or leaning(item)):  # fmt: skip
-                # A leaning item's side, flat or round (V2-stage4b-0c.md 3.3): only a cut square to it, which stays
-                # where the side is clear of its foot.
+            if isinstance(face, SideFace) and host_item is not None and leaning(host_item) \
+                    and (not SOLVE[item.kind].cut or leaning(item)):  # fmt: skip
+                # A leaning item's round side (V2-stage4b-0c.md 3.3): only a hole square to it, which stays where the
+                # side is clear of its foot.
                 layout.issue("unable", at + (pointer("tilt") if leaning(item) else ""),
-                             f"{on.item} leans: Forge only cuts into its side, square to it, and stands or leans "
-                             "nothing on it, for now")  # fmt: skip
+                             f"{on.item} leans: Forge only cuts into its round side, square to it, and stands or leans "
+                             "nothing round it, for now")  # fmt: skip
+                return []
+            if isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant) and host_item is not None \
+                    and leaning(host_item) and leaning(item):  # fmt: skip
+                # A leaning box's side: what is cut into it or stands on it, square to it (step 5's sides).
+                layout.issue("unable", at + pointer("tilt"),
+                             f"{on.item} leans: Forge leans nothing on its side, for now")  # fmt: skip
                 return []
             if isinstance(face, FlatFace) and isinstance(face.depth_model, Slant) and SOLVE[item.kind].cut \
                     and isinstance(end_of(item), ThroughAll) and not isinstance(end_of(item), ThroughNext):  # fmt: skip
@@ -3024,9 +3030,38 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             _curved_footed(item, layout, (item.id, placed.index), _host_face(inst, layout))
         if motion is not None:
             _moved_faces((item.id, placed.index), motion, layout, item)
+            if not _clear_of_the_lean(item, on, placed, motion, layout, at):
+                return []
             placed = _moved_instance(placed, motion)
         standing.append(placed)
     return standing
+
+
+def _clear_of_the_lean(item: Item, on: On, placed: Instance, motion: Rigid, layout: Layout, at: str) -> bool:
+    """What stands on a leaning box's side stays clear of the face the box leans on (V2-stage4b-0c.md 3.3, step 5's
+    sides): every corner of the box round it, as it stands upright on the side and moved with the box, is over that
+    face's plane. Whether it is (False: it is asked about)."""
+    host_item = layout.items.get(on.item)
+    if host_item is None or not leaning(host_item) or placed.lo is None or placed.hi is None:
+        return True
+    index = placed.host[1] if placed.host is not None else 0
+    leaner = next((c for c in layout.instances.get(on.item, []) if c.index == index and c.host is not None), None)
+    plane = layout.faces.get(leaner.host[:2], {}).get(leaner.host[2]) if leaner is not None and leaner.host else None
+    if not isinstance(plane, FlatFace):
+        return True
+    n, o = plane.frame.n, plane.frame.origin
+    lo, hi = placed.lo, placed.hi
+    corners = [(x, y, z) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
+    low = math.inf
+    for c in corners:
+        q = motion.point(c)
+        low = min(low, (q[0] - o[0]) * n[0] + (q[1] - o[1]) * n[1] + (q[2] - o[2]) * n[2])
+    if low > EPS:
+        return True
+    layout.problem("question", at, f"{item.id} reaches down to the face {on.item} leans on, {-low:g} mm past it: "
+                   "should it be shorter, or stand higher up the side?",
+                   [*_item_values(item, "height", "length"), *_place_values(item)])  # fmt: skip
+    return False
 
 
 def _deep(cut: Instance, depth: float) -> Instance:

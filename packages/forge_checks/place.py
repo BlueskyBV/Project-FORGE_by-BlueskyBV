@@ -1700,11 +1700,14 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         if isinstance(end_of(item), UpToFace) and not isinstance(face, FlatFace):
             raise PlaceError(item.id, "round the side of what stands on a turned item's face, nothing is cut up to a "
                              "face, yet")  # fmt: skip
-        if (isinstance(face, RoundSide) or (isinstance(face, FlatFace) and not isinstance(face.material, Slant))) \
-                and isinstance(layout.items[on.item].get("tilt"), Value) \
+        if isinstance(face, RoundSide) and isinstance(layout.items[on.item].get("tilt"), Value) \
                 and (not _entry(item.kind).taken or isinstance(item.get("tilt"), Value)):  # fmt: skip
-            # A leaning item's side (V2-stage4b-0c.md 3.3): a cut square to it only, which stays clear of its foot.
-            raise PlaceError(item.id, "on a leaning item's side, only a cut square to it, yet")
+            # A leaning item's round side (V2-stage4b-0c.md 3.3): a hole square to it only, which stays clear of its foot.
+            raise PlaceError(item.id, "round a leaning item's side, only a hole square to it, yet")
+        if isinstance(face, FlatFace) and not isinstance(face.material, Slant) \
+                and isinstance(layout.items[on.item].get("tilt"), Value) and isinstance(item.get("tilt"), Value):  # fmt: skip
+            # A leaning box's side: what is cut into it or stands on it, square to it.
+            raise PlaceError(item.id, "on a leaning item's side, nothing leans, yet")
         upright = replace(face, local=None)
         layout.upright, layout.motion = True, motion
         try:

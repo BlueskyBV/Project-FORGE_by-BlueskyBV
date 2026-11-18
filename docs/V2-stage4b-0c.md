@@ -1479,8 +1479,36 @@ post to the plate's bottom and top, from a leaning post's side to the
 plate's side: placed where every program puts them, built and judged; from
 a leaning boss's far face said; the generator's part 66). The exit harness's per-seed proof on 66, 297
 and 314 (the three of the first 400 that end so, from a turned item's
-face): all passed, every mutant caught. Generator digests on seeds 0-149,
-old against new: only 66 differs.
+face): all passed, every mutant that makes another part caught (314's
+makes the same part). Generator digests on seeds 0-149, old against new:
+only 66 differs.
+
+**And what stands on a leaning box's side (revision 16).** A leaning post's
+or block's flat sides take what stands on a face too, square to it
+(place.md, "A leaning item's sides"): a boss, a post, a tab or a rib,
+placed on the side less the band along its foot as a cut is, upright, then
+leaned with the box. **The solver** keeps it clear of the face the box
+leans on: every corner of the box round it, as it stands upright and moved
+with the box, is over that face's plane, or it asks whether it should be
+shorter or stand higher up the side (`_clear_of_the_lean`). What leans on
+such a side, and what stands round a leaning boss's or cylinder's round
+side, is still said, by **the solver** and **the judge** alike. **The
+generator** stands one on a leaning box's side, or on a leaning item's far
+face, now and then, from the streams it cuts there with (`_onto_leaning`,
+`_onto_leaning_side`: what that kind takes, while the part is not yet as
+big as it is drawn to be), its corners clear of the face it leans on by
+the generator's gap (`_clear_of_the_lean`). Tests:
+`tests/test_v2_plan_leanside.py` (a boss on each side, across, from and
+under the way it leans, and a post on a leaning block's side: where every
+program puts them, built and judged, the second kernel agreeing, and a
+lean half a degree more caught; a tall one reaching the plate asked
+about; what leans there said; the generator's own shape, built and graded,
+and one reaching down into the plate not fitting). The exit harness's
+per-seed proof on 247 and 1162 (the two of the first 1,163 seeds that
+stand something on a leaning item's face, both on its far face): both
+passed, 247's mutant caught (1162's makes the same part). Generator
+digests on seeds 0-149, old against new: only the impossible part 41
+differs (its leaning block's far face drawn from the wider choice).
 
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new

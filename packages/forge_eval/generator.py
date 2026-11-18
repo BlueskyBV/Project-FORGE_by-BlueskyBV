@@ -36,6 +36,7 @@ meet in one plane by chance.
 from __future__ import annotations
 
 import functools
+import itertools
 import math
 import random
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
@@ -392,7 +393,8 @@ class _Flat:
     #: of its own (:func:`_onto_leaning`), not as on a turned item's face.
     slant: tuple[tuple[float, float], float] | None = None
     #: A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides), oriented as above: where it is clear of its
-    #: foot. Only a cut square to it goes on one, from a stream of its own (:func:`_onto_leaning_side`).
+    #: foot. A cut square to it, or what stands square on it clear of the face it leans on, goes on one, from a stream
+    #: of its own (:func:`_onto_leaning_side`).
     leans: bool = False
 
     @property
@@ -1172,6 +1174,27 @@ def _leaning_round_side(f: Feature, index: int, p: Array, n: Array, u: Array, w:
                                         leaned(_v(unit_of("+" + up[1])))))  # fmt: skip
 
 
+def _clear_of_the_lean(f: Feature, side: _Flat, new: Sequence[Step], part: _Part) -> None:
+    """What stands on a leaning box's side stays clear of the face the box leans on, by the gap (V2-stage4b-0c.md 3.3,
+    step 5's sides): every corner of the box round each of its solids, as the solver asks of the box round it as it
+    stands upright on the side, moved with the box."""
+    item, index, _ = side.key
+    leaner = next((c for c in part.copies.get(item, []) if c.index == index), None)
+    under = part.flats.get(leaner.host) if leaner is not None and leaner.host is not None else None
+    if under is None:
+        return
+    for step in new:
+        solid = step.solid
+        if not step.add or not isinstance(solid, Prism):
+            continue
+        p, e1, e2, n = (_v(x) for x in (solid.centre, solid.first, solid.second, solid.normal))
+        (h1, h2), heights = solid.half, (max(solid.low, 0.0), solid.high)
+        for s1, s2, t in itertools.product((-h1, h1), (-h2, h2), heights):
+            corner = p + s1 * e1 + s2 * e2 + t * n
+            if float(fv.matmul(corner - under.centre, under.normal)) < GAP:
+                raise DoesNotFitError(f"{f.id} reaches down to the face {item} leans on")
+
+
 def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
     """Now and then a hole (plain or counterbored), a boss, a post, a block or a cylinder (turned or not; a body in schema
     1.5) on a face with the same material
@@ -1889,6 +1912,8 @@ def _on_flat(
             )
     if strict and standing:
         _stands_in_air(f, made, part.steps[first:], (*part.steps[:first], *part.late))
+        if face.leans:
+            _clear_of_the_lean(f, face, part.steps[first:], part)
     _in_room(face, before, part)
     if standing and face.hollow is not None:
         for k, foot in enumerate(feet):
@@ -5009,12 +5034,12 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue
         if _onto_end(random.Random(f"forge-eval on round ends {seed} {k}"), k, plan, part, len(plan) < size):
             continue
-        if _onto_leaning(random.Random(f"forge-eval leaning faces {seed} {k}"), k, plan, part):
+        if _onto_leaning(random.Random(f"forge-eval leaning faces {seed} {k}"), k, plan, part, len(plan) < size):
             _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             _everything_now_and_then(random.Random(f"forge-eval through everything round {seed} {k}"), len(plan) - 1,
                                      plan, part)  # fmt: skip
             continue
-        if _onto_leaning_side(random.Random(f"forge-eval leaning sides {seed} {k}"), k, plan, part):
+        if _onto_leaning_side(random.Random(f"forge-eval leaning sides {seed} {k}"), k, plan, part, len(plan) < size):
             _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             _everything_now_and_then(random.Random(f"forge-eval through everything round {seed} {k}"), len(plan) - 1,
                                      plan, part)  # fmt: skip
@@ -5425,23 +5450,24 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
     return False
 
 
-#: How often, where the part has a leaning item's far face, a hole, a pocket or a slot is drawn on it (1b's step 5,
-#: with item 2b), from a stream of its own.
+#: How often, where the part has a leaning item's far face, a hole, a pocket, a slot or what stands is drawn on it (1b's
+#: step 5, with item 2b), from a stream of its own.
 _ON_LEANING = 0.6
 
 
-def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
     """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning item's far face (1b's step 5,
-    with item 2b): placed along the face's own axes, u and v, as with the item upright, blind (no cut goes right
-    through it). Whether one was added to the plan."""
+    with item 2b), or what stands there: placed along the face's own axes, u and v, as with the item upright; a cut
+    blind (no cut goes right through it). Whether one was added to the plan."""
     faces = [key for key, face in part.flats.items() if key[1] == 0 and face.slant is not None]
     if not faces or rng.random() >= _ON_LEANING:
         return False
     key = rng.choice(faces)
     face = part.flats[key]
+    standing_ok = standing_ok and _draw(part.kinds[key[0]]).hosts_standing
     for _ in range(10):
-        candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
-        if not _draw(candidate.kind).cut_out or candidate.depth is None:
+        candidate = replace(_feature(rng, k, key[0], face, standing_ok), own_axes=face.axes)
+        if _draw(candidate.kind).cut_out and candidate.depth is None:
             continue
         try:
             render((*plan, candidate))
@@ -5452,16 +5478,16 @@ def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part) 
     return False
 
 
-#: How often, where the part has a leaning box's side, a hole, a pocket or a slot is cut square into one
-#: (V2-stage4b-0c.md 3.3, a leaning item's sides), from a stream of its own.
+#: How often, where the part has a leaning item's side, a hole, a pocket or a slot is cut square into one, or what
+#: stands is put on a box's (V2-stage4b-0c.md 3.3, a leaning item's sides), from a stream of its own.
 _ON_LEANING_SIDE = 0.5
 
 
-def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
-    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning box's side, or a hole round a
-    leaning boss's or cylinder's (V2-stage4b-0c.md 3.3, a leaning item's sides): placed along the face's own axes, u
-    and v, or along its axis and round it, as on its upright side where that is clear of its foot; blind or right
-    through it. Whether one was added to the plan."""
+def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning box's side, or what stands
+    there clear of the face it leans on, or a hole round a leaning boss's or cylinder's (V2-stage4b-0c.md 3.3, a
+    leaning item's sides): placed along the face's own axes, u and v, or along its axis and round it, as on its upright
+    side where that is clear of its foot; a cut blind or right through it. Whether one was added to the plan."""
     faces = [key for key, face in part.flats.items() if key[1] == 0 and face.leans]
     faces += [key for key, side in part.rounds.items() if key[1] == 0 and side.leans]  # a boss's or a cylinder's
     if not faces or rng.random() >= _ON_LEANING_SIDE:
@@ -5471,9 +5497,8 @@ def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _P
         if key in part.rounds:  # a hole round it, along its axis and at an angle round it
             candidate = _side_hole(rng, k, key[0], part.rounds[key])
         else:
-            candidate = replace(_feature(rng, k, key[0], part.flats[key], False), own_axes=part.flats[key].axes)
-        if not _draw(candidate.kind).cut_out:
-            continue
+            candidate = replace(_feature(rng, k, key[0], part.flats[key], standing_ok
+                                         and _draw(part.kinds[key[0]]).hosts_standing), own_axes=part.flats[key].axes)
         try:
             render((*plan, candidate))
         except DoesNotFitError:

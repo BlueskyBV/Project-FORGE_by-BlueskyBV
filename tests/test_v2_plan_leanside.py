@@ -2,15 +2,17 @@
 leaning item's sides).
 
 - **Placed as on its upright side clear of its foot, then leaned:** a hole,
-  a pocket or a slot square into a side of a leaning post or block, along
-  the face's own axes, u and v, on its upright side less the band along its
-  foot as high as its foot rises on the side it leans towards; a hole round
-  a leaning boss's or cylinder's side, along its axis and at an angle round
-  it, the band its radius times its tilt's tan; every program's layout
-  agrees.
-- **What isn't yet is said:** something standing or leaning on a side, a
-  cut reaching into the band, a box leaning so far that its foot reaches
-  all the way up its sides, and a turned leaning box's sides.
+  a pocket or a slot square into a side of a leaning post or block, or a
+  boss or a post standing square on it, along the face's own axes, u and v,
+  on its upright side less the band along its foot as high as its foot
+  rises on the side it leans towards; a hole round a leaning boss's or
+  cylinder's side, along its axis and at an angle round it, the band its
+  radius times its tilt's tan; every program's layout agrees.
+- **What isn't yet is said:** something leaning on a side, or standing
+  round a round one; what stands on a side reaching down to the face the
+  box leans on; a cut reaching into the band, a box leaning so far that its
+  foot reaches all the way up its sides, and a turned leaning box's
+  sides.
 - **What is built is what was placed.** Each part built by the build loop,
   every face accounted for both ways, every check its spec compiles to
   passing; a cut right through comes out on the side across.
@@ -18,7 +20,9 @@ leaning item's sides).
   the judge.
 - **The second kernel agrees** with the exact part.
 - **The generator draws it:** its own sides, flat and round, oriented as it
-  leans, clear of its foot, and a cut on one now and then.
+  leans, clear of its foot, and a cut on one, or what stands on a flat one
+  clear of the face it leans on, now and then; what stands there built as
+  its own shape.
 """
 
 from __future__ import annotations
@@ -42,7 +46,7 @@ from test_v2_plan_leanfar import (
     _row,
     _slot,
 )
-from v2_drafts import assumed
+from v2_drafts import assumed, cite
 from v2_occ import needs_occ
 
 _THROUGH = {"through": True, "from": {"assumed": "through"}}
@@ -78,6 +82,25 @@ CASES: dict[str, tuple[Any, tuple[str, float, str, str, float, float]]] = {
                             ("post", 25.0, "-x", "+y", 0.0, 0.0)),
     "a row of holes along its side": (lambda b: [_leaning(b, "post"), _row({**_hole(b, "+y", d=2.0), "place": {}})],
                                    ("post", 20.0, "+x", "+y", -3.0, 0.0)),
+}  # fmt: skip
+
+
+def _post(b: Any, face: str) -> dict[str, Any]:
+    return {"id": "hole", "kind": "post", "words": cite(b, "post"), "on": {"item": "lean", "face": face},
+            "length": assumed("long", 4.0), "width": assumed("wide", 3.0), "height": assumed("tall", 3.0)}  # fmt: skip
+
+
+#: Each part: the plate, a leaning box on it, and what stands on one of its sides, square to it; where it is, as with
+#: :data:`CASES`.
+STANDING: dict[str, tuple[Any, tuple[str, float, str, str, float, float]]] = {
+    "a boss on its side across its lean": (lambda b: [_leaning(b, "post"), _boss(b, "+y")],
+                                           ("post", 20.0, "+x", "+y", 0.0, 0.0)),
+    "a boss on the side it leans from": (lambda b: [_leaning(b, "post"), _boss(b, "-x")],
+                                         ("post", 20.0, "+x", "-x", 0.0, 0.0)),
+    "a boss under the side it leans over": (lambda b: [_leaning(b, "post", 25.0), _boss(b, "+x")],
+                                            ("post", 25.0, "+x", "+x", 0.0, 0.0)),
+    "a post on a leaning block's side": (lambda b: [_leaning(b, "block", 15.0, "+y"), _post(b, "-x")],
+                                         ("block", 15.0, "+y", "-x", 0.0, 0.0)),
 }  # fmt: skip
 
 
@@ -124,7 +147,7 @@ class PlacedOnItsUprightSideClearOfItsFootThenLeaned(unittest.TestCase):
     def test_where_it_is(self) -> None:
         from forge_spec.items.solve._common import FACE_AXES
 
-        for name, (make, (kind, tilt, way, side, du, dv)) in CASES.items():
+        for name, (make, (kind, tilt, way, side, du, dv)) in {**CASES, **STANDING}.items():
             with self.subTest(name):
                 report = _report(make)
                 self.assertEqual(report.problems, ())
@@ -167,7 +190,7 @@ class PlacedOnItsUprightSideClearOfItsFootThenLeaned(unittest.TestCase):
         from forge_checks.place import compare_layouts, place
         from forge_spec.placement import solve
 
-        for name, (make, _) in {**CASES, **ROUND_CASES}.items():
+        for name, (make, _) in {**CASES, **STANDING, **ROUND_CASES}.items():
             with self.subTest(name):
                 spec, _ = _planned(make)
                 self.assertEqual(compare_layouts(place(spec.spec), solve(spec.spec)), ())
@@ -183,11 +206,17 @@ class WhatIsntYetIsSaid(unittest.TestCase):
 
         short = {"height": assumed("tall", 5.0)}
         for make, words, judged in (
-            (lambda b: [_leaning(b, "post"), _boss(b, "+y")], "stands or leans nothing on it", True),
-            (lambda b: [_leaning(b), _boss(b, "side")], "stands or leans nothing on it", True),
+            (lambda b: [_leaning(b), _boss(b, "side")], "stands or leans nothing round it", True),
             (lambda b: [_leaning(b, "post"), {**_hole(b, "+y"), "tilt": assumed("leaning", 10.0, "deg"),
                                               "tilt_towards": {"choose": "+u", "from": {"assumed": "that way"}}}],
-             "stands or leans nothing on it", True),
+             "leans nothing on its side", True),
+            (lambda b: [_leaning(b, "post"), {**_boss(b, "+y"), "tilt": assumed("leaning", 10.0, "deg"),
+                                              "tilt_towards": {"choose": "+u", "from": {"assumed": "that way"}}}],
+             "leans nothing on its side", True),
+            # Under the side it leans over, 5 mm down it and 30 mm tall: its far end reaches the plate.
+            (lambda b: [_leaning(b, "post"), {**_boss(b, "+x"), "height": assumed("tall", 30.0),
+                                              "place": {"v": {"offset": assumed("down", -5.0)}}}],
+             "reaches down to the face lean leans on", False),
             # Its v runs up the side: 8.54 mm down from the middle of it clear of its foot to the band, 2 mm round.
             (lambda b: [_leaning(b, "post"), _hole(b, "+y", v={"offset": assumed("down", -7.5)})],
              "runs past the edge of face +y", True),
@@ -217,7 +246,7 @@ class BuiltAsPlaced(unittest.TestCase):
     def test_every_case(self) -> None:
         from forge_checks.classes import Verdict
 
-        for name, (make, _) in {**CASES, **ROUND_CASES}.items():
+        for name, (make, _) in {**CASES, **STANDING, **ROUND_CASES}.items():
             with self.subTest(name):
                 built, accounting, failed = _judged(make)
                 self.assertIsNone(built.gap, built.refusals)
@@ -240,6 +269,7 @@ class AWrongLeanIsCaught(unittest.TestCase):
 
         for name, make in (("a hole across its lean", CASES["a hole across its lean"][0]),
                            ("a pocket in a leaning block's side", CASES["a pocket in a leaning block's side"][0]),
+                           ("a boss on the side it leans from", STANDING["a boss on the side it leans from"][0]),
                            ("a hole into a leaning boss's side", ROUND_CASES["a hole into a leaning boss's side"][0])):
             with self.subTest(name), mock.patch.object(moved, "transform_params", more):
                 built, accounting, failed = _judged(make)
@@ -255,6 +285,7 @@ class TheSecondKernelAgrees(unittest.TestCase):
 
         for name, make in (("a hole right through it the way it leans", CASES["a hole right through it the way it leans"][0]),
                            ("a pocket in a leaning block's side", CASES["a pocket in a leaning block's side"][0]),
+                           ("a post on a leaning block's side", STANDING["a post on a leaning block's side"][0]),
                            ("a hole right through it, along its lean",
                             ROUND_CASES["a hole right through it, along its lean"][0])):  # fmt: skip
             with self.subTest(name):
@@ -317,6 +348,30 @@ class TheGeneratorDrawsIt(unittest.TestCase):
                          and (((key := (f.on[0], 0, f.on[1])) in part.flats and part.flats[key].leans)
                               or (key in part.rounds and part.rounds[key].leans))]  # fmt: skip
                 self.assertEqual(found, [(item, face)])
+
+
+@needs_occ
+class WhatTheGeneratorStandsOnOneIsItsOwnShape(unittest.TestCase):
+    def test_built_and_graded(self) -> None:
+        """A boss or a post the generator stands on a leaning post's side: built, and graded against its own shape both
+        ways; one reaching down into what it leans on doesn't fit."""
+        from forge_eval.generator import DoesNotFitError, Feature, _build, render
+        from v2_exit4 import _built, _graded, _spec
+
+        body = Feature("body", "block", {"length": 60.0, "width": 40.0, "height": 10.0})
+        post = Feature("i0", "post", {"length": 16.0, "width": 12.0, "height": 20.0}, ("body", "+z"), tilt=(20.0, "+x"))
+        flats = _build((body, post), True).flats
+        boss, small = {"diameter": 5.0, "height": 4.0}, {"length": 4.0, "width": 3.0, "height": 3.0}
+        for side, kind, sizes in (("+y", "boss", boss), ("-x", "post", small), ("+x", "boss", boss)):
+            with self.subTest(side=side, kind=kind):
+                on = Feature("i1", kind, sizes, ("i0", side), own_axes=flats[("i0", 0, side)].axes)
+                case = render((body, post, on))
+                _, built = _built(_spec(case.items))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertEqual(_graded(built.result.shape, case.truth, 0), [])
+        tall = Feature("i1", "boss", {**boss, "height": 30.0}, ("i0", "+x"), own_axes=flats[("i0", 0, "+x")].axes)
+        with self.assertRaises(DoesNotFitError):
+            render((body, post, tall))
 
 
 if __name__ == "__main__":

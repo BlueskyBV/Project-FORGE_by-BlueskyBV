@@ -235,8 +235,8 @@ kind modules on the same foundation, never as a rebuild of it.
   finding how deep before confirmation), and of its third through the next
   face and through everything on a round side, a ball, a cone and a turned
   or leaning item's face, and up to a face from a turned or leaning item's
-  face; a leaning item's sides, flat and round, take cuts; next, its
-  fourth step (schema 2.0).
+  face; a leaning item's sides, flat and round, take cuts, and its flat
+  ones what stands; next, its fourth step (schema 2.0).
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and
