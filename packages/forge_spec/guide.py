@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 16
+GUIDE_VERSION = 17
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -773,8 +773,11 @@ hole, a pocket or a slot cut square into them, blind or right through: \
 each is its upright side less the band along its foot as high as the foot \
 rises on the side it leans to (its half size along its lean times \
 tan(tilt)), placed along that side's own "u" and "v" (its middle and its \
-edges are that rectangle's), then leaned with it; nothing stands or leans \
-there yet. Its other faces take nothing yet; its far end's edges ("top") and a \
+edges are that rectangle's), then leaned with it; a leaning boss's or \
+cylinder's round side ("side") likewise takes a hole along its radius, \
+placed along its axis and at an "angle" round it on the side less the \
+band its radius times tan(tilt) high; nothing stands or leans there yet. \
+Its other faces take nothing yet; its far end's edges ("top") and a \
 box's along its lean ("vertical") are rounded as with it upright, not yet \
 its joint; a leaning rod is threaded along its lean from its far end, \
 clear of its foot (give the thread a length that leaves it so).

@@ -590,6 +590,15 @@ class _Round:
     #: A round-ended tab's end (item 3b's fourth step): the angle round it (degrees) of the middle of its half, the way
     #: the tab sticks out; None for a whole side.
     half: float | None = None
+    #: A leaning boss's or cylinder's side (V2-stage4b-0c.md 3.3, a leaning item's sides): its ways out at 0 and 90
+    #: degrees round it and its axis, as it leans; its start and length where it is clear of its foot. Only a hole goes
+    #: into it, from a stream of its own (:func:`_onto_leaning_side`).
+    oriented: tuple[Vec, Vec, Vec] | None = None
+
+    @property
+    def leans(self) -> bool:
+        """Whether it is a leaning item's side."""
+        return self.oriented is not None
 
     def on_half(self, f: Feature, angles: Sequence[float], across: float) -> None:
         """On a round-ended tab's end, all of a copy stays on its half: within a quarter turn of its middle, its reach
@@ -602,7 +611,9 @@ class _Round:
 
     @functools.cached_property
     def frame(self) -> _FaceFrame:
-        """Its start; the ways out at 0 and 90 degrees round it; its axis."""
+        """Its start; the ways out at 0 and 90 degrees round it; its axis (as it leans, where it does)."""
+        if self.oriented is not None:
+            return _FaceFrame(self.start, *self.oriented)
         u, v = TURN_AXES[self.axis]
         return _FaceFrame.of_names(self.start, u, v, self.axis)
 
@@ -1079,6 +1090,8 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
                 _leaning_far(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, face, part)
                 if not _draw(f.kind).leans_round:
                     _leaning_sides(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, part)
+                else:
+                    _leaning_round_side(f, copy_index, p, n, u, w, tilted, side, height, along, lean, part)
     if strict and not cut:
         _stands_in_air(f, made, part.steps[first:], (*part.steps[:first], *part.late))
     for k, at in enumerate(spots):
@@ -1136,6 +1149,27 @@ def _leaning_sides(f: Feature, index: int, p: Array, n: Array, u: Array, w: Arra
                                     (extent[b1] / 2, extent[b2] / 2), 2.0 * half, (f.id, index, other),
                                     oriented=(_t(leaned(_v(unit_of("+" + b1)))), _t(leaned(_v(unit_of("+" + b2))))),
                                     leans=True)  # fmt: skip
+
+
+def _leaning_round_side(f: Feature, index: int, p: Array, n: Array, u: Array, w: Array, tilted: Array, side: Array,
+                        height: float, radius: float, lean: _Lean, part: _Part) -> None:  # fmt: skip
+    """A leaning boss's or cylinder's side (V2-stage4b-0c.md 3.3, a leaning item's sides): its upright side less the
+    band along its foot as high as its foot rises on the low side (its radius times its tilt's tan), oriented as it
+    leans: running along its frame axis from its end with the lesser coordinate, as upright."""
+    rise = radius * lean.tan
+    if height <= rise:
+        return  # its foot reaches all the way up its side: it takes nothing
+
+    def leaned(a: Array) -> Vec:
+        return _t(float(fv.matmul(a, w)) * tilted + float(fv.matmul(a, side)) * side + float(fv.matmul(a, n)) * u + 0.0)
+
+    up = _named(n)
+    zero, quarter = TURN_AXES[up[1]]
+    start = p + rise * u if up[0] == "+" else p + height * u  # its foot at its start, or at its far end
+    key = (f.id, index, "side")
+    part.rounds[key] = _Round(key, up[1], start + 0.0, height - rise, radius,
+                              oriented=(leaned(_v(unit_of("+" + zero))), leaned(_v(unit_of("+" + quarter))),
+                                        leaned(_v(unit_of("+" + up[1])))))  # fmt: skip
 
 
 def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
@@ -3676,6 +3710,7 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     """A rod's rims (cylinder.md, boss.md): ``top`` round its +end, ``bottom`` round its -end, ``both``; a boss's ``joint`` round its foot. Each a ring, exact."""
     round_ = not _draw(f.kind).bevels
     p, n = _v(copy.point), _v(copy.direction)
+    far_is_high = n[int(np.argmax(np.abs(n)))] > 0  # by its face's normal: leaning, its side runs as upright
     keep: tuple[Array, Array] | None = None
     if copy.lean is not None:  # leaning (step 5.3): its rim round its far end, square to its lean; its joint waits
         if which != "top":
@@ -3685,7 +3720,6 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     r = target.sizes["diameter"] / 2
     height = target.sizes[_draw(target.kind).rod_length]
     side = part.rounds.get((target.id, copy.index, "side"))
-    far_is_high = n[int(np.argmax(np.abs(n)))] > 0
     for name, t, b in (("top", height, -1.0), ("bottom", 0.0, 1.0)):
         if which not in (name, "both"):
             continue
@@ -4905,7 +4939,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
             hosts = [key for key, face in part.flats.items() if key[1] == 0 and not face.turned] + [
-                key for key in part.rounds if key[1] == 0
+                key for key, side in part.rounds.items() if key[1] == 0 and not side.leans
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
                 break
@@ -5292,16 +5326,20 @@ _ON_LEANING_SIDE = 0.5
 
 
 def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
-    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning box's side (V2-stage4b-0c.md 3.3,
-    a leaning item's sides): placed along the face's own axes, u and v, as on its upright side where that is clear of
-    its foot; blind or right through it. Whether one was added to the plan."""
+    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning box's side, or a hole round a
+    leaning boss's or cylinder's (V2-stage4b-0c.md 3.3, a leaning item's sides): placed along the face's own axes, u
+    and v, or along its axis and round it, as on its upright side where that is clear of its foot; blind or right
+    through it. Whether one was added to the plan."""
     faces = [key for key, face in part.flats.items() if key[1] == 0 and face.leans]
+    faces += [key for key, side in part.rounds.items() if key[1] == 0 and side.leans]  # a boss's or a cylinder's
     if not faces or rng.random() >= _ON_LEANING_SIDE:
         return False
     key = rng.choice(faces)
-    face = part.flats[key]
     for _ in range(10):
-        candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
+        if key in part.rounds:  # a hole round it, along its axis and at an angle round it
+            candidate = _side_hole(rng, k, key[0], part.rounds[key])
+        else:
+            candidate = replace(_feature(rng, k, key[0], part.flats[key], False), own_axes=part.flats[key].axes)
         if not _draw(candidate.kind).cut_out:
             continue
         try:

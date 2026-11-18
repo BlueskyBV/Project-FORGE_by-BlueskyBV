@@ -1697,7 +1697,7 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         if isinstance(end_of(item), (ThroughEverything, UpToFace)):
             raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut through everything or up to "
                              "a face, yet")  # fmt: skip
-        if isinstance(face, FlatFace) and not isinstance(face.material, Slant) \
+        if (isinstance(face, RoundSide) or (isinstance(face, FlatFace) and not isinstance(face.material, Slant))) \
                 and isinstance(layout.items[on.item].get("tilt"), Value) \
                 and (not _entry(item.kind).taken or isinstance(item.get("tilt"), Value)):  # fmt: skip
             # A leaning item's side (V2-stage4b-0c.md 3.3): a cut square to it only, which stays clear of its foot.
@@ -1909,6 +1909,19 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
                 layout.close(key, name, "it leans so far that its foot reaches all the way up that side")
             else:
                 layout.faces[key][name] = replace(side, local=motion)
+        elif motion is not None and up is not None and isinstance(found, RoundSide) and found.outward \
+                and found.half is None and found.axis == up[1] and name not in layout.closed.get(key, {}):  # fmt: skip
+            # Its round side: as upright where it is clear of its foot, its radius times its tilt's tan up it, leaned
+            # so.
+            rise = found.radius * lean.s / lean.c
+            if found.length <= rise:
+                layout.close(key, name, "it leans so far that its foot reaches all the way up its side")
+            else:
+                lift = unit("+" + up[1])
+                step = rise if up[0] == "+" else 0.0
+                start = (found.start[0] + lift[0] * step, found.start[1] + lift[1] * step,
+                         found.start[2] + lift[2] * step)  # fmt: skip
+                layout.faces[key][name] = replace(found, start=start, length=found.length - rise, local=motion)
         elif name not in layout.closed.get(key, {}):
             layout.close(key, name, "it leans on its face: only a leaning item's far face and sides take anything, "
                          "for now")  # fmt: skip

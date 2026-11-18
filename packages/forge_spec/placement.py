@@ -564,6 +564,20 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
                              f"{name} side")  # fmt: skip
             else:
                 faces[name] = _moved(side, leaned)
+        elif leaned is not None and lean is not None and isinstance(found, SideFace) and found.outward \
+                and found.half is None and found.axis == up[1]:  # fmt: skip
+            # Its round side: as upright where it is clear of its foot, leaned so (V2-stage4b-0c.md 3.3, a leaning
+            # item's sides).
+            rise = found.radius * lean.tan
+            if found.length <= rise:
+                layout.close(key, name, "unable", f"{item.id} leans so far that its foot reaches all the way up its "
+                             "side")  # fmt: skip
+            else:
+                step = rise if up[0] == "+" else 0.0  # its foot at its start, or at its far end
+                lift = _dir("+" + up[1])
+                start = (found.start[0] + lift[0] * step, found.start[1] + lift[1] * step,
+                         found.start[2] + lift[2] * step)  # fmt: skip
+                faces[name] = replace(found, start=start, length=found.length - rise, local=leaned)
         elif motion is not None and name == joined and inst.host is not None:
             layout.close(key, name, "fault", f"{item.id}'s {name} face is joined to {inst.host[0]}")
         elif motion is not None and isinstance(found, FlatFace) and (hollowed or not name.startswith("inner ")):
@@ -2871,10 +2885,10 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                 return []
             face = _upright(face)
             host_item = layout.items.get(on.item)
-            if isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant) and host_item is not None \
-                    and leaning(host_item) and (not SOLVE[item.kind].cut or leaning(item)):  # fmt: skip
-                # A leaning item's side (V2-stage4b-0c.md 3.3): only a cut square to it, which stays where the side is
-                # clear of its foot.
+            if (isinstance(face, SideFace) or (isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant))) \
+                    and host_item is not None and leaning(host_item) and (not SOLVE[item.kind].cut or leaning(item)):  # fmt: skip
+                # A leaning item's side, flat or round (V2-stage4b-0c.md 3.3): only a cut square to it, which stays
+                # where the side is clear of its foot.
                 layout.issue("unable", at + (pointer("tilt") if leaning(item) else ""),
                              f"{on.item} leans: Forge only cuts into its side, square to it, and stands or leans "
                              "nothing on it, for now")  # fmt: skip

@@ -207,12 +207,13 @@ class UnderItAlongItsDirection(unittest.TestCase):
         report = _report(_boss(60.0))
         self.assertTrue(_says(report, "reaches 8.66025 mm back into face +z"), _placing(report))
 
-    def test_only_its_far_face_takes_anything(self) -> None:
-        # Its far face is open (place.md, "A leaning item's far face"); its side waits.
+    def test_its_far_face_and_its_side_take_things(self) -> None:
+        # Its far face and its side, clear of its foot, are open (place.md, "A leaning item's far face", "A leaning
+        # item's sides").
         report = _report(_boss())
-        self.assertEqual(set(report.layout.faces.get(("boss", 0), {})), {"+end"})
-        self.assertNotIn("+end", report.layout.closed[("boss", 0)])
-        self.assertIn("side", report.layout.closed[("boss", 0)])
+        self.assertEqual(set(report.layout.faces.get(("boss", 0), {})), {"+end", "side"})
+        self.assertNotIn("+end", report.layout.closed.get(("boss", 0), {}))
+        self.assertNotIn("side", report.layout.closed.get(("boss", 0), {}))
 
     def test_its_bounds(self) -> None:
         report = _report(_boss())

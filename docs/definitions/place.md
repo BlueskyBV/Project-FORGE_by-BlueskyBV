@@ -162,8 +162,7 @@ A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
 side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
 counterbored hole (not a countersunk one), and only on such a face, for now:
 anything else that leans is CAN'T. A leaning item's far face takes things,
-and a leaning box's sides take cuts (below); a leaning boss's or cylinder's
-round side takes nothing, and it is not hollowed, for now; a
+and its sides take cuts (below); it is not hollowed, for now; a
 leaning rod is threaded along its lean
 from its far end, clear of its foot (thread.md); its far end's edges and a box's
 along its lean are rounded and chamfered as with it upright, not yet where
@@ -204,9 +203,19 @@ own axes, `u` and `v`, on that side less the band: its middle, its edges
 and its offsets are that rectangle's. The material under it is the box's
 own size across it, and a cut right through comes out on the side across;
 a cut through the next face goes on until it comes out all across its
-mouth. Nothing stands on a leaning item's side, and nothing leans there,
-for now; and a box leaning so far that its foot reaches all the way up its
-sides has none to take anything.
+mouth.
+
+The round side of a leaning boss or cylinder, likewise, takes a hole along
+its radius, blind or right through, one or a circle of them: placed along
+its axis and at an angle round it (below, "On a round side"), on its
+upright side less the band along its foot as high as its foot rises on the
+side it leans towards, its radius times tan(`tilt`); its ends and its
+middle are that side's, and its angles are as with it upright, leaned with
+it.
+
+Nothing stands on a leaning item's side, and nothing leans there, for now;
+and an item leaning so far that its foot reaches all the way up its sides
+has none to take anything.
 
 ## On a round side
 

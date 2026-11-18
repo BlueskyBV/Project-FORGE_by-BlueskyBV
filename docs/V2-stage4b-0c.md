@@ -20,9 +20,9 @@ it), and a leaning item's far face (revision 16); what the exit pairs
 found is fixed, and a ball's or a cone's seam is kept clear of what is on
 it (revision 16), and a hole goes through the next face on a round side, a
 ball or a cone, and a cut on a turned or a leaning item's face (2b's third
-step, revision 16), and a leaning box's sides take cuts (revision 16);
-next, a leaning item's round side, the rest of 2b's third step and its
-fourth (schema 2.0).
+step, revision 16), and a leaning item's sides, flat and round, take cuts
+(revision 16); next, the rest of 2b's third step and its fourth (schema
+2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -859,6 +859,34 @@ the next face). The exit harness's per-seed proof on 66, 267, 517, 888,
 leaning box's side; 517's through the next face): all passed, every mutant
 caught (1162's the same shape). Generator digests on seeds
 0-149, old against new: only 66 differs, and the impossible parts 7 and 74,
+made from generated ones.
+
+**And a leaning boss's or cylinder's round side (revision 16).** Its side,
+likewise, is its upright side less the band along its foot as high as its
+foot rises on the low side, its radius times its tilt's tan: from there
+all of its cross-section is clear of the face it leans on. It takes a hole
+along its radius, blind or right through, one or a circle of them, placed
+along its axis and at an angle round it as on the upright side so
+trimmed, then leaned. **The solver** keeps it so (the side's start and
+length moved past the band, its `local` the leaning motion), **the judge**
+its `RoundSide` alike, and both say what can't go there yet as on a box's
+sides; **the planner** builds what is cut into it upright and moves it, as
+round any moved side (step 5.2). **The generator** registers it
+(`_leaning_round_side`: a `_Round` whose frame is `oriented` as it leans,
+its `leans` keeping it from the main draws) and drills it now and then
+from the leaning sides' stream; a rounding of a leaning rod's far rim keeps
+its holes clear of it, its side's far end found by its face's normal, not
+its lean. Tests: `tests/test_v2_plan_leanside.py` (five more parts: a hole
+round a leaning boss at 0 and 90 degrees, one right through along its
+lean, one low on a leaning cylinder, a circle of them; placed where every
+program puts them, built and judged, leaned half a degree more fails, the
+second kernel agrees; a boss round it, a side all band and a hole into the
+band said; the generator's side and its draws), `tests/test_v2_spec_lean.py`
+(a leaning boss's side takes things). The exit harness's per-seed proof on
+129, 184, 381, 620, 646, 650, 830, 858, 1085, 1099 and 1123 (the eleven of
+the first 1,200 that drill a leaning boss's or cylinder's side): all
+passed, every mutant caught. Generator digests on seeds 0-149, old against
+new: only 129 differs, and the impossible parts 60, 94, 96, 98 and 124,
 made from generated ones.
 
 **1b, the ability:**
