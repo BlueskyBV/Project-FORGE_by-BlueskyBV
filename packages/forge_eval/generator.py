@@ -387,14 +387,15 @@ class _Flat:
     #: A turned item's other faces (place.md, "A turned item's faces"): its first and second axes on the part, its
     #: ``axes`` naming them as they are with the item upright; its ``normal`` is the part's.
     oriented: tuple[Vec, Vec] | None = None
-    #: A leaning item's far face (V2-stage4b-0c.md 3.3, 1b's step 5, with item 2b), oriented as above: the material
-    #: under it is its own, from each point back along its axis to the face it leans on, ``material`` at its centre
-    #: and ``tan`` less for each millimetre along ``way`` (in its coordinates). What goes on it is drawn from a stream
-    #: of its own (:func:`_onto_leaning`), not as on a turned item's face.
+    #: A leaning item's far face (V2-stage4b-0c.md 3.3, 1b's step 5, with item 2b), or a leaning block's hollow's floor
+    #: (step 5.5), oriented as above: the material under it is its own, from each point back along its axis to the
+    #: face it leans on, ``material`` at its centre and ``tan`` less for each millimetre along ``way`` (in its
+    #: coordinates). What goes on it is drawn from a stream of its own (:func:`_onto_leaning`), not as on a turned
+    #: item's face.
     slant: tuple[tuple[float, float], float] | None = None
-    #: A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides), oriented as above: where it is clear of its
-    #: foot. A cut square to it, or what stands square on it clear of the face it leans on, goes on one, from a stream
-    #: of its own (:func:`_onto_leaning_side`).
+    #: A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides), or a leaning block's face over its hollow
+    #: or inside it (step 5.5), oriented as above: where it is clear of its foot. A cut square to it, or what stands
+    #: square on it clear of the face it leans on, goes on one, from a stream of its own (:func:`_onto_leaning_side`).
     leans: bool = False
 
     @property

@@ -166,8 +166,10 @@ A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
 side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
 counterbored hole (not a countersunk one), and only on such a face, for now:
 anything else that leans is CAN'T. A leaning item's far face takes things,
-and its sides take cuts and, its flat ones, what stands (below); it is not hollowed, for now; a
-leaning rod is threaded along its lean
+and its sides take cuts and, its flat ones, what stands (below); a leaning
+block is hollowed as with it upright, its floor raised clear of the face it
+leans on (shell.md), and its far face, its sides and its inside faces take
+things as a leaning item's do; a leaning rod is threaded along its lean
 from its far end, clear of its foot (thread.md); its far end's edges and a box's
 along its lean are rounded and chamfered as with it upright, not yet where
 it meets its face (edges.md, "A leaning item's edges").
@@ -175,8 +177,12 @@ it meets its face (edges.md, "A leaning item's edges").
 ### A leaning item's far face
 
 The far face of a leaning boss, post, block or cylinder (its top, or its
-far end: `+end`), not turned in its face and not hollowed, takes a hole, a
-pocket, a slot or what stands on a face. It is named as with the item
+far end: `+end`), not turned in its face, takes a hole, a pocket, a slot
+or what stands on a face; hollowed, its wall is the material under it, and
+a cut right through comes out in the hollow. A hollowed leaning block's
+inside floor is as its far face is: the material under it its own, back
+along its axis to the face it leans on, and nothing goes right through it
+yet. It is named as with the item
 upright, and what goes on it is placed along its own axes, `u` and `v`, as
 on it upright, then leaned with it: about the line through the item's point
 square to its face's normal and its lean, by its tilt. So its `u` runs
@@ -196,8 +202,8 @@ item's faces.
 
 ### A leaning item's sides
 
-The four sides of a leaning post or block, not turned in its face and not
-hollowed, take a hole, a pocket, a slot or letters cut square into them,
+The four sides of a leaning post or block, not turned in its face, take a
+hole, a pocket, a slot or letters cut square into them,
 blind or right through, and what stands square on a face. Each is its side as with the item upright, less the
 band along its foot as high as its foot rises on the side it leans towards:
 its half size along its lean times tan(`tilt`). Above that band all of its
@@ -205,7 +211,9 @@ cross-section is clear of the face it leans on, and the side is its upright
 one leaned with it, as its far face is. What goes on it is placed along its
 own axes, `u` and `v`, on that side less the band: its middle, its edges
 and its offsets are that rectangle's. The material under it is the box's
-own size across it, and a cut right through comes out on the side across;
+own size across it (hollowed, its wall's, a cut right through coming out
+in the hollow, whose inside walls take things as its sides do), and a cut
+right through comes out on the side across;
 a cut through the next face goes on until it comes out all across its
 mouth. What stands on it stands square to it, and is clear of the face the
 box leans on: where any corner of the box round it, leaned with the item,

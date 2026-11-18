@@ -45,9 +45,17 @@ So, by kind:
 
 The shell hollows its body alone, never what stands on it. A block turned
 in its face (place.md, "Turned in the face") is hollowed as it stands
-unturned, its walls, floor and inside faces then turned with it; a body
-leaning on its face isn't hollowed yet. Tubes are hollow already, and other
-kinds can't be hollowed, for now.
+unturned, its walls, floor and inside faces then turned with it. A block
+leaning on its face (place.md, "Leaning on the face") is hollowed as it
+stands upright, its floor raised by as much as the face it leans on rises
+under the hollow's far side along its lean (its half size along its lean
+less its wall there, times tan(`tilt`)), then leaned with it: so its floor
+is `floor` thick (or `thickness`) where it is thinnest, measured along its
+axis, and thicker back against its lean; its walls, its far face's wall and
+its inside faces are leaned with it, and the material under its inside
+floor is its own, back along its axis to the face it leans on. A leaning
+cylinder, and a block turned and leaning, aren't hollowed yet. Tubes are
+hollow already, and other kinds can't be hollowed, for now.
 
 ## Fields
 

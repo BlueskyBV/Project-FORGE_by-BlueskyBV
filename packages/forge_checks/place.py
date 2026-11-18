@@ -1923,24 +1923,43 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     w = tuple(lean.way[0] * a1[k] + lean.way[1] * a2[k] for k in range(3))
     u = (lean.c * n[0] + lean.s * w[0], lean.c * n[1] + lean.s * w[1], lean.c * n[2] + lean.s * w[2])
     key = (item.id, copy.index)
-    # Standing, not turned and not hollowed (1b's step 5, with item 2b): its far face placed on as with it upright, then
-    # leaned so, the material under it its own, from each point back along its axis to the face it leans on.
+    # Standing, not turned (1b's step 5, with item 2b): its far face placed on as with it upright, then leaned so, the
+    # material under it its own, from each point back along its axis to the face it leans on; a block hollowed (step
+    # 5.5), its hollow as with it upright (its floor raised clear of the face it leans on: _hollow), every face of it
+    # then leaned so, the material under its inside floor its own back along its axis to that face.
     up = direction_of(copy.direction)
     far = _entry(item.kind).far(up) if up is not None and not _entry(item.kind).taken else None
     if far is not None and far not in layout.faces.get(key, {}) and "+end" in KINDS[item.kind].faces:
         far = "+end"  # a round body's far end, standing on a flat face (its far face round a side is as it stands)
     upright = layout.faces.get(key, {}).get(far) if far is not None else None
     place = _place(item)
-    if not (isinstance(upright, FlatFace) and upright.axes == face.axes and item.id not in layout.shells
-            and (place is None or place.turn is None)):  # fmt: skip
+    hollow = layout.hollows.get(key) if item.id in layout.shells else None
+    keeps = (place is None or place.turn is None) and (item.id not in layout.shells or hollow is not None)
+    if not (isinstance(upright, FlatFace) and upright.axes == face.axes and keeps):
         upright = None
     motion = None
-    if upright is not None:
+    if keeps and (upright is not None or hollow is not None):
         axis = (n[1] * w[2] - n[2] * w[1], n[2] * w[0] - n[0] * w[2], n[0] * w[1] - n[1] * w[0])
         motion = Motion.about(copy.point, axis, (lean.c, lean.s))
+    floor = None  # the material under its hollow's inside floor at its middle, back along its axis to its face
+    if hollow is not None and up is not None and copy.lo is not None and copy.hi is not None:
+        k = _INDEX[face.axes[0] if lean.first else face.axes[1]]
+        sign = 1.0 if lean.way[0] + lean.way[1] > 0 else -1.0
+        towards = ("+" if sign > 0 else "-") + "xyz"[k]
+        far_side = max((copy.hi[k] - copy.lo[k]) / 2 - hollow.walls.get(towards, 0.0), 0.0)
+        middle = sign * ((hollow.lo[k] + hollow.hi[k]) / 2 - copy.point[k])
+        floor = hollow.walls.get(opposite(up), 0.0) + (far_side - middle) * lean.s / lean.c
     for name in list(layout.faces.get(key, {})) + [n_ for n_ in KINDS[item.kind].faces if n_ not in layout.faces.get(key, {})]:
         found = layout.faces.get(key, {}).get(name)
-        if upright is not None and motion is not None and name == far:
+        if motion is not None and up is not None and isinstance(found, FlatFace) and name.startswith("inner ") \
+                and name not in layout.closed.get(key, {}):  # fmt: skip
+            # Inside its hollow (step 5.5): as upright, leaned so; under its floor, its own back along its axis.
+            if name == f"inner {opposite(up)}" and floor is not None:
+                found = replace(found, material=Slant(found.outline.centre, lean.way, lean.s / lean.c, floor))
+            layout.faces[key][name] = replace(found, local=motion)
+        elif upright is not None and motion is not None and name == far and hollow is not None:
+            layout.faces[key][name] = replace(upright, local=motion)  # over its hollow, its wall
+        elif upright is not None and motion is not None and name == far:
             assert isinstance(upright, FlatFace)
             height = _mm(item, _entry(item.kind).rise)
             layout.faces[key][name] = replace(upright, local=motion,
@@ -2807,7 +2826,7 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
         for name in list(layout.faces[key]):
             layout.close(key, name, f"it stands on {where}: its faces take nothing, for now")
     if item.id in layout.shells:
-        _hollow(item, layout, key, point, up, lo, hi)
+        _hollow(item, layout, key, point, up, lo, hi, axes)
     for name in KINDS[kind].faces:
         if (
             name.startswith("inner ")
@@ -2885,9 +2904,12 @@ def _hollow(
     up: str,
     lo: Vec,
     hi: Vec,
+    axes: tuple[str, str] | None = None,
 ) -> None:
     """Hollow one copy of a body: its walls as the material under its faces, its open faces
-    closed, its inside faces, and the hollow."""
+    closed, its inside faces, and the hollow. A leaning block's (V2-stage4b-0c.md 3.3, step 5.5) as it stands upright,
+    its floor raised by as much as the face it leans on rises under the hollow's far side along its lean (its half
+    size along it less its wall there, times its tilt's tan): the floor its thickness where it is thinnest."""
     shell = layout.shells[item.id]
     thickness = _mm(shell, "thickness")
     floor = _mm(shell, "floor") if shell.get("floor") is not None else None
@@ -2901,6 +2923,22 @@ def _hollow(
                          f"not {sorted(open_faces - allowed)}")  # fmt: skip
     for name in sorted(open_faces):
         layout.close(key, name, f"{shell.id} leaves it open")
+    lean = _lean(item, axes) if axes is not None else None
+    if lean is not None and axes is not None:
+        if not entry.turnable(item) or _turn_of(item) is not None:
+            raise PlaceError(shell.id, f"Forge hollows a leaning block, not yet a leaning {kind} that is round or "
+                             "turned in its face")  # fmt: skip
+        k = _INDEX[axes[0] if lean.first else axes[1]]
+        towards = ("+" if lean.way[0] + lean.way[1] > 0 else "-") + "xyz"[k]
+        walls = _walls(DIRECTIONS, shell, open_faces, floor, thickness)
+        rise = max((hi[k] - lo[k]) / 2 - walls.get(towards, 0.0), 0.0) * lean.s / lean.c
+        j = _INDEX[up[1]]
+        low, high = list(lo), list(hi)
+        if up[0] == "+":
+            low[j] += rise
+        else:
+            high[j] -= rise
+        lo, hi = (low[0], low[1], low[2]), (high[0], high[1], high[2])
 
     entry.hollow(
         item, layout, key, base, up, lo, hi, shell, thickness, floor, open_faces

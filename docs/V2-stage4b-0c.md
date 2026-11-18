@@ -1541,6 +1541,39 @@ end, a post turned on a revolution's): all passed, every mutant caught.
 Generator digests on seeds 0-149, old against new: only those three
 differ, and the impossible parts 31, 34, 44 and 124.
 
+**And a leaning block hollowed (revision 16; step 5.5's last part).** A
+shell of a leaning block was refused: its hollow as with it upright would
+have run down past the face it leans on. Now it is hollowed as it stands
+upright, its floor raised by as much as that face rises under the hollow's
+far side along its lean (its half size along its lean less its wall there,
+times tan(`tilt`)), then leaned with it (shell.md): its floor is its
+thickness where it is thinnest, measured along its axis. **The solver**
+(`_leaning_hollow`) and **the judge** (`_hollow` with the face's axes)
+make the hollow on the raised box and lean every face with it, its far face
+and its sides over their walls, its inside faces too, the material under
+its inside floor its own back along its axis to the face it leans on (a
+`Slant`, as its far face had; a cut right through it there is said, as
+there). **The oracle** hollows it by the hollow's box as it stands upright
+(its walls' half-spaces, `wall_bands`), and **the planner** makes the
+hollow's box upright and leans it with the body's motion, as for a turned
+block: neither needed a change. **The generator** hollows a leaning block
+it has just stood on a face now and then, from the stream it hollows
+standing blocks with (`Block._hollow_leaning`): its hollow upright, raised
+so and leaned, its far face and sides over their walls, a cut through one
+coming out inside, its inside faces as a leaning item's sides and its
+floor as its far face. A leaning cylinder, and a block turned and
+leaning, are still said. Tests: `tests/test_v2_plan_leanhollow.py` (open,
+sealed and with a thicker floor; a hole into its floor as deep as the
+material there, deeper asked about, right through said; holes through an
+inside wall, a side and its sealed far face; a boss on its floor: where
+every program puts them, built and judged, a lean half a degree more
+caught, the second kernel agreeing; the generator's own shape, built and
+graded). The exit harness's per-seed proof on 914 and 1162 (the two of
+the first 1,500 seeds that hollow a leaning block: a block standing on its
+inside wall and a hole in its side; holes through two of its inside walls):
+both passed, every mutant caught. Generator digests on seeds 0-149, old
+against new: only the impossible part 41 differs.
+
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
 parts; 2b's first step's pair against that main kept those and held two

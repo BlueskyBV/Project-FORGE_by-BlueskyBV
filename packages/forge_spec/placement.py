@@ -524,7 +524,10 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
     round it leaning (its foot's section and its far end's cross-section), its faces closed but a turned one's far face
     (schema 1.4): turned with it, its height of material under it and, wholly over a host with the same material under
     all of it, the host's too; partly off it, or on any other, it is closed for now. A turned block hollowed (step 5.1):
-    hollowed as it stands upright, then every face of it, its far face and its inside faces too, turned with it."""
+    hollowed as it stands upright, then every face of it, its far face and its inside faces too, turned with it. A
+    leaning block hollowed (step 5.5): hollowed as it stands upright, its floor raised clear of the face it leans on
+    (:func:`_leaning_hollow`), then every face of it leaned with it, the material under its inside floor its own back
+    along its axis to that face."""
     key = (item.id, inst.index)
     a1, a2 = inst.face_axes or FACE_AXES[up]
     lean = lean_of(item, (a1, a2)) if leaning(item) else None
@@ -541,12 +544,18 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         faces.pop(name)  # a boss is always joined by its foot: its kind has no such face
     turn = _turn_value(item) if lean is None else None
     hollowed = turn is not None and item.id in layout.shells and SOLVE[item.kind].body
-    # Leaning, not turned and not hollowed (1b's step 5, with item 2b): its far face placed on as with it upright, then
-    # leaned so.
+    # Leaning, not turned (1b's step 5, with item 2b): its far face placed on as with it upright, then leaned so; a
+    # leaning block hollowed (step 5.5) so too.
+    shelled = item.id in layout.shells and SOLVE[item.kind].body
     leaned = (_leaning_motion(inst, lean, up) if lean is not None and inst.direction is not None
-              and _turn_value(item) is None and item.id not in layout.shells else None)  # fmt: skip
+              and _turn_value(item) is None
+              and (not shelled or SOLVE[item.kind].turnable(item, layout, (a1, a2)) is not None) else None)  # fmt: skip
     if hollowed:  # step 5.1: its hollow made as it stands upright (its faces so), all of it then turned below
         _hollow(item, key, lo, hi, up, layout, dict(fields or {}))
+    floor = None  # a leaning block's hollow (step 5.5): the material under its inside floor's middle
+    if leaned is not None and lean is not None and shelled:
+        floor = _leaning_hollow(item, key, inst, lo, hi, up, (a1, a2), lean, layout, dict(fields or {}))
+        hollowed = True
     top = _turned_far(faces, far, item, turn) if turn is not None and far in faces and not hollowed else None
     joined = _opposite(up)
     motion = _turned_motion(inst, (a1, a2), turn) if turn is not None else None
@@ -554,7 +563,16 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         found = faces.get(name)
         if (top is not None and name == far) or name in layout.closed.get(key, {}):
             continue
-        if leaned is not None and lean is not None and name == far and isinstance(found, FlatFace) \
+        if leaned is not None and lean is not None and isinstance(found, FlatFace) and name.startswith("inner "):
+            # Inside a leaning block's hollow (step 5.5): as upright, leaned so; under its floor, its own material back
+            # along its axis to the face it leans on.
+            if name == f"inner {joined}" and floor is not None:
+                found = replace(found, depth_below=floor, depth_model=Slant(lean.way, lean.tan))
+            faces[name] = _moved(found, leaned)
+        elif leaned is not None and lean is not None and name == far and isinstance(found, FlatFace) and hollowed:
+            # A leaning block's far face over its hollow: its wall under it (step 5.5).
+            faces[name] = _moved(found, leaned)
+        elif leaned is not None and lean is not None and name == far and isinstance(found, FlatFace) \
                 and found.axes == (a1, a2):  # fmt: skip
             # The material under it is its own: from each point back along its axis to the face it leans on.
             faces[name] = _moved(replace(found, depth_model=Slant(lean.way, lean.tan), over=None), leaned)
@@ -592,9 +610,48 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
     if top is not None:
         _far_material(item, inst, top, host_face, layout)
     if item.id in layout.shells and not hollowed:
-        layout.issue("unable", at, f"Forge doesn't hollow a leaning {item.kind} yet")
+        layout.issue("unable", at, f"Forge hollows a leaning block, not yet a leaning {item.kind} that is round or "
+                     "turned in its face")  # fmt: skip
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
                     (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
+
+
+def _leaning_hollow(item: Item, key: tuple[str, int], inst: Instance, lo: Vec, hi: Vec, up: str, axes: tuple[str, str],
+                    lean: Lean, layout: Layout, fields: Mapping[str, str]) -> float | None:  # fmt: skip
+    """A leaning block hollowed (V2-stage4b-0c.md 3.3, step 5.5; shell.md): its hollow as with it upright, its floor
+    raised by as much as the face it leans on rises under the hollow's far side along its lean (its half size along
+    its lean less its wall there, times its tilt's tan), so that the floor is its thickness where it is thinnest,
+    measured along its axis. The material under its inside floor's middle, back along its axis to that face (it is
+    ``tan`` less for each millimetre the way it leans); None where it isn't hollowed."""
+    shell = layout.shells[item.id]
+    thickness_value, floor_value = shell.get("thickness"), shell.get("floor")
+    if not isinstance(thickness_value, Value):
+        return None
+    opened = shell.get("open")
+    open_faces = set(opened.faces) if isinstance(opened, Faces) else set()
+    t = mm(thickness_value)
+    f = mm(floor_value) if isinstance(floor_value, Value) else t
+    k = _INDEX[axes[0] if lean.along_first else axes[1]]
+    sign = 1.0 if lean.way[0] + lean.way[1] > 0 else -1.0
+    towards = ("+" if sign > 0 else "-") + "xyz"[k]
+
+    def wall(name: str) -> float:  # as Hollowing.wall: none where open, the floor's opposite an opening
+        return 0.0 if name in open_faces else f if _opposite(name) in open_faces else t
+
+    reach = max((hi[k] - lo[k]) / 2 - wall(towards), 0.0)  # the hollow's far side along its lean, from its axis
+    rise = reach * lean.tan
+    j = _INDEX[up[1]]
+    low, high = list(lo), list(hi)
+    if up[0] == "+":
+        low[j] += rise
+    else:
+        high[j] -= rise
+    _hollow(item, key, (low[0], low[1], low[2]), (high[0], high[1], high[2]), up, layout, fields)
+    cavity = layout.cavities.get(key)
+    if cavity is None:
+        return None
+    middle = sign * ((cavity[0][k] + cavity[1][k]) / 2 - inst.origin[k])  # its middle along its lean, from its axis
+    return wall(_opposite(up)) + (reach - middle) * lean.tan
 
 
 def _clear_of_foot(face: FlatFace, up: str, axes: tuple[str, str], lean: Lean, lo: Vec, hi: Vec) -> FlatFace | None:
@@ -2978,8 +3035,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if isinstance(face, FlatFace) and isinstance(face.depth_model, Slant) and SOLVE[item.kind].cut \
                     and isinstance(end_of(item), ThroughAll) and not isinstance(end_of(item), ThroughNext):  # fmt: skip
                 layout.issue("unable", at + pointer("depth"),
-                             f"{on.item} leans: a cut right through its far face would come out on the face it leans "
-                             "on, for now; give it a depth, or go through the next face")  # fmt: skip
+                             f"{on.item} leans: a cut right through its {on.face} face would come out on the face it "
+                             "leans on, for now; give it a depth, or go through the next face")  # fmt: skip
                 return []
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face

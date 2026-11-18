@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 20
+GUIDE_VERSION = 21
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -766,11 +766,13 @@ height or depth is along it; its foot on the face is its section by the \
 face (a round one's an ellipse), which is what fits, overlaps and is \
 measured "to": "edge". It needs the same material under all of its face. \
 Its far face (a boss's or a cylinder's "+end", a post's or a block's top, \
-named as with it upright), unless it is turned or hollowed too, takes a \
+named as with it upright), unless it is turned too, takes a \
 hole, a pocket, a slot or what stands, placed along that face's own "u" \
 and "v" as on it upright, then leaned with it; the material under it is \
 the item's own back along its axis to its face, less on the side it leans \
-to, and nothing goes right through it yet. A leaning post's or block's \
+to, and nothing goes right through it yet; hollowed, its wall is under \
+it, and a cut right through comes out in the hollow. A leaning post's or \
+block's \
 sides (its four faces along its height, named as with it upright) take a \
 hole, a pocket or a slot cut square into them, blind or right through, or \
 what stands square on them, clear of the face it leans on: \
@@ -781,7 +783,12 @@ edges are that rectangle's), then leaned with it; a leaning boss's or \
 cylinder's round side ("side") likewise takes a hole along its radius, \
 placed along its axis and at an "angle" round it on the side less the \
 band its radius times tan(tilt) high; nothing leans on a side, or stands \
-round a round one, yet. \
+round a round one, yet. A shell hollows a leaning block as with it \
+upright, its floor raised clear of the face it leans on (its "floor" or \
+"thickness" where it is thinnest), then leaned with it: its walls are \
+the material under its far face and sides, and its inside faces \
+("inner +x", ...) take things as its sides do, its inside floor as its far \
+face does; a leaning cylinder isn't hollowed yet. \
 Its other faces take nothing yet; its far end's edges ("top") and a \
 box's along its lean ("vertical") are rounded as with it upright, not yet \
 its joint; a leaning rod is threaded along its lean from its far end, \

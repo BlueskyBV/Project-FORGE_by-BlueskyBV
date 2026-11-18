@@ -12,6 +12,7 @@ import random
 from collections.abc import Callable
 
 import numpy as np
+from forge_numeric import vector as fv
 
 from forge_eval.generator import (
     _BEVEL,
@@ -31,8 +32,10 @@ from forge_eval.generator import (
     _flat_axes,
     _Foot,
     _footprint,
+    _lean_of,
     _margin,
     _named,
+    _own_halves,
     _Part,
     _q,
     _round_box,
@@ -244,10 +247,12 @@ class Block(DrawKind):
         step 5.1): every copy's hollow made as with it upright, then turned with it where it is turned; its walls
         the material under its faces, a cut through one coming out on the inside face across the wall; its inside
         faces turned with it. The generator hollows one standing wholly on a face of the part's axes, out of any
-        hollow, upright on it (not leaning), none of its edges rounded, sealed or open on its far face."""
-        if body.tilt is not None or any(_draw(g.kind).rounds_edges and g.of == body.id for g in plan):
-            raise DoesNotFitError(f"{f.id}: the generator hollows a standing block upright on its face, none of its "
-                                  "edges rounded")  # fmt: skip
+        hollow, upright on it or leaning (step 5.5: :meth:`_hollow_leaning`), not turned and leaning, none of its edges
+        rounded, sealed or open on its far face."""
+        if (body.tilt is not None and body.turn is not None) or any(_draw(g.kind).rounds_edges and g.of == body.id
+                                                                    for g in plan):  # fmt: skip
+            raise DoesNotFitError(f"{f.id}: the generator hollows a standing block upright or leaning on its face, "
+                                  "not turned and leaning, none of its edges rounded")  # fmt: skip
         height = body.sizes["height"]
         for copy in part.copies.get(body.id, []):
             k = copy.index
@@ -255,6 +260,9 @@ class Block(DrawKind):
             if face is None or face.turned or face.hollow is not None or not math.isinf(face.room):
                 raise DoesNotFitError(f"{f.id}: the generator hollows a block standing on a face of the part's "
                                       "axes, out of any hollow")  # fmt: skip
+            if body.tilt is not None:
+                self._hollow_leaning(f, body, copy, face, part, opened, wall, height)
+                continue
             up = _named(face.normal)
             n = _v(unit_of(up))
             down = OPPOSITE[up]
@@ -309,6 +317,71 @@ class Block(DrawKind):
                     outer if own is not None else None,
                     room=math.inf if OPPOSITE[name] in opened else high[a] - low[a], hollow=(body.id, k),
                     oriented=(_t(ways[fa[0]]), _t(ways[fa[1]])) if turned else None)  # fmt: skip
+
+    def _hollow_leaning(self, f: Feature, body: Feature, copy: Copy, face: _Flat, part: _Part, opened: set[str],
+                        wall: Callable[[str], float], height: float) -> None:  # fmt: skip
+        """A leaning block hollowed (V2-stage4b-0c.md 3.3, step 5.5; shell.md): its hollow as with it upright, its
+        floor raised by as much as the face it leans on rises under the hollow's far side along its lean (its half size
+        along it less its wall there, times its tilt's tan), then leaned with it: the floor its thickness where it is
+        thinnest. Its far face (sealed) and its sides over their walls, a cut through one coming out inside; its
+        inside faces leaned with it, the material under its floor its own back along its axis to the face it leans
+        on (a :class:`_Flat`'s ``slant``), what goes on them as on a leaning item's faces."""
+        k = copy.index
+        lean = _lean_of(body, face.axes)
+        along, across = _own_halves(body, face.axes, lean)
+        n = face.normal
+        w = lean.in_part(face)
+        u = lean.direction(face)
+        tilted = lean.c * w - lean.s * n + 0.0  # its lean's way square to its direction
+        side = np.asarray(np.cross(n, w), dtype=np.float64) + 0.0  # across its lean: (tilted, side, u) right-handed
+        p = _v(copy.point)
+        up = _named(n)
+        down = OPPOSITE[up]
+        # Upright, along its lean (w), across it (side) and up (n): the hollow's span each way, from its point.
+        ways = ((w, tilted, along), (side, side, across), (n, u, height))
+        span: list[tuple[float, float]] = []
+        for upright, _, half in ways[:2]:
+            span.append((-half + wall(_named(-upright)), half - wall(_named(upright))))
+        rise = max(span[0][1], 0.0) * lean.tan
+        span.append((rise + wall(down), height - wall(up)))
+        if any(hi - lo < 2 * GAP + 1.0 for lo, hi in span):
+            raise DoesNotFitError(f"{f.id}'s walls leave too little hollow in {body.id}")
+        middle = [(lo + hi) / 2 for lo, hi in span]
+        centre = p + sum((middle[j] * ways[j][1] for j in range(3)), _v((0.0, 0.0, 0.0)))
+        reach = (span[2][1] - span[2][0]) / 2
+        part.steps.append(Step(f.id, k, False, Prism(_t(centre), _t(tilted), _t(side), _t(u),
+                                                     ((span[0][1] - span[0][0]) / 2, (span[1][1] - span[1][0]) / 2),
+                                                     0.0, -reach, reach),
+                               (0.0, REACH if up in opened else 0.0)))  # fmt: skip
+
+        def leaned(a: np.ndarray) -> np.ndarray:  # an upright direction, as it leans
+            return float(fv.matmul(a, w)) * tilted + float(fv.matmul(a, side)) * side + float(fv.matmul(a, n)) * u + 0.0
+
+        for j, (upright, _, _) in enumerate(ways):
+            for sign in (1.0, -1.0):
+                d = sign * upright + 0.0
+                name = _named(d)
+                outer = (body.id, k, name)
+                inner = (body.id, k, f"inner {name}")
+                if name in opened:
+                    part.flats.pop(outer, None)
+                    continue
+                own = part.flats.get(outer) if name != down else None
+                if own is not None:  # its far face and its sides: over their walls, a cut through one coming out inside
+                    own.material, own.exit, own.slant, own.leans = wall(name), inner, None, True
+                fa = face.axes if j == 2 else _flat_axes(name)
+                at = list(middle)
+                at[j] = span[j][1] if sign > 0 else span[j][0]
+                halves = [(hi - lo) / 2 for lo, hi in span]
+                sizes = {_named(ways[i][0])[1]: halves[i] for i in range(3)}
+                floor = name == down
+                material = wall(name) + (span[0][1] - middle[0]) * lean.tan if floor else wall(name)
+                part.flats[inner] = _Flat(
+                    inner, p + sum((at[i] * ways[i][1] for i in range(3)), _v((0.0, 0.0, 0.0))), -leaned(d), fa,
+                    "rect", (sizes[fa[0]], sizes[fa[1]]), material, None if floor else (outer if own is not None else None),
+                    room=math.inf if OPPOSITE[name] in opened else 2 * halves[j], hollow=(body.id, k),
+                    oriented=(_t(leaned(_v(unit_of("+" + fa[0])))), _t(leaned(_v(unit_of("+" + fa[1]))))),
+                    slant=(lean.way, lean.tan) if floor else None, leans=not floor)  # fmt: skip
 
     def most_rounding(self, target: Feature, which: str) -> tuple[str, float]:
         s = target.sizes

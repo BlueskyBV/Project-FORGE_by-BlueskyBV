@@ -237,7 +237,9 @@ kind modules on the same foundation, never as a rebuild of it.
   or leaning item's face, and up to a face from a turned or leaning item's
   face; a leaning item's sides, flat and round, take cuts, and its flat
   ones what stands; a turned item's far face takes things over any flat
-  face (1b's step 5.5); next, its fourth step (schema 2.0).
+  face, and a leaning block is hollowed (1b's step 5.5; a leaning
+  cylinder's hollow, and a leaning item's joint with 4b.0d1, still wait);
+  next, its fourth step (schema 2.0).
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and
