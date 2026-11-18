@@ -1510,6 +1510,37 @@ passed, 247's mutant caught (1162's makes the same part). Generator
 digests on seeds 0-149, old against new: only the impossible part 41
 differs (its leaning block's far face drawn from the wider choice).
 
+**And a turned item's far face over any face (revision 16; step 5.5's
+second part).** A turned block's or post's far face took things only where
+its turned outline lay wholly on a host with the same material under all
+of it; on any other flat face (a ledge over the plate's edge, a pocket's
+floor, a leaning item's far face) it was closed. Item 2b measures depth on
+the shape, and the material under such a face is now as with the item
+upright (frame.md): its own height and, where what is cut there is wholly
+over its host's face, the host's material there too, read along the host's
+axes. **The solver**'s `Over` (forge_spec.geometry) carries the face over
+its host, and where the face is turned from the host's axes (the
+difference of their turns), `least_material_under` and
+`most_material_under` read the host's material under the footprint turned
+into the host's axes, piece by piece (`_into_host`: a disc's centre turned,
+a rectangle's or an outline's outline turned); `_far_material` gives a
+turned item's far face its host so (`_far_over`), closing it only on a
+moved face without the same material under all of it, or round a side.
+**The judge**'s `Over` keeps the turn, and reads its host's material at a
+point or under an outline turned so (`_on_host`, `_host_outline`); its
+`_turned_far` gives the far face its host's outline turned into its own
+axes. **The generator** keeps a turned box's far face on any face it
+stands on (`stand_flat`): its own height and the least of its host's under
+its foot. Tests: `tests/test_v2_plan_turnedover.py` (over a ledge, over the
+plate and past its edge, right through; in a pocket; on a leaning post's
+far face: the least under each hole, deeper asked about, every program's
+layout agreeing, built and judged, the second kernel agreeing). The exit
+harness's per-seed proof on 54, 110 and 115 (the three of the first 150
+that now draw on such a face: a block and a tab turned on an extrusion's
+end, a post turned on a revolution's): all passed, every mutant caught.
+Generator digests on seeds 0-149, old against new: only those three
+differ, and the impossible parts 31, 34, 44 and 124.
+
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
 parts; 2b's first step's pair against that main kept those and held two

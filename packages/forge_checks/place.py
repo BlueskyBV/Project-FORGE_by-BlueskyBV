@@ -416,12 +416,16 @@ class Over:
     ``over`` for a block's, a cylinder's or an extrusion's (a cone stands on
     its host only within its smaller end, one of ``over``, where its own
     height is whole); for a revolution's, where the line runs right through
-    it besides (its :class:`Turned`'s ``extra``).
+    it besides (its :class:`Turned`'s ``extra``). A turned item's far face
+    is turned from its host's axes by ``turn`` degrees (V2-stage4b-0c.md 3.3,
+    step 5): its ``over`` along its own, its host's material along the
+    host's, a point or an outline on it turned so to be read there.
     """
 
     own: Solid | Taper | Turned
     over: tuple[Outline, ...]
     host: Material
+    turn: float = 0.0
 
 
 def _plus(own: Solid | Taper | Turned, host: float) -> Solid | Turned:
@@ -475,6 +479,34 @@ class Slant:
 Material = Solid | Taper | Dome | Turned | Over | Less | Slant
 
 
+def _on_host(material: Over, p: Point) -> Point:
+    """A point of a standing item's far face where its host's material is read: turned by its ``turn``."""
+    if material.turn == 0.0:
+        return p
+    c, s = turn(material.turn)
+    return (c * p[0] - s * p[1], s * p[0] + c * p[1])
+
+
+def _host_outline(material: Over, outline: Outline) -> Outline:
+    """An outline on a standing item's far face where its host's material is read: turned by its ``turn``."""
+    return outline if material.turn == 0.0 else _turned_outline(outline, turn(material.turn))
+
+
+def _turned_outline(outline: Outline, by: Point) -> Outline:
+    """An outline turned about the origin of its face's coordinates, by the angle whose cosine and sine are ``by``:
+    a disc or a ring about its centre turned so, any other side by side."""
+    c, s = by
+
+    def at(p: Point) -> Point:
+        return (c * p[0] - s * p[1], s * p[0] + c * p[1])
+
+    if outline.shape in ("disc", "ring"):
+        return replace(outline, centre=at(outline.centre))
+    angle = fs.atan2(s, c)
+    return Outline.profile([Segment(at(q.a), at(q.b)) if isinstance(q, Segment)
+                            else Arc(at(q.centre), q.radius, q.start + angle, q.sweep) for q in outline.pieces()])  # fmt: skip
+
+
 def same_under(face: FlatFace) -> float | None:
     """The material under a flat face where it is the same under all of it (frame.md): its own, or a standing item's
     own height and its host's, wholly over a host with the same under all of it; None where it isn't."""
@@ -502,7 +534,7 @@ def material_at(material: Material, p: Point) -> float:
     if isinstance(material, Less):
         return material_at(material.base, p) - material.depth
     if all(o.contains(p) for o in material.over):
-        return material_at(_plus(material.own, material_at(material.host, p)), p)
+        return material_at(_plus(material.own, material_at(material.host, _on_host(material, p))), p)
     return material_at(material.own, p)
 
 
@@ -528,9 +560,8 @@ def most(material: Material, mouth: Sequence[Outline]) -> float:
     found = most(material.own, mouth)
     region = [*mouth, *material.over]
     if overlap(region):
-        found = max(
-            found, most(_plus(material.own, most(material.host, region)), region)
-        )
+        host = most(material.host, [_host_outline(material, o) for o in region])
+        found = max(found, most(_plus(material.own, host), region))
     return found
 
 
@@ -549,7 +580,7 @@ def least(material: Material, mouth: Outline) -> float:
     if isinstance(material, Less):
         return least(material.base, mouth) - material.depth
     if all(mouth.within(o) for o in material.over):
-        return least(_plus(material.own, least(material.host, mouth)), mouth)
+        return least(_plus(material.own, least(material.host, _host_outline(material, mouth))), mouth)
     return least(material.own, mouth)
 
 
@@ -2050,7 +2081,9 @@ def _turned_floor(item: Item, faces: dict[str, Face], face: FlatFace, degrees: f
 def _turned_far(item: Item, far: FlatFace, face: FlatFace, at: Point, degrees: float, round_: bool) -> FlatFace | None:
     """A turned item's far face, turned by ``degrees`` as it is: its outline moved to where its centre is along its
     turned axes. A round item's keeps the material its host gives it (it is turned as its host's face is); a box's has
-    its own height and, wholly over a host with the same material under all of it, the host's too; else None."""
+    its own height and, wholly over a host with the same material under all of it, the host's too; over any other
+    face, or partly off one, the host's where it is over it, read along the host's axes (V2-stage4b-0c.md 3.3, step
+    5); on a turned or leaning item's face without the same material under all of it, None."""
     turned = replace(far, turn=degrees)
     c1, c2 = turned.frame.plane(far.centre)
     o1, o2 = far.outline.centre
@@ -2058,16 +2091,18 @@ def _turned_far(item: Item, far: FlatFace, face: FlatFace, at: Point, degrees: f
     if round_:
         return replace(turned, outline=outline)
     host = face.same_under
-    if host is None:
-        return None
     own = _turn_of(item)
     foot = _entry(item.kind).footprint(item, {}, face.axes)
     if own is not None:
         foot = _turned(item, foot, own)
-    if not face.holds(foot.moved(*at)):
-        return None
     height = far.material.own if isinstance(far.material, Over) else far.material
     assert isinstance(height, Solid)
+    if host is None or not face.holds(foot.moved(*at)):
+        if face.local is not None:
+            return None
+        d = degrees - face.turn  # its axes from its host's
+        back = _turned_outline(face.outline, turn(-d))  # its host's outline along its own axes
+        return replace(turned, outline=outline, material=Over(height, (back,), face.material, d))
     return replace(turned, outline=outline, material=Solid(height.depth + host))
 
 

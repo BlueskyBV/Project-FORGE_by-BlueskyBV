@@ -10,7 +10,8 @@ schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third move; place.md, "On a flat face", 
   names:** the same item said either way is placed the same, on every face.
 - **A turned item's far face takes things:** turned with it, its own height
   of material under it and its host's, where it stands on a face with the
-  same material under all of it; closed on any other. On it, positions are
+  same material under all of it; on any other, its host's where it is over
+  it, read along the host's axes. On it, positions are
   along its own axes, and the part's are a fault there; what is placed on it
   is turned with it (as placed, an item turned by both turns on an aligned
   plane), turns add, a round item is the same turned, an outline that
@@ -228,14 +229,17 @@ class ATurnedItemsFarFaceTakesThings(unittest.TestCase):
         self.assertEqual((top.turn, top.depth_below), (30.0, 5.0 + 10.0 + 8.0))
         self.assertTrue(report.layout.closed[("boss", 0)])
 
-    def test_closed_over_a_face_without_the_same_material_under_all_of_it(self) -> None:
-        # A block over the plate's edge has the plate's material under its far face only where it is over the plate.
+    def test_over_a_face_without_the_same_material_under_all_of_it(self) -> None:
+        # A block over the plate's edge has the plate's material under its far face only where it is over the plate;
+        # a turned post on it has the block's there too, where it is over the block, read along the block's axes.
         ledge = {"id": "ledge", "kind": "block", "words": cite(B, "plate"), "on": {"item": "plate", "face": "+z"},
                  "length": assumed("long", 20.0), "width": assumed("wide", 20.0), "height": assumed("tall", 6.0),
                  "place": {"x": {"offset": assumed("over the edge", 45.0)}}}  # fmt: skip
         report = _report(ledge, _post(on="ledge", sizes=(4.0, 3.0, 2.0)))
         self.assertEqual(_placing(report), [])
-        self.assertIn("far face in a later move", report.layout.closed[("post", 0)]["+z"][1])
+        top = report.layout.faces[("post", 0)]["+z"]
+        self.assertNotIn("+z", report.layout.closed[("post", 0)])
+        self.assertEqual((top.turn, top.depth_below, top.over.at), (30.0, 2.0, (0.0, 0.0)))
         # Wholly over its host, a boss has the same under all of its far face: a turned post's there takes things.
         report = _report(_boss(on="plate"), _post(on="boss", face="+end", sizes=(4.0, 3.0, 2.0)))
         self.assertEqual(report.layout.faces[("post", 0)]["+z"].depth_below, 2.0 + 5.0 + 8.0)

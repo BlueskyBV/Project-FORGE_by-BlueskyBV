@@ -349,8 +349,9 @@ class DrawKind:
         if f.turn is not None or face.turned:
             # Turned in its face, or on a face turned with what it is on, it is turned so (place.md, "A turned item's
             # far face"): its far face takes things, turned with it, its own height and its host's material under it,
-            # where its host has the same material under all of it; a box's sides take things, turned with it
-            # ("A turned item's faces"). On a turned item's side, the generator keeps none of its faces.
+            # where its host has the same material under all of it; on any other, the least of its host's under its
+            # foot (V2-stage4b-0c.md 3.3, step 5); a box's sides take things, turned with it ("A turned item's
+            # faces"). On a turned item's side, the generator keeps none of its faces.
             if face.oriented is not None:
                 return
             far = (f.id, copy_index, "+end" if self.round_far_end else up)
@@ -362,6 +363,9 @@ class DrawKind:
             if face.level and face.dome <= 0 and face.flare[1] <= 0:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
                                         height + face.material, face.exit, level=True, turn=turn)  # fmt: skip
+            else:
+                part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
+                                        height + under, face.exit, turn=turn)  # fmt: skip
             if face.hollow is None and math.isinf(face.room):
                 _turned_sides(part, f.id, copy_index, p, up, face.axes, (2 * h1, 2 * h2, height), turn)
             return

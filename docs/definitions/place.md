@@ -91,13 +91,17 @@ for a later step there.
 Under it is the turned item's own height of material and, where its turned
 outline lies wholly on a host with the same material under all of it
 (frame.md), the host's too, under all of it: a cut right through goes
-through both and comes out where a cut through the host would. Under a
-turned pocket's floor is the material under its face less its depth, where
-that face has the same material under all of it. Where a turned item stands
-partly off its host's face, or on (or is cut into) a face without the same
-material under all of it, its far face or floor takes nothing yet. A turned
-cut's other faces take nothing yet, nor do a leaning item's but its far
-face (below).
+through both and comes out where a cut through the host would. On a face
+without the same material under all of it (a ledge over an edge, a pocket's
+floor, a leaning item's far face), it is as with the item upright
+(frame.md): under each point, its own height and, where what is cut there
+is wholly over its host's face, the host's material there too, read along
+the host's axes, so a blind cut fits in the least of that under it and one
+right through goes as deep as the most. Under a turned pocket's floor is
+the material under its face less its depth, where that face has the same
+material under all of it; a turned pocket cut into any other face has a
+floor that takes nothing yet. A turned cut's other faces take nothing yet,
+nor do a leaning item's but its far face and its sides (below).
 
 ### A turned item's faces
 

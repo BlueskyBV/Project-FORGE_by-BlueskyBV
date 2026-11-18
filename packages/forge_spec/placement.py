@@ -496,8 +496,8 @@ _TURNED_FACES = (
 )
 #: Why a turned item's far face takes nothing.
 _TURNED_FAR = (
-    "{} stands turned partly off its face, or on one without the same material under all of it: Forge places on "
-    "its far face in a later move"
+    "{} stands turned round a side, or on a turned or leaning item's face without the same material under all of it: "
+    "Forge places on its far face in a later move"
 )
 
 
@@ -640,12 +640,18 @@ def _moved(face: FlatFace, motion: Rigid) -> FlatFace:
 
 def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | None, layout: Layout) -> None:
     """The material under a turned item's far face: its own height and, where its outline turned as it is in its face
-    lies wholly on a host with the same material under all of it, the host's under all of it too; else it is closed."""
+    lies wholly on a host with the same material under all of it, the host's under all of it too. Over any other flat
+    face, or partly off one, its host's where it is over it (:class:`Over`, turned from the host's axes: V2-stage4b-0c.md
+    3.3, step 5), as with it upright; on a turned or leaning item's face without the same material under all of it, or
+    round a side, it is closed."""
     key = (item.id, inst.index)
     if host_face is None:  # the first body, turned on the origin: its own height is all there is
         return
-    if not isinstance(host_face, FlatFace) or not host_face.uniform:
+    if not isinstance(host_face, FlatFace) or (host_face.local is not None and not host_face.uniform):
         layout.close(key, top.name, "unable", _TURNED_FAR.format(item.id))
+        return
+    if not host_face.uniform:
+        _far_over(top, host_face, layout, key)
         return
     own = degrees(_turn_value(item)) - host_face.turn  # type: ignore[arg-type]
     sizes = SOLVE[item.kind].turnable(item, layout, host_face.part_axes)
@@ -653,10 +659,19 @@ def _far_material(item: Item, inst: Instance, top: FlatFace, host_face: Face | N
     h1, h2, r = sizes
     foot = Shape.rect((0.0, 0.0), (h1, h2), (r, r, r, r)).turned(*_turn(own))
     if not host_face.holds(foot, host_face.frame.on(inst.origin)):
-        layout.close(key, top.name, "unable", _TURNED_FAR.format(item.id))
+        if host_face.local is not None:
+            layout.close(key, top.name, "unable", _TURNED_FAR.format(item.id))
+        else:
+            _far_over(top, host_face, layout, key)
         return
     found = add_material(top, host_face.depth_below)
     layout.faces[key][top.name] = replace(found, depth_sources=top.depth_sources + host_face.depth_sources)
+
+
+def _far_over(top: FlatFace, host_face: FlatFace, layout: Layout, key: tuple[str, int]) -> None:
+    """A turned item's far face over its host's material where it is over its host's face (frame.md)."""
+    over = Over(host_face, host_face.frame.on(top.centre))
+    layout.faces[key][top.name] = replace(top, over=over, depth_sources=top.depth_sources + host_face.depth_sources)
 
 
 def _leaning_bounds(item: Item, inst: Instance, lean: Lean, layout: Layout,

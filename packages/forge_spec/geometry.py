@@ -156,8 +156,10 @@ class Over:
 
     frame.md: at a point over the host's face, the material under the
     host's face there too; over an overhang, only the item's own. ``host``
-    is the face it stands on, in the same axes; ``at`` this face's centre on
-    it, along those axes from the host face's centre. The host's material
+    is the face it stands on, in the same axes, or with this face turned in
+    its plane from them (a turned item's far face: the difference of their
+    ``turn``); ``at`` this face's centre on it, along the host's axes from
+    its centre. The host's material
     adds only where the item's own runs right down to its foot: a cone's
     within its smaller end (its :class:`Taper`'s ``flat``), a revolution's
     where the line runs right through it (its :class:`Turned`).
@@ -165,6 +167,24 @@ class Over:
 
     host: FlatFace
     at: tuple[float, float]
+
+
+def _into_host(footprint: Footprint, p1: float, p2: float, turn: float) -> list[tuple[Footprint, float, float]]:
+    """A footprint at (p1, p2) on a face turned ``turn`` degrees from its host's axes (a turned item's far face, over
+    its host: V2-stage4b-0c.md 3.3, step 5), in the host's axes about the face's centre: its outline turned with it, or
+    each of its parts on its own, a disc's at its centre turned so, a rectangle's an outline turned with it."""
+    c, s = cos_sin(turn)
+    if isinstance(footprint, Shape):
+        return [(footprint.moved(p1, p2).turned(c, s), 0.0, 0.0)]
+    found: list[tuple[Footprint, float, float]] = []
+    for part in footprint:
+        a1, a2 = p1 + part.centre[0], p2 + part.centre[1]
+        q1, q2 = c * a1 - s * a2, s * a1 + c * a2
+        if part.disc:
+            found.append(((Part((0.0, 0.0), part.half, True),), q1, q2))
+        else:
+            found.append((Shape.rect((0.0, 0.0), part.half).turned(c, s), q1, q2))
+    return found
 
 
 @dataclass(frozen=True)
@@ -1383,6 +1403,16 @@ def least_material_under(
             break
         far, near = far_near(footprint, p1, p2)
         over = face.over
+        if over is not None and face.turn != over.host.turn:
+            # A turned item's far face over its host: the footprint in the host's axes, each piece of it.
+            pieces = [(f, q1 + over.at[0], q2 + over.at[1])
+                      for f, q1, q2 in _into_host(footprint, p1, p2, face.turn - over.host.turn)]  # fmt: skip
+            if all(footprint_on_face(over.host, *piece) for piece in pieces):
+                host = min(least_material_under(over.host, *piece) for piece in pieces)
+                found = _depth_range(add_material(face, host), near, far)[0]
+            else:
+                found = _depth_range(face, near, far)[0]
+            break
         if over is None or not footprint_on_face(
             over.host, footprint, p1 + over.at[0], p2 + over.at[1]
         ):
@@ -1432,6 +1462,15 @@ def most_material_under(
         far, near = far_near(footprint, p1, p2)
         found = _depth_range(face, near, far)[1]
         over = face.over
+        if over is not None and face.turn != over.host.turn:
+            # A turned item's far face over its host: the footprint in the host's axes, each piece of it.
+            pieces = [(f, q1 + over.at[0], q2 + over.at[1])
+                      for f, q1, q2 in _into_host(footprint, p1, p2, face.turn - over.host.turn)]  # fmt: skip
+            meeting = [piece for piece in pieces if _footprint_meets(over.host, *piece)]
+            if meeting:
+                host = max(most_material_under(over.host, *piece) for piece in meeting)
+                found = max(found, _depth_range(add_material(face, host), near, far)[1])
+            break
         if over is None or not _footprint_meets(
             over.host, footprint, p1 + over.at[0], p2 + over.at[1]
         ):
