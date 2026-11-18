@@ -184,8 +184,11 @@ along the item's axis to the face it leans on. That is its height on the
 axis, and less on the side it leans towards, by tan(`tilt`) for each
 millimetre that way: a blind cut must fit in the least under its mouth. A
 cut right through it would come out on the face it leans on, and Forge
-says it can't yet (give it a depth); so does one through everything,
-through the next face or up to a face, there, for now.
+says it can't yet (give it a depth); so does one through everything or up
+to a face, there, for now. A cut through the next face goes on along its
+axis until it comes out all across its mouth, through the face it leans on
+and what is under that (sizes.md, "Through the next face"), as on a turned
+item's faces.
 
 ## On a round side
 

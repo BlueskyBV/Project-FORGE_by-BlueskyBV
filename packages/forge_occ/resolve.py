@@ -149,7 +149,9 @@ def _comes_out(made: Any, item: Item, instance: Instance, layout: Layout) -> flo
         raise _UnresolvedError("the preview finds how deep a cut goes square to its face only")
     n = tuple(float(x) for x in instance.normal)
     if isinstance(face, FlatFace):
-        e1, e2 = (_unit(a) for a in face.axes)
+        # Along its own u and v: turned in its plane, or moved with a turned or leaning item (2b's third step).
+        frame = face.frame
+        e1, e2 = tuple(float(x) for x in frame.u), tuple(float(x) for x in frame.v)
         outline = _mouth(item, layout, face.axes)
     else:  # round a side, on a ball's surface or a cone's side (item 2b's third step): a hole, its mouth a disc
         hole = layout.diameters.get(item.id)

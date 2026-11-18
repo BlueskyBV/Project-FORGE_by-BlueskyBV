@@ -19,8 +19,9 @@ the preview resolves before confirmation: its third step's resolution, for
 it), and a leaning item's far face (revision 16); what the exit pairs
 found is fixed, and a ball's or a cone's seam is kept clear of what is on
 it (revision 16), and a hole goes through the next face on a round side, a
-ball or a cone (2b's third step, revision 16); next, a leaning item's other
-faces, the rest of 2b's third step and its fourth (schema 2.0).
+ball or a cone, and a cut on a turned or a leaning item's face (2b's third
+step, revision 16); next, a leaning item's other faces, the rest of 2b's
+third step and its fourth (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1325,6 +1326,35 @@ harness's per-seed proof on the generated seeds that cut so (31, 154,
 198, 229, 291 of the first 300): all passed, and every mutant was caught.
 Generator digests on seeds 0-149, old against new: only 31 differs, and
 the impossible part 119, one of whose attempts does.
+
+**And on a turned or a leaning item's face (revision 16).** A cut through
+the next face goes on a turned item's face or a leaning item's far face
+too: **the solver** places it upright as any cut there (`_curved_end` in
+place of the flat-only rule; plain `through` on a leaning far face is
+still said); **the judge** places it upright, then, moved, finds where it
+comes out along its moved axis round its mouth's outline moved
+(`_next_moved`, `_Layout.upright` keeping the upright placing from asking
+the oracle in the wrong place); **the preview** takes the mouth along the
+face's own u and v as moved (`face.frame`); **the planner** builds it
+upright to that depth and moves it, as any cut there, carried on past its
+far end where that is proven clear where it is moved to (`Context.placed`:
+a moved cut's carrying was proven on it as it stands upright before), boxes
+that overlap by less than a length's sixth place only touching. Slanting
+out of a face, its end's rim touches the face where it has come out all
+across its mouth, and OpenCascade leaves a shell open there; carried on, it
+crosses the face cleanly (generated part 184: a hole down each of a row of
+leaning bosses, out of the block's floor). **The generator**
+puts a hole through the next face on a turned item's face or a leaning
+item's far face now and then (the same stream, after `_onto_turned` and
+`_onto_leaning`), how deep from its own shape round its rim
+(`_on_flat`'s sampled way). Tests: `tests/test_v2_plan_throughnext.py` (a
+hole and a pocket out through a leaning boss's or post's far face and on
+through the plate, a hole down through a turned post and the plate, one
+across it from its side: built and judged; the second kernel agrees; the
+generator's part 0 draws one; `tests/test_v2_plan_build_generated.py`
+keeps part 184). The exit harness's per-seed proof on 0, 3, 7, 67, 85,
+117, 129, 149, 175, 184 and 186, which draw one: all passed, every mutant
+caught.
 
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new

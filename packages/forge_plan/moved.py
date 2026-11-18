@@ -7,9 +7,9 @@ The solver places such a copy as on that item's face with the item upright
 copy's are, each then moved by a ``transform`` (ForgeIR v2's rigid motion,
 which keeps the names of a tool's faces on the moved faces); the boxes its
 tools take up are moved with them (the box round each, moved), and a face
-named by the way it faces is named by the way it faces moved. It is made as
-its definition makes it: not carried into the air (5.2) nor sunk (5.3), which
-are proven on the part's own boxes.
+named by the way it faces is named by the way it faces moved. It is carried
+into the air (5.2) where that is proven clear where it is moved to, on the
+part's own boxes (``Context.placed``), and never sunk (5.3).
 """
 
 from __future__ import annotations

@@ -1636,9 +1636,12 @@ def _on_flat(
         raise DoesNotFitError(
             f"{f.id}: an angle places an item round a side, not on a flat face"
         )
-    if f.end is not None and (f.tilt is not None or face.turned or not _draw(f.kind).cut_out):
+    # Through the next face, a hole on a turned or leaning item's face too (item 2b's third step).
+    sampled = (f.end is not None and f.end.next and face.turned and _draw(f.kind).on_curved and _draw(f.kind).cut_out
+               and f.recess is None)  # a hole: the one cut that goes on a curved face too
+    if f.end is not None and (f.tilt is not None or (face.turned and not sampled) or not _draw(f.kind).cut_out):
         raise DoesNotFitError(f"{f.id}: the generator ends a hole, a pocket or a slot square to a flat face by a "
-                              "condition, not leaning, nor on a turned item's face")  # fmt: skip
+                              "condition, not leaning, nor on a turned item's face but a hole through the next one")  # fmt: skip
     if f.tilt is not None:
         return _on_flat_leaning(f, face, index, part, strict)
     if (
@@ -1708,9 +1711,13 @@ def _on_flat(
                 deep = part.resolved[f.id] = _up_to_depth(f, face, part)
                 if deep < _recess_depth(f) + GAP - 0.001:  # as _sizes_hold holds a blind one's drawn depth
                     raise DoesNotFitError(f"{f.id}: a hole up to a face goes on past its {f.recess[0] if f.recess else ''}")
-            depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
-                                         first=f.end is not None and f.end.next)
-                     if everything else face.material if deep is None else deep)  # fmt: skip
+            past = True
+            if sampled:  # how deep from its own shape, round its mouth (item 2b's third step)
+                depth, past = _comes_out_alike(f, [(p, n, e1, e2)], f.sizes["diameter"] / 2, part)
+            else:
+                depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
+                                             first=f.end is not None and f.end.next)
+                         if everything else face.material if deep is None else deep)  # fmt: skip
             if strict and deep is not None and deep > face.material - GAP:
                 raise DoesNotFitError(
                     f"{f.id} is deeper than the material under {face.key}"
@@ -1777,7 +1784,7 @@ def _on_flat(
                         raise DoesNotFitError(
                             f"{f.id} all but breaks into a cut from the far side"
                         )
-            low_reach = REACH if through or everything else 0.0
+            low_reach = REACH if through or (everything and past) else 0.0
             solid, radius = _draw(f.kind).cut_solid(f, p, e1, e2, n, depth, face)
             part.steps.append(Step(f.id, copy_index, False, solid, (low_reach, REACH)))
             if f.recess is not None:
@@ -4827,6 +4834,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         angling = random.Random(f"forge-eval round angles {seed} {k}")
         outlined = not new and profiles.random() < _PROFILED
         if _onto_turned(onto, k, plan, part, len(plan) < size):
+            # Through the next face now and then (item 2b's third step), from a stream of its own.
+            _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             continue
         if _onto_ball(random.Random(f"forge-eval on balls {seed} {k}"), k, plan, part, len(plan) < size):
             # Through the next face now and then (item 2b's third step), from a stream of its own.
@@ -4838,6 +4847,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         if _onto_end(random.Random(f"forge-eval on round ends {seed} {k}"), k, plan, part, len(plan) < size):
             continue
         if _onto_leaning(random.Random(f"forge-eval leaning faces {seed} {k}"), k, plan, part):
+            _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             continue
         before = len(plan)
         for _ in range(tries):
@@ -4983,7 +4993,9 @@ def _next_now_and_then(rng: random.Random, at: int, plan: list[Feature], part: _
         return
     key = (f.on[0], 0, f.on[1])
     face = part.flats.get(key)
-    curved = key in part.balls or key in part.cones  # a hole there (item 2b's third step)
+    hole = _draw(f.kind).on_curved and f.recess is None  # the one cut that goes on a curved face too
+    # A hole there, or on a turned or leaning item's face (item 2b's third step).
+    curved = key in part.balls or key in part.cones or (face is not None and face.turned and hole)
     if (face is None or face.turned) and not curved:
         return
     ended = replace(f, depth=None, end=End(next=True))

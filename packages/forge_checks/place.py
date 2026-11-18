@@ -1129,6 +1129,9 @@ class _Layout:
         self.shells: dict[str, Item] = {}
         #: Every item placed so far, in the order made: what a cut through the next face finds its way out of.
         self.made: list[Item] = []
+        #: Placing on a face as it stands upright, before it is moved (a turned or leaning item's): a cut through the
+        #: next face is found where it is moved to (item 2b's third step), not here.
+        self.upright = False
 
     def close(self, key: tuple[str, int], face: str, why: str) -> None:
         self.faces.setdefault(key, {}).pop(face, None)
@@ -1691,12 +1694,21 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
-        if isinstance(end_of(item), (ThroughEverything, ThroughNext, UpToFace)):
-            raise PlaceError(item.id, "on a turned item's face, nothing is cut through everything, through the next "
-                             "face or up to a face, yet")  # fmt: skip
+        if isinstance(end_of(item), (ThroughEverything, UpToFace)):
+            raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut through everything or up to "
+                             "a face, yet")  # fmt: skip
         upright = replace(face, local=None)
-        for copy in _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made)):
-            made.append(_moved_copy(copy, motion, layout))
+        layout.upright = True
+        try:
+            found = _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made))
+        finally:
+            layout.upright = False
+        for copy in found:
+            moved = _moved_copy(copy, motion, layout)
+            if isinstance(end_of(item), ThroughNext) and _entry(item.kind).taken and isinstance(upright, FlatFace):
+                # Through the next face (item 2b's third step): where it comes out, along its axis where it is moved.
+                moved = _with_depth(moved, _next_moved(item, upright, copy.point, motion, layout))
+            made.append(moved)
     count = item.get("count")
     if isinstance(count, Count) and count.n != len(made):
         raise PlaceError(
@@ -2073,6 +2085,31 @@ def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: 
     return _comes_out(item, base, np.asarray(face.frame.n, dtype=np.float64), oracle(layout.spec, made), layout)
 
 
+def _next_moved(item: Item, face: FlatFace, point: Vec, motion: Motion, layout: _Layout) -> float:
+    """How deep a cut through the next face goes from its point on a turned or leaning item's face (item 2b's third
+    step), as :func:`_next_depth` finds it: its mouth as on the face upright (``face``, ``point``), moved as the face
+    is (``motion``)."""
+    import numpy as np
+
+    from forge_checks.oracle import oracle
+    from forge_checks.outlines import _at
+
+    order = tuple(step for step in _order(layout.made, layout)
+                  if step.edges is not None or not _entry(layout.items[step.item].kind).made_last)  # fmt: skip
+    made = Placed(kinds={i.id: i.kind for i in layout.spec.items}, copies=dict(layout.copies),
+                  faces={k: dict(v) for k, v in layout.faces.items()},
+                  closed={k: dict(v) for k, v in layout.closed.items()}, order=order,
+                  diameters=dict(layout.diameters), hollows=dict(layout.hollows))  # fmt: skip
+    mouth = _mouth(item, layout, face, face.frame.plane(point))
+    across = [_at(side, k / 32) for side in mouth.pieces() for k in range(32)]
+    (c1, c2), (h1, h2) = mouth.centre, mouth.half
+    across += [(c1 + h1 * a, c2 + h2 * b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6)
+               if mouth.contains((c1 + h1 * a, c2 + h2 * b))]  # fmt: skip
+    base = np.array([motion.point(face.frame.point(u, v)) for u, v in across], dtype=np.float64)
+    n = np.asarray(motion.vector(face.frame.n), dtype=np.float64)
+    return _comes_out(item, base, n, oracle(layout.spec, made), layout)
+
+
 def _next_round(item: Item, point: Vec, direction: Vec, radius: float, layout: _Layout) -> float:
     """How deep a hole through the next face goes from its point on a round side, a ball's surface or a cone's side
     (item 2b's third step), as :func:`_next_depth` finds it on a flat one: its mouth a disc square to its axis, asked
@@ -2148,7 +2185,10 @@ def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int
     embossed = entry.embossed(item)
     resolved = _end_depth(item, face, point, layout)
     if isinstance(end_of(item), ThroughNext):  # item 2b's second step: where it comes out, on the oracle's shape
-        resolved = _next_depth(item, face, point, mouth, layout)
+        end = end_of(item)
+        assert isinstance(end, ThroughNext)
+        # Upright, before it is moved: found where it is moved to (_next_moved), the spec's depth meanwhile.
+        resolved = (end.reaches or 1.0) if layout.upright else _next_depth(item, face, point, mouth, layout)
     if isinstance(end_of(item), (ThroughEverything, ThroughNext)):
         entry.cut_through(item)
     if resolved is not None:

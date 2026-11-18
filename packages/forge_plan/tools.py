@@ -83,6 +83,11 @@ __all__ = [
 
 #: How far an edge's own box is shrunk at its ends, and grown across, to find what covers it (5.5).
 _TOUCH = 1e-9
+#: Boxes that overlap by less than this only touch (mm): every length is written to six places, and no box is known
+#: closer. A cut through the next face ends where its mouth has come out all across (2b's third step); slanting out of
+#: a face, its end's rim touches the face there, and the box past it overlaps the box of what it came out of by as
+#: little as the depth was rounded by (generated part 184: a hole down a leaning boss, out of its plate's floor).
+_WRITTEN = 1e-6
 
 
 @dataclass(frozen=True)
@@ -110,12 +115,21 @@ class Context:
             return found.upright()  # what is on a turned item's face is built as on it upright (moved.py)
         return found
 
+    def placed(self, item: Item, copy: Instance) -> Instance:
+        """A copy as placed on the part: one built upright on a turned or leaning item's face (moved.py) is the copy
+        moved there, whose tool is proven carried where it is moved to (:func:`carried_ways`), and not sunk."""
+        if copy.frame is None:
+            for placed in self.layout.instances.get(item.id, []):
+                if placed.local is copy:
+                    return placed
+        return copy
+
     # What the families of kinds make their tools with (items/plan/_families.py).
     def carried(self, chain: Chain, item: Item, copy: Instance) -> tuple[bool, bool]:
-        return carried_ways(chain, self, item, copy)
+        return carried_ways(chain, self, item, self.placed(item, copy))
 
     def sink(self, chain: Chain, item: Item, copy: Instance) -> tuple[Vec, Vec] | None:
-        return sink_box(chain, self, item, copy)
+        return sink_box(chain, self, item, self.placed(item, copy))
 
     def cut_tool(
         self, chain: Chain, item: Item, copy: Instance, carry: tuple[bool, bool]
@@ -182,12 +196,12 @@ def _corner_region(own: Box, f1: str, f2: str, size: float) -> tuple[Box, Box]:
 def clear_of(
     chain: Chain, box: tuple[Vec, Vec], *, but: tuple[str, int] | None = None
 ) -> bool:
-    """Whether a box meets no tool added so far (its interior meets none of theirs): all of the part made so far is within those.
+    """Whether a box meets no tool added so far (its interior meets none of theirs, by more than :data:`_WRITTEN`): all of the part made so far is within those.
 
     ``but``: an item copy whose own boxes are left out, an exact test standing for them (5.2, a round side's host).
     """
     probe = Box(box[0], box[1], "", -1)
-    return not any(probe.meets(b) for b in chain.added if (b.item, b.copy) != but)
+    return not any(probe.meets(b, by=-_WRITTEN) for b in chain.added if (b.item, b.copy) != but)
 
 
 # ----------------------------------------------------------------------

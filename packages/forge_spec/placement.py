@@ -2839,14 +2839,16 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if item.id in layout.shells:
                 layout.issue("unable", at, f"{on.item} is turned: Forge hollows what stands on its faces in a later step")
                 return []
-            if not _flat_end_only(item, layout, at, f"a face of {on.item}, which is turned"):
+            # Through the next face too (item 2b's third step): placed upright, as deep as the preview found it along
+            # its axis where it is moved to.
+            if not _curved_end(item, layout, at, f"a face of {on.item}, which is turned or leans"):
                 return []
             face = _upright(face)
             if isinstance(face, FlatFace) and isinstance(face.depth_model, Slant) and SOLVE[item.kind].cut \
-                    and isinstance(end_of(item), ThroughAll):  # fmt: skip
+                    and isinstance(end_of(item), ThroughAll) and not isinstance(end_of(item), ThroughNext):  # fmt: skip
                 layout.issue("unable", at + pointer("depth"),
                              f"{on.item} leans: a cut right through its far face would come out on the face it leans "
-                             "on, for now; give it a depth")  # fmt: skip
+                             "on, for now; give it a depth, or go through the next face")  # fmt: skip
                 return []
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face

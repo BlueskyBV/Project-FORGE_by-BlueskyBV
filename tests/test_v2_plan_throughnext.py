@@ -29,6 +29,12 @@ face"; V2-stage4b-0c.md, 3.5, item 2b's second step; schema 1.8).
   a plate on through it, a cone's side, one standing on a plate; built and
   judged; through everything there, and from inside a bore, still said;
   the generator draws it on a ball or a cone.
+- **On a turned or a leaning item's face** (item 2b's third step): placed
+  as with the face upright, how deep along its axis where it is moved to:
+  a hole and a pocket out through a leaning boss's or post's far face and
+  on through the plate it leans on, a hole down through a turned post and
+  the plate, one across it from its side; built and judged; the generator
+  draws a hole so.
 """
 
 from __future__ import annotations
@@ -406,6 +412,93 @@ class RoundASideOnABallOrACone(unittest.TestCase):
                 self.assertIsNone(built.gap, built.refusals)
                 report = agree(planned.document(built.choice), "part", exact=built.result)
                 self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
+
+
+def _moved_cases() -> dict[str, tuple[Any, float]]:
+    """On a turned or a leaning item's face: each part, and how deep its cut through the next face goes (mm)."""
+    from test_v2_plan_faceaxes import _hole as _on_post
+    from test_v2_plan_faceaxes import _post
+    from test_v2_plan_leanfar import _hole as _on_lean
+    from test_v2_plan_leanfar import _leaning
+    from test_v2_plan_leanfar import _pocket as _pocket_on_lean
+
+    return {
+        "a hole out through a leaning boss and the plate": (lambda b: [_leaning(b), {**_on_lean(b, "+end"), "depth": _next()}],
+                                                             29.241363),
+        "a pocket out through a leaning post and the plate": (
+            lambda b: [_leaning(b, "post"), {**_pocket_on_lean(b, "+z"), "depth": _next()}], 29.969303),
+        "a hole down through a turned post and the plate": (lambda b: [_post(b), {**_on_post(b), "depth": _next()}], 18.0),
+        "a hole across a turned post from its side": (lambda b: [_post(b), {**_on_post(b, face="-y"), "depth": _next()}],
+                                                      20.0),
+    }  # fmt: skip
+
+
+def _moved_draft(make: Any) -> dict[str, Any]:
+    from forge_spec.words import number_words
+    from test_v2_plan_faceaxes import _TEXT as _FACES
+    from test_v2_plan_faceaxes import _plate
+
+    b = number_words(_FACES)
+    found = draft("plate", [_plate(b), *make(b)])
+    found["schema_version"] = "1.8"
+    return found
+
+
+def _moved_confirmed(found: dict[str, Any]) -> Any:
+    from forge_spec.checks import check_draft
+    from forge_spec.lock import lock
+    from forge_spec.words import number_words
+    from test_v2_plan_faceaxes import _TEXT as _FACES
+
+    report = check_draft(number_words(_FACES), found, strict=False)
+    assert not report.problems, [p.message for p in report.problems]
+    return lock(report, number_words(_FACES), by="draft", strict=False)
+
+
+@needs_occ
+class OnATurnedOrALeaningItemsFace(unittest.TestCase):
+    def test_built_as_the_preview_found(self) -> None:
+        from forge_checks.classes import Verdict
+        from forge_checks.place import place
+        from forge_occ.resolve import resolve_draft
+        from forge_plan import plan
+        from test_v2_plan_build import judged_plan
+
+        for name, (make, deep) in _moved_cases().items():
+            with self.subTest(name):
+                resolved = resolve_draft(_moved_draft(make))
+                self.assertEqual(resolved.notes, ())
+                self.assertAlmostEqual(_reaches(resolved.draft)[0], deep, places=5)
+                spec = _moved_confirmed(resolved.draft)
+                (cut,) = place(spec.spec).copies["hole"]
+                self.assertAlmostEqual(cut.span[1], deep, places=5)
+                built, accounting, failed = judged_plan(spec.spec, plan(spec))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+                self.assertEqual(failed, [])
+
+    def test_the_second_kernel_agrees(self) -> None:
+        from forge_occ.agreement import agree
+        from forge_occ.planned import build_plan
+        from forge_occ.resolve import resolve_draft
+        from forge_plan import plan
+
+        make = _moved_cases()["a hole out through a leaning boss and the plate"][0]
+        planned = plan(_moved_confirmed(resolve_draft(_moved_draft(make)).draft))
+        built = build_plan(planned)
+        self.assertIsNone(built.gap, built.refusals)
+        report = agree(planned.document(built.choice), "part", exact=built.result)
+        self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
+
+    def test_the_generator_draws_a_hole_so(self) -> None:
+        from forge_eval.generator import _build, generate
+
+        case = generate(0)  # its hole on a turned item's face goes through the next face
+        part = _build(case.plan, False)
+        found = [f for f in case.plan if f.end is not None and f.end.next and f.on is not None
+                 and (face := part.flats.get((f.on[0], 0, f.on[1]))) is not None and face.turned]  # fmt: skip
+        self.assertTrue(found)
+        self.assertTrue(all("through_next" in item["depth"] for item in case.items if item["id"] in {f.id for f in found}))
 
 
 if __name__ == "__main__":

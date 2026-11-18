@@ -119,9 +119,15 @@ deep as on a flat face, and the judge again; where the cut comes out
 across a face at a slant, what the judge finds round its mouth must agree
 with the preview's, and the part is made as deep as the preview found.
 
+On a turned item's face, or a leaning item's far face, a cut goes through
+the next face as on any flat face, placed as with the face upright, how
+deep along its axis where it is moved to: out through a leaning boss's
+far face and on through the plate it leans on; down through a turned post
+and the plate; across it from its side.
+
 For now through everything and up to a face are cut square to a flat face
-only, and none of the three leaning, from inside a bore, or on a turned
-item's face: Forge says it can't, and why.
+only, not on a turned or leaning item's face, and none of the three
+leaning, or from inside a bore: Forge says it can't, and why.
 
 ## Sizes from standard tables
 

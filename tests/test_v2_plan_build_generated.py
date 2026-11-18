@@ -78,6 +78,14 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
             with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
                 self.graded(seed, REGRESSIONS[seed][1])
 
+    def test_through_the_next_faces_finds_built_judged_and_graded(self) -> None:
+        """Kept plans that found faults with a cut through the next face (item 2b's third step; tests/v2_regressions.py): a hole down each of a row of leaning bosses and out of the block's floor at a slant, its end's rim touching the floor where it comes out all across its mouth, carried on past it where that is proven where it is moved to (184)."""
+        from v2_regressions import REGRESSIONS
+
+        for seed in (184,):
+            with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
+                self.graded(seed, REGRESSIONS[seed][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge
