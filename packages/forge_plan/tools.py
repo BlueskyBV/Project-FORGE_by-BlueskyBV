@@ -284,6 +284,8 @@ def side_air_boxes(
         radius, widest = PLAN[item.kind].widest(ctx, item)
         w, d = copy.origin, neg(copy.normal)
         mouth = _bounds_of_cylinder(add(w, d, -CARRY), d, widest, CARRY)
+        if copy.depth is not None:  # through the next face: out of the part all across there (2b's third step)
+            return mouth, _bounds_of_cylinder(add(w, d, copy.depth), d, radius, CARRY)
         if not _through(item) or not isinstance(face, BallFace) or face.dome:
             return mouth, None
         depth = face.most_material_under((disc(radius),))
@@ -295,6 +297,8 @@ def side_air_boxes(
     mouth = None
     if face.outward:  # into a bore or a hollow a hole starts at the axis, in air
         mouth = _bounds_of_cylinder(add(w, d, -CARRY), d, widest, CARRY)
+    if copy.depth is not None:  # through the next face: out of the part all across there (2b's third step)
+        return mouth, _bounds_of_cylinder(add(w, d, copy.depth), d, radius, CARRY)
     if not _through(item):
         return mouth, None
     depth = face.most_material_under((disc(radius),))

@@ -22,6 +22,13 @@ face"; V2-stage4b-0c.md, 3.5, item 2b's second step; schema 1.8).
 - **The second kernel agrees** with the exact part.
 - **The generator draws it:** its drafts say 1.8, and its own shape stops
   where it first comes out.
+- **Round a side, on a ball's surface, on a cone's side** (item 2b's third
+  step): a hole through the next face, how deep as the preview finds it
+  along its axis, its mouth a disc square to it: a rod right across, a
+  tube's wall into its bore, a dome out of its flat face, a ball seated in
+  a plate on through it, a cone's side, one standing on a plate; built and
+  judged; through everything there, and from inside a bore, still said;
+  the generator draws it on a ball or a cone.
 """
 
 from __future__ import annotations
@@ -32,7 +39,7 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from test_v2_plan_throughall import _TEXT, _box, _boss, _hole, _hollow, _row
+from test_v2_plan_throughall import _TEXT, _boss, _box, _hole, _hollow, _row
 from v2_drafts import assumed, cite, draft
 from v2_occ import needs_occ
 
@@ -260,6 +267,145 @@ class TheGeneratorDrawsIt(unittest.TestCase):
         self.assertFalse(any(case.truth.inside([(0.0, 0.0, 28.5)])))  # out of the top wall
         self.assertTrue(all(case.truth.inside([(0.0, 0.0, 1.5)])))  # the floor under it is whole
         self.assertEqual(case.items[-1]["depth"]["through_next"], True)
+
+
+_ROUND = "A rod, a tube, a ball on a plate and a cone, each with a hole right through."
+
+
+def _round_hole(b: Any, on: str, face: str, **place: Any) -> dict[str, Any]:
+    return {"id": "hole", "kind": "hole", "words": cite(b, "hole"), "on": {"item": on, "face": face},
+            "diameter": assumed("across", 4.0), "depth": _next(), "place": place}  # fmt: skip
+
+
+def _rod(b: Any) -> dict[str, Any]:
+    return {"id": "rod", "kind": "cylinder", "words": cite(b, "rod"), "diameter": assumed("across", 30.0),
+            "length": assumed("long", 60.0)}  # fmt: skip
+
+
+def _tube(b: Any) -> dict[str, Any]:
+    return {"id": "rod", "kind": "tube", "words": cite(b, "tube"), "outer_diameter": assumed("across", 40.0),
+            "inner_diameter": assumed("bore", 30.0), "length": assumed("long", 60.0)}  # fmt: skip
+
+
+def _ball(b: Any, portion: str = "whole", on: str | None = None, across: float = 40.0) -> dict[str, Any]:
+    found = {"id": "ball", "kind": "sphere", "words": cite(b, "ball"), "diameter": assumed("across", across),
+             "portion": {"choose": portion, "from": {"assumed": "so"}}}  # fmt: skip
+    if on is not None:
+        found["on"] = {"item": on, "face": "+z"}
+    return found
+
+
+def _plate(b: Any) -> dict[str, Any]:
+    return {"id": "plate", "kind": "block", "words": cite(b, "plate"), "length": assumed("long", 100.0),
+            "width": assumed("wide", 60.0), "height": assumed("thick", 8.0)}  # fmt: skip
+
+
+def _cone(b: Any, on: str | None = None) -> dict[str, Any]:
+    found = {"id": "cone", "kind": "cone", "words": cite(b, "cone"), "base_diameter": assumed("base", 30.0),
+             "top_diameter": assumed("top", 10.0), "length": assumed("long", 30.0)}  # fmt: skip
+    if on is not None:
+        found["on"] = {"item": on, "face": "+z"}
+    return found
+
+
+def _round(b: Any, latitude: float, angle: float) -> dict[str, Any]:
+    return {"latitude": assumed("up", latitude, "deg"), "angle": assumed("round", angle, "deg")}
+
+
+#: Each part (its first item first) and how deep its hole through the next face goes, as the preview finds it (mm).
+ROUND: dict[str, tuple[Any, float]] = {
+    "a rod right across": (lambda b: [_rod(b), _round_hole(b, "rod", "side", angle=assumed("round", 30.0, "deg"),
+                                                           z={"offset": assumed("off", 5.0)})], 30.0),
+    "a tube's wall, into its bore": (lambda b: [_tube(b), _round_hole(b, "rod", "side", angle=assumed("round", 30.0, "deg"),
+                                                                      z={"offset": assumed("off", 5.0)})], 5.133931),
+    "a dome, out of its flat face": (lambda b: [_ball(b, "upper_half"), _round_hole(b, "ball", "surface", **_round(b, 45.0, 30.0))],
+                                     22.0),
+    "a ball seated in a plate, on through it": (
+        lambda b: [_plate(b), _ball(b, on="plate", across=30.0), _round_hole(b, "ball", "surface", **_round(b, 50.0, 100.0))],
+        30.0),
+    "a cone's side": (lambda b: [_cone(b), _round_hole(b, "cone", "side", angle=assumed("round", 30.0, "deg"))], 25.217083),
+    "a cone standing on a plate": (
+        lambda b: [_plate(b), _cone(b, on="plate"), _round_hole(b, "cone", "side", angle=assumed("round", 160.0, "deg"))],
+        25.217083),
+}
+
+
+def _round_draft(make: Any) -> dict[str, Any]:
+    from forge_spec.words import number_words
+
+    items = make(number_words(_ROUND))
+    found = draft(items[0]["id"], items)
+    found["schema_version"] = "1.8"
+    return found
+
+
+def _round_confirmed(found: dict[str, Any]) -> Any:
+    from forge_spec.checks import check_draft
+    from forge_spec.lock import lock
+    from forge_spec.words import number_words
+
+    report = check_draft(number_words(_ROUND), found, strict=False)
+    assert not report.problems, [p.message for p in report.problems]
+    return lock(report, number_words(_ROUND), by="draft", strict=False)
+
+
+@needs_occ
+class RoundASideOnABallOrACone(unittest.TestCase):
+    def test_the_preview_finds_how_deep(self) -> None:
+        from forge_occ.resolve import resolve_draft
+
+        for name, (make, deep) in ROUND.items():
+            with self.subTest(name):
+                resolved = resolve_draft(_round_draft(make))
+                self.assertEqual(resolved.notes, ())
+                self.assertEqual(len(_reaches(resolved.draft)), 1)
+                self.assertAlmostEqual(_reaches(resolved.draft)[0], deep, places=5)
+
+    def test_built_as_the_preview_found(self) -> None:
+        from forge_checks.classes import Verdict
+        from forge_checks.place import place
+        from forge_occ.resolve import resolve_draft
+        from forge_plan import plan
+        from test_v2_plan_build import judged_plan
+
+        for name, (make, deep) in ROUND.items():
+            with self.subTest(name):
+                spec = _round_confirmed(resolve_draft(_round_draft(make)).draft)
+                (hole,) = place(spec.spec).copies["hole"]
+                self.assertAlmostEqual(hole.span[1], deep, places=5)
+                built, accounting, failed = judged_plan(spec.spec, plan(spec))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+                self.assertEqual(failed, [])
+
+    def test_what_isnt_yet_is_said(self) -> None:
+        from forge_spec.checks import check_draft
+        from forge_spec.words import number_words
+
+        everything = {"through_all": True, "from": {"assumed": "through it"}}
+        for make, words in (
+            (lambda b: [_ball(b), {**_round_hole(b, "ball", "surface", **_round(b, 45.0, 30.0)), "depth": everything}],
+             "from a flat face, for now, not on a ball's surface"),
+            (lambda b: [_tube(b), {**_round_hole(b, "rod", "bore"), "depth": _next()}], "the inside of a bore"),
+        ):  # fmt: skip
+            with self.subTest(words):
+                found = _round_draft(make)
+                report = check_draft(number_words(_ROUND), found, strict=False)
+                self.assertTrue(any(words in p.message for p in report.problems), [p.message for p in report.problems])
+
+    def test_the_second_kernel_agrees(self) -> None:
+        from forge_occ.agreement import agree
+        from forge_occ.planned import build_plan
+        from forge_occ.resolve import resolve_draft
+        from forge_plan import plan
+
+        for name in ("a dome, out of its flat face", "a cone's side"):
+            with self.subTest(name):
+                planned = plan(_round_confirmed(resolve_draft(_round_draft(ROUND[name][0])).draft))
+                built = build_plan(planned)
+                self.assertIsNone(built.gap, built.refusals)
+                report = agree(planned.document(built.choice), "part", exact=built.result)
+                self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
 
 
 if __name__ == "__main__":

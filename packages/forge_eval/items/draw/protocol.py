@@ -205,8 +205,10 @@ class DrawKind:
         made: list[Copy] = []
         for host_copy in part.copies.get(host, []):
             key = (host, host_copy.index, face_name)
-            if f.end is not None and key not in part.flats:
-                raise DoesNotFitError(f"{f.id}: the generator ends a cut by a condition on a flat face")
+            if f.end is not None and key not in part.flats and not (f.end.next and (key in part.balls or key in part.cones)):
+                # Through the next face also on a ball's surface or a cone's side (item 2b's third step).
+                raise DoesNotFitError(f"{f.id}: the generator ends a cut by a condition on a flat face, or through the "
+                                      "next face on a ball or a cone")  # fmt: skip
             if key in part.flats:
                 made += _on_flat(f, part.flats[key], len(made), part, strict)
             elif key in part.rounds:

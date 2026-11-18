@@ -36,7 +36,7 @@ import itertools
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import (
@@ -2055,12 +2055,9 @@ def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: 
     :data:`_NEXT_CLOSE` between the last two). Where the spec records how deep the preview found it goes, the two
     must agree within the general tolerance for that depth."""
     import numpy as np
-    from forge_numeric import vector as fv
 
-    from forge_checks.classes import general
     from forge_checks.oracle import oracle
     from forge_checks.outlines import _at
-    from forge_checks.view import Side
 
     order = tuple(step for step in _order(layout.made, layout)
                   if step.edges is not None or not _entry(layout.items[step.item].kind).made_last)  # fmt: skip
@@ -2068,13 +2065,50 @@ def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: 
                   faces={k: dict(v) for k, v in layout.faces.items()},
                   closed={k: dict(v) for k, v in layout.closed.items()}, order=order,
                   diameters=dict(layout.diameters), hollows=dict(layout.hollows))  # fmt: skip
-    shape = oracle(layout.spec, made)
     across = [_at(side, k / 8) for side in mouth.pieces() for k in range(8)]
     (c1, c2), (h1, h2) = mouth.centre, mouth.half
     across += [(c1 + h1 * a, c2 + h2 * b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6)
                if mouth.contains((c1 + h1 * a, c2 + h2 * b))]  # fmt: skip
     base = np.array([face.frame.point(u, v) for u, v in across], dtype=np.float64)
-    n = np.asarray(face.frame.n, dtype=np.float64)
+    return _comes_out(item, base, np.asarray(face.frame.n, dtype=np.float64), oracle(layout.spec, made), layout)
+
+
+def _next_round(item: Item, point: Vec, direction: Vec, radius: float, layout: _Layout) -> float:
+    """How deep a hole through the next face goes from its point on a round side, a ball's surface or a cone's side
+    (item 2b's third step), as :func:`_next_depth` finds it on a flat one: its mouth a disc square to its axis, asked
+    round its rim and within it."""
+    import numpy as np
+    from forge_numeric import scalar as fs
+
+    from forge_checks.oracle import oracle
+
+    order = tuple(step for step in _order(layout.made, layout)
+                  if step.edges is not None or not _entry(layout.items[step.item].kind).made_last)  # fmt: skip
+    made = Placed(kinds={i.id: i.kind for i in layout.spec.items}, copies=dict(layout.copies),
+                  faces={k: dict(v) for k, v in layout.faces.items()},
+                  closed={k: dict(v) for k, v in layout.closed.items()}, order=order,
+                  diameters=dict(layout.diameters), hollows=dict(layout.hollows))  # fmt: skip
+    n = np.asarray(direction, dtype=np.float64)
+    helper = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    e1 = np.cross(helper, n)
+    e1 = e1 / fs.hypot(float(e1[0]), float(e1[1]), float(e1[2]))
+    e2 = np.cross(n, e1)
+    across = [(radius * c, radius * s) for c, s in (fs.sincos(2.0 * math.pi * (k + 0.5) / 16)[::-1] for k in range(16))]
+    across += [(radius * a, radius * b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6)
+               if a * a + b * b < 1.0]  # fmt: skip
+    p = np.asarray(point, dtype=np.float64)
+    base = np.array([p + u * e1 + v * e2 for u, v in across], dtype=np.float64)
+    return _comes_out(item, base, n, oracle(layout.spec, made), layout)
+
+
+def _comes_out(item: Item, base: Any, n: Any, shape: Any, layout: _Layout) -> float:
+    """The first depth along ``-n`` at which every point of ``base`` is out of ``shape`` (:func:`_next_depth`)."""
+    import numpy as np
+    from forge_numeric import vector as fv
+
+    from forge_checks.classes import general
+    from forge_checks.view import Side
+
     corners = np.array([[(shape.lo, shape.hi)[(k >> j) & 1][j] for j in range(3)] for k in range(8)])
     reach = float(np.max(fv.matmul(base[0] - corners, n))) + _NEXT_STEP
 
@@ -2100,6 +2134,9 @@ def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: 
         if not -band.minus - TOL <= reaches - found <= band.plus + TOL:
             raise PlaceError(item.id, f"the preview found it comes out {reaches:g} mm in; on the oracle's shape it "
                              f"comes out {found:.6g} mm in")  # fmt: skip
+        # Agreeing, it is made as deep as the spec says: where it comes out across a face at a slant (round a side,
+        # on a ball, item 2b's third step), the points asked round its mouth find a hair less than the deepest.
+        return float(reaches)
     return found
 
 
@@ -2204,8 +2241,8 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
             item.id,
             f"on a round side, a position along its axis {axis} only, not {others[0]}",
         )
-    if side.half is not None and entry.taken and _through(item):
-        raise PlaceError(item.id, "a hole into a tab's round end is blind, for now")
+    if side.half is not None and entry.taken and _through(item) and not isinstance(end_of(item), ThroughNext):
+        raise PlaceError(item.id, "a hole into a tab's round end is blind, or through the next face, for now")
     start = _angle(place.angle) if place and place.angle is not None else (0.0 if side.half is None else side.middle)
     angles = [start]
     if pattern is not None:
@@ -2316,7 +2353,9 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
     for n, angle in enumerate(angles):
         index = first + n
         if entry.taken:
-            if _through(item):
+            if isinstance(end_of(item), ThroughNext):
+                depth = 0.0  # found where it is (item 2b's third step), below
+            elif _through(item):
                 if ball.standing or ball.dome:
                     raise PlaceError(item.id, "right through a whole ball only, standing on nothing, for now")
                 depth = ball.material
@@ -2328,6 +2367,9 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
         if abs(latitude - 90.0) > TOL or abs(math.remainder(angle, 360.0)) > TOL:
             down = Motion.about(frame.origin, frame.v, turn(90.0 - latitude))
             copy = _moved_copy(copy, Motion.about(frame.origin, frame.n, turn(angle)).after(down), layout)
+        if entry.taken and isinstance(end_of(item), ThroughNext):
+            copy = _with_depth(copy, _next_round(item, copy.point, copy.direction, layout.diameters[item.id] / 2,
+                                                 layout))  # fmt: skip
         made.append(copy)
     return made
 
@@ -2352,8 +2394,8 @@ def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout
     pattern = place.pattern if place else None
     if pattern is not None and not _pattern_entry(pattern.kind).round:
         raise PlaceError(item.id, f"round a cone, only a circle or arc of copies, not a {pattern.kind}")
-    if entry.taken and _through(item):
-        raise PlaceError(item.id, "a hole into a cone's side is blind, for now")
+    if entry.taken and _through(item) and not isinstance(end_of(item), ThroughNext):
+        raise PlaceError(item.id, "a hole into a cone's side is blind, or through the next face, for now")
     start = _angle(place.angle) if place is not None and place.angle is not None else 0.0
     angles = [start]
     if pattern is not None:
@@ -2385,7 +2427,9 @@ def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout
         index = first + n
         if entry.taken:
             here = cone.frame_at(turn(angle), along)
-            made.append(Copy(item.id, index, host, here.origin, here.n, None, span=(0.0, _mm(item, "depth"))))
+            depth = (_next_round(item, here.origin, here.n, layout.diameters[item.id] / 2, layout)
+                     if isinstance(end_of(item), ThroughNext) else _mm(item, "depth"))  # fmt: skip
+            made.append(Copy(item.id, index, host, here.origin, here.n, None, span=(0.0, depth)))
             continue
         below = 90.0 * math.floor(angle / 90.0 + 1e-9)
         c, s = turn(below)
@@ -2405,10 +2449,21 @@ def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout
     return made
 
 
+def _with_depth(copy: Copy, depth: float) -> Copy:
+    """A cut's copy (and its upright one, where it was placed upright and moved) as deep as ``depth``."""
+    local = copy.local if copy.local is None else replace(copy.local, span=(0.0, depth))
+    return replace(copy, span=(0.0, depth), local=local)
+
+
 def _round_hole(item: Item, side: RoundSide, host: tuple[str, int, str], index: int, point: Vec,
                 direction: Vec, layout: _Layout) -> Copy:  # fmt: skip
     radius = layout.diameters[item.id] / 2
-    depth = _side_through(item, side, radius) if _through(item) else _mm(item, "depth")
+    if isinstance(end_of(item), ThroughNext):  # item 2b's third step: where it comes out, on the oracle's shape
+        if not side.outward:
+            raise PlaceError(item.id, "from inside a bore, nothing goes through the next face, for now")
+        depth = _next_round(item, point, direction, radius, layout)
+    else:
+        depth = _side_through(item, side, radius) if _through(item) else _mm(item, "depth")
     begins = (
         0.0 if side.outward else -side.radius
     )  # inside a bore, it starts at the side's axis

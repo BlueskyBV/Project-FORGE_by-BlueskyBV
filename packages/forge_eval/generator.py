@@ -2240,6 +2240,47 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     return made
 
 
+#: Round a hole's mouth, how many points the generator asks whether it is out of the part (item 2b's third step).
+_RIM_ASKED = 720
+
+
+def _comes_out_alike(f: Feature, ways: Sequence[tuple[Array, Array, Array, Array]], radius: float,
+                     part: _Part) -> tuple[float, bool]:  # fmt: skip
+    """How deep a hole through the next face goes from each of its copies' points (``ways``: each point, the way out of
+    the face there and two ways square to it) on a ball's surface or a cone's side (item 2b's third step), as the
+    generator's own shape of what is made so far says: the first depth at which its mouth is out of it all across,
+    asked round its rim and within it every 0.05 mm, then halved to a nanometre; the same for every copy (the spec
+    records one); and whether it is out a little further on (into air the generator may carry it). A
+    :class:`DoesNotFitError` where it doesn't come out, or its copies come out apart."""
+    so_far = Truth({}, tuple(part.steps))
+    lo, hi = so_far.box()
+    rim = [_cos_sin(360.0 * (k + 0.5) / _RIM_ASKED) for k in range(_RIM_ASKED)]
+    within = [(a, b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6) if a * a + b * b < 1.0]
+    found = []
+    for p, out, e1, e2 in ways:
+        base = np.array([p + radius * (c * e1 + s * e2) for c, s in (*rim, *within)])
+        reach = max(float(fv.matmul(p - np.array([x, y, z]), out)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1])
+                    for z in (lo[2], hi[2])) + 0.05  # fmt: skip
+
+        def clear(t: float, base: Array = base, out: Array = out) -> bool:
+            return not bool(np.any(so_far.inside(base - t * out)))
+
+        t, step = 0.05, 0.05
+        while t <= reach and not clear(t):
+            t += step
+        if t > reach or t <= step:
+            raise DoesNotFitError(f"{f.id} doesn't come out of what is made before it")
+        low, high = t - step, t
+        while high - low > 1e-9:
+            middle = (low + high) / 2
+            low, high = (low, middle) if clear(middle) else (middle, high)
+        found.append((high, clear(high + REACH) and clear(high + 2 * REACH)))
+    depths = [d for d, _ in found]
+    if max(depths) - min(depths) > 1e-6:
+        raise DoesNotFitError(f"{f.id}'s copies come out at different depths")
+    return round(depths[0], 6) + 0.0, all(past for _, past in found)
+
+
 def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> list[Copy]:
     """A hole, a boss or a post on a ball's or a dome's surface (item 3b's second step; place.md, "On a ball's
     surface"): at its latitude (90, its pole, where it gives none) and its angle round the pole, or a circle of them
@@ -2269,7 +2310,12 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
         raise DoesNotFitError(f"{f.id} is too wide for the ball, here")
     spread = math.degrees(fs.asin(reach / r))
     margin = math.degrees(GAP / r)
-    through = cut and f.depth is None
+    nxt = cut and f.end is not None and f.end.next  # through the next face (item 2b's third step)
+    through = cut and f.depth is None and not nxt
+    found: tuple[float, bool] | None = None
+    if nxt:
+        found = _comes_out_alike(f, [(ball.centre + r * ball.ways(a, latitude)[0], *ball.ways(a, latitude)) for a in angles],
+                                 h1, part)  # fmt: skip
     if strict:
         if latitude - spread < ball.lowest + 2 * margin or latitude > 90.0:
             raise DoesNotFitError(f"{f.id} runs past where the ball's surface ends")
@@ -2283,7 +2329,7 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
             if f.depth > least - GAP:
                 raise DoesNotFitError(f"{f.id} is deeper than the ball under it")
         # Apart from the rest on the ball where they come closest: at their feet, and holes where they reach deepest.
-        deep = r - (2 * r if through else (f.depth or 0.0)) if cut else r
+        deep = r - (2 * r if through else found[0] if found is not None else (f.depth or 0.0)) if cut else r
         mine = [(a, latitude, spread) for a in angles]
         for k, here in enumerate(mine):
             for other in ball.taken + mine[:k]:
@@ -2301,9 +2347,10 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
         p = ball.centre + r * out
         copy_index = index + k
         if cut:
-            depth = 2 * r if through else float(f.depth or 0.0)
+            depth = 2 * r if through else found[0] if found is not None else float(f.depth or 0.0)
             solid = Prism(_t(p), _t(east), _t(south), _t(out), (h1, h2), h1, -depth, 0.0)
-            step = Step(f.id, copy_index, False, solid, (REACH if through else 0.0, REACH))
+            past = through or (found is not None and found[1])  # out into air past its far end
+            step = Step(f.id, copy_index, False, solid, (REACH if past else 0.0, REACH))
         else:
             sag = r - math.sqrt(max(r * r - reach * reach, 0.0))
             corner = h1 if entry.round_foot else 0.0
@@ -2343,8 +2390,9 @@ def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> 
     if f.latitude is not None:
         raise DoesNotFitError(f"{f.id}: a latitude is a ball's")
     cut = entry.cut_out
-    if cut and f.depth is None:
-        raise DoesNotFitError(f"{f.id}: a hole into a cone's side is blind")
+    nxt = cut and f.end is not None and f.end.next  # through the next face (item 2b's third step)
+    if cut and f.depth is None and not nxt:
+        raise DoesNotFitError(f"{f.id}: a hole into a cone's side is blind, or through the next face")
     s = f.sizes
     if cut or entry.round_foot:
         h1 = h2 = s["diameter"] / 2
@@ -2364,19 +2412,22 @@ def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> 
     if narrowest <= 0.0 or reach >= narrowest / 2:
         raise DoesNotFitError(f"{f.id} is too wide for the cone, here")
     spread = math.degrees(fs.asin(min(h1 / narrowest, 1.0)))
+    found: tuple[float, bool] | None = None
+    if nxt:
+        found = _comes_out_alike(f, [cone.ways(a, along) for a in angles], h1, part)
     if strict:
         foot = reach_along + carry * abs(ls)
         if along - foot < 2 * GAP or along + foot > cone.length - 2 * GAP:
             raise DoesNotFitError(f"{f.id} runs past the end of {cone.key[0]}'s side")
         margin = math.degrees(GAP / narrowest)
-        if cut:
+        if cut and not nxt:
             p, normal, around, slant = cone.ways(0.0, along)
             rim = [p + h1 * (c * around + si * slant) for c, si in (_cos_sin(a) for a in range(0, 360, 5))]
             least = float(np.min(cone.exit(np.asarray(rim), -normal)))
             if float(f.depth or 0.0) > least - GAP:
                 raise DoesNotFitError(f"{f.id} is deeper than the cone under it")
         # Apart from the rest on the cone where they come closest: at their feet, and holes where they reach deepest.
-        deep = narrowest - float(f.depth or 0.0) * lc if cut else narrowest
+        deep = narrowest - (found[0] if found is not None else float(f.depth or 0.0)) * lc if cut else narrowest
         mine = [(a, spread, along, foot) for a in angles]
         for k, here in enumerate(mine):
             for other in cone.taken + mine[:k]:
@@ -2395,8 +2446,9 @@ def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> 
         copy_index = index + k
         corner = h1 if (cut or entry.round_foot) else 0.0
         if cut:
-            solid = Prism(_t(p), _t(around), _t(slant), _t(normal), (h1, h2), corner, -float(f.depth or 0.0), 0.0)
-            step = Step(f.id, copy_index, False, solid, (0.0, REACH))
+            depth = found[0] if found is not None else float(f.depth or 0.0)
+            solid = Prism(_t(p), _t(around), _t(slant), _t(normal), (h1, h2), corner, -depth, 0.0)
+            step = Step(f.id, copy_index, False, solid, (REACH if found is not None and found[1] else 0.0, REACH))
         else:
             solid = Prism(_t(p), _t(around), _t(slant), _t(normal), (h1, h2), corner, -carry, s["height"])
             step = Step(f.id, copy_index, True, solid, (REACH, 0.0))
@@ -4777,8 +4829,11 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         if _onto_turned(onto, k, plan, part, len(plan) < size):
             continue
         if _onto_ball(random.Random(f"forge-eval on balls {seed} {k}"), k, plan, part, len(plan) < size):
+            # Through the next face now and then (item 2b's third step), from a stream of its own.
+            _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             continue
         if _onto_cone(random.Random(f"forge-eval on cones {seed} {k}"), k, plan, part, len(plan) < size):
+            _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             continue
         if _onto_end(random.Random(f"forge-eval on round ends {seed} {k}"), k, plan, part, len(plan) < size):
             continue
@@ -4926,8 +4981,10 @@ def _next_now_and_then(rng: random.Random, at: int, plan: list[Feature], part: _
     f = plan[at]
     if rng.random() >= _NEXT or f.end is not None or not _draw(f.kind).cut_out or f.on is None or f.tilt is not None:
         return
-    face = part.flats.get((f.on[0], 0, f.on[1]))
-    if face is None or face.turned:
+    key = (f.on[0], 0, f.on[1])
+    face = part.flats.get(key)
+    curved = key in part.balls or key in part.cones  # a hole there (item 2b's third step)
+    if (face is None or face.turned) and not curved:
         return
     ended = replace(f, depth=None, end=End(next=True))
     trial = [*plan]

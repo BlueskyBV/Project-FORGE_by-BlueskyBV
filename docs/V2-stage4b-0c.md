@@ -18,8 +18,9 @@ schema 1.7) done, and its second (through the next face, schema 1.8, which
 the preview resolves before confirmation: its third step's resolution, for
 it), and a leaning item's far face (revision 16); what the exit pairs
 found is fixed, and a ball's or a cone's seam is kept clear of what is on
-it (revision 16); next, a leaning item's other faces and the rest of 2b's
-third step.
+it (revision 16), and a hole goes through the next face on a round side, a
+ball or a cone (2b's third step, revision 16); next, a leaning item's other
+faces, the rest of 2b's third step and its fourth (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1292,6 +1293,38 @@ where it first comes out). The exit harness's per-seed proof on 20
 generated seeds that cut through the next face: all passed, and every
 mutant was caught. Generator digests on seeds 0-149, old against new: only
 the 50 that cut so differ, and the impossible parts whose attempts do.
+
+**2b's third step, through the next face on a curved face, as built
+(revision 16; schema 1.8).** A hole goes `{"through_next": true}` from a
+round side's outside, a ball's or a dome's surface, a cone's side or a
+round tab's end, along its axis (sizes.md, "Through the next face"): where
+plain `through` can't say how far (a dome, a ball standing on something, a
+cone's side, a tab's end), the shape says, and the preview finds it before
+confirmation. **The solver** lets it be cut there (`_curved_end`), each
+copy as deep as the preview found (`_next_on`); through everything and up
+to a face there, and anything through the next face from inside a bore,
+it still says it can't. **The preview** (`forge_occ.resolve`) carries a
+disc of the hole's mouth along its axis from a millimetre out (its end
+then meets the curved face nowhere) through what is made before it.
+**The judge** finds the depth again on the oracle's shape round the disc's
+rim and within it (`_next_round`, `_comes_out`); across a face at a slant
+the points round the rim find a hair less than the deepest, so where the
+two agree within the general tolerance it is made as deep as the spec
+records. **The planner** cuts to that depth, carried into the air past both
+ends where that is proven clear. **The generator** puts a hole through the
+next face on a ball or a cone now and then (stream "forge-eval through
+next round", after `_onto_ball` and `_onto_cone`), how deep from its own
+shape of what is made before it, asked round 720 points of the rim and
+within it, the same for every copy (`_comes_out_alike`). Tests:
+`tests/test_v2_plan_throughnext.py` (a rod right across, a tube's wall
+into its bore, a dome out of its flat face, a ball seated in a plate and
+on through it, a cone's side, one standing on a plate: the preview's
+depths, built and judged; through everything on a ball and through the
+next face from inside a bore said; the second kernel agrees). The exit
+harness's per-seed proof on the generated seeds that cut so (31, 154,
+198, 229, 291 of the first 300): all passed, and every mutant was caught.
+Generator digests on seeds 0-149, old against new: only 31 differs, and
+the impossible part 119, one of whose attempts does.
 
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new

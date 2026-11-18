@@ -145,17 +145,28 @@ def _comes_out(made: Any, item: Item, instance: Instance, layout: Layout) -> flo
     """How deep one copy first comes out of ``made`` all across its mouth (see the module)."""
     host = instance.host
     face = layout.faces.get(host[:2], {}).get(host[2]) if host is not None else None
-    if not isinstance(face, FlatFace) or instance.direction is not None:
-        raise _UnresolvedError("the preview finds how deep a cut goes square to a flat face only")
+    if face is None or instance.direction is not None:
+        raise _UnresolvedError("the preview finds how deep a cut goes square to its face only")
     n = tuple(float(x) for x in instance.normal)
-    e1, e2 = (_unit(a) for a in face.axes)
-    outline = _mouth(item, layout, face.axes)
+    if isinstance(face, FlatFace):
+        e1, e2 = (_unit(a) for a in face.axes)
+        outline = _mouth(item, layout, face.axes)
+    else:  # round a side, on a ball's surface or a cone's side (item 2b's third step): a hole, its mouth a disc
+        hole = layout.diameters.get(item.id)
+        if hole is None:
+            raise _UnresolvedError("the preview finds how deep a hole goes round a side, a ball or a cone")
+        e1, e2 = _square_to(n)
+        outline = Shape((Arc((0.0, 0.0), hole / 2, 0.0, 2 * math.pi),))
     with boundary("finding where a cut through the next face comes out"):
         lo, hi = _limits(made)
         corners = [(x, y, z) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
         level = sum(instance.origin[k] * n[k] for k in range(3))
         far = max(level - sum(c[k] * n[k] for k in range(3)) for c in corners) + _PAST
-        prism = _prism(outline, instance.origin, e1, e2, n, far)
+        # On a curved face, from a millimetre out: its end then meets the face nowhere (a ball's touches it at its
+        # middle, a cone's or a side's along a line, where a boolean may go wrong: generated part 2947).
+        lift = 0.0 if isinstance(face, FlatFace) else 1.0
+        begin = tuple(instance.origin[k] + lift * n[k] for k in range(3))
+        prism = _prism(outline, begin, e1, e2, n, far + lift)
         common = BRepAlgoAPI_Common(made, prism)
         common.Build()
         if not common.IsDone():
@@ -187,6 +198,16 @@ def _mouth(item: Item, layout: Layout, axes: tuple[str, str]) -> Shape:
     if rest or not part.disc:
         raise _UnresolvedError("the preview finds how deep a hole, a pocket or a slot goes")
     return Shape((Arc(part.centre, part.half[0], 0.0, 2 * math.pi),))
+
+
+def _square_to(n: Sequence[float]) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    """Two ways square to ``n`` and to each other."""
+    helper = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    a = (helper[1] * n[2] - helper[2] * n[1], helper[2] * n[0] - helper[0] * n[2], helper[0] * n[1] - helper[1] * n[0])
+    size = fs.hypot(a[0], a[1], a[2])
+    e1 = (a[0] / size, a[1] / size, a[2] / size)
+    e2 = (n[1] * e1[2] - n[2] * e1[1], n[2] * e1[0] - n[0] * e1[2], n[0] * e1[1] - n[1] * e1[0])
+    return e1, e2
 
 
 def _unit(axis: str) -> tuple[float, float, float]:

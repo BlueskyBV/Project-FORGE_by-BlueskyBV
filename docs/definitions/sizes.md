@@ -110,8 +110,17 @@ the general tolerance for that depth; a spec whose depth the preview hasn't
 found can't be confirmed. A body made after the cut and standing where it
 comes out would close it, and Forge asks.
 
-For now these three are cut square to a flat face, not leaning, and not
-into a round side, a ball's or a cone's surface, a tab's end or a turned
+A hole goes through the next face from a round side's outside, a ball's or
+a dome's surface, a cone's side or a round tab's end too (item 2b's third
+step), along its axis, its mouth a disc square to it: right across a rod;
+through a tube's wall into its bore; out of a dome's flat face; through a
+ball seated in a plate and on through the plate. The preview finds how
+deep as on a flat face, and the judge again; where the cut comes out
+across a face at a slant, what the judge finds round its mouth must agree
+with the preview's, and the part is made as deep as the preview found.
+
+For now through everything and up to a face are cut square to a flat face
+only, and none of the three leaning, from inside a bore, or on a turned
 item's face: Forge says it can't, and why.
 
 ## Sizes from standard tables

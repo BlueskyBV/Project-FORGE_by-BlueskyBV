@@ -1471,6 +1471,24 @@ def _end_depth(item: Item, face: FlatFace, layout: Layout, at: str) -> tuple[boo
     return True, depth
 
 
+def _next_on(item: Item) -> float | None:
+    """How deep a cut through the next face goes, as the preview found it (item 2b's second step); None for any other
+    end, or one the preview hasn't found yet."""
+    end = end_of(item)
+    return end.reaches if isinstance(end, ThroughNext) else None
+
+
+def _curved_end(item: Item, layout: Layout, at: str, where: str) -> bool:
+    """Round a side from outside, on a ball's surface or on a cone's side, a cut goes through the next face as on a
+    flat one, how deep as the preview finds it (item 2b's third step); through everything or up to a face only from a
+    flat face, for now: whether this one isn't such a cut (False: the problem is said)."""
+    if SOLVE[item.kind].cut and isinstance(end_of(item), (ThroughEverything, UpToFace)):
+        layout.issue("unable", at + pointer("depth"),
+                     f"Forge cuts through everything or up to a face from a flat face, for now, not {where}")  # fmt: skip
+        return False
+    return True
+
+
 def _flat_end_only(item: Item, layout: Layout, at: str, where: str) -> bool:
     """A cut through everything or up to a face is cut into a flat face, for now (item 2b's first step): whether this
     one, ``where`` it is, isn't such a cut (False: the problem is said)."""
@@ -1554,7 +1572,8 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
 
 def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layout: Layout,
                     at: str, first: int) -> list[_Copy]:  # fmt: skip
-    if not _flat_end_only(item, layout, at, "round a side"):
+    if not (_curved_end(item, layout, at, "round a side") if face.outward
+            else _flat_end_only(item, layout, at, "round the inside of a bore")):  # fmt: skip
         return []
     place = _place_of(item)
     axis = face.axis
@@ -1600,9 +1619,9 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         layout.issue("fault", at + pointer("place", others[0]),
                      f"on a round side, position along {axis} and an angle only")  # fmt: skip
         return []
-    if face.half is not None and entry.cut and _is_through(item):
+    if face.half is not None and entry.cut and _is_through(item) and not isinstance(end_of(item), ThroughNext):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts a blind hole into a tab's round end, for now: give the hole into {host[0]} a depth")  # fmt: skip
+                     f"Forge cuts a blind hole into a tab's round end, or one through the next face, for now: give the hole into {host[0]} a depth")  # fmt: skip
         return []
     if place and place.angle is not None:
         angles = [degrees(place.angle)]
@@ -1708,7 +1727,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         footprints.append((angle, along, across_size, along_size))
         out.append(
             _Copy(
-                Instance(item.id, 0, origin, outward, host, face_axes),
+                Instance(item.id, 0, origin, outward, host, face_axes, depth=_next_on(item)),
                 face.wall,
                 face.depth_sources,
                 motion=motion,
@@ -1727,7 +1746,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                      face.depth_sources)  # fmt: skip
         bore = face.radius - face.wall
         hole = layout.diameters.get(item.id, 0.0) / 2
-        if face.outward and _is_through(item) and 0 < bore <= hole + EPS:
+        if face.outward and _is_through(item) and not isinstance(end_of(item), ThroughNext) and 0 < bore <= hole + EPS:
             layout.problem("question", at + pointer("depth"),
                            f"{item.id} (\u00d8{2 * hole:g} mm) is as wide as the bore of {host[0]} "
                            f"(\u00d8{2 * bore:g} mm): through one wall only, or right across through both?",
@@ -1827,7 +1846,7 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
                     at: str, first: int) -> list[_Copy]:  # fmt: skip
     """Every copy of a hole, a boss or a post on a ball's or a dome's surface: placed as at its pole (standing on it as
     on a face facing that way), then turned about its centre, down to its latitude and round to its angle."""
-    if not _flat_end_only(item, layout, at, "on a ball's surface"):
+    if not _curved_end(item, layout, at, "on a ball's surface"):
         return []
     place = _place_of(item)
     entry = SOLVE[item.kind]
@@ -1910,9 +1929,9 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
                        f"{item.id}, {spread:g}\u00b0 round the ball from its point at latitude {latitude:g}\u00b0, "
                        f"runs {where}", [*sizes, *([place.latitude] if place is not None else [])])  # fmt: skip
         return []
-    if severs and (face.standing or face.dome):
+    if severs and (face.standing or face.dome) and not isinstance(end_of(item), ThroughNext):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts right through a whole ball only, standing on nothing, for now: give the hole into "
+                     f"Forge cuts right through a whole ball only, standing on nothing, for now: go through the next face, or give the hole into "
                      f"{host[0]} a depth")  # fmt: skip
         return []
     if entry.cut:
@@ -1929,7 +1948,8 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
             # Down from its pole to its latitude about the line through its centre along v, then round its pole.
             down = Rigid.turn_about(frame.origin, frame.v, *_turn(90.0 - latitude))
             motion = Rigid.turn_about(frame.origin, frame.n, *_turn(angle)).after(down)
-        out.append(_Copy(Instance(item.id, 0, pole.origin, pole.n, host, axes if entry.adds else None),
+        out.append(_Copy(Instance(item.id, 0, pole.origin, pole.n, host, axes if entry.adds else None,
+                                  depth=_next_on(item)),
                          face.wall, face.depth_sources, motion=motion))  # fmt: skip
     return out
 
@@ -1940,7 +1960,7 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
     its angle round the axis and its place along it, as round a side; along the cone's normal there. A hole goes in
     along it; a boss or a post is placed as at the frame axis at or below its angle, standing out along the radius
     there, then leaned with the side's slope about its way round and turned about the axis by the rest."""
-    if not _flat_end_only(item, layout, at, "on a cone's side"):
+    if not _curved_end(item, layout, at, "on a cone's side"):
         return []
     place = _place_of(item)
     entry = SOLVE[item.kind]
@@ -1986,9 +2006,10 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
     if position is not None and position.mode == "side" and not position.to_given:
         layout.assume(at, f"{item.id}: measured from the {position.side} end to its centre, along {axis}; "
                       "the brief doesn't say to its centre or its near edge")  # fmt: skip
-    if entry.cut and _is_through(item):
+    if entry.cut and _is_through(item) and not isinstance(end_of(item), ThroughNext):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts a blind hole into a cone's side, for now: give the hole into {host[0]} a depth")  # fmt: skip
+                     f"Forge cuts a blind hole into a cone's side, or one through the next face, for now: give the "
+                     f"hole into {host[0]} a depth, or go through the next face")  # fmt: skip
         return []
     if place and place.angle is not None:
         angles = [degrees(place.angle)]
@@ -2053,7 +2074,8 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
     for angle in angles:
         here = face.frame_at(_turn(angle), along)
         if entry.cut:
-            out.append(_Copy(Instance(item.id, 0, here.origin, here.n, host, None), material, face.depth_sources))
+            out.append(_Copy(Instance(item.id, 0, here.origin, here.n, host, None, depth=_next_on(item)), material,
+                             face.depth_sources))  # fmt: skip
             continue
         below = 90.0 * math.floor(angle / 90.0 + EPS)
         upright = face.frame_at(_turn(below), along)

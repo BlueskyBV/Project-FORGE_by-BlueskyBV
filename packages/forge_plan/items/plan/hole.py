@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
 from forge_spec.geometry import BallFace, ConeFace, Face, FlatFace, SideFace, disc
-from forge_spec.placement import Instance
+from forge_spec.placement import Instance, cut_depth
 
 from forge_plan.errors import PlanError
 from forge_plan.items.plan._edges import _mm
@@ -61,9 +61,11 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
     radius = diameter / 2
     start = _start(face)
     if isinstance(face, (SideFace, BallFace, ConeFace)):
+        found = cut_depth(item, copy, ctx.layout)  # through the next face, as the preview found it (2b's third step)
         depth = (
-            face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
-        )
+            found if found is not None
+            else face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
+        )  # fmt: skip
     else:
         depth = _cut_depth(item, face, (disc(radius),), copy)
     pieces: list[str] = []

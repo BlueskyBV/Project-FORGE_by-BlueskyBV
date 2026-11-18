@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 13
+GUIDE_VERSION = 14
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -741,8 +741,13 @@ under it; out into a pocket cut from the far side), which the preview finds \
 of an item made before it, parallel to the face it is cut into, the offset \
 back towards its mouth, so that it follows that face (a pocket down to a \
 ledge's height). The face is an item's with one copy, and the depth that \
-comes to must fit in the material under the mouth. Both go square to a flat \
-face for now: not leaning, round a side, on a surface or a tab's end.
+comes to must fit in the material under the mouth. "through_all" and \
+"up_to" go square to a flat face for now: not leaning, round a side, on a \
+surface or a tab's end. A hole may also go "through_next" from a round \
+side's outside, a ball's or a dome's surface, a cone's side or a round \
+tab's end, along its axis: right across a rod, through a tube's wall into \
+its bore, out of a dome's flat face (where "through" there can't say how \
+far: a dome, a ball standing on something, a cone, a tab's end).
 
 A hole, a boss or a post on a flat face may lean, and so may a block or a \
 cylinder standing on one: "tilt": angle (more than \
