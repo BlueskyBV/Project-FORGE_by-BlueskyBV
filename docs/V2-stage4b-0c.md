@@ -1150,8 +1150,12 @@ model: through everything, past the reach of its own solids made before,
 every depth along it material all across its mouth and a gap round it or
 air all across, coming out of material, or in again, only on a face it
 keeps and that holds the mouth, which is then taken (and its way across a
-hollow kept clear there); up to a face, its depth read from its own faces
-at every build, so a mutant that moves that face moves the floor with it.
+hollow kept clear there), and nothing made after it that adds to the part
+stands in its way (the box round its mouth along its axis; what of an item
+is carried on into its face counts for nothing: the solver asks about such
+a body, as test_v2_eval_truth's mutants found on 58047d1); up to a face,
+its depth read from its own faces at every build, so a mutant that moves
+that face moves the floor with it.
 Its mutants move the offset (the depth with it) and make a cut through
 everything blind; `impossible()` leaves an ended cut alone. Spec grading
 counts a hole through everything as through, and one up to a face by the

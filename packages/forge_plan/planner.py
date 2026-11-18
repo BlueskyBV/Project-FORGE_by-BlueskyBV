@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 
 from forge_ir.v2 import DocumentV2
 from forge_spec.checks import SpecReport
-from forge_spec.draft import Choice, EdgeSet, Item, On, PartSpec
+from forge_spec.draft import Choice, EdgeSet, Item, On, PartSpec, UpTo
 from forge_spec.geometry import FlatFace
 from forge_spec.lock import ConfirmedSpec
 from forge_spec.placement import Instance, Layout, placed_spec
@@ -646,4 +646,7 @@ def _depends_on(item: Item) -> set[str]:
     concentric = getattr(place, "concentric", None)
     if isinstance(concentric, str):
         found.add(concentric)
+    depth = item.get("depth")
+    if isinstance(depth, UpTo):  # a cut up to a face goes as deep as that face is (item 2b's first step)
+        found.add(depth.face.item)
     return found

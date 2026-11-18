@@ -775,6 +775,10 @@ class _Part:
     threads: list[tuple[str, Array]] = field(default_factory=list)
     #: How deep each cut up to a face goes, as the generator reads it from its own faces (item 2b's first step).
     resolved: dict[str, float] = field(default_factory=dict)
+    #: Each cut through everything's way (item 2b): the box round its mouth carried along its axis as far as it goes,
+    #: which nothing made after it that adds to the part reaches into (the solver asks about a body made after one
+    #: that stands in its way: forge_spec.placement._check_closed).
+    ways: list[tuple[str, Array, Array]] = field(default_factory=list)
 
 
 def _footprint(f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], float]:
@@ -1524,6 +1528,11 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
                 corner = np.array([(lo, hi)[(k >> j) & 1][j] for j in range(3)])
                 reach = max(reach, float(fv.matmul(p - corner, n)))
     depth = reach + _PAST_ALL
+    if strict:  # its way, which nothing made after it that adds to the part reaches into
+        (w1, w2), _ = _footprint(f, face.axes)
+        mouth = [p + s1 * w1 * e1 + s2 * w2 * e2 for s1, s2 in QUADRANTS]
+        ends = np.array([*mouth, *(m - depth * n for m in mouth)])
+        part.ways.append((f"{f.id} copy {name.split(' ')[-1]}", ends.min(axis=0), ends.max(axis=0)))
     if not strict:
         return depth
     (h1, h2), r = _footprint(f, face.axes)
@@ -2884,6 +2893,14 @@ def _build(plan: Plan, strict: bool) -> _Part:
         if strict:
             new = (*part.steps[made[0] :], *part.late[made[1] :])
             _threads_whole(f, threads, new, part)
+        if strict:  # nothing made after a cut through everything stands in its way (item 2b)
+            for step in (*part.steps[made[0] :], *part.late[made[1] :]):
+                if not step.add:
+                    continue
+                lo, hi = _out_of_its_face(step, part)
+                for who, a, b in part.ways:
+                    if who.split(" ")[0] != f.id and np.all(lo < b - 1e-9) and np.all(a < hi - 1e-9):
+                        raise DoesNotFitError(f"{f.id} stands in the way of {who}, made before it")
         # A shell's hollow is made to follow its body's roundings (_shell); everything else keeps clear of them.
         if strict and not _draw(f.kind).follows_roundings:
             chain = _chain(f, plan)
@@ -2893,6 +2910,25 @@ def _build(plan: Plan, strict: bool) -> _Part:
                     if root not in chain and np.all(lo <= b) and np.all(a <= hi):
                         raise DoesNotFitError(f"{f.id} reaches into {who}")
     return part
+
+
+def _out_of_its_face(step: Step, part: _Part) -> tuple[Array, Array]:
+    """The box round what a step adds, out of the face its copy stands on (past :data:`REACH`, where it stands square
+    to it along one of the part's axes): what of it is carried on into the face adds nothing there
+    (:func:`_stands_in_air`)."""
+    lo, hi = (np.array(x, dtype=np.float64) for x in bounds(step.solid))
+    copy = next((c for c in part.copies.get(step.item, ()) if c.index == step.index), None)
+    if copy is None:
+        return lo, hi
+    d = _v(copy.direction)
+    k = int(np.argmax(np.abs(d)))
+    if abs(abs(float(d[k])) - 1.0) > 1e-12:
+        return lo, hi  # leaning: all of its box
+    if d[k] > 0:
+        lo[k] = max(lo[k], copy.point[k] + REACH)
+    else:
+        hi[k] = min(hi[k], copy.point[k] - REACH)
+    return lo, hi
 
 
 def _threads_whole(

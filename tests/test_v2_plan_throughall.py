@@ -22,8 +22,9 @@ V2-stage4b-0c.md, 3.5, item 2b's first step; schema 1.7).
   where one is, and a floor a millimetre off its face's plane each fail the
   judge.
 - **The second kernel agrees** with the exact part.
-- **The generator draws them:** its drafts say 1.7, and a cut through
-  everything goes out of a hollow's far wall in its own model.
+- **The generator draws them:** its drafts say 1.7, a cut through
+  everything goes out of a hollow's far wall in its own model, and nothing
+  made after it that adds to the part stands in its way.
 """
 
 from __future__ import annotations
@@ -341,6 +342,27 @@ class TheGeneratorDrawsThem(unittest.TestCase):
         self.assertTrue(all(cases["through"].truth.inside(floor)))
         self.assertFalse(any(cases["everything"].truth.inside(floor)))
         self.assertEqual(cases["everything"].items[-1]["depth"]["through_all"], True)
+
+
+class TheGeneratorKeepsItsWayClear(unittest.TestCase):
+    def test_nothing_made_after_stands_in_it(self) -> None:
+        from forge_eval.generator import DoesNotFitError, Feature, Position, render
+
+        # A hole through everything across a post under the body, its way on past the post under the body; a block
+        # under the body there, made after it, would stand in it.
+        body = Feature("body", "block", {"length": 60.0, "width": 40.0, "height": 30.0})
+        post = Feature("i0", "block", {"length": 10.0, "width": 10.0, "height": 12.0}, ("body", "-z"))
+        hole = _everything(Feature("i1", "hole", {"diameter": 4.0}, ("i0", "+y")))
+
+        def block(x: float) -> Feature:
+            return Feature("i2", "block", {"length": 6.0, "width": 4.0, "height": 10.0}, ("body", "-z"),
+                           place={"x": Position("offset", x), "y": Position("offset", -12.0)})  # fmt: skip
+
+        with self.assertRaises(DoesNotFitError) as caught:
+            render((body, post, hole, block(0.0)))
+        self.assertIn("stands in the way of i1", str(caught.exception))
+        render((body, post, hole, block(15.0)))  # beside its way, it stands
+        render((body, post, block(0.0), hole))  # made before it, it is cut through
 
 
 def _everything(f: Any) -> Any:
