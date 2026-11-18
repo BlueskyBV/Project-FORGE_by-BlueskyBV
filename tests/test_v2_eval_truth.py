@@ -904,11 +904,11 @@ class AMutantPerLeaf(unittest.TestCase):
         )
 
     def test_a_rounding_s_leaves(self) -> None:
-        """The first part with a block's edges all rounded and five leaves of its roundings to change (three roundings: each has two at most): each, mutated, is rejected."""
+        """The first part with a block's edges all rounded and four leaves of its roundings to change (two roundings at least: each has two at most): each, mutated, is rejected. Five was asked until a rounding of a pocket's floor where it goes through everything, which has none, was no mutant (2b's second step): no part of the first thousand then had five."""
         self.mutated(
-            first_mutable("a block's edges all rounded", ("fillet", "chamfer"), 5),
+            first_mutable("a block's edges all rounded", ("fillet", "chamfer"), 4),
             ("fillet", "chamfer"),
-            5,
+            4,
         )
 
     def test_standing_outlines_leaves(self) -> None:

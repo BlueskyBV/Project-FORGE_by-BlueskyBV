@@ -1258,6 +1258,57 @@ generated seeds that cut through the next face: all passed, and every
 mutant was caught. Generator digests on seeds 0-149, old against new: only
 the 50 that cut so differ, and the impossible parts whose attempts do.
 
+**What the exit pairs found, fixed (revision 16).** The exit pair on main
+with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
+parts; 2b's first step's pair against that main kept those and held two
+more. Each is fixed where it was, and the plans that build quickly kept
+(`tests/v2_regressions.py`):
+
+- **A leaning item's roundings, in the truth** (3640, 1038, 3551, 1340,
+  3950; graded wrong). Each long edge's round began square to the lean
+  where the edge meets the face, not at the face's plane, keeping a sliver
+  of the corner on one side and taking the face's material on the other; a
+  far rim that dips into the face was rounded under it too. The built
+  rounds run down to the plane and stop there, as edges.md says. The truth
+  now keeps each such round on the face's open side (`Kept`, which holds a
+  rounding as it holds the leaning item; the exact and mesh models carry a
+  kept rounding's own ends, and trim a rounded loop at the plane), and the
+  generator draws no long edge that rises less than twice its round and
+  the gap from the face (3344's stayed in the face, and the generator
+  failed on it).
+- **A leaning box's long edges, in the planner** (596; an error). The
+  planner offered to round them early on the box's tool, or as the regions
+  round its box; neither is made for a leaning item, and its tool refused
+  early with a PlanError. Neither is offered now: they are rounded on the
+  part.
+- **A side pressed against what is past its face's edge, in the
+  generator** (2274; graded wrong). A block on a standing block's side,
+  flush with that block's foot, lay against the drum the block stood on; a
+  slot cut into that side hid in the part, and its mouth, carried on into
+  what the truth took for air, cut the drum in the exact model. Such a side
+  is no face of the part now, nor the face it lies against there
+  (`_pressed_sides`), as inside a hollow it already wasn't.
+- **Letters whose ink lies off their point, in the solver** (2361; an
+  error). Asked whether an outline fits anywhere on a face, the solver
+  measured it from its point both ways: a cedilla and a stop, their ink
+  all below the middle of their line's box, were taken as twice as tall
+  as they are. It is measured with its box centred now (`centred`).
+- **A cut through everything past a thin wall, in the judge** (127, 4217;
+  held). A cut's side is looked for from a margin as wide as its band past
+  its mouth; through everything from a floor a millimetre thick, that is
+  past the floor, where the cut runs through the hollow and has no side.
+  Where a cut's end doesn't follow the material under its face (through
+  everything, up to a face), its side is measured as far as that material
+  surely goes (`Copy.wall`, the least under its mouth).
+
+The rest are OpenCascade refusing every way to make a part (15, "unable",
+the same in both), and one mutant it wouldn't build (2629): the build's
+limits, not faults. Tests: `tests/test_v2_plan_build_generated.py` (the
+kept plans built, judged and graded), `tests/test_v2_eval_truth.py` (the
+refused plans refused), `tests/test_v2_plan_turnedges.py` (only on the
+part), `tests/test_v2_plan_throughall.py` (a ring of round pockets through
+a floor 1 mm thick and on past a boss beside them).
+
 ### 3.6 The proof, and what each step costs
 
 | Step | Proof | Runner time |

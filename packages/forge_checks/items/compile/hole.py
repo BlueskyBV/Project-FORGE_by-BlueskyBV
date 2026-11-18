@@ -11,7 +11,7 @@ from forge_spec.ends import ThroughAll, ThroughEverything, end_of
 from forge_spec.values import Value
 
 from forge_checks.classes import general, tolerance_of
-from forge_checks.items.compile._common import _PLAIN, _deg, _mm, _t, _v
+from forge_checks.items.compile._common import _PLAIN, _deg, _mm, _t, _v, side_end
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Centre, ConeRim, Ref, RoundEdge
 from forge_checks.kinds.surfaces import Cone, Plane, Round
@@ -77,7 +77,7 @@ class Hole(CompileKind):
                 continue
             axis = _t(-_v(copy.direction))
             start, end = max(copy.span[0], recess), copy.span[1]
-            wall = Round(copy.point, axis, radius, start, end, True)
+            wall = Round(copy.point, axis, radius, start, side_end(copy, start), True)
             c.check(
                 item, "diameter", "diameter", 2 * radius, tolerance, wall, copy.index
             )
@@ -133,8 +133,8 @@ class Hole(CompileKind):
         if copy.lean is not None:  # leaning: its axis, where its side is all round
             wall = leaning_wall(item, copy, r, c._recess(item, r))
             return Centre(wall) if wall is not None else None
-        return Centre(Round(copy.point, _t(-_v(copy.direction)), r, max(copy.span[0], c._recess(item, r)),
-                            copy.span[1], True))  # fmt: skip
+        start = max(copy.span[0], c._recess(item, r))
+        return Centre(Round(copy.point, _t(-_v(copy.direction)), r, start, side_end(copy, start), True))
 
     def edge_ref(
         self, c: CompileContext, item: Item, copy: Copy, axis: str, sign: float

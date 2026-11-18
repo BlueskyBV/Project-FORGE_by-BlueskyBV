@@ -246,7 +246,8 @@ def _rounding(step: Step) -> Any:
 
 def _kept(step: Step) -> Any:
     """A kept prism: its prism (carried on past neither end) in common with the slab between its two planes, each
-    carried on as the step allows, as wide as the prism's box is across."""
+    carried on as the step allows, as wide as the prism's box is across. A kept rounding (a leaning item's): carried on
+    past its own ends as the step allows, its planes where they are."""
     from dataclasses import replace
 
     from forge_eval.truth import bounds
@@ -258,7 +259,10 @@ def _kept(step: Step) -> Any:
     low, high = step.reach
     k = step.solid
     assert isinstance(k, Kept)
-    prism = _solid(replace(step, solid=k.solid, reach=(0.0, 0.0)))
+    own = (0.0, 0.0)
+    if isinstance(k.solid, (Corner, RingCorner)):
+        own, (low, high) = (low, high), (0.0, 0.0)
+    prism = _solid(replace(step, solid=k.solid, reach=own))
     n = np.asarray(k.normal, dtype=np.float64)
     helper = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
     a = np.cross(helper, n)

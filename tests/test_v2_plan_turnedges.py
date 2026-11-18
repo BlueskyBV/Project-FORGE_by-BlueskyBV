@@ -14,6 +14,10 @@ third move, steps 2c and 5.3).
 - **An edge left sharp is caught.** The same plan with one of its edges'
   queries left out fails the judge.
 - **The second kernel agrees** with the exact part and names alike.
+- **A leaning box's long edges are rounded on the part only:** not early on
+  its tool, nor as the regions round its box, neither of which is made for
+  a leaning item (generated part 596: early was offered, and its tool
+  refused it).
 """
 
 from __future__ import annotations
@@ -102,6 +106,19 @@ CASES: dict[str, Any] = {
     "a leaning block's top edges": lambda b: [_leaning(b, "block"), _rounding(b, "leaning", "top", size=0.8)],
     "a leaning cylinder's rim": lambda b: [_leaning(b, "cylinder", 30.0, "-y"), _rounding(b, "leaning", "top")],
 }
+
+
+class ALeaningBoxsLongEdgesAreRoundedOnThePart(unittest.TestCase):
+    def test_no_other_construction_is_offered(self) -> None:
+        for name, make in (
+            ("a leaning post's", lambda b: [_leaning(b, "post"), _rounding(b, "leaning", "vertical")]),
+            ("a leaning, turned block's, bevelled", lambda b: [_leaning(b, "block", 12.0, "-y", turn=60.0),
+                                                                _rounding(b, "leaning", "vertical", "chamfer", 0.5)]),
+        ):  # fmt: skip
+            with self.subTest(name):
+                _, planned = _planned(make)
+                (rounding,) = [p for p in planned.items if p.item == "round"]
+                self.assertEqual([c.name for c in rounding.constructions], ["on_the_part"])
 
 
 @needs_occ

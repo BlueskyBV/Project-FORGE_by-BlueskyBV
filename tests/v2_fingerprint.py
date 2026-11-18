@@ -99,7 +99,9 @@ ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_
                    # generated cut's end.
                    ("Through", "everything"), ("Instance", "depth"), ("Feature", "end"),
                    # Its second step: through the next face, how deep the preview found it goes.
-                   ("Through", "next"), ("Through", "reaches"), ("End", "next")})  # fmt: skip
+                   ("Through", "next"), ("Through", "reaches"), ("End", "next"),
+                   # The judge's: how far in the material under a cut through everything or up to a face goes.
+                   ("Copy", "wall")})  # fmt: skip
 
 
 def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:

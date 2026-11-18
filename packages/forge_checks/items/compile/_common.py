@@ -61,6 +61,18 @@ _STRAIGHT = 0.5
 _PLAIN = 1.0
 
 
+def side_end(copy: Copy, start: float = 0.0) -> float:
+    """How far in from its mouth a cut's side is measured to: its depth; where its end doesn't follow the material
+    under its face (through everything, up to a face), no farther than that material surely goes (:attr:`Copy.wall`),
+    past which it may run through a hollow, where it has no side. Its whole depth where that wall leaves nothing past
+    ``start`` (a counterbore as deep)."""
+    assert copy.span is not None
+    end = copy.span[1]
+    if copy.wall is None or copy.wall <= start:
+        return end
+    return min(end, copy.wall)
+
+
 class Buried(str):
     """Why a field has no check of its own: a face that fixes it isn't on the part's surface, as the spec has the part.
 

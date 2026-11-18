@@ -70,6 +70,14 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
             with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
                 self.graded(seed, REGRESSIONS[seed][1])
 
+    def test_the_exit_pairs_finds_built_judged_and_graded(self) -> None:
+        """Kept plans the exit pair on the fp fix and on 2b's first step found faults with (tests/v2_regressions.py): a leaning post's long edges rounded, and a leaning boss's far rim rounded where it dips into its face, where the truth's rounding didn't stop at the face's plane (3640, 1038, 3551); letters whose ink lies all below their point, asked about as twice as tall (2361); holes through everything from a hollow box's thin floor, measured past it (4217)."""
+        from v2_regressions import REGRESSIONS
+
+        for seed in (3640, 1038, 3551, 2361, 4217):
+            with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
+                self.graded(seed, REGRESSIONS[seed][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge

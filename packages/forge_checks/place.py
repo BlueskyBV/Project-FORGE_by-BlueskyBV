@@ -850,6 +850,11 @@ class Copy:
     #: (``local``) onto the part; its point, direction, box and lean are the part's.
     frame: Motion | None = None
     local: Copy | None = None
+    #: A cut whose end doesn't follow the material under its face (through everything, up to a face; item 2b): how
+    #: far in from its mouth that material surely goes, the least under its mouth. Its side is measured there: on
+    #: past it, it may run through a hollow, where it has no side (generated part 127, a ring of round pockets
+    #: through everything from a hollow box's inner floor, 1 mm thick, past a block under it).
+    wall: float | None = None
 
 
 @dataclass(frozen=True)
@@ -2120,8 +2125,9 @@ def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int
             )
     else:
         depth = _mm(item, "depth")
+    wall = face.least_under(mouth) if isinstance(end_of(item), (ThroughEverything, UpToFace)) else None
     copy = Copy(item.id, index, host, point, face.frame.n, face.axes,
-                span=(-depth, 0.0) if embossed else (0.0, depth))  # fmt: skip
+                span=(-depth, 0.0) if embossed else (0.0, depth), wall=wall if wall and wall > TOL else None)  # fmt: skip
     entry.after_cut(item, face, index, point, mouth, depth, layout)
     return copy
 

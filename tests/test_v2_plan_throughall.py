@@ -14,7 +14,9 @@ V2-stage4b-0c.md, 3.5, item 2b's first step; schema 1.7).
   asked about (made before it, it is cut through).
 - **What is built is what was placed.** Through everything a hollow box's
   two walls (down and from its side), a plate and the block it stands on,
-  a hollow box and a boss made before under it, a row of two, a slot; up
+  a hollow box and a boss made before under it, a row of two, a slot, a
+  ring of round pockets through a floor 1 mm thick and on past a boss
+  beside them (each measured where its side is, in the floor); up
   to a face, a hole, a pocket down to a ledge's base, a turned pocket:
   built by the build loop, every face accounted for both ways, every check
   its spec compiles to passing.
@@ -96,6 +98,23 @@ def _boss(b: Any) -> dict[str, Any]:
             "diameter": assumed("across", 12.0), "height": assumed("tall", 10.0)}  # fmt: skip
 
 
+def _open_box(b: Any) -> list[dict[str, Any]]:
+    """A box hollowed open at its top, its walls a millimetre thick, and a boss 10 mm tall under it off to one side."""
+    return [_box(b), {"id": "hollow", "kind": "shell", "words": cite(b, "hollow"), "of": "box",
+                      "thickness": assumed("thick", 1.0), "open": {"faces": ["+z"], "from": {"assumed": "open"}}},
+            {**_boss(b), "on": {"item": "box", "face": "-z"}, "diameter": assumed("across", 8.0),
+             "place": {"x": {"offset": assumed("off", 22.0)}}}]  # fmt: skip
+
+
+def _ring_through(b: Any) -> dict[str, Any]:
+    """Three round pockets in a ring, from the open box's floor down through everything (generated part 127)."""
+    three = {"count": 3, "from": {"assumed": "three"}}
+    return {"id": "pocket", "kind": "pocket", "words": cite(b, "pocket"), "on": {"item": "box", "face": "inner -z"},
+            "shape": {"choose": "circle", "from": {"assumed": "round"}}, "diameter": assumed("across", 8.0),
+            "depth": ALL, "count": three, "place": {"pattern": {"circle": {"count": three,
+                                                                          "diameter": assumed("round", 20.0)}}}}  # fmt: skip
+
+
 def _row(found: dict[str, Any]) -> dict[str, Any]:
     two = {"count": 2, "from": {"assumed": "two"}}
     return {**found, "count": two, "place": {"pattern": {"row": {"count": two, "pitch": assumed("apart", 20.0),
@@ -113,6 +132,7 @@ CASES: dict[str, tuple[Any, float]] = {
         lambda b: [_box(b), _hollow(b), {**_boss(b), "on": {"item": "box", "face": "-z"}}, _hole(b, ALL)], 41.0),
     "a row of two through all": (lambda b: [_box(b), _hollow(b), _row(_hole(b, ALL))], 31.0),
     "a slot through all": (lambda b: [_box(b), _hollow(b), _slot(b, ALL)], 31.0),
+    "a ring of pockets through all a thin floor, past a boss": (lambda b: [*_open_box(b), _ring_through(b)], 12.0),
     "a hole up to the bottom less 4": (lambda b: [_box(b), _hole(b, _up_to("box", "-z", 4.0))], 26.0),
     "a pocket down to the ledge's base less 2": (
         lambda b: [_box(b), _ledge(b), _pocket(b, _up_to("box", "+z", 2.0), on="ledge")], 3.0),

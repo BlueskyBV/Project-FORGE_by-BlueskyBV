@@ -60,6 +60,7 @@ __all__ = [
     "Vec",
     "add_material",
     "bbox",
+    "centred",
     "cone_sag",
     "copies_overlap",
     "disc",
@@ -744,6 +745,18 @@ def bbox(parts: Iterable[Part]) -> tuple[float, float]:
     return b1, b2
 
 
+def centred(parts: Sequence[Part]) -> tuple[Part, ...]:
+    """An outline moved so the box round it is centred on its position: what fits anywhere fits so at the middle of a
+    face that is the same turned half round. Letters' ink lies off their point (generated part 2361: a cedilla and a
+    stop, their ink all below the middle of their line's box, asked about as twice as tall as it is)."""
+    if not parts:
+        return tuple(parts)
+    lo1, hi1 = min(p.centre[0] - p.half[0] for p in parts), max(p.centre[0] + p.half[0] for p in parts)
+    lo2, hi2 = min(p.centre[1] - p.half[1] for p in parts), max(p.centre[1] + p.half[1] for p in parts)
+    m1, m2 = (lo1 + hi1) / 2, (lo2 + hi2) / 2
+    return tuple(replace(p, centre=(p.centre[0] - m1, p.centre[1] - m2)) for p in parts)
+
+
 def reach(parts: Iterable[Part]) -> float:
     """How far an outline reaches from its centre."""
     far = 0.0
@@ -956,8 +969,11 @@ def fits_somewhere(
     For a centrally symmetric convex face (a rectangle with matching
     opposite corners, a disc), a symmetric outline that fits anywhere also
     fits at the centre, so the centre decides. A plain rectangle is decided by
-    the outline's box. Other faces are left to the placement's own check.
+    the outline's box. Other faces are left to the placement's own check. The
+    outline is taken with its box centred (:func:`centred`): where it fits
+    is where its box does, not how far it reaches from its own point.
     """
+    parts = centred(parts)
     if face.shape == "rect" and face.corners == (0.0, 0.0, 0.0, 0.0):
         b1, b2 = bbox(parts)
         return b1 <= face.half[0] + EPS and b2 <= face.half[1] + EPS

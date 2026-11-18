@@ -1854,6 +1854,47 @@ def _flush(f: Feature, face: _Flat) -> frozenset[tuple[int, float]]:
     return found
 
 
+def _pressed_sides(f: Feature, index: int, p: Array, frame: tuple[Array, Array, Array], half: tuple[float, float],
+                   height: float, face: _Flat, part: _Part, flush: frozenset[tuple[int, float]], strict: bool) -> None:  # fmt: skip
+    """A box standing flush with an edge of its face, where something is in front of the face past that edge: its side
+    there lies against that, and is no face of the part, so nothing goes on it; nor on the face it lies against, where
+    it does (generated part 2274: a block on a standing block's side, flush with its foot, lay against the cylinder the
+    block stood on; a slot cut into that side hid in the part, and its mouth, carried on into what it took for air,
+    cut the cylinder). Asked just past the side, across it and up it. What is on that face already keeps clear."""
+    e1, e2, n = frame
+    so_far: Truth | None = None
+    up = _named(n)
+    for j, end in flush:
+        e, other, along = (e1, e2)[j], (e1, e2)[1 - j], (half[1], half[0])[j]
+        foot = p + end * half[j] * e
+        asked = np.array([foot + end * REACH * e + a * along * other + t * height * n
+                          for a in (-0.9, 0.0, 0.9) for t in (0.1, 0.5, 0.9)])  # fmt: skip
+        so_far = so_far if so_far is not None else Truth({}, tuple(part.steps))
+        if not so_far.inside(asked).any():
+            continue
+        side = ("+" if end > 0 else "-") + face.axes[j]
+        part.flats.pop((f.id, index, side), None)
+        middle = foot + 0.5 * height * n
+        across = {face.axes[1 - j]: along, up[1]: 0.5 * height}
+        for wall in part.flats.values():
+            if (float(fv.matmul(wall.normal, end * e)) > -1.0 + 1e-9
+                    or abs(float(fv.matmul(middle - wall.centre, wall.normal))) > 1e-6
+                    or any(a not in across for a in wall.axes)):  # fmt: skip
+                continue
+            pressed = _Foot(wall.frame.plane(middle), (across[wall.axes[0]], across[wall.axes[1]]), 0.0)
+            # Clear of what is there, but for the foot of what it stands on, which it lies along.
+            if strict and not all(pressed.clear_of(o, GAP) or _abuts(pressed, o) for o in wall.taken):
+                raise DoesNotFitError(f"{f.id} would be pressed against {wall.key} where something is")
+            wall.taken.append(pressed)
+
+
+def _abuts(one: _Foot, other: _Foot) -> bool:
+    """Whether two rectangular footprints touch along a side and don't overlap: one's side in the other's."""
+    du, dv = abs(one.at[0] - other.at[0]), abs(one.at[1] - other.at[1])
+    su, sv = one.half[0] + other.half[0], one.half[1] + other.half[1]
+    return (abs(du - su) <= 1e-6 and dv < sv) or (abs(dv - sv) <= 1e-6 and du < su)
+
+
 def _touches_falling_edges(f: Feature, p: Array, frame: tuple[Array, Array, Array], radius: float, height: float,
                            flush: frozenset[tuple[int, float]], part: _Part) -> None:  # fmt: skip
     """A boss flush with a face's edge touches the edge along a line: only an edge the face falls away from, with nothing in front of the face just past it (generated part 1566: a boss on a standing block's side, flush with the block's foot, lay along the plate the block stands on, touching it on a line: two solids meeting along an edge, no solid).
@@ -3240,6 +3281,9 @@ def _drop_covered(
     kept: list[Step] = []
     for step in part.late[made:]:
         piece = step.solid
+        plane = piece if isinstance(piece, Kept) else None  # a leaning item's: asked past its face's plane
+        if plane is not None:
+            piece = plane.solid
         if step.add or not isinstance(piece, Corner):
             kept.append(step)
             continue
@@ -3248,9 +3292,10 @@ def _drop_covered(
             for v in (piece.start, piece.along, piece.a, piece.b)
         )
         out = -(a + b) / fv.norm(a + b)
-        covered = so_far.inside(
-            start + np.outer(at * piece.length, along) + _COVER * out
-        )
+        asked = start + np.outer(at * piece.length, along) + _COVER * out
+        if plane is not None:
+            asked = asked[fv.matmul(asked - np.asarray(plane.origin), np.asarray(plane.normal)) > _COVER]
+        covered = so_far.inside(asked)
         if covered.all():
             continue
         if covered.any() and strict:
@@ -3332,6 +3377,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     if host is not None:  # its own ways, turned with it where it is turned (edges.md, "A turned item's edges")
         e1, e2 = _turned_frame(target, host.frame.u, host.frame.v)
     starts: dict[tuple[float, float], float] = {}
+    keep: tuple[Array, Array] | None = None  # leaning: the face's plane its roundings stop at
     if copy.lean is not None:  # leaning (step 5.3): its ways leaned with it, its long edges from the face's plane
         if which not in ("top", "vertical"):
             raise DoesNotFitError(f"{f.id}: a leaning box's joint isn't rounded, for now")
@@ -3346,6 +3392,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
 
         e1, e2 = leaned(e1), leaned(e2)
         n0, n = n, u
+        keep = (p, n0)
         half_ = (target.sizes["length"] / 2, target.sizes["width"] / 2)
         for s1 in (-1.0, 1.0):
             for s2 in (-1.0, 1.0):
@@ -3368,9 +3415,20 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
         for s1 in (-1.0, 1.0):
             for s2 in (-1.0, 1.0):
                 t0 = starts.get((s1, s2), 0.0)  # leaning: where it meets the face's plane
-                part.late.append(Step(f.id, copy.index, False, Corner(_t(corner(s1, s2, t0)), _t(n), height - t0,
-                                                                      _t(-s2 * e2), _t(-s1 * e1), size, round_),
-                                      (REACH if host is None else 0.0, REACH)))  # fmt: skip
+                into1, into2 = -s2 * e2, -s1 * e1  # each face's way from the edge into it
+                if keep is None:
+                    part.late.append(Step(f.id, copy.index, False, Corner(_t(corner(s1, s2, t0)), _t(n), height - t0,
+                                                                          _t(into1), _t(into2), size, round_),
+                                          (REACH if host is None else 0.0, REACH)))  # fmt: skip
+                    continue
+                if height - t0 < 2 * size + GAP:
+                    raise DoesNotFitError(f"{f.id}: {target.id} leans so far a long edge of it all but stays in its face")
+                # Leaning: its round runs on down to the face's plane (edges.md, "A leaning item's edges"), from where
+                # all of its section is past that plane, kept on the plane's open side.
+                back = size * (abs(float(fv.matmul(into1, keep[1]))) + abs(float(fv.matmul(into2, keep[1])))) / cos_t
+                part.late.append(_kept_open(Step(f.id, copy.index, False,
+                                                 Corner(_t(corner(s1, s2, t0 - back)), _t(n), height - t0 + back,
+                                                        _t(into1), _t(into2), size, round_), (0.0, REACH)), keep))  # fmt: skip
         for name in (up, down):
             face = faces(name)
             if face is not None:
@@ -3399,6 +3457,7 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
             rounded,
             False,
             b,
+            keep,
         )
         face = faces(up if name == "top" else down)
         if face is not None:
@@ -3446,15 +3505,40 @@ def _round_box(f: Feature, target: Feature, copy: Copy, which: str, size: float,
 
 def _run_round(f: Feature, index: int, part: _Part, corner: Callable[[float, float, float], Array],
                frame: tuple[Array, Array, Array], half: tuple[float, float], t: float, size: float, round_: bool,
-               rounded: float, inside: bool, b: float) -> None:  # fmt: skip
+               rounded: float, inside: bool, b: float, keep: tuple[Array, Array] | None = None) -> None:  # fmt: skip
     """The pieces of a rounding round a box's face ``t`` along its up (its top, its base, its foot's joint), ``b`` the way along its up into its sides from the edge.
 
     Its four straight runs; where the box's vertical edges are rounded by
     ``rounded``, they stop where those roundings start, and a quarter of a
     ring about each corner's axis joins them (exact, no zone); else they run
     corner to corner, carried on into the zone round each corner where they
-    meet (no end of one lies in a face of the box's).
+    meet (no end of one lies in a face of the box's). A leaning box's
+    (``keep``, its face's plane): each kept on the plane's open side, where
+    its far end dips to it (:func:`_kept_open`).
     """
+    made = len(part.late)
+    _run_round_pieces(f, index, part, corner, frame, half, t, size, round_, rounded, inside, b)
+    if keep is not None:
+        part.late[made:] = [_kept_open(step, keep) for step in part.late[made:]]
+
+
+def _kept_open(step: Step, plane: tuple[Array, Array]) -> Step:
+    """A leaning item's rounding kept on its face's open side (edges.md, "A leaning item's edges"; :class:`Kept`): what
+    it takes stops at the face's plane. As it is where all of it is past the plane, as the box round it says."""
+    origin, normal = plane
+    lo, hi = bounds(step.solid)
+    heights = [float(fv.matmul(np.array([x, y, z]) - origin, normal))
+               for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]  # fmt: skip
+    if min(heights) >= 0.0:
+        return step
+    assert isinstance(step.solid, (Corner, RingCorner))
+    return replace(step, solid=Kept(step.solid, _t(origin), _t(normal), 0.0, max(heights) + 1.0))
+
+
+def _run_round_pieces(f: Feature, index: int, part: _Part, corner: Callable[[float, float, float], Array],
+                      frame: tuple[Array, Array, Array], half: tuple[float, float], t: float, size: float,
+                      round_: bool, rounded: float, inside: bool, b: float) -> None:  # fmt: skip
+    """:func:`_run_round`'s pieces, as they are upright."""
     e1, e2, n = frame
     sign = (
         1.0 if inside else -1.0
@@ -3485,9 +3569,11 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     """A rod's rims (cylinder.md, boss.md): ``top`` round its +end, ``bottom`` round its -end, ``both``; a boss's ``joint`` round its foot. Each a ring, exact."""
     round_ = not _draw(f.kind).bevels
     p, n = _v(copy.point), _v(copy.direction)
+    keep: tuple[Array, Array] | None = None
     if copy.lean is not None:  # leaning (step 5.3): its rim round its far end, square to its lean; its joint waits
         if which != "top":
             raise DoesNotFitError(f"{f.id}: a leaning rod's rim is rounded at its far end only, for now")
+        keep = (p, n)  # its face's plane: where its far end dips to it, the rim's rounding stops there
         n = _v(copy.lean)
     r = target.sizes["diameter"] / 2
     height = target.sizes[_draw(target.kind).rod_length]
@@ -3496,14 +3582,8 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     for name, t, b in (("top", height, -1.0), ("bottom", 0.0, 1.0)):
         if which not in (name, "both"):
             continue
-        part.late.append(
-            Step(
-                f.id,
-                copy.index,
-                False,
-                RingCorner(_t(p), _t(n), r, t, (-1.0, 0.0), (0.0, b), size, round_),
-            )
-        )
+        ring = Step(f.id, copy.index, False, RingCorner(_t(p), _t(n), r, t, (-1.0, 0.0), (0.0, b), size, round_))
+        part.late.append(ring if keep is None else _kept_open(ring, keep))
         face = part.flats.get(
             (target.id, copy.index, "+end" if name == "top" else "-end")
         )
@@ -3953,6 +4033,7 @@ def _cuts_sided(plan: Plan, truth: Truth) -> None:
             continue  # a counterbore, after its hole's own step
         seen.add((step.item, step.index))
         if isinstance(s, Kept):  # leaning: its rod's side, where it is kept
+            assert isinstance(s.solid, Prism)
             points = _past_side(s.solid)
             height = fv.matmul(points - np.asarray(s.origin), np.asarray(s.normal))
             points = points[(height > s.low) & (height < s.high)]

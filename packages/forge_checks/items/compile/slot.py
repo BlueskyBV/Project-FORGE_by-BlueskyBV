@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
 
-from forge_checks.items.compile._common import _STRAIGHT, _mm, _t, _v
+from forge_checks.items.compile._common import _STRAIGHT, _mm, _t, _v, side_end
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Position, RoundEdge
 from forge_checks.kinds.size import Between
@@ -48,8 +48,8 @@ class Slot(CompileKind):
                 )
             c.check(item, "width", "size", width, c.tol(item.get("width")), breadth, copy.index)  # fmt: skip
             if round_ends:
-                ends = [Round(_t(_v(copy.point) + s * (length - width) / 2 * a), _t(-n), width / 2, 0.0, depth, True)
-                        for s in (-1, 1)]  # fmt: skip
+                ends = [Round(_t(_v(copy.point) + s * (length - width) / 2 * a), _t(-n), width / 2, 0.0,
+                              side_end(copy), True) for s in (-1, 1)]  # fmt: skip
                 span = Position(_t(a), RoundEdge(ends[0], -1), RoundEdge(ends[1], 1))
                 c.check(
                     item,
@@ -110,7 +110,7 @@ class Slot(CompileKind):
             return None
         ahead = _v(c.along(copy, str(along)))
         ends = [Round(_t(_v(copy.point) + s * (length - width) / 2 * ahead), _t(-n), width / 2, 0.0,
-                      copy.span[1], True) for s in (-1, 1)]  # fmt: skip
+                      side_end(copy), True) for s in (-1, 1)]  # fmt: skip
         return ends[0], ends[1]
 
 

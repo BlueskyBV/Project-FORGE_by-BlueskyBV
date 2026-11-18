@@ -78,6 +78,7 @@ from .geometry import (
     _point_in_parts,
     add_material,
     bbox,
+    centred,
     cone_sag,
     copies_overlap,
     disc,
@@ -928,7 +929,7 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
                 return
         return
     cut = entry.cut
-    b1, b2 = bbox(parts)
+    b1, b2 = bbox(centred(parts))
     fits = face.fits_somewhere(parts, cut=cut)
     if fits is False:
         severs = cut and _is_through(item)

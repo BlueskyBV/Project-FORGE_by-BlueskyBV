@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING
 from forge_spec.draft import Item
 
 from forge_checks.classes import RADIUS
-from forge_checks.items.compile._common import _STRAIGHT, _mm, _t, _v, main_face_refs
+from forge_checks.items.compile._common import (
+    _STRAIGHT,
+    _mm,
+    _t,
+    _v,
+    main_face_refs,
+    side_end,
+)
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import Centre, Position, Ref, RoundEdge
 from forge_checks.kinds.size import Between
@@ -26,11 +33,11 @@ class Pocket(CompileKind):
         for copy in c.copies(item):
             assert copy.axes is not None and copy.span is not None
             n = _v(copy.direction)
-            depth = copy.span[1]
+            depth, side = copy.span[1], side_end(copy)
             if shape == "circle":
                 r = _mm(item.get("diameter")) / 2
                 c.check(item, "diameter", "diameter", 2 * r, c.tol(item.get("diameter")),
-                           Round(copy.point, _t(-n), r, 0.0, depth, True), copy.index)  # fmt: skip
+                           Round(copy.point, _t(-n), r, 0.0, side, True), copy.index)  # fmt: skip
                 c.size(item, r)
                 c._cut_depth(item, copy, r, r, depth)
                 continue
@@ -73,7 +80,7 @@ class Pocket(CompileKind):
                         + s2 * (half["width"] - corner) * e2
                     )
                     c.check(item, "corner_radius", "corner", corner, c.tol(item.get("corner_radius"), RADIUS),
-                               Round(_t(centre), _t(-n), corner, 0.0, depth, True), copy.index * 4 + k)  # fmt: skip
+                               Round(_t(centre), _t(-n), corner, 0.0, side, True), copy.index * 4 + k)  # fmt: skip
                 c.size(item, corner)
             c._cut_depth(item, copy, min(half.values()), min(half.values()), depth,
                             (copy.axes[0], half["length"], half["width"]))  # fmt: skip
@@ -86,7 +93,7 @@ class Pocket(CompileKind):
         assert copy.span is not None
         r = _mm(item.get("diameter")) / 2
         return Centre(
-            Round(copy.point, _t(-_v(copy.direction)), r, 0.0, copy.span[1], True)
+            Round(copy.point, _t(-_v(copy.direction)), r, 0.0, side_end(copy), True)
         )
 
     def sides(
@@ -132,7 +139,7 @@ class Pocket(CompileKind):
             return None
         # Each end's corner on the +other side (both reach the end alike).
         b = _v(c.along(copy, (copy.axes[1] if first else copy.axes[0])))
-        ends = [Round(_t(_v(copy.point) + s * (half - r) * a + (other - r) * b), _t(-n), r, 0.0, copy.span[1],
+        ends = [Round(_t(_v(copy.point) + s * (half - r) * a + (other - r) * b), _t(-n), r, 0.0, side_end(copy),
                       True) for s in (-1, 1)]  # fmt: skip
         return ends[0], ends[1]
 

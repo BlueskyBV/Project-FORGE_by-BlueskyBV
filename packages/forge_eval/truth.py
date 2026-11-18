@@ -685,9 +685,17 @@ class Kept:
     """A prism's points whose height along ``normal`` from ``origin`` is from ``low`` to ``high``: an item leaning on
     its flat face (place.md, "Leaning on the face"), its prism run along its direction from far enough back that all
     of its outline is past the face's plane, kept on the face's open side (``low`` 0: what stands) or within its
-    material (``high`` 0: a cut). A step's ``reach`` carries the two planes on, not the prism's own ends."""
+    material (``high`` 0: a cut). A step's ``reach`` carries the two planes on, not the prism's own ends.
 
-    solid: Prism
+    A leaning item's rounding (edges.md, "A leaning item's edges") is kept so
+    too, on its face's open side: a long edge's runs from where all of its
+    section is past the face's plane, and what it takes stops at the plane,
+    where the edge meets it; a far end's edge that dips to the plane stops
+    there alike. A kept rounding's step's ``reach`` carries the rounding's
+    own ends on (its planes are where they are: the face's, and one past it).
+    """
+
+    solid: Prism | Corner | RingCorner
     origin: Vec
     normal: Vec
     low: float

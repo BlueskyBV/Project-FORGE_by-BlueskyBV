@@ -326,6 +326,8 @@ def _early(ctx: Context, item: Item, part: str | None) -> Construction | None:
         for copy in copies
     ):
         return None
+    if any(copy.direction is not None for copy in copies):
+        return None  # leaning: its tool is made leaned, its long edges rounded on the part (generated part 596)
     bevel = PLAN[item.kind].bevel
     value = item.get("size" if bevel else "radius")
     if not isinstance(value, Value):
@@ -375,6 +377,8 @@ def _regions(ctx: Context, item: Item, part: str | None) -> Construction | None:
     if target is None:
         return None
     instances = ctx.layout.instances
+    if any(copy.direction is not None for copy in instances.get(target.id, ())):
+        return None  # leaning: its regions aren't the box round it; rounded on the part
     hollowed = set(ctx.layout.shells)
     pairs: list[tuple[Instance, FlatFace | None]] = []
     if edges.which == "joint":
@@ -387,6 +391,7 @@ def _regions(ctx: Context, item: Item, part: str | None) -> Construction | None:
             standing is None
             or not box_like(standing)
             or {standing.id, meets.id, target.id} & hollowed
+            or any(copy.direction is not None for copy in instances.get(standing.id, ()))
         ):
             return None
         host_id = meets.id if standing is target else target.id

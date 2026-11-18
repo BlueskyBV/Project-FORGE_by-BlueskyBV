@@ -282,9 +282,13 @@ def _solid(step: Step, sag: float = SAG, *, pressed: bool = False) -> Any:
         )
         return _placed(made, np.asarray(t.base, dtype=float), u, v, w)
     if isinstance(step.solid, Kept):
-        # Its prism (carried on past neither end), cut by its two planes, each carried on as the step allows.
+        # Its prism (carried on past neither end), cut by its two planes, each carried on as the step allows; a kept
+        # rounding (a leaning item's) carried on past its own ends as the step allows, its planes where they are.
         k = step.solid
-        made = _solid(replace(step, solid=k.solid, reach=(0.0, 0.0)), sag, pressed=pressed)
+        own = (0.0, 0.0)
+        if isinstance(k.solid, (Corner, RingCorner)):
+            own, (low, high) = (low, high), (0.0, 0.0)
+        made = _solid(replace(step, solid=k.solid, reach=own), sag, pressed=pressed)
         n = np.asarray(k.normal, dtype=float)
         at = float(np.dot(np.asarray(k.origin, dtype=float), n))
         made = made.trim_by_plane(tuple(n), at + k.low - low)
@@ -440,18 +444,32 @@ def _trimmed(step: Step, zones: Sequence[tuple[Any, Any]]) -> Step | None:
 
 
 def _loops(steps: Sequence[Step]) -> dict[tuple[str, int, bool], list[Step]]:
-    """A rounding's pieces round a loop of straight runs and rounded corners (a quarter of a ring at each): by item, copy and whether they fill, each loop's pieces."""
+    """A rounding's pieces round a loop of straight runs and rounded corners (a quarter of a ring at each): by item, copy and whether they fill, each loop's pieces (a leaning item's kept on its face's open side: :func:`_kept_plane`)."""
     found: dict[tuple[str, int, bool], list[Step]] = {}
     for step in steps:
-        if isinstance(step.solid, (Corner, RingCorner)):
+        if isinstance(_unkept(step).solid, (Corner, RingCorner)):
             found.setdefault((step.item, step.index, step.add), []).append(step)
     return {
         key: pieces
         for key, pieces in found.items()
         if any(
-            isinstance(p.solid, RingCorner) and p.solid.turn is not None for p in pieces
+            isinstance(s, RingCorner) and s.turn is not None
+            for s in (_unkept(p).solid for p in pieces)
         )
     }
+
+
+def _unkept(step: Step) -> Step:
+    """A step with a kept rounding's own rounding (a leaning item's: kept on its face's open side), else the step."""
+    if isinstance(step.solid, Kept) and isinstance(step.solid.solid, (Corner, RingCorner)):
+        return replace(step, solid=step.solid.solid)
+    return step
+
+
+def _kept_plane(pieces: Sequence[Step]) -> Kept | None:
+    """Of a loop's pieces, a kept one's: the face's plane its rounding stops at (all of a loop's are one item's, on
+    one face); None where none is kept."""
+    return next((p.solid for p in pieces if isinstance(p.solid, Kept)), None)
 
 
 def _rim_loop(
@@ -481,7 +499,7 @@ def _rim_loop(
 
 def _swept_loop(pieces: Sequence[Step], sag: float = SAG) -> Any:
     """A loop's pieces made as one mesh: the rounding's section swept once round the loop (the edge, a rectangle with its corners rounded), so no two pieces' round surfaces, one running on into the next, are left to a boolean."""
-    rings = [p.solid for p in pieces if isinstance(p.solid, RingCorner)]
+    rings = [s for s in (_unkept(p).solid for p in pieces) if isinstance(s, RingCorner)]
     first = rings[0]
     n, e1 = np.asarray(first.axis, dtype=float), np.asarray(first.first, dtype=float)
     e2 = np.cross(n, e1)
@@ -514,6 +532,10 @@ def build(truth: Truth, sag: float = SAG, threads: set[int] | None = None) -> An
             if step is not loops[key][0]:
                 continue  # made with the first of its loop
             solid = _swept_loop(loops[key], sag)
+            kept = _kept_plane(loops[key])
+            if kept is not None:  # a leaning item's: stopped at its face's plane
+                n = np.asarray(kept.normal, dtype=float)
+                solid = solid.trim_by_plane(tuple(n), float(np.dot(np.asarray(kept.origin, dtype=float), n)))
             part = solid if part is None else part + solid if step.add else part - solid
             continue
         if isinstance(step.solid, Corner):
@@ -521,6 +543,11 @@ def build(truth: Truth, sag: float = SAG, threads: set[int] | None = None) -> An
             if found is None:
                 continue
             step = found
+        elif isinstance(step.solid, Kept) and isinstance(step.solid.solid, Corner):
+            found = _trimmed(_unkept(step), zones)
+            if found is None:
+                continue
+            step = replace(found, solid=replace(step.solid, solid=found.solid))
         if isinstance(step.solid, Threaded):
             assert part is not None
             # The plain rod runs on a hair into the thread (OVERLAP; within the zone the truth leaves unsaid), so
@@ -609,8 +636,10 @@ def moved(truth: Truth, by: Mapping[tuple[str, int], Sequence[float]]) -> Truth:
         d = by.get((step.item, step.index), (0.0, 0.0, 0.0))
         solid = step.solid
         if isinstance(solid, Kept):
-            solid = replace(solid, solid=replace(solid.solid, centre=shift(solid.solid.centre, d)),
-                            origin=shift(solid.origin, d))  # fmt: skip
+            inner = solid.solid
+            inner = (replace(inner, start=shift(inner.start, d)) if isinstance(inner, Corner)
+                     else replace(inner, centre=shift(inner.centre, d)))  # fmt: skip
+            solid = replace(solid, solid=inner, origin=shift(solid.origin, d))
         elif isinstance(solid, (Prism, Letters, RingCorner)):
             solid = replace(solid, centre=shift(solid.centre, d))
         elif isinstance(solid, Pushed):

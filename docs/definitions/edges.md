@@ -61,7 +61,10 @@ post's or a block's `top` edges, a boss's or a cylinder's `top` rim) and a
 leaning box's `vertical` edges, those along its lean, are the edges they
 are with it upright, leaned with it: each long edge runs from where it
 meets the face's plane, which differs from one to the next. Each is
-rounded or chamfered as it would be upright. Its `joint`, where it meets
+rounded or chamfered as it would be upright, the round running on down to
+the face's plane and stopping there; a far end that dips into the face
+has its edge where it is out of the face, its round stopping at the
+face's plane alike. Its `joint`, where it meets
 its face (round a leaning boss an ellipse whose angle to the face changes
 all round it), is not rounded or chamfered yet.
 

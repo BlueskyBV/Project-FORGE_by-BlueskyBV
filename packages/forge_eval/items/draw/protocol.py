@@ -37,6 +37,7 @@ from forge_eval.generator import (
     _on_round,
     _overhanging,
     _Part,
+    _pressed_sides,
     _q,
     _register_box,
     _Round,
@@ -365,6 +366,8 @@ class DrawKind:
         else:
             _register_box(part, f.id, copy_index, p, up, face.axes, (2 * h1, 2 * h2, height),
                           under, None if beyond else face.exit)  # fmt: skip
+            if flush and not face.key[2].startswith("inner"):
+                _pressed_sides(f, copy_index, p, (e1, e2, n), (h1, h2), height, face, part, flush, strict)
             if face.key[2].startswith("inner"):
                 # Flush with an edge of a hollow's inside face, a side is pressed against the wall that rises
                 # there: no face of the part, so nothing goes on it; nor on the wall where it is pressed, which
