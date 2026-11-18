@@ -13,7 +13,7 @@ from forge_checks.items.oracle._shapes import (
     flat_cut_node,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Placed, RoundSide, in_axes
+from forge_checks.place import Copy, Face, Placed, in_axes
 from forge_checks.shapes import RoundRect, Shape2D
 
 
@@ -21,7 +21,7 @@ class Slot(OracleKind):
     key = "slot"
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         assert face is not None
         return flat_cut_node(self, item, copy, face)

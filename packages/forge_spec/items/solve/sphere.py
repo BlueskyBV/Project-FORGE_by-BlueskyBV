@@ -9,6 +9,7 @@ from forge_spec.draft import (
 )
 from forge_spec.geometry import (
     EPS,
+    BallFace,
     Dome,
     FlatFace,
     Vec,
@@ -59,9 +60,10 @@ class Sphere(SolveKind):
               host: str | None, joined: str) -> tuple[Vec, Vec, str, dict[str, str]]:  # fmt: skip
         d = _size(item, "diameter")
         half = _choice_of(item, "portion") == "upper_half"
+        diameter = ((item.id, "diameter"),)
         if half:
+            centre = base
             lo, hi = _bounds_round(base, up, d / 2, d / 2)
-            diameter = ((item.id, "diameter"),)
             flat = FlatFace("-end", base, joined, FACE_AXES[up], "disc", (d / 2, d / 2), 0.0, d / 2,
                             depth_model=Dome(d / 2), axis_sources=(diameter, diameter),
                             depth_sources=diameter)  # fmt: skip
@@ -75,8 +77,9 @@ class Sphere(SolveKind):
             layout.close(
                 key, "-end", "fault", f"{item.id} is a whole ball; it has no flat face"
             )
-        layout.close(key, "surface", "unable",
-                     f"{item.id}'s surface is curved; Forge places on a ball's flat face only, for now")  # fmt: skip
+        # Its curved surface takes a hole, a boss or a post, at a latitude and round its pole (item 3b's second step).
+        layout.faces[key]["surface"] = BallFace("surface", centre, up, d / 2, dome=half,
+                                                standing=host is not None, radius_sources=diameter)  # fmt: skip
         return lo, hi, "", {}
 
     def open_faces_allowed(self, item: Item) -> set[str]:
@@ -110,6 +113,10 @@ class Sphere(SolveKind):
             layout.problem("cant", shell_at + pointer("thickness"), f"{t:g} mm walls leave no hollow inside {item.id}",
                            [thickness_value, floor_value, *_item_values(item, "diameter")])  # fmt: skip
             return
+        if "surface" in faces:
+            del faces["surface"]
+            layout.close(key, "surface", "unable",
+                         f"{item.id} is hollowed: Forge places on a hollowed ball's surface in a later step")  # fmt: skip
         flat = faces.get("-end")
         if isinstance(flat, FlatFace) and "-end" not in open_faces:
             faces["-end"] = _with(

@@ -6,9 +6,9 @@
 - **What is built is what was placed.** A boss at 30 degrees round a rod,
   a post at 200, a circle of three bosses, a tab and a rib, a boss round a
   rod lying along x, a boss in a tube's bore, a hole in an angled boss's far
-  face, its rim rounded, a post's top edges bevelled: built by the build
-  loop, every face accounted for both ways, every check its spec compiles
-  to passing.
+  face, its rim rounded, a post's top edges bevelled, its joint with the
+  rod rounded: built by the build loop, every face accounted for both
+  ways, every check its spec compiles to passing.
 - **A wrong turn is caught:** each turned half a degree more fails the
   judge.
 - **The second kernel agrees** with the exact part, a generated part's
@@ -59,9 +59,9 @@ def _round(b: Any, angle: float, kind: str = "boss", *, item: str = "boss", on: 
     return found
 
 
-def _rounding(b: Any, of: str, which: str, kind: str = "fillet", size: float = 1.0) -> dict[str, Any]:
+def _rounding(b: Any, of: str, which: str, kind: str = "fillet", size: float = 1.0, **more: Any) -> dict[str, Any]:
     return {"id": "round", "kind": kind, "words": cite(b, "post"), ("radius" if kind == "fillet" else "size"):
-            assumed("small", size), "edges": {"of": of, "which": which}}  # fmt: skip
+            assumed("small", size), "edges": {"of": of, "which": which, **more}}  # fmt: skip
 
 
 #: Each part: a rod (or a tube) on the plate, and what stands round its side at an angle.
@@ -81,6 +81,7 @@ CASES: dict[str, Any] = {
     "its rim rounded": lambda b: [_rod(b), _round(b, 30.0), _rounding(b, "boss", "top", size=0.6)],
     "a post's top edges bevelled": lambda b: [_rod(b), _round(b, 75.0, "post"),
                                               _rounding(b, "boss", "top", "chamfer", 0.5)],
+    "its joint rounded": lambda b: [_rod(b), _round(b, 30.0), _rounding(b, "boss", "joint", size=0.6, where_meets="rod")],
 }
 
 
@@ -150,7 +151,8 @@ class TheSecondKernelAgrees(unittest.TestCase):
         from forge_occ.agreement import agree
         from forge_occ.planned import build_plan
 
-        for name in ("a boss at 30 degrees", "a circle of three bosses", "a tab at 45 degrees", "its rim rounded"):
+        for name in ("a boss at 30 degrees", "a circle of three bosses", "a tab at 45 degrees", "its rim rounded",
+                     "its joint rounded"):  # fmt: skip
             with self.subTest(name):
                 _, planned = _planned(CASES[name])
                 built = build_plan(planned)

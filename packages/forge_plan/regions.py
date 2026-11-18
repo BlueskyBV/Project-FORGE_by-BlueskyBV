@@ -26,7 +26,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from forge_spec.draft import EdgeSet, Item
-from forge_spec.geometry import FlatFace, SideFace
+from forge_spec.geometry import Face, FlatFace
 from forge_spec.placement import Instance
 
 from .edges import box_pairs, followed, opposite
@@ -394,5 +394,5 @@ def edge_set(rounding: Item) -> EdgeSet:
     return edges
 
 
-def on_flat(face: FlatFace | SideFace | None) -> FlatFace | None:
+def on_flat(face: Face | None) -> FlatFace | None:
     return face if isinstance(face, FlatFace) and face.shape == "rect" else None

@@ -10,6 +10,7 @@ from forge_numeric import scalar as fs
 from forge_spec.draft import Choice, Item, Place, Profile
 from forge_spec.ends import ThroughAll, end_of
 from forge_spec.geometry import (
+    Face,
     FlatFace,
     Footprint,
     SideFace,
@@ -262,7 +263,7 @@ def _cut_depth(item: Item, face: FlatFace, parts: Footprint, w: Vec) -> float:
     return deep
 
 
-def _start(face: FlatFace | SideFace) -> float:
+def _start(face: Face) -> float:
     """Where a cut starts along its way in: at the face, or at a bore's axis (hole.md)."""
     if isinstance(face, SideFace) and not face.outward:
         return -face.radius
@@ -310,7 +311,7 @@ def _footprint_box(
 # ----------------------------------------------------------------------
 # Turned in the face's plane (V2-stage4b-0c.md, 3.3, 1b's first move)
 # ----------------------------------------------------------------------
-def turned_on(layout: Layout, item: Item, face: FlatFace | SideFace) -> Shape | None:
+def turned_on(layout: Layout, item: Item, face: Face) -> Shape | None:
     """A copy's outline on its flat face turned by its ``place.turn``, about its point, in the face's axes; None if it
     isn't turned. The solver's own outline (:func:`forge_spec.placement.turned_outline`), so what is built is what was
     placed."""

@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
-from forge_spec.geometry import FlatFace, Part, SideFace, disc, rounded_rect
+from forge_spec.geometry import Face, FlatFace, Part, disc, rounded_rect
 from forge_spec.placement import Instance
 from forge_spec.schema import DIRECTIONS
 
@@ -95,7 +95,7 @@ class Pocket(CutPlan):
     floored = True
     floor_name = "bottom"
 
-    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
+    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
                  mouth: float, far: float) -> list[str]:  # fmt: skip
         if not isinstance(face, FlatFace):
             raise PlanError(f"a {item.kind} goes into flat faces only", item=item.id)

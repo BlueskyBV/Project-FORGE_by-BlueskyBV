@@ -18,7 +18,7 @@ from forge_checks.items.oracle._shapes import (
     convex_pieces_of,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Placed, RoundSide
+from forge_checks.place import Copy, Face, Placed
 from forge_checks.shapes import Disc, Halfspace, Polygon, Prism
 
 
@@ -28,12 +28,12 @@ class Extrusion(OracleKind):
     outline_rounded = True
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         return _extrusion_node(item, copy, face)
 
 
-def _extrusion_node(item: Item, copy: Copy, face: FlatFace | RoundSide | None) -> Node:
+def _extrusion_node(item: Item, copy: Copy, face: Face | None) -> Node:
     """An extrusion: its outline's convex pieces pushed ``length`` along it (docs/V2-stage4.md, 6.6).
 
     Each polygon a :class:`Prism`; each bulge a disc's prism meeting the

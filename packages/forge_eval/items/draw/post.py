@@ -7,6 +7,10 @@ post's branches here (V2-stage4b-0b.md, 7).
 
 from __future__ import annotations
 
+import random
+
+from forge_numeric import scalar as fs
+
 from forge_eval.generator import (
     Feature,
     Plan,
@@ -14,6 +18,7 @@ from forge_eval.generator import (
     _earlier_vertical,
     _Flat,
     _Part,
+    _q,
     _Round,
     _round_box,
     _standing_round,
@@ -24,6 +29,14 @@ from forge_eval.truth import Copy
 
 class Post(DrawKind):
     key = "post"
+    on_ball = True
+    ball_weight = 2
+    ball_rank = 3
+
+    def ball_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
+        sizes = {"length": _q(rng.uniform(1.5, max(1.6, radius / 3))), "width": _q(rng.uniform(1.5, max(1.6, radius / 3))),
+                 "height": _q(rng.uniform(1.0, max(1.1, min(10.0, radius))))}  # fmt: skip
+        return sizes, None, fs.hypot(sizes["length"] / 2, sizes["width"] / 2)
     turnable = True
     leans = True
     flat_weight = 1

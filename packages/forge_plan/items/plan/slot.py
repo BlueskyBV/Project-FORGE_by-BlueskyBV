@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
-from forge_spec.geometry import FlatFace, SideFace, rect, slot_outline
+from forge_spec.geometry import Face, FlatFace, rect, slot_outline
 from forge_spec.placement import Instance
 
 from forge_plan.errors import PlanError
@@ -60,7 +60,7 @@ def _slot(
 class Slot(CutPlan):
     key = "slot"
 
-    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
+    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
                  mouth: float, far: float) -> list[str]:  # fmt: skip
         if not isinstance(face, FlatFace):
             raise PlanError(f"a {item.kind} goes into flat faces only", item=item.id)

@@ -86,6 +86,9 @@ class PlaceKind:
         """It may go round a round side (a standing feature, a hole)."""
         return KINDS[self.key].category is Category.ADD
 
+    #: It may go on a ball's or a dome's surface (item 3b's second step): a hole, a boss, a post.
+    goes_on_ball = False
+
     # ------------------------------------------------------------------
     # Its own
     # ------------------------------------------------------------------

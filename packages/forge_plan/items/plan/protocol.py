@@ -19,7 +19,7 @@ from forge_plan.errors import PlanError
 
 if TYPE_CHECKING:
     from forge_spec.draft import Item
-    from forge_spec.geometry import FlatFace, Part, SideFace
+    from forge_spec.geometry import Face, FlatFace, Part
     from forge_spec.outline import Shape
     from forge_spec.placement import Instance
 
@@ -91,7 +91,7 @@ class PlanKind:
         """One copy of a body."""
         raise PlanError(f"a {item.kind} body isn't compiled", item=item.id)
 
-    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
+    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
                  mouth: float, far: float) -> list[str]:  # fmt: skip
         """One copy of a cut: its tool's pieces."""
         raise PlanError(f"a {item.kind} cut isn't compiled", item=item.id)

@@ -12,7 +12,7 @@ from forge_checks import rounds
 from forge_checks.csg import Node
 from forge_checks.items.oracle._shapes import _mm, _rim_chains, _unit2, round_footprint
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+from forge_checks.place import Copy, Face, Hollow, Placed
 from forge_checks.shapes import Frame, Frustum
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ class Cone(OracleKind):
     key = "cone"
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         u = np.asarray(copy.direction, dtype=float)
         frame = Frame.along(copy.point, u)

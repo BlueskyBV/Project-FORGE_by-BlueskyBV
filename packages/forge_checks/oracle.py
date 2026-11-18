@@ -97,6 +97,7 @@ from .items.oracle._shapes import (
     _outline_chain,
     _unit2,
     _vec,
+    round_band,
 )
 from .letters import Letters2D
 from .moved import moved_chain, moved_node, upright
@@ -107,6 +108,7 @@ from .place import (
     FlatFace,
     Motion,
     Placed,
+    RoundBall,
     RoundSide,
     body_edges,
     direction_of,
@@ -1340,7 +1342,7 @@ def _joint_chains(
         if copy.host is None or copy.host[0] != host.id:
             continue
         face = placed.face(copy.host)
-        if isinstance(face, RoundSide):
+        if isinstance(face, (RoundSide, RoundBall)):
             yield copy.index, [], [_joint_band(standing, copy, face, size)], None
             continue
         box = None if copy.lo is None or copy.hi is None else (copy.lo, copy.hi)
@@ -1397,21 +1399,14 @@ def _face_chains(face: FlatFace, copy: Copy) -> list[rounds.Chain]:
     return found
 
 
-def _joint_band(item: Item, copy: Copy, face: RoundSide, size: float) -> Node:
-    """Where an item stands round a side: its foot follows no circle; the zone where the rounding must be."""
+def _joint_band(item: Item, copy: Copy, face: RoundSide | RoundBall, size: float) -> Node:
+    """Where an item stands round a side or on a ball's surface: its foot follows no circle; the zone where the
+    rounding must be."""
     reach = 4 * size
     assert copy.lo is not None and copy.hi is not None
     lo = np.asarray(copy.lo) - reach
     hi = np.asarray(copy.hi) + reach
-    axis = Frame.along(face.start, face.frame.n)
-    near = Prism.box(_vec(lo), _vec(hi))
-    band = Inter(
-        (
-            Round(axis, face.radius + reach),
-            Complement(Round(axis, max(face.radius - reach, 1e-9))),
-        )
-    )
-    return Inter((near, band))
+    return Inter((Prism.box(_vec(lo), _vec(hi)), round_band(face, reach)))
 
 
 # ----------------------------------------------------------------------

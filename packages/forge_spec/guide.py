@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 7
+GUIDE_VERSION = 8
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -338,6 +338,7 @@ def _defs() -> dict[str, Any]:
                 **{axis: _ref(f"position_{axis}") for axis in IN_FACE_AXES},
                 "angle": _ref("angle"),
                 "turn": _ref("angle"),
+                "latitude": _ref("angle"),
                 "pattern": _ref("pattern"),
                 "concentric": _ref("concentric"),
             },
@@ -676,7 +677,12 @@ round it (0 deg towards the next axis: for a rod along z, +x; along x, +y; \
 along y, +z). A boss, a post, a tab or a rib stands round it at any angle; \
 at one that isn't 0, 90, 180 or 270 deg its faces and axes are named as at \
 the one of those at or below it, turned with the side about its axis, and \
-what goes on its far face is placed along that face's own "u" and "v". \
+what goes on its far face is placed along that face's own "u" and "v". On \
+a ball's or a dome's "surface" ("schema_version": "1.6"), a hole, a boss or \
+a post is placed by "latitude" (from its equator towards its pole, which is \
+the way it stands; 90 deg is the pole) and "angle" round the pole, as round \
+a side; a circle of them goes round the pole; a hole there has a depth (right \
+through only a whole ball standing on nothing), and its faces take nothing yet. \
 "concentric": {{"item": ..., "from": ...}} puts it on the axis \
 of a round item (a hole down a boss). On a flat face, "turn": angle turns a \
 slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \

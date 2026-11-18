@@ -14,7 +14,7 @@ from forge_checks.csg import Node
 from forge_checks.items.oracle._shapes import _choice, _frame, _mm, copy_axes
 from forge_checks.items.oracle.protocol import OracleKind
 from forge_checks.letters import Ink, LetterPrism, Letters2D
-from forge_checks.place import Copy, FlatFace, RoundSide
+from forge_checks.place import Copy, Face
 
 if TYPE_CHECKING:
     from forge_checks.oracle import Step, _Making
@@ -24,7 +24,7 @@ class Text(OracleKind):
     key = "text"
 
     def copy_steps(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, making: _Making
+        self, item: Item, copy: Copy, face: Face | None, making: _Making
     ) -> list[Step]:
         """Its letters, cut into the face or standing on it; spaces alone take nothing and add nothing."""
         letters = _letters(item, copy)

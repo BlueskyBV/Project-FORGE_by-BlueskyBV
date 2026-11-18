@@ -18,6 +18,7 @@ from forge_checks.place import (
     Hollow,
     Material,
     PlaceError,
+    RoundBall,
     Solid,
     Vec,
     _add,
@@ -50,6 +51,7 @@ class Sphere(PlaceKind):
         u = unit(up)
         radius = _mm(item, "diameter") / 2
         if _choice(item, "portion") == "upper_half":
+            centre = point
             lo, hi = _box(point, up, {a1: 2 * radius, a2: 2 * radius}, radius)
             plane = FLAT_AXES[up[1]]
             faces["-end"] = FlatFace("-end", point, opposite(up), plane, Outline.disc(radius, _in_plane(point, plane)),
@@ -59,11 +61,9 @@ class Sphere(PlaceKind):
             lo = (centre[0] - radius, centre[1] - radius, centre[2] - radius)
             hi = (centre[0] + radius, centre[1] + radius, centre[2] + radius)
             layout.close(key, "-end", "a whole ball has no flat face")
-        layout.close(
-            key,
-            "surface",
-            "a ball's surface is curved: nothing is placed on it, for now",
-        )
+        # Its curved surface takes a hole, a boss or a post (item 3b's second step).
+        faces["surface"] = RoundBall("surface", centre, up, radius, _choice(item, "portion") == "upper_half",
+                                     host is not None)  # fmt: skip
         return lo, hi
 
     def openable(self, item: Item) -> set[str]:
@@ -74,6 +74,8 @@ class Sphere(PlaceKind):
                shell: Item, thickness: float, floor: float | None, open_faces: frozenset[str]) -> None:  # fmt: skip
         faces = layout.faces[key]
         dome = _choice(item, "portion") == "upper_half"
+        if "surface" in faces:
+            layout.close(key, "surface", "a hollowed ball's surface takes nothing, for now")
         if floor is not None and (not dome or "-end" in open_faces):
             raise PlaceError(
                 shell.id, "only a dome with its flat face closed has a floor"

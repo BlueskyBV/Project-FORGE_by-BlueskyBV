@@ -18,7 +18,7 @@ from forge_checks.items.oracle._shapes import (
     round_footprint,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+from forge_checks.place import Copy, Face, Hollow, Placed
 from forge_checks.shapes import Ball, Complement, Frame, Halfspace
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ class Sphere(OracleKind):
     key = "sphere"
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         u = np.asarray(copy.direction, dtype=float)
         radius = _mm(item.get("diameter")) / 2

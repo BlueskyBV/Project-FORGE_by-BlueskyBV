@@ -131,6 +131,12 @@ WIDENED: dict[str, Callable[[Case], bool]] = {
     # 4b.0c, 1b's third move, step 5.1: a block standing on a face hollowed, upright or turned in it.
     "a block standing on a face hollowed": lambda c: _standing_hollowed(c, turned=False),
     "a block turned in its face hollowed": lambda c: _standing_hollowed(c, turned=True),
+    # Item 3b's first two steps: round a side at any angle; on a ball's or a dome's surface.
+    "a boss or a post round a side at any angle": lambda c: any(
+        f.on is not None and f.on[1] == "side" and f.kind in ("boss", "post") and (f.angle or 0.0) % 90
+        for f in c.plan
+    ),
+    "on a ball's or a dome's surface": lambda c: any(f.on is not None and f.on[1] == "surface" for f in c.plan),
 }
 
 

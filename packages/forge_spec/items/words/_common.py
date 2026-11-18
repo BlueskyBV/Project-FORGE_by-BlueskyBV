@@ -95,7 +95,11 @@ def _place(place: Place | None) -> str:
         return "where the solver puts it (see the assumptions)"
     kind = place.pattern.kind if place.pattern is not None else None
     parts = [_axis(axis, pos, kind) for axis, pos in sorted(place.axes.items())]
-    if place.angle is not None:
+    if place.latitude is not None:  # on a ball's surface (item 3b's second step)
+        parts.append(f"at latitude {_v(place.latitude)}")
+        if place.angle is not None:
+            parts.append(f"{_v(place.angle)} round its pole")
+    elif place.angle is not None:
         parts.append(f"at {_v(place.angle)} around the axis")
     if place.turn is not None:
         parts.append(f"turned {_v(place.turn)} in the face")

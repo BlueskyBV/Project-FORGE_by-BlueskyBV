@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from forge_checks import rounds
     from forge_checks.csg import Node
     from forge_checks.oracle import Step, _Making
-    from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+    from forge_checks.place import Copy, Face, Hollow, Placed
     from forge_checks.place import Step as Planned
     from forge_checks.shapes import Shape2D
 
@@ -76,7 +76,7 @@ class OracleKind:
         self,
         item: Item,
         copy: Copy,
-        face: FlatFace | RoundSide | None,
+        face: Face | None,
         making: _Making,
     ) -> list[Step]:
         """One copy's step: its solid taken from the part (a cut's), or added to it and kept as the copy's own."""
@@ -96,7 +96,7 @@ class OracleKind:
         return None
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         """One copy's solid: what a body or a standing feature adds, or a cut takes away."""
         raise OracleError(f"{item.id}: a {item.kind} is not made by the oracle yet")

@@ -204,6 +204,39 @@ an angle round it.
   only one at a place or a `circle` or `arc` of them: no other pattern, and
   nothing `concentric`.
 
+## On a ball's surface
+
+On a ball's or a dome's curved surface (sphere.md, its `surface` face;
+schema 1.6), an item is placed by a **latitude** and an **angle round its
+pole**:
+
+- **Its pole** is the way the ball stands: +z for the first body (a dome),
+  the way the face it stands on faces for one standing on a face. Its
+  **equator** is the circle square to it through the ball's centre: a
+  dome's rim, or where a whole ball standing on a face meets it.
+- **`place.latitude`** is how far from the equator towards the pole, in
+  degrees: 90 is the pole, 0 the equator. None is 90, an assumption.
+- **`place.angle`** is how far round the pole, from the first of the
+  reference axes towards the second, as round a side whose axis is the
+  pole's (about z: from +x towards +y). None is 0, an assumption where it
+  matters (not at the pole).
+- The item's **point** is on the surface there, its **direction** the way
+  out along the ball's radius. A hole goes in against it, its depth from
+  its point; a boss or a post stands out along it, its height from its
+  point, its foot following the ball's curve. A post's length runs round
+  the pole (east), its width along the meridian.
+- It is placed as at the pole, then turned about the ball's centre, down to
+  its latitude and round to its angle; its faces take nothing, for now. Its
+  edges, its joint with the ball and a hole's mouth are rounded or
+  chamfered as edges.md, "Round a side, and on a ball's surface", says.
+- A `circle` or an `arc` of copies goes round the pole at its latitude.
+- What it covers must stay on the surface: above a dome's rim, above a
+  standing ball's equator (below it is what it stands on). A hole goes right
+  through a whole ball standing on nothing only, for now; otherwise it has a
+  depth no more than the material under it.
+- Only holes, bosses and posts go on a ball's surface, for now, and not on
+  a hollowed ball's.
+
 ## Concentric
 
 `concentric` with an item puts this item's centre on that item's axis, where

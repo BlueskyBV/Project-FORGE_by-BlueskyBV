@@ -39,6 +39,7 @@ import tempfile
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from decimal import ROUND_CEILING, Context, Decimal
 from typing import Any
 
 import numpy as np
@@ -1210,7 +1211,7 @@ def _step_bytes(parts: Sequence[StepPart], instances: Sequence[StepInstance], as
     doc = _document()
     tool = XCAFDoc_DocumentTool.ShapeTool_s(doc.Main())
     labels: dict[str, Any] = {}
-    stated = max(at_least, *(loosest_tolerance(part.shape) for part in parts))
+    stated = _stated(max(at_least, *(loosest_tolerance(part.shape) for part in parts)), unit)
     with boundary("writing STEP"):
         for part in parts:
             label = tool.AddShape(part.shape, False, False)
@@ -1297,6 +1298,20 @@ def read_step(data: bytes) -> StepFile:
     for shape in parts.values():
         _measured_tolerances(shape, uncertainty)
     return StepFile(parts, tuple(instances), assembly)
+
+
+def _stated(loosest: float, unit: str) -> float:
+    """The uncertainty a STEP file states for its parts' loosest tolerance (mm): rounded up to what OpenCascade writes,
+    six significant figures in the file's unit, so the file never states the part nearer its true surface than it is
+    (generated part 0: a tolerance of 3.2656402e-06 mm written as 3.26564E-06)."""
+    scale = 25.4 if unit == "INCH" else 1.0
+    if not (math.isfinite(loosest) and loosest > 0.0):
+        return loosest
+    six = Context(prec=6, rounding=ROUND_CEILING)
+    written = six.plus(Decimal(loosest / scale))
+    while float(written) * scale < loosest:  # read back in millimetres, a hair under it: the next figure up
+        written = six.next_plus(written)
+    return float(written) * scale
 
 
 #: A STEP file's stated uncertainty: its length measure (the file is in millimetres; check_step holds it to that).

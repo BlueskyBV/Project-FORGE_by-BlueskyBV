@@ -100,6 +100,9 @@ class SolveKind:
         """Whether it may go round a round side (a standing item; a hole)."""
         return self.adds
 
+    #: Whether it goes on a ball's or a dome's surface (item 3b's second step): a hole, a boss, a post.
+    on_ball = False
+
     # ------------------------------------------------------------------
     # Its own
     # ------------------------------------------------------------------

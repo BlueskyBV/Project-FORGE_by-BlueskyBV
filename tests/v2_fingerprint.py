@@ -90,7 +90,9 @@ ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_
                    ("FlatFace", "local"), ("Instance", "frame"), ("Instance", "local"), ("Copy", "frame"),
                    ("Copy", "local"), ("_Flat", "oriented"),
                    # Step 5.2: a round side on a turned item's face, upright, with its motion.
-                   ("SideFace", "local"), ("RoundSide", "local")})  # fmt: skip
+                   ("SideFace", "local"), ("RoundSide", "local"),
+                   # Item 3b's second step: on a ball's or a dome's surface, at a latitude.
+                   ("Feature", "latitude"), ("Place", "latitude")})  # fmt: skip
 
 
 def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:

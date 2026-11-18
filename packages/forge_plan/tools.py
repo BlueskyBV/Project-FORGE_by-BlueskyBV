@@ -25,6 +25,7 @@ from forge_spec.draft import (
 )
 from forge_spec.geometry import (
     EPS,
+    BallFace,
     FlatFace,
     Footprint,
     SideFace,
@@ -91,7 +92,7 @@ class Context:
     def items(self) -> Mapping[str, Item]:
         return {item.id: item for item in self.spec.items}
 
-    def face(self, copy: Instance) -> FlatFace | SideFace:
+    def face(self, copy: Instance) -> FlatFace | SideFace | BallFace:
         """The face a copy stands on or is cut into."""
         if copy.host is None:
             raise PlanError("the first body is on no face", item=copy.item)
@@ -355,6 +356,8 @@ def standing_tool(
     face = ctx.face(copy)
     if isinstance(face, SideFace):
         return _round_side(chain, item, copy, face)
+    if isinstance(face, BallFace):
+        return _on_ball(chain, ctx, item, copy, face)
     if copy.direction is not None:  # leaning on its face (1b's second move)
         sizes = PLAN[item.kind].section(item, face.axes) if PLAN[item.kind].box_like(item) else None
         if sizes is None:
@@ -419,6 +422,32 @@ def sink_box(
     if any(probe.meets(b) for b in chain.cut):
         return None
     return region
+
+
+def _on_ball(chain: Chain, ctx: Context, item: Item, copy: Instance, face: BallFace) -> str:
+    """A boss or a post on a ball's or a dome's surface (item 3b's second step), as at its pole: its section from the
+    plane through the ball's centre out to its height, less the ball (it is joined to it), its foot following its
+    curve. The ball it is cut by is the one the part has, seen as from where the item is placed before it is moved
+    (:mod:`.moved`): moved with it, its foot lies on the part's own surface, made alike."""
+    from forge_spec.frames import Rigid
+
+    from .moved import transform_params
+
+    k = copy.index
+    prism, lo, hi = PLAN[item.kind].round_side_prism(chain, item, copy, face.radius)
+    if not PLAN[item.kind].box_like(item):
+        # A round section turned an eighth about its own axis: a rod along an axis has its seam where the ball's runs.
+        turned = Rigid.turn_about(copy.origin, copy.normal, 0.7071067811865476, 0.7071067811865476)
+        prism = chain.step(f"{prism}.turned", "transform", transform_params(turned), item=item.id, inputs=(prism,))
+    ball = chain.sphere(_id(item.id, k, "ball"), face.centre, 2 * face.radius, item=item.id)
+    placed = ctx.layout.instances.get(item.id, [])
+    moved = placed[k] if k < len(placed) else None
+    if moved is not None and moved.frame is not None:
+        back = moved.frame.inverse()
+        ball = chain.step(f"{ball}.back", "transform", transform_params(back), item=item.id, inputs=(ball,))
+    tool = chain.boolean(_id(item.id, k, "on_ball"), "subtract", [prism, ball], item=item.id)
+    chain.add_box(Box(lo, hi, item.id, k))
+    return tool
 
 
 def _round_side(chain: Chain, item: Item, copy: Instance, face: SideFace) -> str:

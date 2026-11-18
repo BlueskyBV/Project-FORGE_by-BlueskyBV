@@ -10,7 +10,7 @@ from forge_checks import rounds
 from forge_checks.csg import Node
 from forge_checks.items.oracle._shapes import _choice, _mm, box_chains, standing_box
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide, in_axes
+from forge_checks.place import Copy, Face, Hollow, Placed, in_axes
 
 if TYPE_CHECKING:
     from forge_checks.oracle import _Making
@@ -20,7 +20,7 @@ class Rib(OracleKind):
     key = "rib"
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         assert copy.axes is not None
         a1, a2 = copy.axes

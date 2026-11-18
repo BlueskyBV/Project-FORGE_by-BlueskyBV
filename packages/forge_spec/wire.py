@@ -78,6 +78,8 @@ def _place(place: Place) -> dict[str, Any]:
         out["angle"] = value_to_wire(place.angle)
     if place.turn is not None:
         out["turn"] = value_to_wire(place.turn)
+    if place.latitude is not None:
+        out["latitude"] = value_to_wire(place.latitude)
     if place.pattern is not None:
         body: dict[str, Any] = {
             name: value_to_wire(v) for name, v in place.pattern.values.items()

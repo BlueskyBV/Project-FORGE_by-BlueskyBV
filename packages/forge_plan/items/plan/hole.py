@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
-from forge_spec.geometry import FlatFace, SideFace, disc
+from forge_spec.geometry import BallFace, Face, FlatFace, SideFace, disc
 from forge_spec.placement import Instance
 
 from forge_plan.errors import PlanError
@@ -51,7 +51,7 @@ def _widest(ctx: Context, item: Item) -> tuple[float, float]:
     return radius, widest
 
 
-def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
+def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
           mouth: float, far: float) -> list[str]:  # fmt: skip
     k, w = copy.index, copy.origin
     d = neg(copy.normal)
@@ -60,7 +60,7 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace
         raise PlanError("its diameter wasn't resolved", item=item.id)
     radius = diameter / 2
     start = _start(face)
-    if isinstance(face, SideFace):
+    if isinstance(face, (SideFace, BallFace)):
         depth = (
             face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
         )
@@ -115,7 +115,7 @@ class Hole(CutPlan):
 
     goes_round_side = True
 
-    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: FlatFace | SideFace,
+    def cut_tool(self, chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
                  mouth: float, far: float) -> list[str]:  # fmt: skip
         return _hole(chain, ctx, item, copy, face, mouth, far)
 

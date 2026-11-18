@@ -241,6 +241,9 @@ class Place:
     #: On a flat face, the item turned in the face's plane by this angle, from the face's first axis towards its second
     #: (schema 1.2; V2-stage4b-0c.md, 3.3, 1b's first move).
     turn: Value | None = None
+    #: On a ball's or a dome's surface, how far from its equator towards its pole (schema 1.6; V2-stage4b-0c.md, 3.4,
+    #: item 3b's second step); ``angle`` is then how far round its pole.
+    latitude: Value | None = None
 
 
 FieldValue = (
@@ -928,7 +931,7 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
         at,
         problems,
         "a placement",
-        {*IN_FACE_AXES, "angle", "turn", "pattern", "concentric"},
+        {*IN_FACE_AXES, "angle", "turn", "latitude", "pattern", "concentric"},
     )
     if obj is None:
         return None
@@ -946,6 +949,9 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
     )
     turn = (
         _angle(obj["turn"], at + pointer("turn"), problems) if "turn" in obj else None
+    )
+    latitude = (
+        _angle(obj["latitude"], at + pointer("latitude"), problems) if "latitude" in obj else None
     )
     pattern = (
         _pattern(obj["pattern"], at + pointer("pattern"), problems)
@@ -973,7 +979,7 @@ def _place(raw: Any, at: str, problems: Problems) -> Place | None:
                 )
     if len(problems.faults) > before:
         return None
-    return Place(axes, angle, pattern, concentric, concentric_provenance, turn)
+    return Place(axes, angle, pattern, concentric, concentric_provenance, turn, latitude)
 
 
 def _counterbore(raw: Any, at: str, problems: Problems) -> Counterbore | None:
@@ -1180,6 +1186,9 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                 ):
                     problems.fault(pointer("items", n, "place", "turn"),
                                    'a turn is schema 1.2\'s: give the draft\'s "schema_version": "1.2"')  # fmt: skip
+                if isinstance(place, Place) and place.latitude is not None and version < (1, 6):
+                    problems.fault(pointer("items", n, "place", "latitude"),
+                                   'a latitude is schema 1.6\'s: give the draft\'s "schema_version": "1.6"')  # fmt: skip
                 # A body leans in 1.5 (step 3), a hole, a boss or a post in 1.3.
                 since = (1, 5) if KINDS[item.kind].category is Category.BODY else (1, 3)
                 for leans in ("tilt", "tilt_towards"):

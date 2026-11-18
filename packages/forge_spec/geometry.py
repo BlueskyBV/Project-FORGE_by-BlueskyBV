@@ -42,8 +42,10 @@ from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 
 __all__ = [
     "EPS",
+    "BallFace",
     "DepthModel",
     "Dome",
+    "Face",
     "FlatFace",
     "Footprint",
     "Less",
@@ -384,7 +386,98 @@ class SideFace:
         )
 
 
-Face = FlatFace | SideFace
+@dataclass(frozen=True)
+class BallFace:
+    """A ball's or a dome's curved surface (item 3b's second step; sphere.md): its centre, the way its pole lies from it
+    (``up``: the way the ball stands, its own +z as the first body) and its radius; whether it is a dome (the half of
+    the ball on its pole's side), and whether it is ``standing`` on a face (a whole ball so is ``seated``, its lower
+    half in what it stands on). A point on it is at a ``latitude`` from its equator towards its pole and an angle round its pole
+    (its longitude) from its zero meridian, the way round its pole its frame's ``u`` gives (frame.md: about z, +x).
+
+    ``wall`` is the material a cut along its radius meets at its pole: a ball's diameter, a dome's radius.
+    """
+
+    name: str
+    centre: Vec
+    up: str  # "+z"
+    radius: float
+    dome: bool = False
+    #: Whether it stands on a face (a dome on its flat face; a ball centred on the face, its lower half in it).
+    standing: bool = False
+    radius_sources: tuple[Source, ...] = ()
+    #: The face of what stands on a turned item's face (as a round side's): kept as with that item upright, and the
+    #: motion onto the part.
+    local: Rigid | None = None
+
+    @property
+    def wall(self) -> float:
+        return self.radius if self.dome else 2 * self.radius
+
+    @property
+    def sources(self) -> tuple[Source, ...]:
+        return self.radius_sources
+
+    @property
+    def depth_sources(self) -> tuple[Source, ...]:
+        return self.radius_sources
+
+    @property
+    def seated(self) -> bool:
+        """A whole ball standing on a face: its lower half in what it stands on."""
+        return self.standing and not self.dome
+
+    @property
+    def lowest(self) -> float:
+        """The least latitude (degrees) what is on it may reach down to: its rim's on a dome, its equator's on a seated
+        ball (below it is what it stands on); a free ball's south pole."""
+        return 0.0 if self.dome or self.seated else -90.0
+
+    def upright(self) -> BallFace:
+        return self if self.local is None else replace(self, local=None)
+
+    @cached_property
+    def frame(self) -> Frame:
+        """Its centre; ``u`` its zero meridian's way out at its equator, ``v`` a quarter round its pole from it, ``n``
+        its pole's way (right-handed)."""
+        a, b = _REFERENCE[self.up[1]]
+        found = Frame.of_names(self.centre, "+" + a, self.up[0] + b, self.up)
+        return found if self.local is None else self.local.frame(found)
+
+    def frame_at(self, longitude: tuple[float, float], latitude: tuple[float, float]) -> Frame:
+        """Its frame at a point on it (item 3a's placeable face): ``longitude`` and ``latitude`` the cosines and sines of
+        the angles round its pole and up from its equator. Its origin is on the surface; ``n`` the way out, ``u`` east
+        (round its pole) and ``v`` north (towards its pole), ``u x v = n``."""
+        frame = self.frame
+        (cl, sl), (cp, sp) = longitude, latitude
+        out = tuple(cp * (cl * frame.u[i] + sl * frame.v[i]) + sp * frame.n[i] + 0.0 for i in range(3))
+        east = tuple(-sl * frame.u[i] + cl * frame.v[i] + 0.0 for i in range(3))
+        north = tuple(-sp * (cl * frame.u[i] + sl * frame.v[i]) + cp * frame.n[i] + 0.0 for i in range(3))
+        origin = _plus(frame.origin, out, self.radius)  # type: ignore[arg-type]
+        return Frame(origin, east, north, out)  # type: ignore[arg-type]
+
+    # Item 3a's placeable face: the material a cut along its radius meets, at a latitude (degrees) of it.
+    def material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 90.0)) -> float:
+        """The least material a radial cut of that mouth meets, at ``at`` (its longitude and latitude): what a blind
+        one must fit in. Into a ball, the far side comes first at its edge (as into a rod); into a dome, its flat face,
+        at its edge nearest the rim."""
+        r, reach_ = self.radius, _reach_of(footprint)
+        through = r + math.sqrt(max(r * r - reach_ * reach_, 0.0))
+        if not self.dome:
+            return through
+        c, s = cos_sin(at[1])
+        return min(through, r - reach_ * c / s) if s > EPS else 0.0
+
+    def most_material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 90.0)) -> float:
+        """How far a radial cut of that mouth through it goes: through a ball, to its far side; through a dome, until it
+        is out of its flat face all across its mouth."""
+        r, reach_ = self.radius, _reach_of(footprint)
+        if not self.dome:
+            return 2 * r
+        c, s = cos_sin(at[1])
+        return r + reach_ * c / s if s > EPS else math.inf
+
+
+Face = FlatFace | SideFace | BallFace
 
 #: Round each axis, the axes at 0 and 90 degrees.
 _REFERENCE = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}

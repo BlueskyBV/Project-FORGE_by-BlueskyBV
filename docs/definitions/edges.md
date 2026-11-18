@@ -65,6 +65,19 @@ rounded or chamfered as it would be upright. Its `joint`, where it meets
 its face (round a leaning boss an ellipse whose angle to the face changes
 all round it), is not rounded or chamfered yet.
 
+### Round a side, and on a ball's surface
+
+An item round a side (place.md, "Round a side") or on a ball's or a
+dome's surface ("On a ball's surface") has the edge sets it has upright,
+at the angle or the latitude it is placed at: a boss's `top` rim, a post's
+`vertical` and `top` edges, each rounded or chamfered as at the quarter
+turn below its angle, or at the ball's pole, then turned with it. Its
+`joint`, where it meets the side or the ball, and a hole's `top` edge
+there, its mouth, are curves on the round surface, not in one plane: each
+is rounded or chamfered all along it. The judge holds such a rounding to
+the band round the curve, within four times its size of the surface, and
+doesn't measure its size there yet.
+
 ### `joint`
 
 The inside corner where the item meets the item named in `where_meets`. One

@@ -1,7 +1,8 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
 Status (17 November 2026): items 0, 14, 1a, 2a and 3a done, and 3b's first
-step (a standing item round a side at any angle); 1b's first and second
+two steps (a standing item round a side at any angle; a hole, a boss or a
+post on a ball's or a dome's surface, schema 1.6); 1b's first and second
 moves done (items turned in their face, schema 1.2; holes, bosses and posts
 leaning on it, schema 1.3); its third move's first step done (positions
 along a face's own axes and a turned item's far face, schema 1.4), its
@@ -10,8 +11,8 @@ neither a schema minor, and its third (a body leans, schema 1.5): its
 schema 2.0 made with item 2b (revision 12). Step 5 (revision 13: a turned
 box hollowed, round sides on a turned item's faces, a leaning item's edges,
 a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
-3b's second step (a ball's or a dome's surface) next, then the rest of 3b,
-then 2b (a leaning item's faces with it).
+3b's third step (a cone's side) next, then the rest of 3b, then 2b (a
+leaning item's faces with it).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -925,6 +926,50 @@ tab, a rib along the rod, a boss round a rod lying along x, a boss in a
 tube's bore, a hole in its far face, its rim rounded, a post's top edges
 bevelled; turned half a degree more fails; the second kernel agrees, a
 kept generated part's too).
+
+**3b's second step, as built (revision 14).** A hole, a boss or a post goes
+on a ball's or a dome's curved surface (its `surface` face), at a
+`place.latitude` (schema 1.6: from its equator towards its pole, the way the
+ball stands; 90 degrees, its pole, where none is given) and a `place.angle`
+round its pole, and a circle of them round it. It is placed as at the pole
+(standing there as on a face facing that way, its length round the pole),
+then turned about the ball's centre, down to its latitude and round to its
+angle, with 3b's first step's turn (`_Copy.motion`): **the solver** keeps
+the surface as a `BallFace` (its centre, pole, radius; a dome's or a whole
+ball's, standing or not; the material a cut along its radius meets, a
+dome's less towards its rim) and places through `_HOSTS`; **the judge**
+keeps it as a `RoundBall`, its copies moved so (`Motion.about`), and
+compares the two; **the planner** builds what stands on it from the plane
+through the ball's centre, less the ball as the part has it seen from where
+the item is placed before it is moved (so the foot lies on the part's own
+surface once moved, and OpenCascade's seams don't meet), and a hole as round
+a side; **the oracle** keeps a standing item outside the ball; **the
+generator** puts holes, bosses and posts on balls' and domes' surfaces now
+and then (`_onto_ball`, a stream of its own), at latitudes clear of a
+dome's rim or a standing ball's equator, and circles of two to six. Its
+edges are rounded and chamfered as at its pole, then turned; its joint with
+the ball and a hole's mouth, curves on the ball, all along them: the
+planner names the joint's edges by the faces the item has upright (which
+also fixed a joint round an angled boss on a side, 3b's first step's), and
+the oracle bounds both in the band round the ball's surface, as round a
+side's (`round_band`, the ball's or the side's place on the part). Its
+faces take nothing yet; a hole goes right through a whole ball standing on
+nothing only; a hollowed ball's surface takes nothing; the check compiler
+holds its place and sizes by face accounting, as a turned item's, and a
+rounding in a band unmeasured, as round a side. With it, a STEP file
+states its uncertainty rounded up to the six figures OpenCascade writes
+(`export._stated`), so it never states the part tighter than it is
+(generated part 0, 3b's first step's, wrote 3.2656402e-06 mm as
+3.26564E-06). Tests:
+`tests/test_v2_plan_ballsurface.py` (1.6's own; placed as at the pole, then
+turned; every program's layout agrees; what isn't built yet is said; built
+and judged: a boss and a post on a ball, a post on a dome, a circle of holes
+round a ball's pole, a hole right through a ball, a boss at its pole, on a
+ball and a dome standing on a plate, round a ball standing on the plate's
+side, a boss's joint with the ball rounded, a hole's mouth bevelled, a
+post's edges rounded; turned half a degree more fails; the second kernel
+agrees); `tests/test_v2_plan_roundangle.py` gains a joint round an angled
+boss.
 
 ### 3.5 Item 2: depth by geometry
 

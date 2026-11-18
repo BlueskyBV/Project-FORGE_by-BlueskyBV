@@ -66,7 +66,9 @@ from .draft import (
 )
 from .ends import Blind, ThroughAll, end_of
 from .geometry import (
+    _REFERENCE,
     EPS,
+    BallFace,
     Face,
     FlatFace,
     Part,
@@ -761,7 +763,7 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
         )
         least = face.material_under(mouth, (p1, p2))
         most = face.most_material_under(mouth, (p1, p2))
-    elif isinstance(face, SideFace):
+    elif isinstance(face, (SideFace, BallFace)):
         r = layout.diameters.get(item.id, 0.0) / 2
         least, most = face.material_under((disc(r),)), face.most_material_under((disc(r),))
     emboss = VIEWS[item.kind].embossed(item)
@@ -1309,6 +1311,8 @@ class _Drawing:
             self._on_flat(face, local, place, pattern)
         elif isinstance(face, SideFace):
             self._on_side(face, local, place)
+        elif isinstance(face, BallFace):
+            self._on_ball(face, place)
         if pattern is not None:
             self._pattern_words(face, pattern)
 
@@ -1405,6 +1409,21 @@ class _Drawing:
                       (local[0].origin[other], local[j].origin[other]), text, f"place.pattern.{name}")  # fmt: skip
 
         PATTERN_VIEWS[pattern.kind].steps(pattern, face, local, middle, canvas, between)
+
+    def _on_ball(self, face: BallFace, place: Place | None) -> None:
+        """Where on a ball's surface (item 3b's second step): its latitude, and how far round its pole from its zero
+        meridian (frame.md)."""
+        pattern = place.pattern if place is not None else None
+        spread = pattern is not None and PATTERN_VIEWS[pattern.kind].round
+        lead = "the first" if spread else "it"
+        if place is not None and place.latitude is not None:
+            self.say(f"at latitude {_value(place.latitude)} on the ball, from its equator towards its pole {face.up}",
+                     "place.latitude")  # fmt: skip
+        else:
+            self.say(f"at the ball's pole, {face.up}")
+        if place is not None and place.angle is not None:
+            zero = _REFERENCE[face.up[1]][0].upper()
+            self.say(f"{lead} {_value(place.angle)} round its pole from +{zero}", "place.angle")
 
     def _on_side(
         self, face: SideFace, local: Sequence[Instance], place: Place | None

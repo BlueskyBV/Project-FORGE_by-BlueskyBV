@@ -34,6 +34,13 @@ from forge_eval.truth import Copy, Prism, Step
 
 class Hole(DrawKind):
     key = "hole"
+    on_ball = True
+    ball_weight = 5
+    ball_rank = 1
+
+    def ball_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
+        sizes = {"diameter": _q(rng.uniform(1.0, max(1.1, radius / 3)))}
+        return sizes, _q(rng.uniform(0.5, max(0.6, radius * 0.6))), sizes["diameter"] / 2
     leans = True
     round_rim = True
     flat_weight = 4

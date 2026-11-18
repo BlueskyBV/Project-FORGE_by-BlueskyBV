@@ -23,7 +23,13 @@ from forge_checks.items.oracle._shapes import (
 )
 from forge_checks.items.oracle.protocol import OracleKind
 from forge_checks.outlines import Segment as OutlineSegment
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide, section_of
+from forge_checks.place import (
+    Copy,
+    Face,
+    Hollow,
+    Placed,
+    section_of,
+)
 from forge_checks.shapes import Frame, Polygon, Revolved, Torus
 
 if TYPE_CHECKING:
@@ -34,7 +40,7 @@ class Revolution(OracleKind):
     key = "revolution"
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         return _revolution_node(item, copy)
 

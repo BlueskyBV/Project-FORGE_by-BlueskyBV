@@ -22,7 +22,7 @@ from forge_spec.draft import (
 )
 from forge_spec.ends import ThroughAll, end_of
 from forge_spec.frames import Frame, cos_sin
-from forge_spec.geometry import EPS, FlatFace, SideFace, Source, Taper, Vec
+from forge_spec.geometry import EPS, BallFace, FlatFace, SideFace, Source, Taper, Vec
 from forge_spec.outline import Shape
 from forge_spec.schema import DIRECTIONS, FACE_AXES
 from forge_spec.values import Count, Value
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 _INDEX = {"x": 0, "y": 1, "z": 2}
 
 
-Face = FlatFace | SideFace
+Face = FlatFace | SideFace | BallFace
 
 
 def _dir(direction: str) -> Vec:

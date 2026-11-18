@@ -19,7 +19,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from forge_spec.draft import PartSpec, read_draft
-from forge_spec.geometry import FlatFace, SideFace
+from forge_spec.geometry import BallFace, FlatFace, SideFace
 from forge_spec.placement import Layout, solve
 
 WORDS = [0]
@@ -413,6 +413,8 @@ def _faces(layout: Layout) -> list[tuple[str, str, FlatFace | SideFace]]:
         if index:
             continue  # the first copy stands for its item: an item goes on every copy
         for name, face in faces.items():
+            if isinstance(face, BallFace):
+                continue  # a ball's surface (item 3b's second step): its own tests draw on it
             found.append((item_id, name, face))
     return found
 

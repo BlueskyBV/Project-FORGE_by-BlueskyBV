@@ -29,10 +29,12 @@ from forge_checks.outlines import Segment as OutlineSegment
 from forge_checks.place import (
     FLAT_AXES,
     Copy,
+    Face,
     FlatFace,
     Hollow,
     Placed,
     PlaceError,
+    RoundBall,
     RoundSide,
     direction_of,
     opposite,
@@ -40,6 +42,7 @@ from forge_checks.place import (
     unit,
 )
 from forge_checks.shapes import (
+    Ball,
     Complement,
     Disc,
     Frame,
@@ -158,7 +161,7 @@ def leaning_node(copy: Copy, outline: Shape2D, reach: float, height: float, into
 
 
 def _standing_prism(
-    copy: Copy, outline: Shape2D, height: float, face: FlatFace | RoundSide | None
+    copy: Copy, outline: Shape2D, height: float, face: FlatFace | RoundSide | RoundBall | None
 ) -> Node:
     """A standing item's solid: its outline across its direction, from its point out to ``height``."""
     assert copy.axes is not None
@@ -174,6 +177,9 @@ def _standing_prism(
         bottom = -face.radius if face.outward else 0.0
         t0, t1 = sorted((sign * bottom, sign * height))
         return _on_side(Prism(frame, outline, t0, t1), face)
+    if isinstance(face, RoundBall):  # from the plane through its centre, outside the ball (item 3b's second step)
+        t0, t1 = sorted((-sign * face.radius, sign * height))
+        return Inter((Prism(frame, outline, t0, t1), Complement(Ball(face.centre, face.radius))))
     t0, t1 = sorted((0.0, sign * height))
     return Prism(frame, outline, t0, t1)
 
@@ -493,11 +499,27 @@ def _face_loop(
     return _outline_chain(frame, pieces, 0.0, sign, region_inside, False)
 
 
+def round_band(face: RoundSide | RoundBall, reach: float) -> Node:
+    """What lies within ``reach`` of a round side's or a ball's surface, where it is on the part (moved with its item)."""
+    at = face.placed_frame
+    if isinstance(face, RoundBall):
+        inner = Ball(at.origin, max(face.radius - reach, 1e-9))
+        return Inter((Ball(at.origin, face.radius + reach), Complement(inner)))
+    axis = Frame.along(at.origin, at.n)
+    return Inter(
+        (
+            Round(axis, face.radius + reach),
+            Complement(Round(axis, max(face.radius - reach, 1e-9))),
+        )
+    )
+
+
 def _rim_band(
-    item: Item, copy: Copy, face: FlatFace | RoundSide, placed: Placed, size: float
+    item: Item, copy: Copy, face: FlatFace | RoundSide | RoundBall, placed: Placed, size: float
 ) -> Node:
-    """Round a mouth on a round side (or in a bore): no circle; the zone where its rounding must be."""
-    if not isinstance(face, RoundSide):
+    """Round a mouth on a round side, a ball's surface (item 3b's second step) or in a bore: no circle; the zone where
+    its rounding must be."""
+    if isinstance(face, FlatFace):
         raise OracleError(
             f"{item.id}: a cut starting inside a bore is on its round side"
         )
@@ -510,25 +532,18 @@ def _rim_band(
             if item.get(n) is not None
         )
     ) / 2
-    # The rim's curve on the side falls back from the mouth's point, along the
-    # way the cut goes, by at most the side's sagitta over the mouth.
+    # The rim's curve on the side (or the ball) falls back from the mouth's
+    # point, along the way the cut goes, by at most its sagitta over the mouth.
     sag = face.radius - math.sqrt(max(face.radius * face.radius - radius * radius, 0.0))
     radius += reach
     u = np.asarray(copy.direction, dtype=float)
-    axis = Frame.along(face.start, unit("+" + face.axis))
     near = Prism(
         Frame.along(_vec(np.asarray(copy.point) - u * (reach + sag)), u),
         Disc(radius),
         0.0,
         2 * (reach + sag),
     )
-    band: Node = Inter(
-        (
-            Round(axis, face.radius + reach),
-            Complement(Round(axis, max(face.radius - reach, 1e-9))),
-        )
-    )
-    return Inter((near, band))
+    return Inter((near, round_band(face, reach)))
 
 
 def standing_box(
@@ -536,28 +551,28 @@ def standing_box(
     first: float,
     second: float,
     height: float,
-    face: FlatFace | RoundSide | None,
+    face: Face | None,
 ) -> Node:
     """A box standing on a face: ``first`` and ``second`` along its copy's axes, ``height`` out of the face."""
     return _standing_prism(copy, RoundRect(first / 2, second / 2), height, face)
 
 
 def rod_node(
-    copy: Copy, face: FlatFace | RoundSide | None, radius: float, height: float
+    copy: Copy, face: FlatFace | RoundSide | RoundBall | None, radius: float, height: float
 ) -> Node:
     """A cylinder's or a boss's solid: ``radius`` round its axis, ``height`` along it."""
     if copy.lean is not None:
         return leaning_node(copy, Disc(radius), radius, height, False)
     u = np.asarray(copy.direction, dtype=float)
     frame = Frame.along(copy.point, u)
-    if isinstance(face, RoundSide):
+    if isinstance(face, (RoundSide, RoundBall)):
         assert copy.axes is not None
         return _standing_prism(copy, Disc(radius), height, face)
     return Prism(frame, Disc(radius), 0.0, height)
 
 
 def flat_cut_node(
-    entry: OracleKind, item: Item, copy: Copy, face: FlatFace | RoundSide
+    entry: OracleKind, item: Item, copy: Copy, face: Face
 ) -> Node:
     """What a slot or a pocket takes away: its outline (``entry``'s), from its mouth to its depth."""
     assert copy.span is not None
@@ -574,11 +589,12 @@ def flat_cut_node(
 def round_rim(
     item: Item, copy: Copy, which: str, placed: Placed, size: float
 ) -> tuple[list[rounds.Chain], bool, list[Node], Node | None] | None:
-    """A cut's rim where it is cut round a side, or from inside a bore: bounded by a band round it; None on a flat face."""
+    """A cut's rim where it is cut round a side, on a ball's surface, or from inside a bore: bounded by a band round it;
+    None on a flat face."""
     assert copy.host is not None and copy.span is not None
     face = placed.face(copy.host)
     fill = which == "bottom"
-    if isinstance(face, RoundSide) or copy.span[0] < 0:
+    if isinstance(face, (RoundSide, RoundBall)) or copy.span[0] < 0:
         return [], fill, [_rim_band(item, copy, face, placed, size)], None
     return None
 

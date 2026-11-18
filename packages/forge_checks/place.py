@@ -78,6 +78,7 @@ __all__ = [
     "Copy",
     "Difference",
     "Dome",
+    "Face",
     "FlatFace",
     "Hollow",
     "Less",
@@ -85,6 +86,7 @@ __all__ = [
     "Over",
     "PlaceError",
     "Placed",
+    "RoundBall",
     "RoundSide",
     "Solid",
     "Step",
@@ -642,7 +644,56 @@ class RoundSide:
         return abs(self.radius - self.other)
 
 
-Face = FlatFace | RoundSide
+@dataclass(frozen=True)
+class RoundBall:
+    """A ball's or a dome's curved surface (item 3b's second step; sphere.md): its centre, the way its pole lies from it
+    (``up``), its radius; a dome's (the half on its pole's side) or a whole ball's, and whether it stands on a face (a
+    whole ball so has its lower half in what it stands on). A point on it is at a latitude from its equator towards its
+    pole and an angle round its pole from its frame's ``u``."""
+
+    name: str
+    centre: Vec
+    up: str
+    radius: float
+    dome: bool
+    standing: bool
+    #: Kept as with the item it is on upright, and the motion onto the part (as a round side's).
+    local: Motion | None = None
+
+    @property
+    def placed_frame(self) -> FaceFrame:
+        return self.frame if self.local is None else self.local.frame(self.frame)
+
+    @functools.cached_property
+    def frame(self) -> FaceFrame:
+        """Its centre; ``u`` its zero meridian's way out at its equator, ``v`` a quarter round its pole, ``n`` its pole's way
+        (right-handed)."""
+        u, v = TURN_AXES[self.up[1]]
+        return FaceFrame.of_names(self.centre, "+" + u, self.up[0] + v, self.up)
+
+    def frame_at(self, longitude: Point, latitude: Point) -> FaceFrame:
+        """Its frame at a point on it (item 3a): ``longitude`` and ``latitude`` the cosines and sines of the angles round
+        its pole and up from its equator; ``n`` the way out, ``u`` east, ``v`` north."""
+        frame = self.frame
+        (cl, sl), (cp, sp) = longitude, latitude
+        level = _add(_scale(frame.u, cl), frame.v, sl)
+        out = _add(_scale(level, cp), frame.n, sp)
+        east = _add(_scale(frame.u, -sl), frame.v, cl)
+        north = _add(_scale(level, -sp), frame.n, cp)
+        return FaceFrame(_add(frame.origin, out, self.radius), east, north, out)
+
+    @property
+    def material(self) -> float:
+        """The material a cut along its radius meets at its pole: a ball's diameter, a dome's radius."""
+        return self.radius if self.dome else 2 * self.radius
+
+    @property
+    def lowest(self) -> float:
+        """How far down (latitude, degrees) what is on it may reach: a dome's rim, a standing ball's equator."""
+        return 0.0 if self.dome or self.standing else -90.0
+
+
+Face = FlatFace | RoundSide | RoundBall
 
 
 # ----------------------------------------------------------------------
@@ -1567,8 +1618,14 @@ def _on_round(item: Item, face: Face, host: tuple[str, int, str], host_copies: i
     return _round_copies(item, face, host, layout, first)
 
 
+def _on_ball(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
+             first: int) -> list[Copy]:  # fmt: skip
+    assert isinstance(face, RoundBall)
+    return _ball_copies(item, face, host, layout, first)
+
+
 #: Each kind of face an item can be put on (item 3a's placeable faces), by its class: how its copies are placed.
-_HOSTS = {FlatFace: _on_flat, RoundSide: _on_round}
+_HOSTS = {FlatFace: _on_flat, RoundSide: _on_round, RoundBall: _on_ball}
 
 
 def _lies_on(item: Item, face: FlatFace, at: Point, layout: _Layout) -> None:
@@ -1954,6 +2011,65 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
     return made
 
 
+def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout: _Layout,
+                 first: int) -> list[Copy]:  # fmt: skip
+    """On a ball's or a dome's surface (item 3b's second step; place.md, "On a ball's surface"): a hole, a boss or a post,
+    placed as at its pole (standing there on it as on a face facing that way), then turned about its centre, down to its
+    latitude and round its pole to its angle."""
+    entry = _entry(item.kind)
+    if not entry.goes_on_ball:
+        raise PlaceError(item.id, f"only holes, bosses and posts go on a ball's surface, not a {item.kind}")
+    place = _place(item)
+    if place is not None and (place.turn is not None or place.concentric or place.axes):
+        raise PlaceError(item.id, "on a ball's surface, a latitude and an angle round its pole only")
+    pattern = place.pattern if place else None
+    if pattern is not None and not _pattern_entry(pattern.kind).round:
+        raise PlaceError(item.id, f"round a ball's pole, only a circle or arc of copies, not a {pattern.kind}")
+    latitude = _angle(place.latitude) if place is not None and place.latitude is not None else 90.0
+    if not -90.0 - TOL <= latitude <= 90.0 + TOL:
+        raise PlaceError(item.id, f"a latitude is from -90 to 90 degrees, not {latitude:g}")
+    start = _angle(place.angle) if place is not None and place.angle is not None else 0.0
+    angles = [start]
+    if pattern is not None:
+        values, counts = _pattern_values(item, pattern)
+        steps_round = _pattern_entry(pattern.kind).steps_round
+        extra = sorted(set(values) - ({"step"} if steps_round else set()))
+        if extra:
+            raise PlaceError(item.id, f"round a ball's pole, a {pattern.kind} takes only a count"
+                             + (" and a step" if steps_round else "") + f", not {extra}")  # fmt: skip
+        _needs(item, pattern, {**values, **counts}, "count", *(("step",) if steps_round else ()))
+        step = _pattern_entry(pattern.kind).round_step(values, counts)
+        angles = [start + k * step for k in range(counts["count"])]
+    up = ball.up
+    meridian, east = TURN_AXES[up[1]]  # its length round the pole (east at its point), its width along its meridian
+    axes = (east, meridian)
+    reach = entry.footprint(item, layout.diameters, axes).farthest((0.0, 0.0))
+    if reach >= ball.radius - TOL:
+        raise PlaceError(item.id, "it is as wide as the ball it is on")
+    if latitude - math.degrees(fs.asin(reach / ball.radius)) < ball.lowest - TOL:
+        raise PlaceError(item.id, "its foot runs past where the ball's surface ends")
+    frame = ball.frame
+    pole = _add(frame.origin, frame.n, ball.radius)
+    made = []
+    for n, angle in enumerate(angles):
+        index = first + n
+        if entry.taken:
+            if _through(item):
+                if ball.standing or ball.dome:
+                    raise PlaceError(item.id, "right through a whole ball only, standing on nothing, for now")
+                depth = ball.material
+            else:
+                depth = _mm(item, "depth")
+            copy = Copy(item.id, index, host, pole, frame.n, None, span=(0.0, depth))
+        else:
+            copy = _standing(item, ball, host, index, pole, up, axes, layout)
+        if abs(latitude - 90.0) > TOL or abs(math.remainder(angle, 360.0)) > TOL:
+            down = Motion.about(frame.origin, frame.v, turn(90.0 - latitude))
+            copy = _moved_copy(copy, Motion.about(frame.origin, frame.n, turn(angle)).after(down), layout)
+        made.append(copy)
+    return made
+
+
 def _round_hole(item: Item, side: RoundSide, host: tuple[str, int, str], index: int, point: Vec,
                 direction: Vec, layout: _Layout) -> Copy:  # fmt: skip
     radius = layout.diameters[item.id] / 2
@@ -1986,7 +2102,7 @@ def _host_material(face: Face | None) -> tuple[tuple[Outline, ...], Material] | 
     """Where a standing item's far face has its host's material under it too, and that material."""
     if face is None:
         return None
-    if isinstance(face, RoundSide):
+    if isinstance(face, (RoundSide, RoundBall)):
         return (), Solid(face.material)
     return (face.outline,), face.material
 
@@ -2076,6 +2192,7 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
     entry = _entry(kind)
     key = (item.id, index)
     on_side = isinstance(face, RoundSide)
+    on_ball = isinstance(face, RoundBall)
     under = _host_material(face)
     faces: dict[str, Face] = {}
     u = unit(up)
@@ -2083,6 +2200,16 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
     foot = 0.0
     if on_side and isinstance(face, RoundSide) and face.outward:
         foot = _foot(face, item, axes)
+        k = _INDEX[up[1]]
+        low, high = list(lo), list(hi)
+        if up[0] == "+":
+            low[k] -= foot
+        else:
+            high[k] += foot
+        lo, hi = (low[0], low[1], low[2]), (high[0], high[1], high[2])
+    if on_ball and isinstance(face, RoundBall):  # its foot follows the ball's curve back past its point
+        across = _footprint(item, {}, axes).farthest((0.0, 0.0))
+        foot = face.radius - math.sqrt(max(face.radius * face.radius - across * across, 0.0))
         k = _INDEX[up[1]]
         low, high = list(lo), list(hi)
         if up[0] == "+":
@@ -2104,6 +2231,9 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
                     name,
                     "it stands round a side: only its far face takes anything, for now",
                 )
+    if on_ball:
+        for name in list(layout.faces[key]):
+            layout.close(key, name, "it stands on a ball's surface: its faces take nothing, for now")
     if item.id in layout.shells:
         _hollow(item, layout, key, point, up, lo, hi)
     for name in KINDS[kind].faces:
@@ -2512,8 +2642,23 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
                     f"{_profile_gap(face, other):.3g} mm from the solver's",
                     "",
                 )
+        elif isinstance(face, RoundBall):
+            if not hasattr(other, "dome"):
+                differ(here, "kind of face", "ball", type(other).__name__)
+                continue
+            framed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
+            checks = (
+                ("centre", face.centre, getattr(other, "centre", None)),
+                ("up", face.up, getattr(other, "up", None)),
+                ("radius", face.radius, getattr(other, "radius", None)),
+                ("dome", face.dome, getattr(other, "dome", None)),
+                ("standing", face.standing, getattr(other, "standing", None)),
+                ("frame", (*framed.origin, *framed.u, *framed.v, *framed.n),
+                 None if theirs_frame is None else (*theirs_frame.origin, *theirs_frame.u, *theirs_frame.v,
+                                                    *theirs_frame.n)),
+            )
         else:
-            if not hasattr(other, "radius"):
+            if not hasattr(other, "radius") or hasattr(other, "dome"):
                 differ(here, "kind of face", "round", type(other).__name__)
                 continue
             framed, theirs_frame = face.placed_frame, getattr(other, "frame", None)

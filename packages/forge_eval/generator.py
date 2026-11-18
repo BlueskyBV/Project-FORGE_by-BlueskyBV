@@ -193,6 +193,9 @@ class Feature:
     #: Its face's axes as the part names them, where the draft names them by the face's own, ``u`` and ``v``
     #: (schema 1.4; V2-stage4b-0c.md 3.3, 1b's third move): on a turned face always, now and then on any flat face.
     own_axes: tuple[str, str] | None = None
+    #: On a ball's or a dome's surface, how far up from its equator towards its pole (degrees; schema 1.6, item 3b's
+    #: second step); ``angle`` is then how far round its pole.
+    latitude: float | None = None
 
 
 Plan = tuple[Feature, ...]
@@ -568,6 +571,47 @@ class _Round:
         return _FaceFrame(p, _t(np.cross(w, out)), _t(w), _t(out))
 
 
+@dataclass
+class _Ball:
+    """A ball's or a dome's surface (item 3b's second step; sphere.md): its centre, the way its pole lies, its radius;
+    a dome's (the half on its pole's side) or a whole ball's, standing on a face or not (a whole one standing on a face
+    has its lower half in it). A point on it is at a latitude from its equator and an angle round its pole from its
+    frame's ``u``."""
+
+    key: tuple[str, int, str]
+    centre: Array
+    up: str
+    radius: float
+    dome: bool
+    standing: bool
+    #: What is on it: each copy's angle round its pole and latitude (degrees), and how far round the ball its foot
+    #: reaches from its point (degrees).
+    taken: list[tuple[float, float, float]] = field(default_factory=list)
+
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its centre; ``u`` its zero meridian's way out at its equator, ``v`` a quarter round its pole, ``n`` its pole's
+        way."""
+        u, v = TURN_AXES[self.up[1]]
+        return _FaceFrame.of_names(self.centre, "+" + u, self.up[0] + v, self.up)
+
+    @property
+    def lowest(self) -> float:
+        """How far down (latitude) what is on it may reach: a dome's rim, a standing ball's equator."""
+        return 0.0 if self.dome or self.standing else -90.0
+
+    def ways(self, angle: float, latitude: float) -> tuple[Array, Array, Array]:
+        """Its way out at a point on it, and east and south there (an item's first and second axes, as the solver's)."""
+        f = self.frame
+        cl, sl = _cos_sin(angle)
+        cp, sp = _cos_sin(latitude)
+        level = cl * f.u + sl * f.v
+        out = cp * level + sp * f.n + 0.0
+        east = -sl * f.u + cl * f.v + 0.0
+        south = sp * level - cp * f.n + 0.0
+        return out, east, south
+
+
 def _v(a: Any) -> Array:
     return np.asarray(a, dtype=np.float64)
 
@@ -602,6 +646,8 @@ class _Part:
     steps: list[Step] = field(default_factory=list)
     flats: dict[tuple[str, int, str], _Flat] = field(default_factory=dict)
     rounds: dict[tuple[str, int, str], _Round] = field(default_factory=dict)
+    #: Balls' and domes' surfaces (item 3b's second step).
+    balls: dict[tuple[str, int, str], _Ball] = field(default_factory=dict)
     kinds: dict[str, str] = field(default_factory=dict)
     #: What stands in each hollow: each copy's item and its box (low and high corners).
     inside: dict[tuple[str, int], list[tuple[str, Array, Array]]] = field(
@@ -1863,6 +1909,111 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     return made
 
 
+def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> list[Copy]:
+    """A hole, a boss or a post on a ball's or a dome's surface (item 3b's second step; place.md, "On a ball's
+    surface"): at its latitude (90, its pole, where it gives none) and its angle round the pole, or a circle of them
+    there; along the ball's radius, a hole's depth from its point, a standing one's height out of it, its foot carried
+    into the ball past where the surface curves away under it. Its faces take nothing, for now. What it is made of is
+    kept clear of everything else made but the ball and what the ball stands on."""
+    entry = _draw(f.kind)
+    if not entry.on_ball:
+        raise DoesNotFitError(f"{f.id}: on a ball's surface, a hole, a boss or a post")
+    if f.pattern is not None and not _pattern_draw(f.pattern.kind).round_whole:
+        raise DoesNotFitError(f"{f.id}: round a ball's pole, copies go round it (a circle)")
+    if f.place or f.turn is not None or f.tilt is not None or f.recess is not None:
+        raise DoesNotFitError(f"{f.id}: on a ball's surface, a latitude and an angle round its pole only")
+    latitude = 90.0 if f.latitude is None else f.latitude
+    start = f.angle or 0.0
+    n = f.pattern.counts["count"] if f.pattern is not None else 1
+    angles = [start + k * 360.0 / n for k in range(n)]
+    s = f.sizes
+    cut = entry.cut_out
+    if cut or entry.round_foot:
+        h1 = h2 = s["diameter"] / 2
+    else:
+        h1, h2 = s["length"] / 2, s["width"] / 2
+    r = ball.radius
+    reach = fs.hypot(h1, h2) if not (cut or entry.round_foot) else h1
+    if reach >= r / 2:
+        raise DoesNotFitError(f"{f.id} is too wide for the ball, here")
+    spread = math.degrees(fs.asin(reach / r))
+    margin = math.degrees(GAP / r)
+    through = cut and f.depth is None
+    if strict:
+        if latitude - spread < ball.lowest + 2 * margin or latitude > 90.0:
+            raise DoesNotFitError(f"{f.id} runs past where the ball's surface ends")
+        if through and (ball.dome or ball.standing):
+            raise DoesNotFitError(f"{f.id}: right through a whole ball standing on nothing only")
+        if cut and f.depth is not None:
+            least = r + math.sqrt(r * r - reach * reach)
+            if ball.dome:
+                c, sp = _cos_sin(latitude)
+                least = min(least, r - reach * c / sp)
+            if f.depth > least - GAP:
+                raise DoesNotFitError(f"{f.id} is deeper than the ball under it")
+        # Apart from the rest on the ball where they come closest: at their feet, and holes where they reach deepest.
+        deep = r - (2 * r if through else (f.depth or 0.0)) if cut else r
+        mine = [(a, latitude, spread) for a in angles]
+        for k, here in enumerate(mine):
+            for other in ball.taken + mine[:k]:
+                (c1, s1), (c2, s2) = _cos_sin(here[1]), _cos_sin(other[1])
+                apart = fs.acos(min(1.0, max(-1.0, s1 * s2 + c1 * c2 * _cos_sin(here[0] - other[0])[0])))
+                if math.degrees(apart) < here[2] + other[2] + 2 * margin:
+                    raise DoesNotFitError(f"{f.id} meets something else on {ball.key[0]}'s surface")
+                if cut and other in mine and deep > GAP and 2 * deep * fs.sin(apart / 2) < 2 * reach + GAP:
+                    raise DoesNotFitError(f"{f.id}'s copies meet inside {ball.key[0]}")
+    host = ball.key[0]
+    beside = {host, *(c.host[0] for c in part.copies.get(host, []) if c.host is not None)}
+    made = []
+    for k, a in enumerate(angles):
+        out, east, south = ball.ways(a, latitude)
+        p = ball.centre + r * out
+        copy_index = index + k
+        if cut:
+            depth = 2 * r if through else float(f.depth or 0.0)
+            solid = Prism(_t(p), _t(east), _t(south), _t(out), (h1, h2), h1, -depth, 0.0)
+            step = Step(f.id, copy_index, False, solid, (REACH if through else 0.0, REACH))
+        else:
+            sag = r - math.sqrt(max(r * r - reach * reach, 0.0))
+            corner = h1 if entry.round_foot else 0.0
+            solid = Prism(_t(p), _t(east), _t(south), _t(out), (h1, h2), corner, -(sag + REACH), s["height"])
+            step = Step(f.id, copy_index, True, solid, (REACH, 0.0))
+        if strict:
+            lo, hi = bounds(replace(solid, low=0.0)) if not cut else bounds(solid)
+            for earlier in (*part.steps, *part.late):
+                its_lo, its_hi = bounds(earlier.solid)
+                if earlier.item not in beside and np.all(lo <= its_hi) and np.all(its_lo <= hi):
+                    raise DoesNotFitError(f"{f.id} {'cuts' if cut else 'stands'} into {earlier.item}")
+            if not cut:
+                _foot_in_ball(f, solid, ball, part)
+        part.steps.append(step)
+        if not cut:
+            lo, hi = bounds(replace(solid, low=0.0))
+            part.kept.append((f"{f.id} on {host}'s surface", lo - GAP / 2, hi + GAP / 2, f.id))
+        meridian, east_name = TURN_AXES[ball.up[1]]
+        made.append(Copy(f.id, copy_index, ball.key, _t(p), _t(out), (east_name, meridian)))
+    ball.taken += [(a, latitude, spread) for a in angles]
+    return made
+
+
+def _foot_in_ball(f: Feature, solid: Prism, ball: _Ball, part: _Part) -> None:
+    """What of a standing item's foot lies within its ball's surface lies in the part made so far (as a rod's:
+    :func:`_foot_in_material`): its foot fills no hole drilled into the ball there."""
+    centre, first, second, n = (_v(x) for x in (solid.centre, solid.first, solid.second, solid.normal))
+    h1, h2 = solid.half
+    a, b = np.meshgrid(np.linspace(-h1, h1, 15), np.linspace(-h2, h2, 15), indexing="ij")
+    if solid.corner >= min(h1, h2):  # a boss: a disc
+        keep = a * a + b * b <= solid.corner * solid.corner
+        a, b = a[keep], b[keep]
+    across = centre + a.reshape(-1, 1) * first + b.reshape(-1, 1) * second
+    depth = np.linspace(solid.low, 0.0, 8)
+    points = (across[:, None, :] + depth[None, :, None] * n).reshape(-1, 3)
+    d = points - ball.centre
+    within = points[fv.dot(d, d) < fv.sq(ball.radius - 1e-3)]
+    if len(within) and not np.all(Truth({}, (*part.steps, *part.late)).inside(within)):
+        raise DoesNotFitError(f"{f.id}'s foot would fill what is cut into {ball.key[0]}")
+
+
 def _foot_in_material(
     f: Feature, solid: Prism, side: _Round, w: Array, part: _Part
 ) -> None:
@@ -2252,7 +2403,7 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
     if f.on is not None:
         host, face = f.on
         found["on"] = {"item": host, "face": face}
-        w.say(f", on the {face}{'' if face == 'side' else ' face'} of {names[host]}")
+        w.say(f", on the {face}{'' if face in ('side', 'surface') else ' face'} of {names[host]}")
         if f.tilt is not None:
             tilt, towards = f.tilt
             w.say(", ")
@@ -2293,7 +2444,13 @@ def _place_said(f: Feature, w: Writer) -> dict[str, Any]:
         else:
             distance = _mm(w, pos.distance, before=f"its {pos.to} ", after=f" from the {pos.side} edge")  # fmt: skip
             place[axis] = {"side": pos.side, "distance": distance, "to": pos.to}
-    if f.angle is not None:
+    if f.latitude is not None:  # on a ball's surface (item 3b's second step)
+        w.say(", ")
+        place["latitude"] = _mm(w, f.latitude, before="at latitude ", unit="deg")
+        if f.angle is not None:
+            w.say(", ")
+            place["angle"] = _mm(w, f.angle, after=" round its pole", unit="deg")
+    elif f.angle is not None:
         w.say(", ")
         place["angle"] = _mm(w, f.angle, before="at ", after=" round the side", unit="deg")  # fmt: skip
     if f.turn is not None:
@@ -3425,11 +3582,13 @@ def _names_own_axes(item: Mapping[str, Any]) -> bool:
 
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
+    1.6 where an item is on a ball's surface (place.latitude), 1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
     on its face (tilt), 1.2 where one is
     turned in it (place.turn), else the first, so a part that does none of these is read, and its spec's digest
     made, as it always was."""
     found = list(items)
+    if any(isinstance(item.get("place"), Mapping) and "latitude" in item["place"] for item in found):
+        return {"schema_version": "1.6", "name": name, "items": found}  # on a ball's surface (item 3b's second step)
     if any("tilt" in item and "kind" in item and _draw(item["kind"]).leans_since >= (1, 5) for item in found):
         return {"schema_version": "1.5", "name": name, "items": found}
     if any(_names_own_axes(item) for item in found):
@@ -4075,6 +4234,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         outlined = not new and profiles.random() < _PROFILED
         if _onto_turned(onto, k, plan, part, len(plan) < size):
             continue
+        if _onto_ball(random.Random(f"forge-eval on balls {seed} {k}"), k, plan, part, len(plan) < size):
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -4199,6 +4360,48 @@ _ON_TURNED = 0.7
 _SPELLED = 0.04
 
 
+#: How often the generator puts a hole, a boss or a post on a ball's or a dome's surface, where there is one (item 3b's
+#: second step).
+_ON_BALL = 0.6
+
+
+def _onto_ball(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, a hole, a boss or a post on a ball's or a dome's surface (item 3b's second
+    step), where the part has one: at a latitude and an angle round its pole, or a circle of them. Whether one was added
+    to the plan."""
+    balls = [key for key in part.balls if key[1] == 0]
+    if not balls or rng.random() >= _ON_BALL:
+        return False
+    key = rng.choice(balls)
+    ball = part.balls[key]
+    for _ in range(10):
+        candidate = _ball_item(rng, k, key[0], ball, standing_ok)
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+def _ball_item(rng: random.Random, k: int, host: str, ball: _Ball, standing_ok: bool) -> Feature:
+    """A hole (blind), a boss or a post on a ball's surface, sized to it: at a latitude from just clear of where its
+    surface ends up to its pole, at an angle round its pole on a half-degree grid; one copy, or (one in four) a circle
+    of two to six."""
+    r = ball.radius
+    kind = rng.choice(_weighted("ball_weight", "ball_rank", None if standing_ok else (lambda e: e.cut_out)))
+    sizes, depth, reach = _draw(kind).ball_sizes(rng, r)
+    spread = math.degrees(fs.asin(min(reach / r, 1.0)))
+    low = min(ball.lowest + spread + 3.0, 89.0)
+    latitude = _q(rng.uniform(low, 90.0), 0.5)
+    angle = _q(rng.uniform(0.0, 360.0), 0.5)
+    pattern = None
+    if latitude < 80.0 and rng.random() < 0.25:
+        pattern = Pattern("circle", {}, {"count": rng.choice([2, 3, 4, 6])})
+    return Feature(f"i{k}", kind, sizes, (host, "surface"), depth, {}, None, {}, angle, pattern, latitude=latitude)
+
+
 def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
     """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
@@ -4241,7 +4444,7 @@ def impossible(seed: int) -> Case:
     for attempt in range(40):
         case = generate(seed * 1000 + attempt, 4)
         cuts = [f for f in case.plan if _draw(f.kind).misfits and f.on is not None and f.pattern is None
-                and f.on[1] != "side" and f.turn is None and f.tilt is None]  # fmt: skip
+                and f.on[1] not in ("side", "surface") and f.turn is None and f.tilt is None]  # fmt: skip
         if not cuts:
             continue
         f = rng.choice(cuts)
@@ -4442,7 +4645,11 @@ def _changes(f: Feature, plan: Plan) -> Iterator[tuple[str, list[Feature]]]:
         ways = [("-" if towards[0] == "+" else "+") + towards[1], *(s + a for a in "xyz" if a != towards[1]
                                                                      for s in "+-")]  # fmt: skip
         yield "tilt_towards", [replace(f, tilt=(tilt, way)) for way in ways]
-    if f.angle is not None:
+    if f.latitude is not None:
+        # On a ball's surface: a little further up or down it, and a little further round its pole.
+        yield "place.latitude", [replace(f, latitude=_q(f.latitude + d, 0.5)) for d in (8.0, -8.0, 16.0, -16.0)]
+        yield "place.angle", [replace(f, angle=_q((f.angle or 0.0) + d, 0.5)) for d in (15.0, -15.0, 40.0, -40.0)]
+    elif f.angle is not None:
         # A hole turned a little round its side; something standing round it, a quarter or a half.
         turned = _draw(f.kind).turned(f.angle)
         yield "place.angle", [replace(f, angle=_q(a, 0.5)) for a in turned]

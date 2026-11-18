@@ -29,7 +29,7 @@ from dataclasses import replace
 from typing import Any
 
 from forge_spec.draft import EdgeSet, Faces, Item
-from forge_spec.geometry import FlatFace, SideFace
+from forge_spec.geometry import Face, FlatFace
 from forge_spec.placement import Instance
 from forge_spec.schema import DIRECTIONS
 
@@ -107,7 +107,7 @@ def _rises(copy: Instance) -> str:
 def edge_reference(chain: Chain, rounding: Item, *, items: Mapping[str, Item],
                    copies: Mapping[str, Sequence[Instance]], shells: Mapping[str, Item],
                    part: str | None,
-                   faces: Mapping[tuple[str, int], Mapping[str, FlatFace | SideFace]] | None = None,
+                   faces: Mapping[tuple[str, int], Mapping[str, Face]] | None = None,
                    ) -> tuple[dict[str, Any], dict[tuple[str, int], frozenset[frozenset[str]]]]:  # fmt: skip
     """The reference of a rounding's edges, and on each copy of the item it rounds, which edges (by their faces) it names.
 
@@ -314,7 +314,7 @@ def _flat_at(box: Box, copy: Instance) -> tuple[list[float], list[float]]:
 # Joints
 # ----------------------------------------------------------------------
 def _joint(chain: Chain, queries: Queries, target: Item, meets: Item, copies: Mapping[str, Sequence[Instance]],
-           faces: Mapping[tuple[str, int], Mapping[str, FlatFace | SideFace]]) -> None:  # fmt: skip
+           faces: Mapping[tuple[str, int], Mapping[str, Face]]) -> None:  # fmt: skip
     """The inside corner where one item stands on the other (edges.md, "joint").
 
     A side flush with an edge of the face has no corner along it (edges.md):
@@ -333,13 +333,16 @@ def _joint(chain: Chain, queries: Queries, target: Item, meets: Item, copies: Ma
         if copy.host is None or copy.host[0] != host.id:
             continue
         key = (standing.id, copy.index)
+        # Its faces are named as it stands upright: at an angle round a side, or on a ball's surface, as at the quarter
+        # turn below or at its pole (place.md).
+        upright = copy.local or copy
         names = chain.names_of(standing.id, copy.index)
         face = chain.names_of(copy.host[0], copy.host[1]).get(copy.host[2], ())
         box = _box(chain, key)
         host_face = faces.get((copy.host[0], copy.host[1]), {}).get(copy.host[2])
         flush = _flush_sides(box, host_face)
         sides = [refs for name, refs in names.items()
-                 if name in ("side", "surface", *DIRECTIONS) and name not in _ends(copy) and name not in flush]  # fmt: skip
+                 if name in ("side", "surface", *DIRECTIONS) and name not in _ends(upright) and name not in flush]  # fmt: skip
         earlier = [
             Ref(d.step, "bevel" if d.bevel else "round")
             for d in chain.rounded.get(key, [])
@@ -354,7 +357,7 @@ def _joint(chain: Chain, queries: Queries, target: Item, meets: Item, copies: Ma
             count=(0, 8 + 2 * _crossing(chain, foot_lo, foot_hi, key)),
         )
         # Under where it hangs over the face's edge: between its underside and the host's sides.
-        base = names.get(_base(copy), ())
+        base = names.get(_base(upright), ())
         host_names = chain.names_of(copy.host[0], copy.host[1])
         host_sides = tuple(r for name, refs in host_names.items() if name in DIRECTIONS
                            and name not in (copy.host[2], opposite(copy.host[2])) for r in refs)  # fmt: skip
@@ -362,7 +365,7 @@ def _joint(chain: Chain, queries: Queries, target: Item, meets: Item, copies: Ma
             queries.add(base, host_sides, where=where, count=(0, 8))
 
 
-def _flush_sides(box: Box, face: FlatFace | SideFace | None) -> set[str]:
+def _flush_sides(box: Box, face: Face | None) -> set[str]:
     """The sides of a box-like item standing on a rectangular face that lie in the planes of the face's edges."""
     if not isinstance(face, FlatFace) or face.shape != "rect":
         return set()

@@ -60,7 +60,9 @@ from .draft import (
 from .ends import Blind, ThroughAll, end_of
 from .frames import Rigid
 from .geometry import (
+    _REFERENCE,
     EPS,
+    BallFace,
     FlatFace,
     Footprint,
     Over,
@@ -1662,6 +1664,143 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
                    [*_item_values(item, *_outline_fields(item)), *_place_values(item)])  # fmt: skip
 
 
+# ----------------------------------------------------------------------
+# On a ball's or a dome's surface (item 3b's second step; place.md, "On a ball's surface")
+# ----------------------------------------------------------------------
+def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layout: Layout,
+                    at: str, first: int) -> list[_Copy]:  # fmt: skip
+    """Every copy of a hole, a boss or a post on a ball's or a dome's surface: placed as at its pole (standing on it as
+    on a face facing that way), then turned about its centre, down to its latitude and round to its angle."""
+    place = _place_of(item)
+    entry = SOLVE[item.kind]
+    if not entry.on_ball:
+        layout.issue("unable", at + pointer("on"),
+                     f"on a ball's surface, Forge cuts round holes and stands bosses and posts; not a {item.kind}, "
+                     "for now")  # fmt: skip
+        return []
+    if place is not None and ((place.pattern and not PATTERN_SOLVE[place.pattern.kind].round) or place.concentric):
+        layout.issue("unable", at + pointer("place"),
+                     "on a ball's surface, Forge places by a latitude and an angle round its pole only")  # fmt: skip
+        return []
+    if place is not None and place.axes:
+        layout.issue("fault", at + pointer("place", next(iter(place.axes))),
+                     "on a ball's surface, place gives a latitude and an angle round its pole, not a position along an "
+                     "axis")  # fmt: skip
+        return []
+    if place is not None and place.turn is not None:
+        layout.issue("fault", at + pointer("place", "turn"),
+                     "a turn turns an item in a flat face's plane; on a ball's surface, place.angle says where round "
+                     "its pole it is")  # fmt: skip
+        return []
+    if leaning(item):
+        layout.issue("fault", at + pointer("tilt"),
+                     "a tilt leans an item from square to a flat face; on a ball's surface, it stands along its "
+                     "radius")  # fmt: skip
+        return []
+    if place is not None and place.pattern is not None:
+        extra = sorted(set(place.pattern.values)
+                       - ({"step"} if PATTERN_SOLVE[place.pattern.kind].steps_round else set()))  # fmt: skip
+        if extra:
+            kind = place.pattern.kind
+            layout.issue("fault", at + pointer("place", "pattern", kind),
+                         f"round a ball's pole, a {kind} pattern takes only a count"
+                         + (" and a step" if PATTERN_SOLVE[kind].steps_round else "")
+                         + f"; give the first one's angle as place.angle, not {extra}")  # fmt: skip
+            return []
+    if place is not None and place.latitude is not None:
+        latitude = degrees(place.latitude)
+        if not -90.0 - EPS <= latitude <= 90.0 + EPS:
+            layout.issue("fault", at + pointer("place", "latitude"),
+                         f"a latitude is from -90 to 90 degrees, not {latitude:g}")  # fmt: skip
+            return []
+    else:
+        latitude = 90.0
+        layout.assume(at, f"{item.id}: at the top of {host[0]}'s surface, its pole; the brief doesn't say where")
+    if place is not None and place.angle is not None:
+        angles = [degrees(place.angle)]
+    else:
+        angles = [0.0]
+        if latitude < 90.0 - EPS or (place is not None and place.pattern is not None):
+            layout.assume(at, f"{item.id}: at 0 degrees round the pole of {host[0]}; any angle would do")
+    if place is not None and place.pattern is not None and PATTERN_SOLVE[place.pattern.kind].round:
+        count = place.pattern.counts.get("count")
+        if count is None:
+            layout.issue("fault", at + pointer("place", "pattern"), "say how many round its pole")
+            return []
+        step_value = place.pattern.values.get("step")
+        step = degrees(step_value) if step_value is not None else 360.0 / count.n
+        angles = [angles[0] + step * k for k in range(count.n)]
+    up = face.up
+    # Its length round the pole (east at its point), its width along its meridian: as round a side.
+    meridian, east = _REFERENCE[up[1]]
+    axes = (east, meridian)
+    outline = _outline(item, layout, axes)
+    far = reach(outline)
+    sizes = [*_item_values(item, *_outline_fields(item, axes)), *layout.values_of(face.radius_sources)]
+    severs = entry.cut and _is_through(item)
+    if far >= face.radius - EPS:
+        layout.problem("cant" if severs else "question", at,
+                       f"{item.id} ({2 * far:g} mm across) is as wide as the ball {host[0]} it is on "
+                       f"(\u00d8{2 * face.radius:g} mm)", sizes)  # fmt: skip
+        return []
+    spread = math.degrees(fs.asin(far / face.radius))  # how far round the ball its foot reaches from its point
+    if latitude - spread < face.lowest - EPS:
+        where = "past the rim of the dome" if face.dome else "into what the ball stands on"
+        if not face.dome and not face.standing:
+            where = "round past the ball's south pole"
+        layout.problem("question", at,
+                       f"{item.id}, {spread:g}\u00b0 round the ball from its point at latitude {latitude:g}\u00b0, "
+                       f"runs {where}", [*sizes, *([place.latitude] if place is not None else [])])  # fmt: skip
+        return []
+    if severs and (face.standing or face.dome):
+        layout.issue("unable", at + pointer("depth"),
+                     f"Forge cuts right through a whole ball only, standing on nothing, for now: give the hole into "
+                     f"{host[0]} a depth")  # fmt: skip
+        return []
+    if entry.cut:
+        _check_depth(item, outline, lambda mouth: face.material_under(mouth, (angles[0], latitude)), layout, at,
+                     face.depth_sources)  # fmt: skip
+    if len(angles) > 1:
+        _check_ball_overlaps(item, face, angles, latitude, far, layout, at, first)
+    frame = face.frame
+    pole = face.frame_at((1.0, 0.0), (0.0, 1.0))
+    out: list[_Copy] = []
+    for angle in angles:
+        motion: Rigid | None = None
+        if abs(latitude - 90.0) > EPS or abs(math.remainder(angle, 360.0)) > EPS:
+            # Down from its pole to its latitude about the line through its centre along v, then round its pole.
+            down = Rigid.turn_about(frame.origin, frame.v, *_turn(90.0 - latitude))
+            motion = Rigid.turn_about(frame.origin, frame.n, *_turn(angle)).after(down)
+        out.append(_Copy(Instance(item.id, 0, pole.origin, pole.n, host, axes if entry.adds else None),
+                         face.wall, face.depth_sources, motion=motion))  # fmt: skip
+    return out
+
+
+def _check_ball_overlaps(item: Item, face: BallFace, angles: Sequence[float], latitude: float, far: float,
+                         layout: Layout, at: str, first: int) -> None:  # fmt: skip
+    """No two copies on a ball's surface overlap where they come closest: standing ones at their feet, holes where they
+    reach deepest (they converge towards its centre; holes that reach it meet there, as a cross-drilled ball's)."""
+    entry = SOLVE[item.kind]
+    radius = face.radius
+    if entry.cut:
+        end = end_of(item)
+        depth = face.wall if isinstance(end, ThroughAll) else (mm(end.depth) if isinstance(end, Blind) else 0.0)
+        radius = face.radius - depth
+        if radius <= EPS:
+            return
+    c, s = _turn(latitude)
+    for j in range(len(angles)):
+        for i in range(j):
+            turned = math.radians(angles[j] - angles[i])
+            # The angle between the two points, seen from the centre, and the chord between them at ``radius``.
+            cos_apart = min(1.0, max(-1.0, s * s + c * c * fs.cos(turned)))
+            chord = 2 * radius * fs.sin(fs.acos(cos_apart) / 2)
+            if chord < 2 * far - EPS:
+                layout.problem("question", at, f"copies {first + i + 1} and {first + j + 1} of {item.id} overlap",
+                               [*_item_values(item, *_outline_fields(item)), *_place_values(item)])  # fmt: skip
+                return
+
+
 def _make_order(spec: PartSpec, sequence: Sequence[Item], layout: Layout) -> list[str]:
     """Every item's id in the order the part is made (docs/definitions/frame.md, "The order").
 
@@ -2323,6 +2462,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                            copy.depth_sources)  # fmt: skip
         if isinstance(_host_face(inst, layout), SideFace):
             _round_footed(item, layout, (item.id, placed.index), up)
+        elif isinstance(_host_face(inst, layout), BallFace):
+            _ball_footed(item, layout, (item.id, placed.index))
         if motion is not None:
             _moved_faces((item.id, placed.index), motion, layout, item)
             placed = _moved_instance(placed, motion)
@@ -2423,10 +2564,17 @@ def _nothing_more(item: Item, placed: Instance, face: Face, host: tuple[str, int
     return None
 
 
+def _ball_copies(item: Item, face: Face, host: tuple[str, int, str], host_count: int, layout: Layout, at: str,
+                 first: int) -> list[_Copy]:  # fmt: skip
+    assert isinstance(face, BallFace)
+    return _ball_instances(item, face, host, layout, at, first)
+
+
 #: Each kind of face an item can be put on, by its class.
 _HOSTS: Mapping[type, _Host] = {
     FlatFace: _Host(_flat_copies, _flat_numbered),
     SideFace: _Host(_side_copies, _nothing_more),
+    BallFace: _Host(_ball_copies, _nothing_more),
 }
 
 
@@ -2435,6 +2583,13 @@ def _host_face(inst: Instance, layout: Layout) -> Face | None:
         return None
     item_id, index, name = inst.host
     return layout.faces.get((item_id, index), {}).get(name)
+
+
+def _ball_footed(item: Item, layout: Layout, key: tuple[str, int]) -> None:
+    """A boss or a post standing on a ball's surface (item 3b's second step): its faces take nothing, for now."""
+    for name in list(layout.faces.get(key, {})):
+        layout.close(key, name, "unable",
+                     f"{item.id} stands on a ball's surface: its faces take nothing, for now")  # fmt: skip
 
 
 def _round_footed(item: Item, layout: Layout, key: tuple[str, int], up: str) -> None:

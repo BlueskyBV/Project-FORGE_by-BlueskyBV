@@ -18,7 +18,7 @@ from forge_checks.items.oracle._shapes import (
     round_footprint,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, FlatFace, Hollow, Placed, RoundSide
+from forge_checks.place import Copy, Face, Hollow, Placed
 from forge_checks.shapes import Complement, Disc, Frame, Halfspace, Prism, Round
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class Cylinder(OracleKind):
     threadable = True
 
     def node(
-        self, item: Item, copy: Copy, face: FlatFace | RoundSide | None, placed: Placed
+        self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         return rod_node(
             copy, face, _mm(item.get("diameter")) / 2, _mm(item.get("length"))

@@ -41,7 +41,9 @@ none.
 
 - `-end`: a dome's flat face, a disc. A whole ball has none. Standing on a
   face, a dome is joined by it, and it can't be used.
-- `surface`: its curved surface. Nothing is placed on it, for now.
+- `surface`: its curved surface. A hole, a boss or a post goes on it, at a
+  latitude and an angle round its pole ([place.md](place.md), "On a ball's
+  surface"; schema 1.6); not on a hollowed ball's, for now.
 
 ## Edges
 

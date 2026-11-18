@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 class Hole(SolveKind):
     key = "hole"
+    on_ball = True
 
     round_foot = True
     on_round_side = True

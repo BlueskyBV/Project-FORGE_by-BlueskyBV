@@ -36,6 +36,7 @@ from forge_checks.place import (
     Over,
     Placed,
     PlaceError,
+    RoundBall,
     RoundSide,
     Solid,
     Taper,
@@ -225,7 +226,9 @@ class FirstBodies(unittest.TestCase):
         ball = placed(item("ball", "sphere", diameter=a(20), portion=pick("whole")))
         (copy,) = ball.copies["ball"]
         self.assertEqual((copy.lo, copy.hi), ((-10.0, -10.0, 0.0), (10.0, 10.0, 20.0)))
-        self.assertEqual(ball.faces[("ball", 0)], {})
+        (surface,) = ball.faces[("ball", 0)].values()  # its curved surface takes things (item 3b's second step)
+        assert isinstance(surface, RoundBall)
+        self.assertEqual((surface.centre, surface.up, surface.radius, surface.dome), ((0.0, 0.0, 10.0), "+z", 10.0, False))
         dome = placed(
             item("dome", "sphere", diameter=a(20), portion=pick("upper_half"))
         )

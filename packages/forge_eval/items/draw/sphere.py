@@ -18,17 +18,19 @@ from forge_eval.generator import (
     DoesNotFitError,
     Feature,
     Plan,
+    _Ball,
     _ball,
     _Flat,
     _Foot,
     _hollow_dome,
+    _named,
     _Part,
     _q,
     _t,
     _v,
 )
 from forge_eval.items.draw.protocol import DrawKind
-from forge_eval.truth import Copy, Step, Turned
+from forge_eval.truth import Copy, Step, Turned, unit_of
 
 
 class Sphere(DrawKind):
@@ -60,6 +62,9 @@ class Sphere(DrawKind):
         if f.choices["portion"] == "upper_half":
             part.flats[(f.id, 0, "-end")] = _Flat((f.id, 0, "-end"), origin.copy(), _v((0, 0, -1)), ("x", "y"),
                                                   "disc", (r, r), r, None, dome=r)  # fmt: skip
+        # Its curved surface takes a hole, a boss or a post (item 3b's second step).
+        part.balls[(f.id, 0, "surface")] = _Ball((f.id, 0, "surface"), origin.copy(), "+z", r,
+                                                 f.choices["portion"] == "upper_half", False)  # fmt: skip
         return
 
     def rise(self, f: Feature) -> float:
@@ -81,6 +86,11 @@ class Sphere(DrawKind):
                 f"{f.id}: its lower half would come out of the far side of {face.key}, here"
             )
         part.steps.append(Step(f.id, copy_index, True, Turned(_t(p), _t(n), _ball(f))))
+        up = _named(n)
+        if np.array_equal(n, _v(unit_of(up))):  # its curved surface takes things where it stands along an axis
+            key = (f.id, copy_index, "surface")
+            part.balls[key] = _Ball(key, p.copy(), up, f.sizes["diameter"] / 2, f.choices["portion"] == "upper_half",
+                                    True)  # fmt: skip
 
     def draw_new(
         self, rng: random.Random, face: _Flat, top: float, choices: dict[str, str]
@@ -107,6 +117,7 @@ class Sphere(DrawKind):
     def hollow(self, f: Feature, body: Feature, plan: Plan, part: _Part, t: float, floor: float, opened: set[str],
                wall: Callable[[str], float]) -> None:  # fmt: skip
         _hollow_dome(f, body, part, t, floor, bool(opened))
+        part.balls.pop((body.id, 0, "surface"), None)  # a hollowed dome's surface takes nothing, for now
 
 
 ENTRY = Sphere()
