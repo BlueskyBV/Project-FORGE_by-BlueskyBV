@@ -94,7 +94,10 @@ ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_
                    # Item 3b's second step: on a ball's or a dome's surface, at a latitude.
                    ("Feature", "latitude"), ("Place", "latitude"),
                    # Item 3b's fourth step: a round-ended tab's end, its halves.
-                   ("SideFace", "half"), ("SideFace", "behind"), ("RoundSide", "half")})  # fmt: skip
+                   ("SideFace", "half"), ("SideFace", "behind"), ("RoundSide", "half"),
+                   # Item 2b's first step: through everything, how deep a cut through it or up to a face goes, and a
+                   # generated cut's end.
+                   ("Through", "everything"), ("Instance", "depth"), ("Feature", "end")})  # fmt: skip
 
 
 def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:

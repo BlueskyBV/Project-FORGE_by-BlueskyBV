@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import functools
 import heapq
+import itertools
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -52,9 +53,10 @@ from forge_spec.draft import (
     Place,
     Profile,
     Text,
+    UpTo,
     axis_names,
 )
-from forge_spec.ends import ThroughAll, end_of
+from forge_spec.ends import ThroughAll, ThroughEverything, UpToFace, end_of
 from forge_spec.font import missing_letters, text_width
 from forge_spec.schema import KINDS
 from forge_spec.tables import lookup_fit
@@ -922,6 +924,9 @@ def _depends_on(item: Item) -> set[str]:
         found.add(edges.of)
         if edges.where_meets:
             found.add(edges.where_meets)
+    depth = item.get("depth")
+    if isinstance(depth, UpTo):  # the face it is cut up to (item 2b's first step)
+        found.add(depth.face.item)
     return found
 
 
@@ -1639,6 +1644,8 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
+        if isinstance(end_of(item), (ThroughEverything, UpToFace)):
+            raise PlaceError(item.id, "on a turned item's face, nothing is cut through everything or up to a face, yet")
         upright = replace(face, local=None)
         for copy in _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made)):
             made.append(_moved_copy(copy, motion, layout))
@@ -1932,13 +1939,56 @@ def _mouth(item: Item, layout: _Layout, face: FlatFace, at: Point) -> Outline:
     return _entry(item.kind).mouth(item, layout, face, at)
 
 
+#: How far past everything made so far a cut through everything is carried (mm), as the judge carries it.
+_THROUGH_PAST = 2.0
+
+
+def _end_depth(item: Item, face: FlatFace, point: Vec, layout: _Layout) -> float | None:
+    """How deep a cut through everything or up to a face goes from its point (item 2b's first step), as the judge has
+    it; None for any other. Through everything: as far as everything placed so far reaches behind its mouth, and on
+    past it; up to a face: to that flat face's plane, square to the cut, less its offset."""
+    end = end_of(item)
+    n = face.frame.n
+    level = sum(point[k] * n[k] for k in range(3))
+    if isinstance(end, ThroughEverything):
+        reach = 0.0
+        for copies in layout.copies.values():
+            for copy in copies:
+                if copy.lo is not None and copy.hi is not None:
+                    for corner in itertools.product(*zip(copy.lo, copy.hi, strict=True)):
+                        reach = max(reach, level - sum(corner[k] * n[k] for k in range(3)))
+        return reach + _THROUGH_PAST
+    if not isinstance(end, UpToFace):
+        return None
+    target = layout.copies.get(end.face.item)
+    if target is None or len(target) != 1:
+        raise PlaceError(item.id, f"it is cut up to a face of {end.face.item}, which isn't one item placed before it")
+    other = layout.faces.get((end.face.item, 0), {}).get(end.face.face)
+    if not isinstance(other, FlatFace):
+        raise PlaceError(item.id, f"{end.face.item}'s {end.face.face} isn't a flat face to cut up to")
+    m = other.frame.n
+    if abs(abs(sum(m[k] * n[k] for k in range(3))) - 1.0) > TOL:
+        raise PlaceError(item.id, f"{end.face.item}'s {end.face.face} face isn't parallel to the face it is cut into")
+    depth = level - sum(other.frame.origin[k] * n[k] for k in range(3)) - (
+        _length(end.offset) if end.offset is not None else 0.0
+    )
+    if depth <= TOL:
+        raise PlaceError(item.id, f"the plane of {end.face.item}'s {end.face.face} face isn't behind its mouth")
+    return depth
+
+
 def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int, point: Vec,
               layout: _Layout) -> Copy:  # fmt: skip
     at = face.frame.plane(point)
     mouth = _mouth(item, layout, face, at)
     entry = _entry(item.kind)
     embossed = entry.embossed(item)
-    if _through(item):
+    resolved = _end_depth(item, face, point, layout)
+    if isinstance(end_of(item), ThroughEverything):
+        entry.cut_through(item)
+    if resolved is not None:
+        depth = resolved
+    elif _through(item):
         entry.cut_through(item)
         depth = face.most_under([mouth])
         if depth <= TOL:
@@ -1958,7 +2008,7 @@ def _pocket_floor(item: Item, face: FlatFace, index: int, point: Vec, mouth: Out
     """A pocket's floor, a face of its own (pocket.md)."""
     key = (item.id, index)
     layout.faces.setdefault(key, {})
-    if _through(item):
+    if _through(item) or isinstance(end_of(item), ThroughEverything):
         layout.close(key, "bottom", "it goes through: it has no floor")
         return
     if depth >= face.least_under(mouth) - TOL:

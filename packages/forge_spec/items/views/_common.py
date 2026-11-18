@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 
-from forge_spec.draft import Choice, Fit, Item, Profile, Through, outline_points
+from forge_spec.draft import Choice, Fit, Item, Profile, Through, UpTo, outline_points
 from forge_spec.geometry import EPS, Vec
 from forge_spec.items.words._common import _n as number
 from forge_spec.placement import Instance, Layout, mm
@@ -63,7 +63,10 @@ def _mm(x: float) -> str:
 
 def _through(value: object) -> str:
     if isinstance(value, Through):
-        return "through" + _tag(value.provenance)
+        return ("through all" if value.everything else "through") + _tag(value.provenance)
+    if isinstance(value, UpTo):  # item 2b's first step
+        back = "" if value.offset is None else f" less {_value(value.offset)}"
+        return f"down to {value.face.item} {value.face.face}{back}" + _tag(value.provenance)
     return f"{_value(value)} deep"
 
 

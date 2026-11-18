@@ -65,6 +65,35 @@ A depth of `through` goes through the material under the face (see
 [frame.md](frame.md)): the cut comes out of the far side of that material
 everywhere across its mouth.
 
+## Through everything, and up to a face
+
+Schema 1.7 (item 2b's first step). Two more ends for a cut square to a
+flat face:
+
+- `{"through_all": true, "from": ...}`: **through everything** made before
+  it along its axis, cavities and all: a pin hole through a hollow
+  housing's two walls, or through a plate and the block it stands on. It
+  goes on until it has passed everything the part reaches behind its
+  mouth, so it comes out of the last of it, cutting through whatever was
+  made before it on the way. Where there is nothing but the material under
+  the face, it is the same cut as `through`. A body made after it in its
+  way would close it, and Forge asks: should that body be cut through too
+  (made first), or the cut stop short of it?
+- `{"up_to": {"item": ..., "face": ...}, "offset": size, "from": ...}`:
+  **up to a face**: its floor is in the plane of that flat face of an item
+  made before it, the `offset` (none: 0) back from it towards the mouth. A
+  pocket down to a ledge's height follows the ledge when its height
+  changes. The face is an item's with one copy, flat, and parallel to the
+  face the cut goes into; its plane, less the offset, must be behind the
+  mouth (else Forge asks). The depth it comes to is held as a blind cut's
+  is: it must fit in the material under the mouth, a counterbore must
+  leave some of the hole below it, and it is checked as that depth, within
+  the general tolerance for it.
+
+For now both are cut square to a flat face, not leaning, and not into a
+round side, a ball's or a cone's surface, a tab's end or a turned item's
+face: Forge says it can't, and why.
+
 ## Sizes from standard tables
 
 A hole's diameter may be a standard fit, and any size may be read from a

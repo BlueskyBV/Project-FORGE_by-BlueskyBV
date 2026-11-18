@@ -63,7 +63,7 @@ class TheReaderNeverRaisesOrCoerces(unittest.TestCase):
             self.assertIn("/spec_format", [at for at, _ in faults(d)], wrong)
             d.pop("schema_version", None)
             self.assertIn("/spec_format", [at for at, _ in faults(d)], wrong)
-        for wrong in (1.1, "1", "1.1.0", "01.1", "v1.1", "2.0", "1.7", True, None):
+        for wrong in (1.1, "1", "1.1.0", "01.1", "v1.1", "2.0", "1.8", True, None):
             d = dict(self.good, schema_version=wrong)
             self.assertIn("/schema_version", [at for at, _ in faults(d)], wrong)
         d = dict(self.good)

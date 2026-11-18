@@ -54,6 +54,7 @@ from forge_checks.shapes import (
     Round,
     RoundRect,
     Shape2D,
+    Solid,
 )
 
 if TYPE_CHECKING:
@@ -575,7 +576,7 @@ def _sag_under(face: RoundSide | RoundBall | RoundCone, copy: Copy, radius: floa
     return 2 * (r - math.sqrt(max(r * r - radius * radius, 0.0)))
 
 
-def cone_seen_upright(face: RoundCone, copy: Copy) -> Node:
+def cone_seen_upright(face: RoundCone, copy: Copy) -> Solid:
     """A cone as a copy standing on its side sees it from where it is placed upright, before it is moved (item 3b's
     third step): leaned back, against the copy's lean with the slope, about the copy's way round there. Turned about
     its axis, a cone is itself, so the rest of the copy's motion leaves it as it is."""
@@ -586,7 +587,9 @@ def cone_seen_upright(face: RoundCone, copy: Copy) -> Node:
     radial = copy.direction
     around = (frame.n[1] * radial[2] - frame.n[2] * radial[1], frame.n[2] * radial[0] - frame.n[0] * radial[2],
               frame.n[0] * radial[1] - frame.n[1] * radial[0])  # fmt: skip
-    return moved_node(cone, Motion.about(copy.point, around, face.lean).inverse())
+    seen = moved_node(cone, Motion.about(copy.point, around, face.lean).inverse())
+    assert isinstance(seen, Solid)  # a solid moved is a solid
+    return seen
 
 
 def standing_box(

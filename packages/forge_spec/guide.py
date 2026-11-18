@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 10
+GUIDE_VERSION = 11
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -231,7 +231,18 @@ def _defs() -> dict[str, Any]:
             ("through", "from"),
             "right through the material under the face: out of its far side all across the mouth",
         ),
-        "depth": {"oneOf": [_ref("length"), _ref("through")]},
+        "through_all": _obj(
+            {"through_all": {"const": True}, "from": _ref("stated")},
+            ("through_all", "from"),
+            "schema 1.7: right through everything made before it along its axis, cavities and all: out of the last of it",
+        ),
+        "up_to": _obj(
+            {"up_to": _ref("on"), "offset": _ref("length"), "from": _ref("stated")},
+            ("up_to", "from"),
+            "schema 1.7: its floor in the plane of a flat face of an item made before it, parallel to the face it is "
+            "cut into, the offset (none: 0) back towards its mouth",
+        ),
+        "depth": {"oneOf": [_ref("length"), _ref("through"), _ref("through_all"), _ref("up_to")]},
         "fit": {
             "oneOf": [
                 _obj(
@@ -507,7 +518,7 @@ def _type_name(spec: FieldSpec) -> str:
         FieldType.LENGTH: "size",
         FieldType.ANGLE: "angle",
         FieldType.COUNT: "count",
-        FieldType.DEPTH: "size or through",
+        FieldType.DEPTH: "size, through, through_all or up_to a face",
         FieldType.DIAMETER: "size or standard fit",
         FieldType.ON: "face",
         FieldType.ITEM: "item id",
@@ -709,6 +720,17 @@ faces turned with it; a turned item's other faces take nothing yet. A turned ite
 edges, and those of what is on its faces, are rounded and chamfered as with \
 it upright (a turned post's "vertical" edges are its own four, turned with \
 it); a leaning item's as below.
+
+A cut's "depth" is a size; {{"through": true}}, through the material under \
+its face and out of its far side; {{"through_all": true}} ("schema_version": \
+"1.7"), through everything made before it along its axis, cavities and all \
+(a pin hole through a hollow box's two walls); or {{"up_to": {{"item": ..., \
+"face": ...}}, "offset": size}} (1.7), its floor in the plane of a flat face \
+of an item made before it, parallel to the face it is cut into, the offset \
+back towards its mouth, so that it follows that face (a pocket down to a \
+ledge's height). The face is an item's with one copy, and the depth that \
+comes to must fit in the material under the mouth. Both go square to a flat \
+face for now: not leaning, round a side, on a surface or a tab's end.
 
 A hole, a boss or a post on a flat face may lean, and so may a block or a \
 cylinder standing on one: "tilt": angle (more than \

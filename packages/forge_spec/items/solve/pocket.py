@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
-from forge_spec.ends import Blind, end_of
+from forge_spec.ends import Blind, UpToFace, end_of
 from forge_spec.geometry import (
     EPS,
     FlatFace,
@@ -20,7 +20,6 @@ from forge_spec.items.solve._common import (
     _item_values,
     _length_of,
     _size,
-    mm,
     route,
 )
 from forge_spec.items.solve.protocol import SolveKind
@@ -72,21 +71,23 @@ class Pocket(SolveKind):
     def floor(self, item: Item, copy: Instance, face: FlatFace, material: float, key: tuple[str, int],
               layout: Layout) -> None:  # fmt: skip
         """The floor of a pocket, a face other features can go into."""
-        from forge_spec.placement import _outline
+        from forge_spec.placement import _outline, cut_depth
 
         end = end_of(item)
         layout.faces.setdefault(key, {})
-        if not isinstance(end, Blind):
+        resolved = cut_depth(item, copy, layout) if isinstance(end, (Blind, UpToFace)) else None
+        if resolved is None:
             layout.close(
                 key, "bottom", "fault", f"{item.id} goes through; it has no bottom"
             )
             return
-        depth = end.depth
-        deep = mm(depth)
+        # A blind one's depth; up to a face (item 2b's first step), as deep as that face's plane, its offset back.
+        depth: object = end.depth if isinstance(end, Blind) else (end.offset if isinstance(end, UpToFace) else None)
+        deep = resolved
         if deep >= material - EPS:
             # As deep as the material: it breaks through and leaves no floor. The
             # brief may say both, so who settles it depends on where they came from.
-            kind = route("question", [depth, *layout.values_of(face.depth_sources)])
+            kind = route("question", [*([depth] if depth is not None else []), *layout.values_of(face.depth_sources)])
             layout.close(key, "bottom", kind,
                          f"{item.id} ({deep:g} mm deep) goes right through the {material:g} mm of material; "
                          "it has no bottom" + (_RESTS_ON_AN_ASSUMPTION if kind != "question" else ""))  # fmt: skip

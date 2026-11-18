@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Fit, Item
-from forge_spec.ends import ThroughAll, end_of
+from forge_spec.ends import ThroughAll, ThroughEverything, end_of
 from forge_spec.values import Value
 
 from forge_checks.classes import general, tolerance_of
@@ -30,7 +30,7 @@ def leaning_wall(item: Item, copy: Copy, radius: float, recess: float) -> Round 
     c = float(sum(copy.lean[k] * copy.direction[k] for k in range(3)))
     tan = math.sqrt(max(1.0 - c * c, 0.0)) / c
     start = recess + radius * tan
-    end = copy.span[1] - (2 * radius * tan if isinstance(end_of(item), ThroughAll) else 0.0)
+    end = copy.span[1] - (2 * radius * tan if isinstance(end_of(item), (ThroughAll, ThroughEverything)) else 0.0)
     if end - start < _PLAIN:
         return None
     return Round(copy.point, _t(-_v(copy.lean)), radius, start, end, True)

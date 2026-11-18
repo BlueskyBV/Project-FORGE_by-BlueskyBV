@@ -63,8 +63,9 @@ from .draft import (
     Place,
     Text,
     Through,
+    UpTo,
 )
-from .ends import Blind, ThroughAll, end_of
+from .ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
 from .geometry import (
     _REFERENCE,
     EPS,
@@ -107,6 +108,7 @@ from .placement import (
     _along,
     _outline,
     _reaches,
+    cut_depth,
     mm,
     placed_spec,
     turned_outline,
@@ -118,7 +120,7 @@ from .values import Count, Source, Value
 __all__ = ["Dimension", "View", "Views", "render_views"]
 
 #: The kinds of value the views show; a choice is drawn (the way a slot runs, a round end).
-_SHOWN = (Value, Count, Through, Fit, Text, Counterbore, Countersink)
+_SHOWN = (Value, Count, Through, UpTo, Fit, Text, Counterbore, Countersink)
 
 
 def _rises(item: Item) -> str:
@@ -218,7 +220,7 @@ class Views:
 def _generic(value: object) -> str:
     if isinstance(value, (Value, Count)):
         return _value(value)
-    if isinstance(value, Through):
+    if isinstance(value, (Through, UpTo)):
         return _through(value)
     if isinstance(value, Fit):
         return _fit(value, None)
@@ -726,7 +728,7 @@ def _leaning_ends(item: Item, copy: Instance, layout: Layout, face: FlatFace) ->
     thick = face.depth_below
     found = []
     r = layout.diameters.get(item.id, 0.0) / 2
-    bores: list[tuple[float, float | None]] = [(r, None if isinstance(end_of(item), ThroughAll) else _length(item, "depth"))]
+    bores: list[tuple[float, float | None]] = [(r, None if isinstance(end_of(item), ThroughAll) else cut_depth(item, copy, layout))]
     bore = item.get("counterbore")
     if isinstance(bore, Counterbore):
         bores.append((mm(bore.diameter) / 2, mm(bore.depth)))
@@ -776,14 +778,11 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
     end = end_of(item)
     if emboss:
         return (mm(end.depth) if isinstance(end, Blind) else 0.0), False
-    through = isinstance(end, ThroughAll) or (
-        isinstance(end, Blind) and least > EPS and mm(end.depth) >= least - EPS
-    )
-    deep = (
-        most
-        if isinstance(end, ThroughAll)
-        else (min(mm(end.depth), most) if isinstance(end, Blind) else 0.0)
-    )
+    if isinstance(end, ThroughEverything):  # through everything behind its mouth (item 2b's first step)
+        return max(most, cut_depth(item, copy, layout) or 0.0), not VIEWS[item.kind].lettered and least > EPS
+    blind = cut_depth(item, copy, layout) if isinstance(end, (Blind, UpToFace)) else None
+    through = isinstance(end, ThroughAll) or (blind is not None and least > EPS and blind >= least - EPS)
+    deep = most if isinstance(end, ThroughAll) else (min(blind, most) if blind is not None else 0.0)
     return deep, not VIEWS[item.kind].lettered and least > EPS and through
 
 

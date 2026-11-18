@@ -35,6 +35,7 @@ geometry (faces, outlines, exact fits, overlaps, material) is in
 from __future__ import annotations
 
 import heapq
+import itertools
 import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -55,9 +56,10 @@ from .draft import (
     PartSpec,
     Pattern,
     Place,
+    UpTo,
     axis_names,
 )
-from .ends import Blind, ThroughAll, end_of
+from .ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
 from .frames import Rigid
 from .geometry import (
     _REFERENCE,
@@ -180,6 +182,9 @@ class Instance:
     #: that face upright (``local``), onto the part. Every program places, builds and judges it upright, then moves it.
     frame: Rigid | None = None
     local: Instance | None = None
+    #: A cut through everything or up to a face (item 2b's first step): how deep it goes from its point, as the solver
+    #: worked it out.
+    depth: float | None = None
 
 
 @dataclass
@@ -323,6 +328,9 @@ def _depends_on(item: Item) -> set[str]:
         needs.add(edges.of)
         if edges.where_meets:
             needs.add(edges.where_meets)
+    depth = item.get("depth")
+    if isinstance(depth, UpTo):  # the face it is cut up to (item 2b's first step)
+        needs.add(depth.face.item)
     return needs
 
 
@@ -937,7 +945,8 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
 
 
 def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts: Sequence[Part],
-                  positions: Sequence[tuple[float, float]], layout: Layout, at: str, first: int) -> None:  # fmt: skip
+                  positions: Sequence[tuple[float, float]], layout: Layout, at: str, first: int,
+                  resolved: float | None = None) -> None:  # fmt: skip
     """A cut right across a body's face, and through it, cuts the part in two: CAN'T.
 
     Right across means from one edge of the face to the other, with material
@@ -960,12 +969,10 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
     far = reach(parts)
     for n, (p1, p2) in enumerate(positions):
         nearest = max(fs.hypot(p1, p2) - far, 0.0)
+        deep = mm(end.depth) if isinstance(end, Blind) else resolved
         if not (
-            isinstance(end, ThroughAll)
-            or (
-                isinstance(end, Blind)
-                and mm(end.depth) >= face.material_under((disc(0.0),), (nearest, 0.0)) - EPS
-            )
+            isinstance(end, (ThroughAll, ThroughEverything))
+            or (deep is not None and deep >= face.material_under((disc(0.0),), (nearest, 0.0)) - EPS)
         ):
             continue
         for part in parts:
@@ -1062,8 +1069,11 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
                      f"face {face.name} of {host[0]} is turned with it, and so is what is placed on it: Forge turns a "
                      f"{item.kind} in a later step")  # fmt: skip
         return []
+    placeable, resolved = _end_depth(item, face, layout, at) if SOLVE[item.kind].cut else (True, None)
+    if not placeable:
+        return []
     if (place is not None and place.turn is not None) or leaning(item):
-        return _turned_copies(item, place, face, host, layout, at, first)
+        return _turned_copies(item, place, face, host, layout, at, first, resolved)
     if place is not None and place.concentric:
         found = _concentric_positions(item, place, face, host, host_count, layout, at)
     else:
@@ -1077,7 +1087,7 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if (
         entry.cut and not entry.lettered
     ):  # letters, cut in or standing out, never cut through
-        _check_severs(item, face, host, parts, positions, layout, at, first)
+        _check_severs(item, face, host, parts, positions, layout, at, first, resolved)
     if not entry.body:
         values = [*_item_values(item, *_outline_fields(item)), *_place_values(item)]
         _check_overlaps(item, parts, positions, layout, at, first, values)
@@ -1087,7 +1097,7 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     out = []
     for p1, p2 in positions:
         instance = Instance(
-            item.id, 0, face.frame_at((p1, p2)).origin, normal, host, face.part_axes
+            item.id, 0, face.frame_at((p1, p2)).origin, normal, host, face.part_axes, depth=resolved
         )
         material = face.material_under(footprint, (p1, p2))
         out.append(
@@ -1096,7 +1106,7 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if entry.cut and out:
         _check_depth(item, parts,
                      lambda mouth: min(face.material_under(mouth, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources)  # fmt: skip
+                     layout, at, face.depth_sources, resolved)  # fmt: skip
     return out
 
 
@@ -1182,7 +1192,7 @@ def _axis_vec(axis: str) -> Vec:
 
 
 def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[str, int, str], layout: Layout,
-                   at: str, first: int) -> list[_Copy]:  # fmt: skip
+                   at: str, first: int, resolved: float | None = None) -> list[_Copy]:  # fmt: skip
     """The copies of an item turned in the face's plane, or leaning on it: placed, fitted to the face, held apart and
     its depth checked on its outline turned, or its section by the face (forge_spec.lean)."""
     lean = None
@@ -1245,7 +1255,7 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
     out = []
     for p1, p2 in positions:
         instance = Instance(
-            item.id, 0, face.frame_at((p1, p2)).origin, face.frame.n, host, face.part_axes
+            item.id, 0, face.frame_at((p1, p2)).origin, face.frame.n, host, face.part_axes, depth=resolved
         )
         material = face.material_under(covered, (p1, p2))
         out.append(
@@ -1253,7 +1263,7 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         )
     if entry.cut and out:
         _check_depth(item, (), lambda _mouth: min(face.material_under(covered, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources)  # fmt: skip
+                     layout, at, face.depth_sources, resolved)  # fmt: skip
     return out
 
 
@@ -1369,8 +1379,96 @@ def _check_turned_edges(
                          "its lean; where it meets its face, in a later step")  # fmt: skip
 
 
+#: How far past everything made so far a cut through everything is carried (mm): through the air beyond, so its far
+#: end is in no face of the part.
+THROUGH_PAST = 1.0
+
+
+def _end_depth(item: Item, face: FlatFace, layout: Layout, at: str) -> tuple[bool, float | None]:
+    """A cut through everything or up to a face (item 2b's first step), on a flat face: how deep it goes from its point,
+    the same from every point of the face. Through everything: as far as everything made so far reaches behind it, and
+    on past it; up to a face: to that face's plane, square to the cut, less its offset. Whether it is placed (False:
+    the problem is said), and that depth (None for any other cut)."""
+    end = end_of(item)
+    if not isinstance(end, (ThroughEverything, UpToFace)):
+        return True, None
+    if leaning(item):
+        layout.issue("unable", at + pointer("depth"),
+                     "Forge cuts a leaning item through everything or up to a face in a later step")  # fmt: skip
+        return False, None
+    n = face.frame.n
+    level = sum(face.centre[k] * n[k] for k in range(3))
+    if isinstance(end, ThroughEverything):
+        reach = 0.0
+        for copies in layout.instances.values():
+            for copy in copies:
+                if copy.lo is None or copy.hi is None:
+                    continue
+                for corner in itertools.product(*zip(copy.lo, copy.hi, strict=True)):
+                    reach = max(reach, level - sum(corner[k] * n[k] for k in range(3)))
+        return True, reach + THROUGH_PAST
+    target, name = end.face.item, end.face.face
+    here = at + pointer("depth", "up_to")
+    if target not in layout.instances:
+        if target not in layout.items:
+            layout.issue("fault", here, f"no item {target!r} to cut up to")
+        return False, None  # not placed: its own problem says why
+    if len(layout.instances[target]) != 1:
+        layout.issue("unable", here, f"{target} has {len(layout.instances[target])} copies: Forge cuts up to a face of "
+                     "an item with one, for now")  # fmt: skip
+        return False, None
+    other = layout.faces.get((target, 0), {}).get(name)
+    if name not in KINDS[layout.kinds[target]].faces:
+        layout.issue("fault", here, f"{target} has no face {name!r}")
+        return False, None
+    if not isinstance(other, FlatFace):
+        layout.issue("unable", here, f"{target}'s {name} isn't a flat face: Forge cuts up to the plane of a flat face")
+        return False, None
+    m = other.frame.n
+    if abs(abs(sum(m[k] * n[k] for k in range(3))) - 1.0) > EPS:
+        layout.issue("unable", here, f"{target}'s {name} face isn't square to {item.id}: Forge cuts up to a face "
+                     "parallel to the one it is cut into, for now")  # fmt: skip
+        return False, None
+    offset = mm(end.offset) if end.offset is not None else 0.0
+    depth = level - sum(other.centre[k] * n[k] for k in range(3)) - offset
+    if depth <= EPS:
+        layout.problem("question", here, f"the plane of {target}'s {name} face"
+                       + (f", {offset:g} mm back," if offset else "") + f" isn't behind {item.id}'s mouth",
+                       [*([end.offset] if end.offset is not None else []), *layout.values_of(face.depth_sources)])  # fmt: skip
+        return False, None
+    bore = item.get("counterbore")
+    if isinstance(bore, Counterbore) and mm(bore.depth) >= depth - EPS:
+        layout.problem("question", at + pointer("counterbore"),
+                       f"the counterbore ({mm(bore.depth):g} mm deep) is as deep as the hole goes, up to {target}'s "
+                       f"{name} face ({depth:g} mm): there's no hole left below it",
+                       [bore.depth, *([end.offset] if end.offset is not None else [])])  # fmt: skip
+        return False, None
+    return True, depth
+
+
+def _flat_end_only(item: Item, layout: Layout, at: str, where: str) -> bool:
+    """A cut through everything or up to a face is cut into a flat face, for now (item 2b's first step): whether this
+    one, ``where`` it is, isn't such a cut (False: the problem is said)."""
+    if SOLVE[item.kind].cut and isinstance(end_of(item), (ThroughEverything, UpToFace)):
+        layout.issue("unable", at + pointer("depth"),
+                     f"Forge cuts through everything or up to a face from a flat face, for now, not {where}")  # fmt: skip
+        return False
+    return True
+
+
+def cut_depth(item: Item, copy: Instance, layout: Layout) -> float | None:
+    """How deep a cut goes from its point, as the solver has it: a blind one's depth, one through everything or up to a
+    face as it worked it out (item 2b's first step); None for one through the material under its face, or none."""
+    end = end_of(item)
+    if isinstance(end, Blind):
+        return mm(end.depth)
+    if isinstance(end, (ThroughEverything, UpToFace)):
+        return copy.depth
+    return None
+
+
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
-                 layout: Layout, at: str, sources: Iterable[Source]) -> None:  # fmt: skip
+                 layout: Layout, at: str, sources: Iterable[Source], up_to: float | None = None) -> None:  # fmt: skip
     """A blind cut, a counterbore, a countersink or engraving no deeper than the material.
 
     Each is measured against the least material under its own mouth
@@ -1386,6 +1484,9 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
     if isinstance(end, Blind) and not (SOLVE[item.kind].embossed(item)):
         mouth = (disc(hole / 2),) if hole is not None else outline
         deep.append(("depth", mm(end.depth), mouth, [end.depth], False))
+    if isinstance(end, UpToFace) and up_to is not None:  # as deep as the plane it is cut up to (item 2b's first step)
+        mouth = (disc(hole / 2),) if hole is not None else outline
+        deep.append(("depth", up_to, mouth, [*([end.offset] if end.offset is not None else [])], False))
     bore = item.get("counterbore")
     if isinstance(bore, Counterbore):
         deep.append(
@@ -1425,6 +1526,8 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
 
 def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layout: Layout,
                     at: str, first: int) -> list[_Copy]:  # fmt: skip
+    if not _flat_end_only(item, layout, at, "round a side"):
+        return []
     place = _place_of(item)
     axis = face.axis
     entry = SOLVE[item.kind]
@@ -1696,6 +1799,8 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
                     at: str, first: int) -> list[_Copy]:  # fmt: skip
     """Every copy of a hole, a boss or a post on a ball's or a dome's surface: placed as at its pole (standing on it as
     on a face facing that way), then turned about its centre, down to its latitude and round to its angle."""
+    if not _flat_end_only(item, layout, at, "on a ball's surface"):
+        return []
     place = _place_of(item)
     entry = SOLVE[item.kind]
     if not entry.on_curved:
@@ -1807,6 +1912,8 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
     its angle round the axis and its place along it, as round a side; along the cone's normal there. A hole goes in
     along it; a boss or a post is placed as at the frame axis at or below its angle, standing out along the radius
     there, then leaned with the side's slope about its way round and turned about the axis by the rest."""
+    if not _flat_end_only(item, layout, at, "on a cone's side"):
+        return []
     place = _place_of(item)
     entry = SOLVE[item.kind]
     axis = face.axis
@@ -2161,6 +2268,7 @@ def solve(spec: PartSpec) -> Layout:
     # Once the bodies are placed: which of a hollowed body's edges border an
     # open face depends on the way it rises.
     layout.order = _make_order(spec, [layout.items[i.id] for i in sequence], layout)
+    _check_closed(spec, layout)
     return layout
 
 
@@ -2293,6 +2401,82 @@ def _meet(a: tuple[Part, dict[str, float]], b: tuple[Part, dict[str, float]], b_
     return _parts_overlap(pa, (ca[first], ca[second]), pb, (cb[first], cb[second]))
 
 
+def _check_closed(spec: PartSpec, layout: Layout) -> None:
+    """A cut through everything (item 2b's first step) goes on past everything made before it; a body made after it in
+    its way would close it, the cut ending in that body, which isn't through everything: asked about, with the values
+    that put them there.
+
+    In its way: across the stretch it goes behind its mouth, and over its mouth seen along its axis, where the body
+    stands on a face parallel to the cut's (its foot against the mouth's outline); else its box against the box round
+    the mouth.
+    """
+    position = {item.id: n for n, item in enumerate(spec.items)}
+    made: dict[str, int] = {}
+    for k, item_id in enumerate(layout.order):
+        made.setdefault(item_id, k)
+    for item in spec.items:
+        if not SOLVE[item.kind].cut or not isinstance(end_of(item), ThroughEverything) or item.id in layout.unplaced:
+            continue
+        for cut in layout.instances.get(item.id, []):
+            face = layout.faces.get(cut.host[:2], {}).get(cut.host[2]) if cut.host is not None else None
+            if cut.depth is None or not isinstance(face, FlatFace):
+                continue
+            n = face.frame.n
+            level = sum(cut.origin[k] * n[k] for k in range(3))
+            outline = _outline(item, layout, face.axes)
+            mouth_turned = turned_outline(item, layout, face.axes)
+            for owner in spec.items:
+                if (not SOLVE[owner.kind].solid or owner.id in layout.unplaced
+                        or made.get(owner.id, -1) <= made.get(item.id, -1)):  # fmt: skip
+                    continue
+                for other in layout.instances.get(owner.id, []):
+                    if other.lo is None or other.hi is None:
+                        continue
+                    behind = [level - sum(c[k] * n[k] for k in range(3))
+                              for c in itertools.product(*zip(other.lo, other.hi, strict=True))]  # fmt: skip
+                    if max(behind) <= EPS or min(behind) >= cut.depth - EPS:
+                        continue
+                    if not _in_its_way(outline, mouth_turned, cut, face, owner, other, layout):
+                        continue
+                    values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
+                              *_item_values(owner, *_outline_fields(owner)), *_place_values(owner)]  # fmt: skip
+                    layout.problem("question", pointer("items", position[item.id]),
+                                   f"{item.id} copy {cut.index + 1} goes through everything made before it, and "
+                                   f"{owner.id} copy {other.index + 1}, made after it, stands in its way: should "
+                                   f"{owner.id} be cut through too (made first), or {item.id} stop short of it?",
+                                   values)  # fmt: skip
+                    break
+
+
+def _in_its_way(outline: Sequence[Part], mouth_turned: Shape | None, cut: Instance, face: FlatFace, owner: Item,
+                other: Instance, layout: Layout) -> bool:  # fmt: skip
+    """Whether a body's copy is over a cut's mouth seen along the cut's axis (:func:`_check_closed`): standing upright
+    on a face parallel to the cut's, by its foot against the mouth's outline; else by its box against the box round
+    the mouth (round its turned outline however it is turned)."""
+    host = layout.faces.get(other.host[:2], {}).get(other.host[2]) if other.host is not None else None
+    n = face.frame.n
+    if (isinstance(host, FlatFace) and other.direction is None and other.local is None and host.local is None
+            and abs(abs(sum(host.frame.n[k] * n[k] for k in range(3))) - 1.0) <= EPS):  # fmt: skip
+        mouth = _in_plane(face, cut.origin, outline)
+        over = _in_plane(host, other.origin, _outline(owner, layout, host.axes))
+        over_turned = turned_outline(owner, layout, host.axes)
+        if mouth_turned is None and over_turned is None:
+            return any(_meet(m, o, host.axes, face.axes) for m in mouth for o in over)
+        near = _seen(mouth, mouth_turned, cut.origin, face.axes, face.axes)
+        far = _seen(over, over_turned, other.origin, host.axes, face.axes)
+        return any(shapes_overlap(a, b) for a in near for b in far)
+    assert other.lo is not None and other.hi is not None
+    turned = mouth_turned is not None
+    reach = max(fs.hypot(abs(p.centre[0]) + p.half[0], abs(p.centre[1]) + p.half[1]) for p in outline) if turned else 0.0
+    for j, a in enumerate(face.axes):
+        k = _INDEX[a]
+        low = cut.origin[k] + (-reach if turned else min(p.centre[j] - p.half[j] for p in outline))
+        high = cut.origin[k] + (reach if turned else max(p.centre[j] + p.half[j] for p in outline))
+        if other.hi[k] <= low + EPS or other.lo[k] >= high - EPS:
+            return False
+    return True
+
+
 def _check_exits(spec: PartSpec, layout: Layout) -> None:
     """A cut right through its body comes out on the face across from it: not under something standing there.
 
@@ -2312,7 +2496,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
     for item in spec.items:
         if (
             not SOLVE[item.kind].cut
-            or not _is_through(item)
+            or not isinstance(end_of(item), ThroughAll)  # through everything cuts on through what stands there
             or item.id in layout.unplaced
         ):
             continue
@@ -2597,6 +2781,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if item.id in layout.shells:
                 layout.issue("unable", at, f"{on.item} is turned: Forge hollows what stands on its faces in a later step")
                 return []
+            if not _flat_end_only(item, layout, at, f"a face of {on.item}, which is turned"):
+                return []
             face = _upright(face)
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face
@@ -2607,8 +2793,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             return []
         for copy in found:
             index = len(copies)
-            placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal,
-                              copy.instance.host, copy.instance.face_axes, direction=copy.instance.direction)  # fmt: skip
+            placed = Instance(item.id, index, copy.instance.origin, copy.instance.normal, copy.instance.host,
+                              copy.instance.face_axes, direction=copy.instance.direction, depth=copy.instance.depth)  # fmt: skip
             kind.numbered(item, placed, face, host, copy, layout, at)
             moving = _then(motion, copy.motion)
             if moving is not None:

@@ -44,7 +44,7 @@ def _pocket(
     if _choice(item, "shape") == "circle":
         d = _mm(item, "diameter")
         parts: tuple[Part, ...] = (disc(d / 2),)
-        depth = _cut_depth(item, face, parts, w)
+        depth = _cut_depth(item, face, parts, copy)
         tool, _, floor = _extrude_into(chain, item, k, face, w, depth, "profile_circle",
                                        {"diameter": length(d)}, mouth, far)  # fmt: skip
         chain.name(item.id, k, "wall", Ref(tool, "side"))
@@ -54,7 +54,7 @@ def _pocket(
     long, wide = _mm(item, "length"), _mm(item, "width")
     r = _mm_or(item, "corner_radius", 0.0)
     parts = rounded_rect(long / 2, wide / 2, r)
-    depth = _cut_depth(item, face, parts, w)
+    depth = _cut_depth(item, face, parts, copy)
     a1, a2 = face.axes
     box = Box(*_footprint_box(face, w, (long / 2, wide / 2), depth), item.id, k)
     chain.cut_box(box)

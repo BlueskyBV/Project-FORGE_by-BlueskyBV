@@ -250,10 +250,14 @@ def _through(item: Item) -> bool:
     return isinstance(end_of(item), ThroughAll)
 
 
-def _cut_depth(item: Item, face: FlatFace, parts: Footprint, w: Vec) -> float:
-    """How deep a cut on a flat face goes: its depth, or through the most material under its mouth."""
+def _cut_depth(item: Item, face: FlatFace, parts: Footprint, copy: Instance) -> float:
+    """How deep a cut on a flat face goes: its depth; through everything or up to a face, as the solver worked it out
+    for the copy (item 2b's first step); or through the most material under its mouth."""
+    if copy.depth is not None:
+        return copy.depth
     if not _through(item):
         return _mm(item, "depth")
+    w = copy.origin
     p1, p2 = _on_face(face, w)
     deep = face.most_material_under(parts, (p1, p2))
     if deep <= 0.0:
@@ -376,7 +380,7 @@ def turned_cut(chain: Chain, item: Item, copy: Instance, face: FlatFace, shape: 
         raise PlanError("a rounding of a turned item's edges is made early", item=item.id)
     k, w = copy.index, copy.origin
     normal = unit(face.normal)
-    depth = _cut_depth(item, face, shape, w)
+    depth = _cut_depth(item, face, shape, copy)
     outline, axis, datum_sign = plane_outline(chain, item, k, face.axes, w, add(w, normal, mouth), shape)
     inward = -normal["xyz".index(axis)]
     mode = "normal" if inward == datum_sign else "reverse"

@@ -73,6 +73,7 @@ from .truth import (
 __all__ = [
     "Case",
     "DoesNotFitError",
+    "End",
     "Feature",
     "Pattern",
     "Plan",
@@ -155,6 +156,17 @@ class Pattern:
 
 
 @dataclass(frozen=True)
+class End:
+    """A cut's end by a condition (schema 1.7; V2-stage4b-0c.md 3.5, item 2b's first step): through everything made
+    before it, ``face`` None (its feature's ``depth`` None too); or up to the plane of ``face`` (an item's, by the
+    item and the face's name), ``offset`` back from it towards its mouth (its feature's ``depth`` how deep that is
+    as drawn; as built, the generator reads it from its own faces)."""
+
+    face: tuple[str, str] | None = None
+    offset: float = 0.0
+
+
+@dataclass(frozen=True)
 class Feature:
     """One item of a plan: a first body, a body or feature standing on a face, or a cut into one.
 
@@ -196,6 +208,9 @@ class Feature:
     #: On a ball's or a dome's surface, how far up from its equator towards its pole (degrees; schema 1.6, item 3b's
     #: second step); ``angle`` is then how far round its pole.
     latitude: float | None = None
+    #: A cut's end by a condition, through everything or up to a face (schema 1.7, item 2b's first step), on a flat
+    #: face.
+    end: End | None = None
 
 
 Plan = tuple[Feature, ...]
@@ -758,6 +773,8 @@ class _Part:
     #: Each thread's rod's material that must stay whole: the thread's id, and points round its stretch from a
     #: wall in from its root out (:func:`_threaded_clear`); what is made after it is held to them too.
     threads: list[tuple[str, Array]] = field(default_factory=list)
+    #: How deep each cut up to a face goes, as the generator reads it from its own faces (item 2b's first step).
+    resolved: dict[str, float] = field(default_factory=dict)
 
 
 def _footprint(f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], float]:
@@ -1444,6 +1461,107 @@ def _outline_draft(f: Feature, source: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+#: How far a cut through everything goes on past all that is made before it (mm): the generator's own, as the solver's
+#: and the judge's are theirs.
+_PAST_ALL = 1.5
+#: How far apart along a cut through everything the generator asks where its lines are in the part, and where it
+#: asks first (mm): off the 0.001 mm grid sizes are drawn on, so that no face's plane falls on one.
+_ALL_STEP, _ALL_FIRST = 0.2468, 0.0123
+
+
+def _up_to_depth(f: Feature, face: _Flat, part: _Part) -> float:
+    """How deep a cut up to a face goes from ``face`` (item 2b's first step), as the generator reads its own faces: to
+    the plane of the face it is cut up to, square to it, less its offset. A :class:`DoesNotFitError` where that face
+    isn't one Forge cuts up to: a flat face of an item with one copy, not turned with it nor inside a hollow, parallel
+    to the cut's own face and behind its mouth."""
+    assert f.end is not None and f.end.face is not None
+    item, name = f.end.face
+    target = part.flats.get((item, 0, name))
+    if target is None or target.turned or name.startswith("inner") or len(part.copies.get(item, ())) != 1:
+        raise DoesNotFitError(f"{f.id}: the generator cuts up to a flat face of an item with one copy, not {item}'s {name}")
+    n = face.normal
+    if abs(abs(float(fv.matmul(target.normal, n))) - 1.0) > 1e-9:
+        raise DoesNotFitError(f"{f.id}: {item}'s {name} isn't parallel to {face.key}")
+    depth = float(fv.matmul(face.centre - target.centre, n)) - f.end.offset
+    if depth <= GAP:
+        raise DoesNotFitError(f"{f.id}: the plane of {item}'s {name}, less its offset, isn't behind its mouth")
+    return depth
+
+
+def _footprint_points(half: tuple[float, float], corner: float, grow: float) -> list[tuple[float, float]]:
+    """Points round a footprint's outline (its half sizes and corner radius, about its centre) grown by ``grow`` (in,
+    where it is less than 0): along each straight side and round each corner."""
+    h1, h2 = half
+    c1, c2 = h1 - corner, h2 - corner
+    r = max(corner + grow, 0.0)
+    points = []
+    for s1, s2 in QUADRANTS:
+        for k in range(3):
+            a = (k + 0.5) * math.pi / 6
+            points.append((s1 * (c1 + r * fs.cos(a)), s2 * (c2 + r * fs.sin(a))))
+    for k in range(5):
+        u, v = -c1 + k * c1 / 2, -c2 + k * c2 / 2
+        points += [(u, h2 + grow), (u, -h2 - grow), (h1 + grow, v), (-h1 - grow, v)]
+    return points
+
+
+def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Array, e1: Array, e2: Array, n: Array,
+                        name: str, part: _Part, strict: bool) -> float:  # fmt: skip
+    """How deep a copy of a cut through everything goes (item 2b's first step): as far as all that is made before it
+    reaches behind its mouth, and on past it by :data:`_PAST_ALL`, as the generator's own solids say.
+
+    Strict, a :class:`DoesNotFitError` unless what it goes through lies all across it: asked at points along lines
+    through it, within its outline and just outside it, each depth it is asked at is material all across or air all
+    across; it comes out into air, or into a hollow and in again, only on a face the generator keeps (a wall's, a
+    hollow's), which holds its outline. Each such face is taken where it comes out, or goes in again (nothing stands
+    there after); its way across a hollow is kept clear there as what stands in it is."""
+    made = (*part.steps, *part.late)
+    reach = 0.0
+    for step in made:
+        if step.add:
+            lo, hi = bounds(step.solid)
+            for k in range(8):
+                corner = np.array([(lo, hi)[(k >> j) & 1][j] for j in range(3)])
+                reach = max(reach, float(fv.matmul(p - corner, n)))
+    depth = reach + _PAST_ALL
+    if not strict:
+        return depth
+    (h1, h2), r = _footprint(f, face.axes)
+    within = [(0.0, 0.0), *((s1 * h1 / 2, s2 * h2 / 2) for s1, s2 in QUADRANTS), *_footprint_points((h1, h2), r, -0.2)]
+    across = np.array([*within, *_footprint_points((h1, h2), r, 0.9 * GAP)])
+    mouth = p + np.outer(across[:, 0], e1) + np.outer(across[:, 1], e2)
+    ts = _ALL_FIRST + _ALL_STEP * np.arange(int(depth / _ALL_STEP) + 1)
+    points = mouth[None, :, :] - ts[:, None, None] * n[None, None, :]
+    inside = Truth({}, made).inside(points.reshape(-1, 3)).reshape(len(ts), len(across))
+    full = inside.all(axis=1)
+    if np.any(inside.any(axis=1) & ~full):
+        raise DoesNotFitError(f"{f.id} through everything meets something that doesn't lie all across it")
+    if not full[0]:
+        raise DoesNotFitError(f"{f.id} has no material under its mouth")
+    foot = face.foot(f, at)
+    changes = [j for j in range(1, len(ts)) if full[j] != full[j - 1]]
+    for m, j in enumerate(changes):
+        leaving = bool(full[j - 1])  # out of material into air; else into material again
+        facing = -n if leaving else n
+        found = []
+        for g in part.flats.values():
+            level = float(fv.matmul(p - g.centre, n))
+            if ts[j - 1] < level < ts[j] and float(fv.matmul(g.normal, facing)) > 1 - 1e-9:
+                mine = _on_exit(face, g, foot)
+                if g.holds(mine):
+                    found.append((g, mine, level))
+        if not found:
+            raise DoesNotFitError(f"{f.id} through everything comes {'out' if leaving else 'in'} where the generator "
+                                  "keeps no face that holds it")  # fmt: skip
+        for g, mine, level in found:
+            g.taken.append(mine)
+            if leaving and g.hollow is not None and m + 1 < len(changes):
+                # Across the hollow, to where it goes in again: kept clear there as what stands in it is.
+                again = (ts[changes[m + 1] - 1] + ts[changes[m + 1]]) / 2
+                part.inside.setdefault(g.hollow, []).append((name, *_box_over(g, mine, again - level)))
+    return depth
+
+
 def _on_flat(
     f: Feature, face: _Flat, index: int, part: _Part, strict: bool
 ) -> list[Copy]:
@@ -1452,6 +1570,9 @@ def _on_flat(
         raise DoesNotFitError(
             f"{f.id}: an angle places an item round a side, not on a flat face"
         )
+    if f.end is not None and (f.tilt is not None or face.turned or not _draw(f.kind).cut_out):
+        raise DoesNotFitError(f"{f.id}: the generator ends a hole, a pocket or a slot square to a flat face by a "
+                              "condition, not leaning, nor on a turned item's face")  # fmt: skip
     if f.tilt is not None:
         return _on_flat_leaning(f, face, index, part, strict)
     if (
@@ -1514,8 +1635,16 @@ def _on_flat(
         made.append(Copy(f.id, copy_index, face.key, _t(p), _t(n), face.axes))
         cut = _draw(f.kind).cut_out
         if cut:
-            depth = face.material if f.depth is None else f.depth
-            if strict and f.depth is not None and f.depth > face.material - GAP:
+            # Through everything, or up to a face (item 2b's first step): as the generator reads its own part.
+            everything = f.end is not None and f.end.face is None
+            deep = f.depth
+            if f.end is not None and f.end.face is not None:
+                deep = part.resolved[f.id] = _up_to_depth(f, face, part)
+                if deep < _recess_depth(f) + GAP - 0.001:  # as _sizes_hold holds a blind one's drawn depth
+                    raise DoesNotFitError(f"{f.id}: a hole up to a face goes on past its {f.recess[0] if f.recess else ''}")
+            depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict)
+                     if everything else face.material if deep is None else deep)  # fmt: skip
+            if strict and deep is not None and deep > face.material - GAP:
                 raise DoesNotFitError(
                     f"{f.id} is deeper than the material under {face.key}"
                 )
@@ -1525,22 +1654,22 @@ def _on_flat(
                 )
             if (
                 strict
-                and f.depth is not None
+                and deep is not None
                 and face.dome > 0
-                and f.depth > face.material_under(_Foot(at, half, corner)) - GAP
+                and deep > face.material_under(_Foot(at, half, corner)) - GAP
             ):
                 # Under a dome's flat face the material is the dome's height over a point: least at the cut's
                 # farthest from the centre (its box's corner, a bound).
                 raise DoesNotFitError(f"{f.id} is deeper than the dome over it")
             if strict and face.flare[1] > 0:
                 room = face.material_under(_Foot(at, half, corner))
-                if f.depth is None and room < face.material:
+                if deep is None and not everything and room < face.material:
                     # Past a flared cone's base, a line down comes out of its flank into the air under it, and
                     # in again further down: right through has no one meaning (generated part 3375).
                     raise DoesNotFitError(
                         f"{f.id} can't go right through {face.key} past its cone's base"
                     )
-                if f.depth is not None and f.depth > room - GAP:
+                if deep is not None and deep > room - GAP:
                     raise DoesNotFitError(
                         f"{f.id} is deeper than the cone over its flank"
                     )
@@ -1548,7 +1677,7 @@ def _on_flat(
                     raise DoesNotFitError(
                         f"{f.id}'s recess is deeper than the cone over its flank"
                     )
-            through = f.depth is None
+            through = deep is None and not everything
             if strict and through and face.exit is None:
                 # Not every line down through the face comes out on another (a flange's foot, its hub deeper
                 # than its rim): what is under it isn't one depth, and right through has no one meaning
@@ -1561,7 +1690,7 @@ def _on_flat(
                     raise DoesNotFitError(
                         f"{f.id} would come out where {face.exit} is pressed against another"
                     )
-            elif strict and face.exit is not None:
+            elif strict and face.exit is not None and not everything:  # through everything: its own (above)
                 out = part.flats[face.exit]
                 mine = _on_exit(face, out, _Foot(at, half, corner))
                 if through and not out.holds(mine):
@@ -1573,15 +1702,15 @@ def _on_flat(
                         raise DoesNotFitError(
                             f"{f.id} comes out through {face.exit} where something is"
                         )
-                for foot, deep in out.dug:
+                for foot, dug in out.dug:
                     if (
                         not mine.clear_of(foot, 0.0)
-                        and abs(depth + deep - face.material) < 0.3
+                        and abs(depth + dug - face.material) < 0.3
                     ):
                         raise DoesNotFitError(
                             f"{f.id} all but breaks into a cut from the far side"
                         )
-            low_reach = REACH if through else 0.0
+            low_reach = REACH if through or everything else 0.0
             solid, radius = _draw(f.kind).cut_solid(f, p, e1, e2, n, depth, face)
             part.steps.append(Step(f.id, copy_index, False, solid, (low_reach, REACH)))
             if f.recess is not None:
@@ -2582,12 +2711,24 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
     own.words_said(f, w, found)
     said = own.sizes_said(f)
     said = [entry for entry in said if entry[0] != "corner_radius"]
-    if own.cut_out and f.depth is not None:
+    if own.cut_out and f.depth is not None and f.end is None:
         said.append(("depth", f.depth, "", " deep"))
     for k, (size, v, before, after) in enumerate(said):
         w.say("" if not k else " and " if k == len(said) - 1 else ", ")
         found[size] = _mm(w, v, before=before, after=after)
-    if own.cut_out and f.depth is None:
+    if own.cut_out and f.end is not None:  # through everything, or up to a face (schema 1.7, item 2b's first step)
+        w.say(", ")
+        if f.end.face is None:
+            found["depth"] = {"through_all": True, "from": {"words": w.cite("right through everything behind it")}}
+        else:
+            item, face_name = f.end.face
+            ended: dict[str, Any] = {"up_to": {"item": item, "face": face_name},
+                                     "from": {"words": w.cite(f"down to the plane of the {face_name} face of {names[item]}")}}  # fmt: skip
+            if f.end.offset:
+                w.say(", ")
+                ended["offset"] = _mm(w, f.end.offset, after=" short of it")
+            found["depth"] = ended
+    elif own.cut_out and f.depth is None:
         w.say(", ")
         found["depth"] = {"through": True, "from": {"words": w.cite("right through")}}
     if "corner_radius" in s:
@@ -3312,7 +3453,7 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
     """A cut's rims (hole.md, pocket.md): ``top`` its mouth's (an outside edge, taken), ``bottom`` round a pocket's floor (an inside edge, filled). Straight runs and round corners exact; a sharp corner a zone."""
     round_ = not _draw(f.kind).bevels
     p, n = _v(copy.point), _v(copy.direction)
-    depth = host.material if target.depth is None else target.depth
+    depth = host.material if target.depth is None else part.resolved.get(target.id, target.depth)
     if strict and size > depth / 2:
         raise DoesNotFitError(f"{f.id} is too big for the cut it rounds")
     at = host.frame.plane(p)
@@ -3801,11 +3942,13 @@ def _names_own_axes(item: Mapping[str, Any]) -> bool:
 
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.6 where an item is on a ball's surface (place.latitude), 1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
+    1.7 where a cut goes through everything or up to a face, 1.6 where an item is on a ball's surface (place.latitude), 1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
     on its face (tilt), 1.2 where one is
     turned in it (place.turn), else the first, so a part that does none of these is read, and its spec's digest
     made, as it always was."""
     found = list(items)
+    if any(isinstance(item.get("depth"), Mapping) and {"through_all", "up_to"} & set(item["depth"]) for item in found):
+        return {"schema_version": "1.7", "name": name, "items": found}  # through everything, up to a face (item 2b)
     if any(isinstance(item.get("place"), Mapping) and "latitude" in item["place"] for item in found):
         return {"schema_version": "1.6", "name": name, "items": found}  # on a ball's surface (item 3b's second step)
     if any("tilt" in item and "kind" in item and _draw(item["kind"]).leans_since >= (1, 5) for item in found):
@@ -4546,9 +4689,63 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             break
         _spelled_now_and_then(spells, plan, part)
         if len(plan) > before:
+            _ended_now_and_then(random.Random(f"forge-eval ends {seed} {k}"), before, plan, part)
             _hollowed_now_and_then(seed, k, plan[before], plan, part)
     _decorate(seed, plan, tries)
     return render(tuple(plan))
+
+
+#: How often a cut just drawn on a flat face ends by a condition instead (schema 1.7; V2-stage4b-0c.md 3.5, item 2b's
+#: first step), and how often then, blind, it goes through everything rather than up to a face behind it.
+_ENDED, _BLIND_THROUGH = 0.35, 0.3
+
+
+def _ended_now_and_then(rng: random.Random, at: int, plan: list[Feature], part: _Part) -> None:
+    """Now and then a hole, a pocket or a slot just drawn square to a flat face ends by a condition (item 2b's first
+    step), from a stream of its own (a seed that ends nothing so stays as it was drawn): one through goes through
+    everything; a blind one up to a face behind it, as deep as drawn, its offset what is left (where a face is so
+    placed), or now and then through everything too. Where that doesn't fit, it is as drawn."""
+    f = plan[at]
+    if rng.random() >= _ENDED or not _draw(f.kind).cut_out or f.on is None or f.tilt is not None:
+        return
+    face = part.flats.get((f.on[0], 0, f.on[1]))
+    if face is None or face.turned:
+        return
+    ended: Feature | None = None
+    if f.depth is None or rng.random() < _BLIND_THROUGH:
+        ended = replace(f, depth=None, end=End())
+    else:
+        targets = _up_to_targets(f, f.depth, face, part)
+        if targets:
+            (item, name), offset = rng.choice(targets)
+            ended = replace(f, end=End((item, name), offset))
+    if ended is None:
+        return
+    trial = [*plan]
+    trial[at] = ended
+    try:
+        render(tuple(trial))
+    except DoesNotFitError:
+        return
+    plan[at] = ended
+
+
+def _up_to_targets(f: Feature, depth: float, face: _Flat, part: _Part) -> list[tuple[tuple[str, str], float]]:
+    """The faces a cut ``depth`` deep into ``face`` may be cut up to instead (item 2b's first step), each with its
+    offset: flat faces of items with one copy, not turned nor inside a hollow, parallel to ``face`` and behind it
+    by at least ``depth``, by an offset on the grid sizes are drawn on; in the order they were made."""
+    n = face.normal
+    found = []
+    for (item, index, name), g in part.flats.items():
+        if index != 0 or g.turned or name.startswith("inner") or len(part.copies.get(item, ())) != 1:
+            continue
+        if abs(abs(float(fv.matmul(g.normal, n))) - 1.0) > 1e-9:
+            continue
+        behind = float(fv.matmul(face.centre - g.centre, n))
+        offset = _q(behind - depth)
+        if offset >= 0.0 and abs(offset - (behind - depth)) < 1e-6:
+            found.append(((item, name), offset))
+    return found
 
 
 #: How often a block just drawn standing on a face is hollowed (V2-stage4b-0c.md, step 5.1).
@@ -4754,7 +4951,7 @@ def impossible(seed: int) -> Case:
         # On flat faces only: not round a side, on a ball's surface, or at an angle round a round tab's end.
         cuts = [f for f in case.plan if _draw(f.kind).misfits and f.on is not None and f.pattern is None
                 and f.on[1] not in ("side", "surface") and not (f.angle is not None and f.on[1][0] in "+-")
-                and f.turn is None and f.tilt is None]  # fmt: skip
+                and f.turn is None and f.tilt is None and f.end is None]  # fmt: skip
         if not cuts:
             continue
         f = rng.choice(cuts)
@@ -4870,11 +5067,16 @@ def _changes(f: Feature, plan: Plan) -> Iterator[tuple[str, list[Feature]]]:
             name,
             [replace(f, sizes={**f.sizes, name: _q(value + d)}) for d in _by(value)],
         )
-    if f.depth is not None:
+    if f.end is not None and f.end.face is not None and f.depth is not None:
+        # Up to a face: less far short of it, or further (its depth as drawn with it).
+        end = f.end
+        yield "depth", [replace(f, depth=_q(f.depth + d), end=replace(end, offset=_q(end.offset - d)))
+                        for d in _by(f.depth) if end.offset - d >= 0]  # fmt: skip
+    elif f.depth is not None:
         yield "depth", [replace(f, depth=_q(f.depth + d)) for d in _by(f.depth)]
-    elif _draw(f.kind).cut_out:
+    elif _draw(f.kind).cut_out:  # through (everything) made blind
         below = _recess_depth(f) + GAP
-        yield "depth", [replace(f, depth=_q(below + d)) for d in (0.5, 0.1)]
+        yield "depth", [replace(f, depth=_q(below + d), end=None) for d in (0.5, 0.1)]
     if f.recess is not None:
         what, d, third = f.recess
         yield (

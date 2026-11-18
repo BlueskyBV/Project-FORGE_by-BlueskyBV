@@ -103,6 +103,7 @@ __all__ = [
     "Silent",
     "Text",
     "Through",
+    "UpTo",
     "axis_names",
     "read_draft",
 ]
@@ -143,6 +144,21 @@ class Designation(Text):
 
 @dataclass(frozen=True)
 class Through:
+    """A cut through: the material under its face (``{"through": true}``), or, ``everything``, all of the part made so
+    far behind its mouth along its axis, cavities and all (``{"through_all": true}``; schema 1.7, item 2b's first
+    step)."""
+
+    provenance: Provenance
+    everything: bool = False
+
+
+@dataclass(frozen=True)
+class UpTo:
+    """A cut's floor in the plane of a flat face of an item made before it, square to the cut, ``offset`` back towards
+    its mouth (``{"up_to": {"item": ..., "face": ...}, "offset": size}``; schema 1.7, item 2b's first step)."""
+
+    face: On
+    offset: Value | None
     provenance: Provenance
 
 
@@ -253,6 +269,7 @@ FieldValue = (
     | Choice
     | Text
     | Through
+    | UpTo
     | Fit
     | Counterbore
     | Countersink
@@ -414,20 +431,30 @@ def _canonical(name: str, at: str, problems: Problems) -> str:
     return canonical
 
 
-def _depth(raw: Any, at: str, problems: Problems) -> Value | Through | None:
-    if isinstance(raw, Mapping) and "through" in raw:
-        obj = _object(raw, at, problems, "a through depth", {"through", "from"})
+def _depth(raw: Any, at: str, problems: Problems) -> Value | Through | UpTo | None:
+    for key in ("through", "through_all"):
+        if not (isinstance(raw, Mapping) and key in raw):
+            continue
+        obj = _object(raw, at, problems, "a through depth", {key, "from"})
         if obj is None:
             return None
-        if obj.get("through") is not True:
-            problems.fault(
-                at + pointer("through"), 'write "through": true, or give a depth'
-            )
+        if obj.get(key) is not True:
+            problems.fault(at + pointer(key), f'write "{key}": true, or give a depth')
             return None
         provenance = read_provenance(
             obj.get("from"), at + pointer("from"), problems, STATED_SOURCES
         )
-        return None if provenance is None else Through(provenance)
+        return None if provenance is None else Through(provenance, everything=key == "through_all")
+    if isinstance(raw, Mapping) and "up_to" in raw:
+        obj = _object(raw, at, problems, "a depth up to a face", {"up_to", "offset", "from"})
+        if obj is None:
+            return None
+        face = _on(obj.get("up_to"), at + pointer("up_to"), problems)
+        offset = _length(obj["offset"], at + pointer("offset"), problems) if "offset" in obj else None
+        provenance = read_provenance(obj.get("from"), at + pointer("from"), problems, STATED_SOURCES)
+        if face is None or provenance is None or ("offset" in obj and offset is None):
+            return None
+        return UpTo(face, offset, provenance)
     value = _length(raw, at, problems)
     if value is not None and min(value.nominal, value.made.nominal) <= 0:
         problems.fault(
@@ -1189,6 +1216,11 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                 if isinstance(place, Place) and place.latitude is not None and version < (1, 6):
                     problems.fault(pointer("items", n, "place", "latitude"),
                                    'a latitude is schema 1.6\'s: give the draft\'s "schema_version": "1.6"')  # fmt: skip
+                depth = item.get("depth")
+                if ((isinstance(depth, Through) and depth.everything) or isinstance(depth, UpTo)) and version < (1, 7):
+                    problems.fault(pointer("items", n, "depth"),
+                                   'a depth through all or up to a face is schema 1.7\'s: give the draft\'s '
+                                   '"schema_version": "1.7"')  # fmt: skip
                 # A body leans in 1.5 (step 3), a hole, a boss or a post in 1.3.
                 since = (1, 5) if KINDS[item.kind].category is Category.BODY else (1, 3)
                 for leans in ("tilt", "tilt_towards"):

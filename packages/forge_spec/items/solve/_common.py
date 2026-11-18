@@ -19,8 +19,9 @@ from forge_spec.draft import (
     Item,
     Place,
     Profile,
+    UpTo,
 )
-from forge_spec.ends import ThroughAll, end_of
+from forge_spec.ends import ThroughAll, ThroughEverything, end_of
 from forge_spec.frames import Frame, cos_sin
 from forge_spec.geometry import (
     EPS,
@@ -126,7 +127,8 @@ def _place_of(item: Item) -> Place | None:
 
 
 def _is_through(item: Item) -> bool:
-    return isinstance(end_of(item), ThroughAll)
+    """Whether a cut goes through: the material under its face, or everything behind its mouth (item 2b's first step)."""
+    return isinstance(end_of(item), (ThroughAll, ThroughEverything))
 
 
 def _flatten(value: object) -> list[object]:
@@ -134,6 +136,8 @@ def _flatten(value: object) -> list[object]:
         return [value.diameter, value.depth]
     if isinstance(value, Countersink):
         return [value.diameter, value.angle]
+    if isinstance(value, UpTo):  # up to a face (item 2b's first step): where it says so, and its offset
+        return [value, *([value.offset] if value.offset is not None else [])]
     return [value]
 
 

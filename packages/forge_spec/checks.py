@@ -65,6 +65,7 @@ from .draft import (
     Profile,
     Text,
     Through,
+    UpTo,
     read_draft,
 )
 from .items.checks import SPEC_CHECKS
@@ -179,6 +180,10 @@ def _provenances(
     """Every value-like thing in a field, with its pointer and, for a choice, its synonyms."""
     if isinstance(raw, (Value, Count, Choice, Text, Through, Fit, Faces, Profile)):
         yield at, raw, synonyms
+    elif isinstance(raw, UpTo):  # up to a face (item 2b's first step): its words, and its offset's
+        yield at, raw.provenance, None
+        if raw.offset is not None:
+            yield at + pointer("offset"), raw.offset, None
     elif isinstance(raw, Counterbore | Countersink):
         yield at + pointer("diameter"), raw.diameter, None
         second = raw.depth if isinstance(raw, Counterbore) else raw.angle
@@ -397,7 +402,7 @@ def _check_one(
     elif isinstance(thing, Fit):
         _check_fit(thing, at, label, c)
     elif isinstance(thing, Through):
-        _stated(thing.provenance, at, f"{label}: through", c)
+        _stated(thing.provenance, at, f"{label}: through" + (" all" if thing.everything else ""), c)
     elif isinstance(thing, Faces):
         _stated(thing.provenance, at, f"{label}: {', '.join(thing.faces) or 'none'}", c)
         if thing.provenance.source is Source.BRIEF and thing.faces:

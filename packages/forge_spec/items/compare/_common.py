@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from forge_spec.draft import Choice, Counterbore, Countersink, EdgeSet, Item, Place
-from forge_spec.ends import Blind, ThroughAll, end_of
+from forge_spec.ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
 from forge_spec.geometry import (
     EPS,
     BallFace,
@@ -24,7 +24,14 @@ from forge_spec.geometry import (
     disc,
 )
 from forge_spec.items.solve._common import _turn, degrees
-from forge_spec.placement import Instance, Layout, _outline, mm, turned_outline
+from forge_spec.placement import (
+    Instance,
+    Layout,
+    _outline,
+    cut_depth,
+    mm,
+    turned_outline,
+)
 from forge_spec.values import Value
 
 _INDEX = {"x": 0, "y": 1, "z": 2}
@@ -214,8 +221,10 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
     # In against the way out of its mouth: its face's outward normal, or leaning, its direction.
     mouth, into = copy.origin, _neg(copy.direction if copy.direction is not None else copy.normal)
     end = end_of(item)
-    deep = mm(end.depth) if isinstance(end, Blind) else material
-    through = isinstance(end, ThroughAll) or deep >= material - EPS
+    blind = cut_depth(item, copy, layout) if isinstance(end, (Blind, UpToFace)) else None
+    deep = blind if blind is not None else material
+    # Through everything behind its mouth (item 2b's first step) is through what is under it too.
+    through = isinstance(end, (ThroughAll, ThroughEverything)) or deep >= material - EPS
     deep = min(deep, material)
     head: tuple[object, ...]
     tail: tuple[object, ...]

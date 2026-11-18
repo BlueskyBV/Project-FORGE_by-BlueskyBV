@@ -43,7 +43,7 @@ from forge_spec.draft import (
     On,
     PartSpec,
 )
-from forge_spec.ends import Blind, ThroughAll, end_of
+from forge_spec.ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
 from forge_spec.geometry import (
     EPS,
     FlatFace,
@@ -463,15 +463,18 @@ def _at_edge(face: FlatFace, p1: float, p2: float, reach: float) -> bool:
 def _through_at(item: Item, copy: Instance, face: FlatFace, reach: float) -> bool:
     """Whether one copy of a cut leaves no material under any of it."""
     end = end_of(item)
-    if isinstance(end, ThroughAll):
+    if isinstance(end, (ThroughAll, ThroughEverything)):
         return True
-    if not isinstance(end, Blind):
+    if isinstance(end, Blind):
+        deep = mm(end.depth)
+    elif isinstance(end, UpToFace) and copy.depth is not None:  # up to a face: as deep as the solver found it goes
+        deep = copy.depth
+    else:
         return False
-    depth = end.depth
     p1, p2 = _offset(copy, face)
     # The most material anywhere within its reach (on a turned part's end, not always at the nearest point).
     most = face.most_material_under((disc(reach),), (p1, p2))
-    return mm(depth) >= most - EPS
+    return deep >= most - EPS
 
 
 def _holes(
@@ -577,6 +580,8 @@ def _through_holes(
                 deep = (
                     mm(blind.depth)
                     if isinstance(blind, Blind)
+                    else copy.depth  # through everything or up to a face: as the solver found it goes
+                    if copy.depth is not None
                     else material_at(face, p1, p2, 0.0)
                 )
                 end = copy.origin[k] - copy.normal[k] * deep

@@ -22,6 +22,7 @@ from forge_spec.draft import (
     Profile,
     Text,
     Through,
+    UpTo,
 )
 from forge_spec.items.words.pattern import PATTERN_WORDS
 from forge_spec.values import Count, Provenance, Source, Value
@@ -130,7 +131,10 @@ def _place(place: Place | None) -> str:
 
 def _depth(value: object) -> str:
     if isinstance(value, Through):
-        return "right through" + _tag(value.provenance)
+        return ("right through everything behind it" if value.everything else "right through") + _tag(value.provenance)
+    if isinstance(value, UpTo):  # item 2b's first step
+        back = "" if value.offset is None else f", {_v(value.offset)} short of it"
+        return f"down to the plane of {value.face.item}'s {value.face.face} face{back}" + _tag(value.provenance)
     return f"{_v(value)} deep"
 
 

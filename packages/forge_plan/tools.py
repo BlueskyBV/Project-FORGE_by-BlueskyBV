@@ -251,7 +251,7 @@ def air_boxes(
     mouth = _span_box(w, d, -CARRY, 0.0, {a1: at_mouth[0], a2: at_mouth[1]})
     if not _through(item):
         return mouth, None
-    depth = _cut_depth(item, face, depth_of, w)
+    depth = _cut_depth(item, face, depth_of, copy)
     return mouth, _span_box(w, d, depth, depth + CARRY, {a1: at_far[0], a2: at_far[1]})
 
 

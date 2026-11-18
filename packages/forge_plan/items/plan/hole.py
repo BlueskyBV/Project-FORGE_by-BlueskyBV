@@ -65,7 +65,7 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
             face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
         )
     else:
-        depth = _cut_depth(item, face, (disc(radius),), w)
+        depth = _cut_depth(item, face, (disc(radius),), copy)
     pieces: list[str] = []
     begin = start - mouth
     bore = chain.cylinder(_id(item.id, k, "bore"), add(w, d, begin), d, diameter, depth + far - begin,

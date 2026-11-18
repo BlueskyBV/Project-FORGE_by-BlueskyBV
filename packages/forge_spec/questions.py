@@ -250,7 +250,7 @@ def _options(at: str, draft: Mapping[str, Any]) -> tuple[Option, ...]:
         ]
     elif "count" in node:
         found.append(Option("It is this many: __", EditKind.COUNT, here))
-    elif "value" in node or "through" in node:
+    elif "value" in node or {"through", "through_all", "up_to"} & set(node):
         unit = str(node.get("unit", "mm")) if "value" in node else "mm"
         found.append(Option(f"It is __ {unit}", EditKind.VALUE, here, unit=unit))
     return (*found, _note())
@@ -279,7 +279,7 @@ def _target(parts: list[str], draft: Mapping[str, Any]) -> tuple[list[str], Mapp
         if (
             isinstance(node, Mapping)
             and "from" in node
-            and {"value", "count", "through", "choose"} & set(node)
+            and {"value", "count", "through", "through_all", "up_to", "choose"} & set(node)
         ):
             kind = field.type if field is not None and depth == 3 else None
             choices = (
@@ -433,6 +433,8 @@ def _held(
             )
         elif "through" in node:
             held = (Option("", EditKind.THROUGH, question.at), answer)
+        elif {"through_all", "up_to"} & set(node):
+            return edit  # an end by a condition (schema 1.7): no one value to say
         elif "value" in node:
             unit = str(node.get("unit", "mm"))
             held = (

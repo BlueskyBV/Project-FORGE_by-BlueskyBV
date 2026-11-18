@@ -204,6 +204,8 @@ class DrawKind:
         made: list[Copy] = []
         for host_copy in part.copies.get(host, []):
             key = (host, host_copy.index, face_name)
+            if f.end is not None and key not in part.flats:
+                raise DoesNotFitError(f"{f.id}: the generator ends a cut by a condition on a flat face")
             if key in part.flats:
                 made += _on_flat(f, part.flats[key], len(made), part, strict)
             elif key in part.rounds:
@@ -421,11 +423,13 @@ class DrawKind:
         """What a copy at ``at`` leaves on the face it is on, besides what it covers: a cut, its mouth (through to the far face) or its floor."""
         if not self.cut_out:
             return
+        if f.end is not None and f.end.face is None:
+            return  # through everything: where it comes out, taken as it is made (_through_everything)
         if f.depth is None and face.exit is not None:
             out = part.flats[face.exit]
             out.taken.append(_on_exit(face, out, _Foot(at, half, corner)))
         elif f.depth is not None:
-            face.dug.append((_Foot(at, half, corner), f.depth))
+            face.dug.append((_Foot(at, half, corner), part.resolved.get(f.id, f.depth)))
 
     def limits(self, f: Feature) -> None:
         """Its own page's limits on its sizes, besides every size being more than 0: a :class:`DoesNotFitError` where one is broken."""

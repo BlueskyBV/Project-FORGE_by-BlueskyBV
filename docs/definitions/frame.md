@@ -104,7 +104,11 @@ direction.
 Under a cut's mouth the material may vary (on a cone, a dome, a round side,
 an overhang). A blind cut must fit in the **least** material under its mouth.
 A cut **through** goes through the **most**: it comes out of the far side
-everywhere across its mouth.
+everywhere across its mouth. A cut **through everything** (schema 1.7) isn't
+measured in the material under its face: it goes on past everything made
+before it, as far as the part reaches behind its mouth ([sizes.md](sizes.md)).
+A cut **up to a face** goes to that face's plane, less its offset, and must
+fit in the least material under its mouth as a blind cut does.
 
 The material under a face is what its own items make it. Cuts made before
 don't change it: a blind hole that reaches a pocket cut from the far side
@@ -116,7 +120,8 @@ The part is made one item at a time.
 
 1. Each time, the next item made is the earliest in the spec of those whose
    dependencies are all made. An item depends on what it stands on or cuts
-   into, what it is concentric with, and what it hollows, rounds or threads.
+   into, what it is concentric with, what it hollows, rounds or threads, and
+   the item whose face it is cut up to.
 2. A body or a standing feature adds its points to the part.
 3. A cut takes its points away from what has been made so far. What is made
    after it is not cut by it: a post standing on a pocket's floor stands in

@@ -13,7 +13,9 @@ schema 2.0 made with item 2b (revision 12). Step 5 (revision 13: a turned
 box hollowed, round sides on a turned item's faces, a leaning item's edges,
 a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
 3b's last step (a torus) waits for 4b.0d1's certified face-face
-intersections; 2b (with a leaning item's faces) next.
+intersections; 2b's first step (a cut through everything, or up to a face,
+schema 1.7) done, its second (through the next face) next, a leaning
+item's faces with it.
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1079,6 +1081,96 @@ the preview's resolution with the same question, so the exit harness's
 impossible outcomes are part of 2b's proof. The 1.0 to 2.0 migration
 writes each `depth` as `blind(d)` and each `through` as `through_all`,
 which the proof holds oracle-equal.
+
+**2b, planned (revision 15, 18 November 2026): the conditions each
+program can decide on its own first, then those only the shape decides.**
+Today's `through` goes through the material under the cut's face as the
+definitions model it (frame.md): into a hollowed body's cavity, never out
+of its far wall; and a blind depth is a number, which keeps no intent when
+the part changes. Each step is proven as 1b's and 3b's were (each
+program's layout, the oracle, the planner, the generator's draws, the
+second kernel, the exit harness old against new) before the next starts.
+
+1. **Through everything, and up to a face (schema 1.7, a minor):** a
+   cut's `depth` may be `{"through_all": true}`, through all of the part
+   made so far along its axis, cavities and all (a pin hole through a
+   hollow housing's two walls); or `{"up_to": {"item": ..., "face": ...},
+   "offset": size}`, its floor in the plane of a flat face of an item made
+   before it, square to the cut, the offset back towards its mouth (a
+   pocket down to a ledge's height, following it when the ledge moves).
+   Each program decides both on its own: the solver, the judge, the
+   planner and the generator each from their own faces and boxes, as far
+   as everything made so far reaches, or to that face's plane. Today's
+   `through` and a blind depth are as they are.
+2. **Through the next face that covers it** (`{"through_next": true}`):
+   out of the material all across its mouth for the first time, as the
+   shape says. The oracle and the generator decide it on their own
+   shapes; the solver's material model gives its own answer, and the
+   preview build's resolution (step 3) settles a part none of them can.
+3. **The preview resolves, the person confirms:** a condition the solver
+   can't decide alone is built before confirmation, the depth it reaches
+   recorded with its condition and shown, confirmed as any value is; the
+   oracle checks it again on its own shape. The solver's material algebra
+   is retired where the preview decides better.
+4. **Schema 2.0:** positions along a face's own `u` and `v` only, and
+   every cut's end written as its condition, the one migration proven on
+   every draft Forge holds (`tests/v2_migrations.py`); start conditions
+   and two directions with it.
+
+**2b's first step, as built (revision 15, schema 1.7).** A cut square to
+a flat face may go `{"through_all": true}` or `{"up_to": {"item": ...,
+"face": ...}, "offset": size}` (sizes.md; frame.md: a cut depends on the
+item it goes up to, which is made first). **The reader** reads them as
+`Through(everything=True)` and `UpTo`, `forge_spec.ends` as
+`ThroughEverything` and `UpToFace`; below 1.7 either is a fault; the wire,
+the words ("right through everything behind it", "down to the plane of
+...'s ... face, ... short of it") and the views say them. **The solver**
+works out each copy's depth on its own (`_end_depth`, kept as
+`Instance.depth`, read by `cut_depth`): through everything, to the
+farthest corner behind the mouth of every body placed before it, and a
+millimetre on; up to a face, to the plane of a declared flat face of an
+item with one copy, parallel to the cut's, less the offset, which must
+leave more than nothing (else it asks), and which is then held as a blind
+depth is (it must fit in the material under the mouth, and a counterbore
+must leave some of the hole below it). A leaning cut, or
+one round a side, on a surface, a tab's end or a turned item's face, it
+can't do yet, and says so. A body made after a cut through everything and
+standing in its way would close it: asked (`_check_closed`); one made
+before it is cut through. **The judge**
+works out its own (`_end_depth`, from its own boxes and faces, 2 mm on);
+**the check compiler** checks a cut through everything open along its axis
+as far as that, and one up to a face by its floor in that plane, within
+the general tolerance for the depth it comes to; **the planner** cuts each
+copy to its depth. **The generator** draws them now and then (stream
+"forge-eval ends", 0.35 of the holes, pockets and slots just drawn on a
+flat face): one through goes through everything; a blind one up to a face
+of an item with one copy behind it by at least its depth, its offset what
+is left, or (0.3) through everything too. It decides both from its own
+model: through everything, past the reach of its own solids made before,
+every depth along it material all across its mouth and a gap round it or
+air all across, coming out of material, or in again, only on a face it
+keeps and that holds the mouth, which is then taken (and its way across a
+hollow kept clear there); up to a face, its depth read from its own faces
+at every build, so a mutant that moves that face moves the floor with it.
+Its mutants move the offset (the depth with it) and make a cut through
+everything blind; `impossible()` leaves an ended cut alone. Spec grading
+counts a hole through everything as through, and one up to a face by the
+depth it comes to. The guide says them (GUIDE_VERSION 11), its schema
+takes them, and a question about such a depth offers "through" or a size.
+Tests: `tests/test_v2_plan_throughall.py` (read and written back; below
+1.7 a fault; each copy's depth as every program places it; what isn't so
+is said, a body made after one through everything in its way asked
+about; built and judged: through everything a hollow box's two walls,
+from its side, a plate and its block, a hollow box and a boss made before
+under it, a row of two, a slot, and up to a face a hole, a pocket down to
+a ledge's base, a turned pocket; one wall
+for everything, everything for one wall, and a floor a millimetre off
+each fail; the second kernel agrees; the generator's drafts say 1.7 and
+its cut through everything leaves a hollow's floor open). The exit
+harness's per-seed proof on 27 generated seeds that end a cut so: all
+passed, and every mutant that changes the shape was caught. Generator
+digests on seeds 0-149, old against new: only the 85 that end a cut
+differ, and the impossible parts whose attempts do.
 
 ### 3.6 The proof, and what each step costs
 

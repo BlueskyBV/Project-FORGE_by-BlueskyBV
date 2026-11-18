@@ -167,11 +167,16 @@ def value_for(rng: random.Random, spec: FieldSpec, kind: str, others: list[str],
     if t is FieldType.COUNT:
         return count(rng)
     if t is FieldType.DEPTH:
-        return (
-            {"through": True, "from": stated(rng)}
-            if rng.random() < 0.4
-            else length(rng)
-        )
+        # Through everything and up to a face (schema 1.7) out of the same draw as through: a seed's stream as it was.
+        drawn = rng.random()
+        if drawn >= 0.4:
+            return length(rng)
+        source = stated(rng)
+        if drawn < 0.06:
+            return {"through_all": True, "from": source}
+        if drawn < 0.12:
+            return {"up_to": {"item": "body", "face": "+z"}, "from": source}
+        return {"through": True, "from": source}
     if t is FieldType.DIAMETER:
         if rng.random() < 0.3:
             fit = rng.choice([("clearance", "M4", "fine"), ("clearance", "M3", None), ("tapped", "M5", None),
@@ -271,7 +276,7 @@ def random_draft(rng: random.Random) -> dict[str, Any]:
         )
         items.append(random_item(rng, f"item{k}", kind, body_kind))
     draft: dict[str, Any] = {
-        "schema_version": "1.6",
+        "schema_version": "1.7",
         "name": rng.choice(["part", "a bracket", "plate 2"]),
         "items": items,
     }

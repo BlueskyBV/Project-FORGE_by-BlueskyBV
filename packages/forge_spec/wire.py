@@ -26,6 +26,7 @@ from .draft import (
     Requirements,
     Text,
     Through,
+    UpTo,
 )
 from .values import Count, Provenance, Source, Value
 from .versions import CURRENT, Version, written
@@ -111,7 +112,13 @@ def _field(value: Any) -> Any:
     if isinstance(value, Text):
         return {"text": value.text, "from": provenance_to_wire(value.provenance)}
     if isinstance(value, Through):
-        return {"through": True, "from": provenance_to_wire(value.provenance)}
+        return {"through_all" if value.everything else "through": True, "from": provenance_to_wire(value.provenance)}
+    if isinstance(value, UpTo):
+        found: dict[str, Any] = {"up_to": {"item": value.face.item, "face": value.face.face}}
+        if value.offset is not None:
+            found["offset"] = value_to_wire(value.offset)
+        found["from"] = provenance_to_wire(value.provenance)
+        return found
     if isinstance(value, Fit):
         out = {
             "fit": value.fit,

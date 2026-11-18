@@ -53,6 +53,9 @@ half its length and half its width. None: square corners.
 ### `depth`
 
 How deep it goes, from the face: a size, or `through` ([sizes.md](sizes.md)).
+Schema 1.7: also `through_all` or `up_to` a face, with an offset
+([sizes.md](sizes.md)): a pocket up to a face has its floor in that face's
+plane, less the offset.
 
 ### `count`
 

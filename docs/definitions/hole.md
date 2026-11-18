@@ -61,7 +61,9 @@ The hole's diameter: a size, or a standard fit ([sizes.md](sizes.md)):
 How deep it goes, from the face: a size, or `through` (through the material
 under the face, coming out of the far side all across its mouth,
 [frame.md](frame.md)). A blind hole as deep as the material under it is a
-hole through.
+hole through. Schema 1.7: also `through_all` (through everything made
+before it, cavities and all) or `up_to` a face of an item made before it,
+with an offset ([sizes.md](sizes.md)), on a flat face.
 
 ### `counterbore`
 

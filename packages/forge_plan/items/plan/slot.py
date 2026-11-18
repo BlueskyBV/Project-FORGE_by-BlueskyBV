@@ -37,7 +37,7 @@ def _slot(
     first = _choice(item, "along") == face.axes[0]
     round_ends = _choice(item, "ends") == "round"
     _, parts = ENTRY.outline_of(item, face)
-    depth = _cut_depth(item, face, parts, w)
+    depth = _cut_depth(item, face, parts, copy)
     if round_ends:
         op, params = "profile_slot", {"length": length(long), "width": length(wide),
                                       "rotation": {"magnitude": 0.0 if first else 90.0, "unit": "deg"}}  # fmt: skip

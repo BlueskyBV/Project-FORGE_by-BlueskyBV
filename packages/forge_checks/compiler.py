@@ -63,7 +63,7 @@ from forge_spec.draft import (
     Pattern,
     Place,
 )
-from forge_spec.ends import ThroughAll, end_of
+from forge_spec.ends import ThroughAll, ThroughEverything, UpToFace, end_of
 from forge_spec.schema import AXES, KINDS
 from forge_spec.values import Count, Value
 from forge_units.dimension import LENGTH
@@ -961,7 +961,8 @@ class _Compiler:
         first axis, and its half sizes along it and the other), or a disc
         within ``reach`` of its centre.
         """
-        if isinstance(end_of(item), ThroughAll):
+        end = end_of(item)
+        if isinstance(end, (ThroughAll, ThroughEverything)):  # through everything: open as far as the part goes
             self.check(item, "depth", "depth", depth, None, Open(copy.point, _t(-_v(copy.direction)), depth, radius),
                        copy.index, _RAYS)  # fmt: skip
             return
@@ -973,9 +974,9 @@ class _Compiler:
             if outline is not None
             else Plane(at, copy.direction, reach)
         )
-        self._floor(
-            item, "depth", copy, floor, depth, self.tol(item.get("depth")), reach
-        )
+        # Up to a face (item 2b's first step): its floor in that face's plane, held as a size is.
+        tolerance = general(depth) if isinstance(end, UpToFace) else self.tol(item.get("depth"))
+        self._floor(item, "depth", copy, floor, depth, tolerance, reach)
 
     def _floor(self, item: Item, name: str, copy: Copy, floor: Plane, depth: float, tolerance: Tolerance,
                reach: float) -> None:  # fmt: skip
