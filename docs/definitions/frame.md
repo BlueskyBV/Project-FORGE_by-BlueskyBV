@@ -94,6 +94,10 @@ direction.
   its whole diameter: a cut goes in, across the axis, and out of the far
   side. A tube's, or a hollowed cylinder's, is its wall.
 - A hollowed body's face: its wall's thickness there.
+- A leaning item's far face: its own, from each point back along its axis to
+  the face it leans on: its height on the axis, less by tan(tilt) for each
+  millimetre towards the way it leans (place.md, "A leaning item's far
+  face").
 - A pocket's floor: what is left under it (the material under the face it
   was cut into, less its depth).
 - The far face of an item standing on a host (the top of a post on a

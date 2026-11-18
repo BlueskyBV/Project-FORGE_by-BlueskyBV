@@ -439,7 +439,40 @@ class Less:
     depth: float
 
 
-Material = Solid | Taper | Dome | Turned | Over | Less
+@dataclass(frozen=True)
+class Slant:
+    """A leaning item's far face (V2-stage4b-0c.md 3.3, 1b's step 5, with item 2b): its own material, from each point
+    back along its axis to the face it leans on: ``depth`` at ``centre`` (on its axis), ``tan`` (its tilt's) less for
+    each millimetre along ``way`` (a unit vector in the face's coordinates, the way it leans)."""
+
+    centre: Point
+    way: Point
+    tan: float
+    depth: float
+
+    def at(self, p: Point) -> float:
+        along = (p[0] - self.centre[0]) * self.way[0] + (p[1] - self.centre[1]) * self.way[1]
+        return max(self.depth - self.tan * along, 0.0)
+
+    def reach(self, outline: Outline, sign: float) -> float:
+        """How far ``outline`` reaches from the centre along the way it leans, at most (``sign`` 1), or against it
+        (-1): from its sides, and an arc's farthest point that way where its sweep passes it."""
+        w = (sign * self.way[0], sign * self.way[1])
+        found = -math.inf
+        for side in outline.pieces():
+            if isinstance(side, Arc):
+                points = side.ends()
+                angle = fs.atan2(w[1], w[0])
+                if side.holds(angle):
+                    points.append(side.at(angle))
+            else:
+                points = [side.a, side.b]
+            for p in points:
+                found = max(found, (p[0] - self.centre[0]) * w[0] + (p[1] - self.centre[1]) * w[1])
+        return found
+
+
+Material = Solid | Taper | Dome | Turned | Over | Less | Slant
 
 
 def same_under(face: FlatFace) -> float | None:
@@ -464,6 +497,8 @@ def material_at(material: Material, p: Point) -> float:
         return material.depth
     if isinstance(material, (Taper, Dome, Turned)):
         return material.at(fs.dist(p, material.centre))
+    if isinstance(material, Slant):
+        return material.at(p)
     if isinstance(material, Less):
         return material_at(material.base, p) - material.depth
     if all(o.contains(p) for o in material.over):
@@ -486,6 +521,8 @@ def most(material: Material, mouth: Sequence[Outline]) -> float:
             raise ValueError("most() of an empty region")
         far = min(m.farthest(material.centre) for m in mouth)
         return material.range(near, max(far, near))[1]
+    if isinstance(material, Slant):  # least far along its lean, over the first outline: the region is within it
+        return max(material.depth + material.tan * material.reach(mouth[0], -1.0), 0.0)
     if isinstance(material, Less):
         return most(material.base, mouth) - material.depth
     found = most(material.own, mouth)
@@ -507,6 +544,8 @@ def least(material: Material, mouth: Outline) -> float:
         return material.range(
             mouth.nearest(material.centre), mouth.farthest(material.centre)
         )[0]
+    if isinstance(material, Slant):
+        return max(material.depth - material.tan * material.reach(mouth, 1.0), 0.0)
     if isinstance(material, Less):
         return least(material.base, mouth) - material.depth
     if all(mouth.within(o) for o in material.over):
@@ -1801,9 +1840,27 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     w = tuple(lean.way[0] * a1[k] + lean.way[1] * a2[k] for k in range(3))
     u = (lean.c * n[0] + lean.s * w[0], lean.c * n[1] + lean.s * w[1], lean.c * n[2] + lean.s * w[2])
     key = (item.id, copy.index)
+    # Standing, not turned and not hollowed (1b's step 5, with item 2b): its far face placed on as with it upright, then
+    # leaned so, the material under it its own, from each point back along its axis to the face it leans on.
+    up = direction_of(copy.direction)
+    far = _entry(item.kind).far(up) if up is not None and not _entry(item.kind).taken else None
+    if far is not None and far not in layout.faces.get(key, {}) and "+end" in KINDS[item.kind].faces:
+        far = "+end"  # a round body's far end, standing on a flat face (its far face round a side is as it stands)
+    upright = layout.faces.get(key, {}).get(far) if far is not None else None
+    place = _place(item)
+    if not (isinstance(upright, FlatFace) and upright.axes == face.axes and item.id not in layout.shells
+            and (place is None or place.turn is None)):  # fmt: skip
+        upright = None
     for name in list(layout.faces.get(key, {})) + [n_ for n_ in KINDS[item.kind].faces if n_ not in layout.faces.get(key, {})]:
-        if name not in layout.closed.get(key, {}):
-            layout.close(key, name, "it leans on its face: nothing is placed on a leaning item's faces, for now")
+        if upright is not None and name == far:
+            assert isinstance(upright, FlatFace)
+            axis = (n[1] * w[2] - n[2] * w[1], n[2] * w[0] - n[0] * w[2], n[0] * w[1] - n[1] * w[0])
+            motion = Motion.about(copy.point, axis, (lean.c, lean.s))
+            height = _mm(item, _entry(item.kind).rise)
+            layout.faces[key][name] = replace(upright, local=motion,
+                                              material=Slant(upright.outline.centre, lean.way, lean.s / lean.c, height))  # fmt: skip
+        elif name not in layout.closed.get(key, {}):
+            layout.close(key, name, "it leans on its face: only a leaning item's far face takes anything, for now")
     if _entry(item.kind).taken:
         r = layout.diameters[item.id] / 2
         if _through(item):

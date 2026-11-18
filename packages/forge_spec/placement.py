@@ -71,6 +71,7 @@ from .geometry import (
     Over,
     Part,
     SideFace,
+    Slant,
     Source,
     Vec,
     _parts_overlap,
@@ -535,6 +536,10 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         faces.pop(name)  # a boss is always joined by its foot: its kind has no such face
     turn = _turn_value(item) if lean is None else None
     hollowed = turn is not None and item.id in layout.shells and SOLVE[item.kind].body
+    # Leaning, not turned and not hollowed (1b's step 5, with item 2b): its far face placed on as with it upright, then
+    # leaned so.
+    leaned = (_leaning_motion(inst, lean, up) if lean is not None and inst.direction is not None
+              and _turn_value(item) is None and item.id not in layout.shells else None)  # fmt: skip
     if hollowed:  # step 5.1: its hollow made as it stands upright (its faces so), all of it then turned below
         _hollow(item, key, lo, hi, up, layout, dict(fields or {}))
     top = _turned_far(faces, far, item, turn) if turn is not None and far in faces and not hollowed else None
@@ -544,7 +549,11 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         found = faces.get(name)
         if (top is not None and name == far) or name in layout.closed.get(key, {}):
             continue
-        if motion is not None and name == joined and inst.host is not None:
+        if leaned is not None and lean is not None and name == far and isinstance(found, FlatFace) \
+                and found.axes == (a1, a2):  # fmt: skip
+            # The material under it is its own: from each point back along its axis to the face it leans on.
+            faces[name] = _moved(replace(found, depth_model=Slant(lean.way, lean.tan), over=None), leaned)
+        elif motion is not None and name == joined and inst.host is not None:
             layout.close(key, name, "fault", f"{item.id}'s {name} face is joined to {inst.host[0]}")
         elif motion is not None and isinstance(found, FlatFace) and (hollowed or not name.startswith("inner ")):
             # Its other faces are its own, turned with it (1b's third move, step 2): placed on as upright, then turned.
@@ -557,6 +566,17 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         layout.issue("unable", at, f"Forge doesn't hollow a leaning {item.kind} yet")
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
                     (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
+
+
+def _leaning_motion(inst: Instance, lean: Lean, up: str) -> Rigid:
+    """A leaning item's own motion (1b's step 5, with item 2b): the turn about the line through its point square to its
+    face's normal and the way it leans, by its tilt, which takes it upright to as it leans; its direction is the
+    normal so moved."""
+    a1, a2 = inst.face_axes or FACE_AXES[up]
+    e1, e2, n = _axis_vec(a1), _axis_vec(a2), _dir(up)
+    w = tuple(lean.way[0] * e1[k] + lean.way[1] * e2[k] for k in range(3))
+    axis = (n[1] * w[2] - n[2] * w[1], n[2] * w[0] - n[0] * w[2], n[0] * w[1] - n[1] * w[0])
+    return Rigid.turn_about(inst.origin, axis, lean.c, lean.s)
 
 
 def _turned_motion(inst: Instance, axes: tuple[str, str], turn: Value) -> Rigid:
@@ -2799,6 +2819,12 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if not _flat_end_only(item, layout, at, f"a face of {on.item}, which is turned"):
                 return []
             face = _upright(face)
+            if isinstance(face, FlatFace) and isinstance(face.depth_model, Slant) and SOLVE[item.kind].cut \
+                    and isinstance(end_of(item), ThroughAll):  # fmt: skip
+                layout.issue("unable", at + pointer("depth"),
+                             f"{on.item} leans: a cut right through its far face would come out on the face it leans "
+                             "on, for now; give it a depth")  # fmt: skip
+                return []
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face
         found = kind.copies(item, named, host, len(hosts), layout, at, len(copies))

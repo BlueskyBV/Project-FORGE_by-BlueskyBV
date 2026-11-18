@@ -96,7 +96,8 @@ turned pocket's floor is the material under its face less its depth, where
 that face has the same material under all of it. Where a turned item stands
 partly off its host's face, or on (or is cut into) a face without the same
 material under all of it, its far face or floor takes nothing yet. A turned
-cut's other faces take nothing yet, nor do a leaning item's.
+cut's other faces take nothing yet, nor do a leaning item's but its far
+face (below).
 
 ### A turned item's faces
 
@@ -160,11 +161,31 @@ A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
 `tilt_towards`, a way that isn't one of the face's axes, or a lean round a
 side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
 counterbored hole (not a countersunk one), and only on such a face, for now:
-anything else that leans is CAN'T. A leaning item's own faces take nothing,
-and it is not hollowed, for now; a leaning rod is threaded along its lean
+anything else that leans is CAN'T. A leaning item's far face takes things
+(below); its other faces take nothing, and it is not hollowed, for now; a
+leaning rod is threaded along its lean
 from its far end, clear of its foot (thread.md); its far end's edges and a box's
 along its lean are rounded and chamfered as with it upright, not yet where
 it meets its face (edges.md, "A leaning item's edges").
+
+### A leaning item's far face
+
+The far face of a leaning boss, post, block or cylinder (its top, or its
+far end: `+end`), not turned in its face and not hollowed, takes a hole, a
+pocket, a slot or what stands on a face. It is named as with the item
+upright, and what goes on it is placed along its own axes, `u` and `v`, as
+on it upright, then leaned with it: about the line through the item's point
+square to its face's normal and its lean, by its tilt. So its `u` runs
+along the lean where the item leans along the face's first axis, tipped
+with it.
+
+The material under it is the item's own (frame.md): from each point back
+along the item's axis to the face it leans on. That is its height on the
+axis, and less on the side it leans towards, by tan(`tilt`) for each
+millimetre that way: a blind cut must fit in the least under its mouth. A
+cut right through it would come out on the face it leans on, and Forge
+says it can't yet (give it a depth); so does one through everything,
+through the next face or up to a face, there, for now.
 
 ## On a round side
 

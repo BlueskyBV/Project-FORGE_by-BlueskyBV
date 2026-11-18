@@ -386,6 +386,11 @@ class _Flat:
     #: A turned item's other faces (place.md, "A turned item's faces"): its first and second axes on the part, its
     #: ``axes`` naming them as they are with the item upright; its ``normal`` is the part's.
     oriented: tuple[Vec, Vec] | None = None
+    #: A leaning item's far face (V2-stage4b-0c.md 3.3, 1b's step 5, with item 2b), oriented as above: the material
+    #: under it is its own, from each point back along its axis to the face it leans on, ``material`` at its centre
+    #: and ``tan`` less for each millimetre along ``way`` (in its coordinates). What goes on it is drawn from a stream
+    #: of its own (:func:`_onto_leaning`), not as on a turned item's face.
+    slant: tuple[tuple[float, float], float] | None = None
 
     @property
     def turned(self) -> bool:
@@ -427,6 +432,11 @@ class _Flat:
 
         The farthest point is bounded by the footprint's box's corner.
         """
+        if self.slant is not None:  # least where the footprint's box reaches farthest along the way it leans
+            (w1, w2), tan = self.slant
+            cu, cv = self.coords()
+            reach = w1 * (foot.at[0] - cu) + w2 * (foot.at[1] - cv) + abs(w1) * foot.half[0] + abs(w2) * foot.half[1]
+            return max(self.material - tan * reach, 0.0)
         if self.dome <= 0 and self.flare[1] <= 0:
             return self.material
         cu, cv = self.coords()
@@ -1059,6 +1069,8 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
                          height)  # fmt: skip
             top = height * lean.c + along * lean.s + 1.0
             part.steps.append(Step(f.id, copy_index, True, Kept(body, _t(p), _t(n), 0.0, top), (REACH, 0.0)))
+            if f.turn is None:
+                _leaning_far(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, face, part)
     if strict and not cut:
         _stands_in_air(f, made, part.steps[first:], (*part.steps[:first], *part.late))
     for k, at in enumerate(spots):
@@ -1069,6 +1081,27 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
         elif cut:
             face.dug.append((covers[k], deepest))
     return made
+
+
+def _leaning_far(f: Feature, index: int, p: Array, n: Array, u: Array, w: Array, tilted: Array, side: Array,
+                 height: float, along: float, across: float, lean: _Lean, face: _Flat, part: _Part) -> None:  # fmt: skip
+    """A leaning item's far face (1b's step 5, with item 2b), named as with it upright and oriented as it leans: its
+    axes the face's own turned by its lean (each the part of it along the way it leans turned to ``tilted``, the part
+    across kept), its outline its own cross-section, the material under it its own back along its axis (a
+    :class:`_Flat`'s ``slant``). No cut goes right through it, so it comes out nowhere."""
+    name = "+end" if _draw(f.kind).leans_round else _named(n)
+    a1, a2 = face.frame.u, face.frame.v
+
+    def leaned(a: Array) -> Vec:
+        return _t(float(fv.matmul(a, w)) * tilted + float(fv.matmul(a, side)) * side + 0.0)
+
+    if _draw(f.kind).leans_round:
+        shape, half = "disc", (along, along)
+    else:
+        shape, half = "rect", (along, across) if lean.along_first else (across, along)
+    key = (f.id, index, name)
+    part.flats[key] = _Flat(key, p + height * u, u.copy(), face.axes, shape, half, height, None,
+                            oriented=(leaned(a1), leaned(a2)), slant=(lean.way, lean.tan))  # fmt: skip
 
 
 def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
@@ -1689,7 +1722,7 @@ def _on_flat(
             if (
                 strict
                 and deep is not None
-                and face.dome > 0
+                and (face.dome > 0 or face.slant is not None)
                 and deep > face.material_under(_Foot(at, half, corner)) - GAP
             ):
                 # Under a dome's flat face the material is the dome's height over a point: least at the cut's
@@ -4668,6 +4701,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue
         if _onto_end(random.Random(f"forge-eval on round ends {seed} {k}"), k, plan, part, len(plan) < size):
             continue
+        if _onto_leaning(random.Random(f"forge-eval leaning faces {seed} {k}"), k, plan, part):
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -5004,7 +5039,7 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
     """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
     Whether one was added to the plan."""
-    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned]
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned and face.slant is None]
     if not faces or rng.random() >= _ON_TURNED:
         return False
     key = rng.choice(faces)
@@ -5019,6 +5054,33 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
                 continue
             plan.append(more or candidate)
             return True
+    return False
+
+
+#: How often, where the part has a leaning item's far face, a hole, a pocket or a slot is drawn on it (1b's step 5,
+#: with item 2b), from a stream of its own.
+_ON_LEANING = 0.6
+
+
+def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning item's far face (1b's step 5,
+    with item 2b): placed along the face's own axes, u and v, as with the item upright, blind (no cut goes right
+    through it). Whether one was added to the plan."""
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.slant is not None]
+    if not faces or rng.random() >= _ON_LEANING:
+        return False
+    key = rng.choice(faces)
+    face = part.flats[key]
+    for _ in range(10):
+        candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
+        if not _draw(candidate.kind).cut_out or candidate.depth is None:
+            continue
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
     return False
 
 

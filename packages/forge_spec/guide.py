@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 12
+GUIDE_VERSION = 13
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -754,8 +754,14 @@ length, as a boss's height, along it); a \
 hole's way out of its mouth does, so it goes in leaning the other way. Its \
 height or depth is along it; its foot on the face is its section by the \
 face (a round one's an ellipse), which is what fits, overlaps and is \
-measured "to": "edge". It needs the same material under all of its face; \
-nothing goes on its own faces yet; its far end's edges ("top") and a \
+measured "to": "edge". It needs the same material under all of its face. \
+Its far face (a boss's or a cylinder's "+end", a post's or a block's top, \
+named as with it upright), unless it is turned or hollowed too, takes a \
+hole, a pocket, a slot or what stands, placed along that face's own "u" \
+and "v" as on it upright, then leaned with it; the material under it is \
+the item's own back along its axis to its face, less on the side it leans \
+to, and nothing goes right through it yet. Its other faces take nothing \
+yet; its far end's edges ("top") and a \
 box's along its lean ("vertical") are rounded as with it upright, not yet \
 its joint; a leaning rod is threaded along its lean from its far end, \
 clear of its foot (give the thread a length that leaves it so).

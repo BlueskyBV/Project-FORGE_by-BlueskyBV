@@ -53,6 +53,7 @@ __all__ = [
     "Over",
     "Part",
     "SideFace",
+    "Slant",
     "Source",
     "Taper",
     "Turned",
@@ -134,7 +135,18 @@ class Turned:
     extra: float = 0.0
 
 
-DepthModel = Taper | Dome | Turned
+@dataclass(frozen=True)
+class Slant:
+    """The material under a leaning item's far face (V2-stage4b-0c.md 3.3, 1b's step 5, with item 2b): its own, from
+    each point back along its axis to the face it leans on. That is the face's ``depth_below`` at its centre, on the
+    axis, and ``tan`` (its tilt's) less for each millimetre along ``way`` (a unit vector in the face's coordinates, the
+    way it leans): the face it leans on is that much nearer there."""
+
+    way: tuple[float, float]
+    tan: float
+
+
+DepthModel = Taper | Dome | Turned | Slant
 
 
 @dataclass(frozen=True)
@@ -1192,6 +1204,7 @@ def _depth_at(face: FlatFace, rho: float) -> float:
         return turned_depth(model.shape, model.top, rho, rho, model.extra)[0]
     if isinstance(model, Dome):
         return math.sqrt(max(model.radius * model.radius - rho * rho, 0.0))
+    assert not isinstance(model, Slant), "a slant's material isn't by distance from the centre"
     if rho <= model.flat:
         return face.depth_below
     if rho >= model.edge:
@@ -1209,6 +1222,8 @@ def _depth_range(face: FlatFace, near: float, far: float) -> tuple[float, float]
     model = face.depth_model
     if isinstance(model, Turned):
         return turned_depth(model.shape, model.top, near, far, model.extra)
+    if isinstance(model, Slant):  # bounds over the ring, whichever way it leans (the walks above read it exactly)
+        return max(face.depth_below - model.tan * far, 0.0), face.depth_below + model.tan * far
     return _depth_at(face, far), _depth_at(face, near)
 
 
@@ -1347,6 +1362,9 @@ def least_material_under(
             steps.append(_Step(less=face.less.depth))
             p1, p2, face = p1 + face.less.at[0], p2 + face.less.at[1], face.less.base
             continue
+        if isinstance(face.depth_model, Slant):  # a leaning item's far face: its own material, over nothing else
+            found = _slanted(face, face.depth_model, footprint, p1, p2, 1.0)
+            break
         far, near = far_near(footprint, p1, p2)
         over = face.over
         if over is None or not footprint_on_face(
@@ -1392,6 +1410,9 @@ def most_material_under(
             steps.append(_Step(less=face.less.depth))
             p1, p2, face = p1 + face.less.at[0], p2 + face.less.at[1], face.less.base
             continue
+        if isinstance(face.depth_model, Slant):  # a leaning item's far face: its own material, over nothing else
+            found = _slanted(face, face.depth_model, footprint, p1, p2, -1.0)
+            break
         far, near = far_near(footprint, p1, p2)
         found = _depth_range(face, near, far)[1]
         over = face.over
@@ -1410,6 +1431,50 @@ def most_material_under(
                 _depth_range(add_material(step.face, found), step.near, step.far)[1],
             )
     return found
+
+
+def _slanted(face: FlatFace, slant: Slant, footprint: Footprint, p1: float, p2: float, sign: float) -> float:
+    """The least (``sign`` 1) or the most (-1) material under a footprint at (p1, p2) on a leaning item's far face
+    (:class:`Slant`): its own at the centre, less ``tan`` for each millimetre the footprint reaches farthest (or least
+    far) along the way it leans; none below nothing."""
+    w1, w2 = slant.way
+    reach = _support(footprint, (sign * w1, sign * w2), p1, p2)
+    return max(face.depth_below - sign * slant.tan * reach, 0.0)
+
+
+def _support(footprint: Footprint, way: tuple[float, float], p1: float, p2: float) -> float:
+    """How far along ``way`` (a unit vector) a footprint at (p1, p2) reaches, at most."""
+    w1, w2 = way
+    if isinstance(footprint, Shape):
+        found = -math.inf
+        for piece in footprint.pieces:
+            ends: tuple[tuple[float, float], ...]
+            if isinstance(piece, Arc):
+                ends = (piece.at(0.0), piece.at(1.0))
+                angle = fs.atan2(w2, w1)
+                if _within_sweep(angle, piece.start, piece.sweep):
+                    ends += ((piece.centre[0] + piece.radius * w1, piece.centre[1] + piece.radius * w2),)
+            else:
+                ends = (piece.a, piece.b)
+            found = max(found, *(w1 * (p1 + e[0]) + w2 * (p2 + e[1]) for e in ends))
+        return found
+    found = -math.inf
+    for part in footprint:
+        c1, c2 = p1 + part.centre[0], p2 + part.centre[1]
+        if part.disc:
+            found = max(found, w1 * c1 + w2 * c2 + part.half[0])
+        else:
+            found = max(found, w1 * c1 + w2 * c2 + abs(w1) * part.half[0] + abs(w2) * part.half[1])
+    return found
+
+
+def _within_sweep(angle: float, start: float, sweep: float) -> bool:
+    """Whether ``angle`` (radians) lies on an arc from ``start`` turning ``sweep`` (anticlockwise positive)."""
+    turn = 2 * math.pi
+    if abs(sweep) >= turn - 1e-12:
+        return True
+    lo, span = (start, sweep) if sweep >= 0 else (start + sweep, -sweep)
+    return (angle - lo) % turn <= span + 1e-12
 
 
 def add_material(face: FlatFace, host: float) -> FlatFace:

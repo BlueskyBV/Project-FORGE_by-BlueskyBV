@@ -788,6 +788,40 @@ is given) is a CAN'T that says how long it may be. Tests:
 threaded, built and judged; threaded square to the face instead fails),
 `tests/test_v2_spec_lean.py` (all along it, a CAN'T; shorter, read).
 
+**Step 5's leaning far face, as built (revision 16, with item 2b).** The far
+face of a leaning boss, post, block or cylinder, not turned and not
+hollowed, takes a hole, a pocket, a slot or what stands on a face (place.md,
+"A leaning item's far face"); no schema change. It is placed on as with the
+item upright and then leaned, as a turned item's faces are (1b's third
+move, step 2): about the line through the item's point square to its face's
+normal and its lean, by its tilt. **The solver** keeps it as the upright
+far face with that motion (`_leaning_motion`) and the material under it a
+`Slant` (`forge_spec.geometry`): its height on the axis, `tan` less for each
+millimetre towards its lean, read by the least and the most under a
+footprint (its reach that way: a disc's, a rectangle's, a turned outline's
+sides and arcs), so a blind cut too deep on the low side is asked; a cut
+right through it, which would come out on the face it leans on, it can't
+yet. **The judge** does the same on its own (its `Slant` material, its
+`Motion`), opening only the far face of a leaning copy; **the planner**, the
+oracle and the check compiler build and measure what is on it as on any
+moved face (built upright, then moved). **The generator** registers each
+leaning standing copy's far face (`_leaning_far`), oriented as it leans
+(each of its axes' part along the lean tipped with it), with its own slant
+of material, and draws a blind hole, pocket or slot on one now and then
+(`_onto_leaning`, stream "forge-eval leaning faces", 0.6 where a part has
+one); a turned item's face stream leaves it alone. Tests:
+`tests/test_v2_plan_leanfar.py` (twelve parts placed where every program
+puts them, a hole in a pocket's floor there among them; the least material
+the way it leans, more against it, and less the pocket's depth under its
+floor; what
+isn't yet is said; built and judged; leaned half a degree more fails; the
+second kernel agrees; the generator's far face and its draws),
+`tests/test_v2_spec_lean.py` and `tests/test_v2_plan_leanbody.py` (only the
+far face takes anything). The exit harness's per-seed proof on 15 generated
+seeds that put a cut on a leaning item's far face: all passed, and every
+mutant was caught. Generator digests on seeds 0-149, old against new: only
+the 6 that put one there differ, and the impossible parts whose attempts do.
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block
