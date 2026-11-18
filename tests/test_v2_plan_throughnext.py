@@ -43,6 +43,12 @@ face"; V2-stage4b-0c.md, 3.5, item 2b's second step; schema 1.8).
   judged; a body made after it in its way is asked about; the second
   kernel agrees; the generator draws it round a side, on a ball or a
   cone, and on a turned item's face.
+- **And up to a face from a turned or leaning item's face** (item 2b's third
+  step): to that face's plane, square to the cut where it is moved to, less
+  its offset: down through a turned post to the plate's bottom or top, from
+  a leaning post's side to the plate's side; built and judged; one from a
+  leaning item's far face, at a slant to every face, is said; the generator
+  draws it on a leaning box's side.
 """
 
 from __future__ import annotations
@@ -612,6 +618,80 @@ class ThroughEverythingBuiltAsPlaced(unittest.TestCase):
                 self.assertIsNone(built.gap, built.refusals)
                 report_ = agree(planned.document(built.choice), "part", exact=built.result)
                 self.assertTrue(report_.holds, (report_.disagreements, report_.notes, report_.names, report_.topology))
+
+
+def _up_to(item: str, face: str, offset: float | None = None) -> dict[str, Any]:
+    found: dict[str, Any] = {"up_to": {"item": item, "face": face}, "from": {"assumed": "down to it"}}
+    if offset is not None:
+        found["offset"] = assumed("short", offset)
+    return found
+
+
+def _up_to_cases() -> dict[str, tuple[Any, float]]:
+    """Up to a face from a turned or leaning item's face: each part, and how deep its hole goes from its point (mm)."""
+    from test_v2_plan_faceaxes import _hole as _on_post
+    from test_v2_plan_faceaxes import _post
+    from test_v2_plan_leanfar import _hole as _on_lean
+    from test_v2_plan_leanfar import _leaning
+
+    return {
+        # The turned post's top 18 mm over the plate's bottom, its plate's top 8.
+        "down through a turned post to the plate's bottom, less 2": (
+            lambda b: [_post(b), {**_on_post(b), "depth": _up_to("plate", "-z", 2.0)}], 16.0),
+        "down a turned post to the plate's top, less 3": (
+            lambda b: [_post(b), {**_on_post(b), "depth": _up_to("plate", "+z", 3.0)}], 7.0),
+        # From the leaning post's +y side, 6 mm out from its axis, to the plate's -y side 30 mm the other way, less 25.
+        "from a leaning post's side to the plate's side, less 25": (
+            lambda b: [_leaning(b, "post"), {**_on_lean(b, "+y"), "depth": _up_to("plate", "-y", 25.0)}], 11.0),
+    }  # fmt: skip
+
+
+class UpToAFaceFromATurnedOrALeaningItemsFace(unittest.TestCase):
+    def test_to_its_plane_where_it_is_moved_to(self) -> None:
+        from forge_checks.place import compare_layouts, place
+        from forge_spec.placement import solve
+
+        for name, (make, deep) in _up_to_cases().items():
+            with self.subTest(name):
+                report, _ = _everything_report(make, "moved")
+                self.assertEqual(report.problems, ())
+                (hole,) = report.layout.instances["hole"]
+                self.assertAlmostEqual(hole.depth, deep, places=9)
+                self.assertEqual(compare_layouts(place(report.spec), solve(report.spec)), ())
+
+    def test_from_a_leaning_far_face_it_is_said(self) -> None:
+        from test_v2_plan_leanfar import _hole as _on_lean
+        from test_v2_plan_leanfar import _leaning
+
+        report, _ = _everything_report(lambda b: [_leaning(b), {**_on_lean(b, "+end"), "depth": _up_to("plate", "-z")}],
+                                       "moved")  # fmt: skip
+        self.assertTrue(any(p.kind == "unable" and "isn't square to hole" in p.message for p in report.problems),
+                        [(p.kind, p.message) for p in report.problems])  # fmt: skip
+
+    @needs_occ
+    def test_built_and_judged(self) -> None:
+        from forge_checks.classes import Verdict
+        from forge_plan import plan
+        from forge_spec.lock import lock
+        from test_v2_plan_build import judged_plan
+
+        for name, (make, _) in _up_to_cases().items():
+            with self.subTest(name):
+                report, brief = _everything_report(make, "moved")
+                spec = lock(report, brief, by="draft", strict=False)
+                built, accounting, failed = judged_plan(spec.spec, plan(spec))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+                self.assertEqual(failed, [])
+
+    def test_the_generator_draws_it(self) -> None:
+        from forge_eval.generator import _build, generate
+
+        case = generate(66)  # a hole into a leaning post's side, up to the block's side
+        part = _build(case.plan, False)
+        found = [f.end.face for f in case.plan if f.on is not None and f.end is not None and f.end.face is not None
+                 and (key := (f.on[0], 0, f.on[1])) in part.flats and part.flats[key].leans]  # fmt: skip
+        self.assertEqual(found, [("body", "-x")])
 
 
 class TheGeneratorDrawsThroughEverythingThere(unittest.TestCase):

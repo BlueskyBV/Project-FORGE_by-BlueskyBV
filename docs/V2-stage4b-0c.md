@@ -1461,6 +1461,27 @@ Generator digests on seeds 0-149, old against new: only the eleven of
 those that draw one differ, and the impossible parts 97, 104, 110, 114,
 119 and 128.
 
+**And up to a face from a turned or leaning item's face (revision 16).** A
+cut goes up to a face from a turned item's face, or a leaning item's far
+face or side, too (sizes.md): to that face's plane, square to the cut where
+it is on the part, less the offset. **The solver** and **the judge** place
+it upright as any cut there, and work out how deep, and whether the face is
+square to it and behind its mouth, where it is moved to (`Layout.motion`,
+`_Layout.motion`: the face's motion while it is placed upright, which their
+`_end_depth` applies to its plane and its way; through everything on such a
+face is found so too); so a pocket's floor there is where it ends. **The
+generator** ends a blind cut just drawn on a turned item's face or a leaning
+box's side up to a face behind it now and then, from the same stream as
+through everything (`_everything_now_and_then`, half of those it ends:
+`_BLIND_UP_TO`). From a leaning item's far face no face is square to it,
+and that is said. Tests: `tests/test_v2_plan_throughnext.py` (down a turned
+post to the plate's bottom and top, from a leaning post's side to the
+plate's side: placed where every program puts them, built and judged; from
+a leaning boss's far face said; the generator's part 66). The exit harness's per-seed proof on 66, 297
+and 314 (the three of the first 400 that end so, from a turned item's
+face): all passed, every mutant caught. Generator digests on seeds 0-149,
+old against new: only 66 differs.
+
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
 parts; 2b's first step's pair against that main kept those and held two

@@ -1712,9 +1712,10 @@ def _on_flat(
     # Through the next face, a hole on a turned or leaning item's face too (item 2b's third step).
     sampled = (f.end is not None and f.end.next and face.turned and _draw(f.kind).on_curved and _draw(f.kind).cut_out
                and f.recess is None)  # a hole: the one cut that goes on a curved face too
-    # Through everything on a turned item's face, or a leaning box's side, as on any flat face (item 2b's third step):
-    # where it comes out on faces the generator keeps, square to it (not out of a leaning item's far face, at a slant).
-    moved_all = (f.end is not None and f.end.face is None and not f.end.next and face.turned and face.slant is None)
+    # Through everything or up to a face on a turned item's face, or a leaning box's side, as on any flat face (item
+    # 2b's third step): where it comes out on faces the generator keeps, square to it, or to a face parallel to it (not
+    # from a leaning item's far face, at a slant).
+    moved_all = (f.end is not None and not f.end.next and face.turned and face.slant is None)  # or up to a face
     if f.end is not None and (f.tilt is not None or (face.turned and not sampled and not moved_all)
                               or not _draw(f.kind).cut_out):  # fmt: skip
         raise DoesNotFitError(f"{f.id}: the generator ends a hole, a pocket or a slot square to a flat face by a "
@@ -5189,8 +5190,8 @@ def _everything_now_and_then(rng: random.Random, at: int, plan: list[Feature], p
     """Now and then a hole just drawn round a side, on a ball's surface or a cone's side, or a cut on a turned item's
     face or a leaning box's side, not ended by a condition already, goes through everything (item 2b's third step),
     from a stream of its own (a seed that sends none so stays as it was drawn): as far as everything made before it
-    reaches along its axis from its point, as the generator's own shape says. Where that doesn't fit, it is as
-    drawn."""
+    reaches along its axis from its point, as the generator's own shape says; a blind one on a flat face now and then
+    up to a face behind it instead. Where that doesn't fit, it is as drawn."""
     f = plan[at]
     if rng.random() >= _EVERYTHING_ROUND or f.end is not None or not _draw(f.kind).cut_out or f.on is None:
         return
@@ -5202,6 +5203,14 @@ def _everything_now_and_then(rng: random.Random, at: int, plan: list[Feature], p
     if not round_ and not (face is not None and face.turned and face.slant is None):
         return
     ended = replace(f, depth=None, end=End())
+    if not round_ and f.depth is not None and rng.random() < _BLIND_UP_TO:
+        # A blind one on a turned item's face or a leaning box's side now and then up to a face behind it instead, as
+        # deep as drawn, its offset what is left (where a face is so placed).
+        assert face is not None
+        targets = _up_to_targets(f, f.depth, face, part)
+        if targets:
+            (item, name), offset = rng.choice(targets)
+            ended = replace(f, end=End((item, name), offset))
     trial = [*plan]
     trial[at] = ended
     try:
@@ -5209,6 +5218,11 @@ def _everything_now_and_then(rng: random.Random, at: int, plan: list[Feature], p
     except DoesNotFitError:
         return
     plan[at] = ended
+
+
+#: How often a blind cut on a turned item's face or a leaning box's side that :func:`_everything_now_and_then` ends is
+#: cut up to a face behind it, rather than through everything (item 2b's third step).
+_BLIND_UP_TO = 0.5
 
 
 def _up_to_targets(f: Feature, depth: float, face: _Flat, part: _Part) -> list[tuple[tuple[str, str], float]]:

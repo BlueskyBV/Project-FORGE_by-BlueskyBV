@@ -1132,6 +1132,9 @@ class _Layout:
         #: Placing on a face as it stands upright, before it is moved (a turned or leaning item's): a cut through the
         #: next face is found where it is moved to (item 2b's third step), not here.
         self.upright = False
+        #: And the motion that takes it onto the part: a cut through everything or up to a face is worked out where it
+        #: is (item 2b's third step).
+        self.motion: Motion | None = None
 
     def close(self, key: tuple[str, int], face: str, why: str) -> None:
         self.faces.setdefault(key, {}).pop(face, None)
@@ -1694,19 +1697,20 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
-        if isinstance(end_of(item), UpToFace):
-            raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut up to a face, yet")
+        if isinstance(end_of(item), UpToFace) and not isinstance(face, FlatFace):
+            raise PlaceError(item.id, "round the side of what stands on a turned item's face, nothing is cut up to a "
+                             "face, yet")  # fmt: skip
         if (isinstance(face, RoundSide) or (isinstance(face, FlatFace) and not isinstance(face.material, Slant))) \
                 and isinstance(layout.items[on.item].get("tilt"), Value) \
                 and (not _entry(item.kind).taken or isinstance(item.get("tilt"), Value)):  # fmt: skip
             # A leaning item's side (V2-stage4b-0c.md 3.3): a cut square to it only, which stays clear of its foot.
             raise PlaceError(item.id, "on a leaning item's side, only a cut square to it, yet")
         upright = replace(face, local=None)
-        layout.upright = True
+        layout.upright, layout.motion = True, motion
         try:
             found = _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made))
         finally:
-            layout.upright = False
+            layout.upright, layout.motion = False, None
         for copy in found:
             moved = _moved_copy(copy, motion, layout)
             if isinstance(end_of(item), ThroughNext) and _entry(item.kind).taken and isinstance(upright, FlatFace):
@@ -1716,8 +1720,10 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
                 # Round the side of what stands on one: from where it is moved to, round its mouth.
                 moved = _with_depth(moved, _next_round(item, moved.point, moved.direction,
                                                        layout.diameters[item.id] / 2, layout))  # fmt: skip
-            elif isinstance(end_of(item), ThroughEverything) and _entry(item.kind).taken:
-                # Through everything (item 2b's third step): as far as everything reaches from where it is moved to.
+            elif isinstance(end_of(item), ThroughEverything) and _entry(item.kind).taken \
+                    and not isinstance(upright, FlatFace):  # fmt: skip
+                # Through everything round the side of what stands on one (item 2b's third step): as far as everything
+                # reaches from where it is moved to (on a flat face, _end_depth found that, upright).
                 moved = _with_depth(moved, _everything_at(moved.point, moved.direction, layout))
             made.append(moved)
     count = item.get("count")
@@ -2080,6 +2086,8 @@ def _end_depth(item: Item, face: FlatFace, point: Vec, layout: _Layout) -> float
     past it; up to a face: to that flat face's plane, square to the cut, less its offset."""
     end = end_of(item)
     n = face.frame.n
+    if layout.motion is not None:  # a turned or leaning item's face, placed upright: where it is moved to (2b's third)
+        n, point = layout.motion.vector(n), layout.motion.point(point)
     level = sum(point[k] * n[k] for k in range(3))
     if isinstance(end, ThroughEverything):
         reach = 0.0

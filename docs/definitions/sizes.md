@@ -134,9 +134,17 @@ rod and on past what is beside it; through a ball seated in a plate and
 the plate; out through a leaning boss and the plate it leans on. A body
 made after it in its way would close it, and Forge asks.
 
-For now up to a face is cut square to a flat face only, not on a turned or
-leaning item's face, and none of the three leaning, or from inside a bore:
-Forge says it can't, and why.
+A cut goes **up to a face** from a turned item's face, or a leaning item's
+far face or side, too: to that face's plane, square to the cut where it is
+on the part, less the offset: down through a turned post to the plate's
+bottom; from a leaning post's side to the plate's side. A face at a slant
+to it, as every face is to a leaning item's far face, isn't one Forge cuts
+up to.
+
+For now up to a face is cut from a flat face only, not round a side, on a
+ball or a cone; none of the three leaning; and nothing goes through the
+next face, through everything or up to a face from inside a bore: Forge
+says it can't, and why.
 
 ## Sizes from standard tables
 

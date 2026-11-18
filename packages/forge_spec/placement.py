@@ -219,6 +219,10 @@ class Layout:
     #: hollowed body followed by its own roundings and chamfers and then its
     #: shell; every other rounding, chamfer and thread last, in the spec's order.
     order: list[str] = field(default_factory=list)
+    #: Placing on a face as it stands upright, before it is moved (a turned or leaning item's): the motion that takes
+    #: it onto the part, so a cut through everything or up to a face is worked out where it is (item 2b's third
+    #: step). The solver's working state, not part of what it solves to.
+    motion: Rigid | None = field(default=None, compare=False, repr=False)
 
     def issue(self, kind: str, at: str, message: str) -> None:
         found = Issue(kind, at, message)
@@ -1461,8 +1465,10 @@ def _end_depth(item: Item, face: FlatFace, layout: Layout, at: str) -> tuple[boo
         return False, None
     if isinstance(end, ThroughNext):
         return True, end.reaches
-    n = face.frame.n
-    level = sum(face.centre[k] * n[k] for k in range(3))
+    n, centre = face.frame.n, face.centre
+    if layout.motion is not None:  # a turned or leaning item's face, placed upright: where it is moved to (2b's third)
+        n, centre = layout.motion.vector(n), layout.motion.point(centre)
+    level = sum(centre[k] * n[k] for k in range(3))
     if isinstance(end, ThroughEverything):
         reach = 0.0
         for copies in layout.instances.values():
@@ -2936,10 +2942,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if item.id in layout.shells:
                 layout.issue("unable", at, f"{on.item} is turned: Forge hollows what stands on its faces in a later step")
                 return []
-            # Through the next face too (item 2b's third step): placed upright, as deep as the preview found it along
-            # its axis where it is moved to.
-            if not _curved_end(item, layout, at, f"a face of {on.item}, which is turned or leans"):
-                return []
+            # Through the next face, through everything and up to a face too (item 2b's third step): placed upright,
+            # how deep along its axis where it is moved to. Round the side of what stands on one, as round any side.
             face = _upright(face)
             host_item = layout.items.get(on.item)
             if (isinstance(face, SideFace) or (isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant))) \
@@ -2958,7 +2962,11 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                 return []
         kind = _HOSTS[type(face)]
         named = _in_its_axes(item, face) if isinstance(face, FlatFace) else face
-        found = kind.copies(item, named, host, len(hosts), layout, at, len(copies))
+        layout.motion = motion
+        try:
+            found = kind.copies(item, named, host, len(hosts), layout, at, len(copies))
+        finally:
+            layout.motion = None
         if len(copies) + len(found) > MAX_COPIES:
             layout.issue("unable", at, f"more than {MAX_COPIES:,} copies of {item.id} on every "
                          f"copy of {on.item}: Forge places at most {MAX_COPIES:,} of one item")  # fmt: skip
