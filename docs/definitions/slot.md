@@ -58,7 +58,7 @@ the face").
 
 How deep it goes, from the face: a size, or `through` ([sizes.md](sizes.md)).
 Schema 1.7: also `through_all` or `up_to` a face, with an offset
-([sizes.md](sizes.md)).
+([sizes.md](sizes.md)); schema 1.8, `through_next`.
 
 ### `count`
 

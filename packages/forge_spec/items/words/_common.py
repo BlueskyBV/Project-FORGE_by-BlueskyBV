@@ -131,6 +131,9 @@ def _place(place: Place | None) -> str:
 
 def _depth(value: object) -> str:
     if isinstance(value, Through):
+        if value.next:  # item 2b's second step: as deep as the preview found, once it has
+            found = "" if value.reaches is None else f" ({_n(value.reaches)} mm deep, as the preview found it)"
+            return "right through the next face it comes out of" + found + _tag(value.provenance)
         return ("right through everything behind it" if value.everything else "right through") + _tag(value.provenance)
     if isinstance(value, UpTo):  # item 2b's first step
         back = "" if value.offset is None else f", {_v(value.offset)} short of it"

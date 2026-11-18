@@ -402,7 +402,8 @@ def _check_one(
     elif isinstance(thing, Fit):
         _check_fit(thing, at, label, c)
     elif isinstance(thing, Through):
-        _stated(thing.provenance, at, f"{label}: through" + (" all" if thing.everything else ""), c)
+        _stated(thing.provenance, at,
+                f"{label}: through" + (" the next face" if thing.next else " all" if thing.everything else ""), c)  # fmt: skip
     elif isinstance(thing, Faces):
         _stated(thing.provenance, at, f"{label}: {', '.join(thing.faces) or 'none'}", c)
         if thing.provenance.source is Source.BRIEF and thing.faces:

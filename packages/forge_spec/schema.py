@@ -478,7 +478,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "depth",
                     FieldType.DEPTH,
-                    "how deep, right through the material under the face, through everything, or up to a face",
+                    "how deep, right through the material under the face, through everything, through the next face, or "
+                    "up to a face",
                 ),
                 _f(
                     "counterbore",
@@ -535,7 +536,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "depth",
                     FieldType.DEPTH,
-                    "how deep, right through the material under the face, through everything, or up to a face",
+                    "how deep, right through the material under the face, through everything, through the next face, or "
+                    "up to a face",
                 ),
                 _COUNT,
             ),
@@ -583,7 +585,8 @@ KINDS: Mapping[str, KindSpec] = {
                 _f(
                     "depth",
                     FieldType.DEPTH,
-                    "how deep, right through the material under the face, through everything, or up to a face",
+                    "how deep, right through the material under the face, through everything, through the next face, or "
+                    "up to a face",
                 ),
                 _COUNT,
             ),

@@ -23,6 +23,7 @@ from typing import Any, Literal
 
 from .checks import SpecReport, check_draft
 from .draft import PartSpec
+from .ends import ThroughNext, end_of
 from .placement import Assumption, Layout
 from .problems import Problem
 from .versions import CURRENT, Version, version_of
@@ -205,6 +206,12 @@ def _clean(brief: NumberedBrief, data: dict[str, Any], strict: bool) -> SpecRepo
         raise LockError(
             f"{len(report.problems)} problem(s) left: answer or fix them first"
         )
+    for item in report.spec.items:
+        end = end_of(item)
+        if isinstance(end, ThroughNext) and end.reaches is None:
+            # Item 2b's second step: the person confirms how deep it goes, which the preview finds.
+            raise LockError(f"{item.id} goes through the next face: build the preview to find how deep, then confirm "
+                            "it")  # fmt: skip
     return report
 
 

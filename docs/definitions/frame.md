@@ -108,7 +108,10 @@ everywhere across its mouth. A cut **through everything** (schema 1.7) isn't
 measured in the material under its face: it goes on past everything made
 before it, as far as the part reaches behind its mouth ([sizes.md](sizes.md)).
 A cut **up to a face** goes to that face's plane, less its offset, and must
-fit in the least material under its mouth as a blind cut does.
+fit in the least material under its mouth as a blind cut does. A cut
+**through the next face** (schema 1.8) goes as the shape says: until it is
+out of the part all across its mouth for the first time, which the preview
+finds and the spec records ([sizes.md](sizes.md)).
 
 The material under a face is what its own items make it. Cuts made before
 don't change it: a blind hole that reaches a pocket cut from the far side

@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 11
+GUIDE_VERSION = 12
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -236,13 +236,21 @@ def _defs() -> dict[str, Any]:
             ("through_all", "from"),
             "schema 1.7: right through everything made before it along its axis, cavities and all: out of the last of it",
         ),
+        "through_next": _obj(
+            {"through_next": {"const": True}, "from": _ref("stated"),
+             "reaches": {"type": "number", "exclusiveMinimum": 0,
+                         "description": "how deep the preview found it goes, mm: Forge writes it; leave it out"}},
+            ("through_next", "from"),
+            "schema 1.8: on until it is out of the part all across its mouth for the first time, as the shape says "
+            "(the preview finds how deep)",
+        ),
         "up_to": _obj(
             {"up_to": _ref("on"), "offset": _ref("length"), "from": _ref("stated")},
             ("up_to", "from"),
             "schema 1.7: its floor in the plane of a flat face of an item made before it, parallel to the face it is "
             "cut into, the offset (none: 0) back towards its mouth",
         ),
-        "depth": {"oneOf": [_ref("length"), _ref("through"), _ref("through_all"), _ref("up_to")]},
+        "depth": {"oneOf": [_ref("length"), _ref("through"), _ref("through_all"), _ref("through_next"), _ref("up_to")]},
         "fit": {
             "oneOf": [
                 _obj(
@@ -518,7 +526,7 @@ def _type_name(spec: FieldSpec) -> str:
         FieldType.LENGTH: "size",
         FieldType.ANGLE: "angle",
         FieldType.COUNT: "count",
-        FieldType.DEPTH: "size, through, through_all or up_to a face",
+        FieldType.DEPTH: "size, through, through_all, through_next or up_to a face",
         FieldType.DIAMETER: "size or standard fit",
         FieldType.ON: "face",
         FieldType.ITEM: "item id",
@@ -724,7 +732,11 @@ it); a leaning item's as below.
 A cut's "depth" is a size; {{"through": true}}, through the material under \
 its face and out of its far side; {{"through_all": true}} ("schema_version": \
 "1.7"), through everything made before it along its axis, cavities and all \
-(a pin hole through a hollow box's two walls); or {{"up_to": {{"item": ..., \
+(a pin hole through a hollow box's two walls); {{"through_next": true}} \
+("schema_version": "1.8"), on until it is out of the part all across its \
+mouth for the first time, as the shape says (out of a plate and the boss \
+under it; out into a pocket cut from the far side), which the preview finds \
+(write no "reaches": Forge adds it); or {{"up_to": {{"item": ..., \
 "face": ...}}, "offset": size}} (1.7), its floor in the plane of a flat face \
 of an item made before it, parallel to the face it is cut into, the offset \
 back towards its mouth, so that it follows that face (a pocket down to a \

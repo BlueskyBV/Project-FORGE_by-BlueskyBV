@@ -63,6 +63,9 @@ def _mm(x: float) -> str:
 
 def _through(value: object) -> str:
     if isinstance(value, Through):
+        if value.next:  # item 2b's second step
+            found = "" if value.reaches is None else f" ({_mm(value.reaches)} mm)"
+            return "through next" + found + _tag(value.provenance)
         return ("through all" if value.everything else "through") + _tag(value.provenance)
     if isinstance(value, UpTo):  # item 2b's first step
         back = "" if value.offset is None else f" less {_value(value.offset)}"

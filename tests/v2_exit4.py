@@ -80,11 +80,21 @@ _RECORD = "v2_exit4 record: "
 _FRESH = 75
 
 
+def resolved(draft: dict[str, Any]) -> dict[str, Any]:
+    """A generated draft as the preview resolves it before it is confirmed: each cut through the next face given how
+    deep it goes (forge_occ.resolve; item 2b's second step). A draft with none is as it is."""
+    if not any(isinstance(item.get("depth"), dict) and "through_next" in item["depth"] for item in draft.get("items", [])):
+        return draft
+    from forge_occ.resolve import resolve_draft
+
+    return resolve_draft(draft).draft
+
+
 def _spec(items: Iterable[dict[str, Any]]) -> Any:
     from forge_eval.generator import draft_of
     from forge_spec.draft import read_draft
 
-    spec, problems = read_draft(draft_of(items))
+    spec, problems = read_draft(resolved(draft_of(items)))
     if spec is None or problems.faults:
         raise ValueError(
             f"the generated draft doesn't read: {[str(p) for p in problems.faults][:3]}"
@@ -254,7 +264,7 @@ def _impossible(seed: int, record: dict[str, Any]) -> None:
     from forge_spec.placement import solve
 
     case = impossible(seed)
-    spec, problems = read_draft(draft_of(case.items))
+    spec, problems = read_draft(resolved(draft_of(case.items)))
     said = [f"fault: {p}" for p in problems.faults]
     if spec is not None and not said:
         said = [f"{i.kind}: {i.message}" for i in solve(spec).issues]

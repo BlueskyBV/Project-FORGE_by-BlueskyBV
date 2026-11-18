@@ -90,9 +90,29 @@ flat face:
   leave some of the hole below it, and it is checked as that depth, within
   the general tolerance for it.
 
-For now both are cut square to a flat face, not leaning, and not into a
-round side, a ball's or a cone's surface, a tab's end or a turned item's
-face: Forge says it can't, and why.
+## Through the next face
+
+Schema 1.8 (item 2b's second step). `{"through_next": true, "from": ...}`:
+on until the cut is out of the part all across its mouth for the first
+time, as the shape says, not as the material under the face is modelled
+(frame.md): out of a plate and on through a boss made before it under the
+plate; out into a pocket cut before it from the far side; out of a hollow
+box's wall into the hollow.
+
+How deep that is, the **preview finds** before the spec is confirmed: what
+is made before the cut is built, and the cut's mouth carried along its axis
+through it; where the material it meets first ends all across the mouth is
+how deep it goes. Forge writes that into the draft as the cut's `"reaches"`
+(mm), shows it, and the person confirms it with the rest; a writer leaves
+it out. Every copy must come out at the same depth. The judge finds the
+depth again on its own model of the part, and the two must agree within
+the general tolerance for that depth; a spec whose depth the preview hasn't
+found can't be confirmed. A body made after the cut and standing where it
+comes out would close it, and Forge asks.
+
+For now these three are cut square to a flat face, not leaning, and not
+into a round side, a ball's or a cone's surface, a tab's end or a turned
+item's face: Forge says it can't, and why.
 
 ## Sizes from standard tables
 

@@ -63,7 +63,9 @@ under the face, coming out of the far side all across its mouth,
 [frame.md](frame.md)). A blind hole as deep as the material under it is a
 hole through. Schema 1.7: also `through_all` (through everything made
 before it, cavities and all) or `up_to` a face of an item made before it,
-with an offset ([sizes.md](sizes.md)), on a flat face.
+with an offset ([sizes.md](sizes.md)), on a flat face; schema 1.8,
+`through_next` (on until it first comes out all across its mouth, as the
+preview finds).
 
 ### `counterbore`
 

@@ -144,12 +144,16 @@ class Designation(Text):
 
 @dataclass(frozen=True)
 class Through:
-    """A cut through: the material under its face (``{"through": true}``), or, ``everything``, all of the part made so
+    """A cut through: the material under its face (``{"through": true}``); or, ``everything``, all of the part made so
     far behind its mouth along its axis, cavities and all (``{"through_all": true}``; schema 1.7, item 2b's first
-    step)."""
+    step); or, ``next``, on until it is out of the part all across its mouth for the first time, as the shape says
+    (``{"through_next": true}``; schema 1.8, its second step), ``reaches`` how deep the preview build found that is
+    (mm; written by Forge, the person confirming it)."""
 
     provenance: Provenance
     everything: bool = False
+    next: bool = False
+    reaches: float | None = None
 
 
 @dataclass(frozen=True)
@@ -432,19 +436,29 @@ def _canonical(name: str, at: str, problems: Problems) -> str:
 
 
 def _depth(raw: Any, at: str, problems: Problems) -> Value | Through | UpTo | None:
-    for key in ("through", "through_all"):
+    for key in ("through", "through_all", "through_next"):
         if not (isinstance(raw, Mapping) and key in raw):
             continue
-        obj = _object(raw, at, problems, "a through depth", {key, "from"})
+        allowed = {key, "from", "reaches"} if key == "through_next" else {key, "from"}
+        obj = _object(raw, at, problems, "a through depth", allowed)
         if obj is None:
             return None
         if obj.get(key) is not True:
             problems.fault(at + pointer(key), f'write "{key}": true, or give a depth')
             return None
+        reaches = obj.get("reaches")
+        if reaches is not None and (isinstance(reaches, bool) or not isinstance(reaches, (int, float))
+                                    or not math.isfinite(reaches) or reaches <= 0):  # fmt: skip
+            problems.fault(at + pointer("reaches"),
+                           "reaches is how deep the preview found it goes, in mm: a number more than 0")  # fmt: skip
+            return None
         provenance = read_provenance(
             obj.get("from"), at + pointer("from"), problems, STATED_SOURCES
         )
-        return None if provenance is None else Through(provenance, everything=key == "through_all")
+        if provenance is None:
+            return None
+        return Through(provenance, everything=key == "through_all", next=key == "through_next",
+                       reaches=None if reaches is None else float(reaches))  # fmt: skip
     if isinstance(raw, Mapping) and "up_to" in raw:
         obj = _object(raw, at, problems, "a depth up to a face", {"up_to", "offset", "from"})
         if obj is None:
@@ -1221,6 +1235,10 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                     problems.fault(pointer("items", n, "depth"),
                                    'a depth through all or up to a face is schema 1.7\'s: give the draft\'s '
                                    '"schema_version": "1.7"')  # fmt: skip
+                if isinstance(depth, Through) and depth.next and version < (1, 8):
+                    problems.fault(pointer("items", n, "depth"),
+                                   'a depth through the next face is schema 1.8\'s: give the draft\'s '
+                                   '"schema_version": "1.8"')  # fmt: skip
                 # A body leans in 1.5 (step 3), a hole, a boss or a post in 1.3.
                 since = (1, 5) if KINDS[item.kind].category is Category.BODY else (1, 3)
                 for leans in ("tilt", "tilt_towards"):

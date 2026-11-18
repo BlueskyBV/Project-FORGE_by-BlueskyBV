@@ -97,7 +97,9 @@ ADDED = frozenset({("Copy", "turn"), ("Feature", "turn"), ("Place", "turn"), ("_
                    ("SideFace", "half"), ("SideFace", "behind"), ("RoundSide", "half"),
                    # Item 2b's first step: through everything, how deep a cut through it or up to a face goes, and a
                    # generated cut's end.
-                   ("Through", "everything"), ("Instance", "depth"), ("Feature", "end")})  # fmt: skip
+                   ("Through", "everything"), ("Instance", "depth"), ("Feature", "end"),
+                   # Its second step: through the next face, how deep the preview found it goes.
+                   ("Through", "next"), ("Through", "reaches"), ("End", "next")})  # fmt: skip
 
 
 def _at_default(value: Any, f: dataclasses.Field[Any]) -> bool:
@@ -212,8 +214,9 @@ class _Sections:
 
 def _draft(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
     from forge_eval.generator import draft_of
+    from v2_exit4 import resolved
 
-    return draft_of(items)
+    return resolved(draft_of(items))  # a cut through the next face, as the preview finds it (item 2b's second step)
 
 
 def _drafted(

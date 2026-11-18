@@ -231,7 +231,9 @@ kind modules on the same foundation, never as a rebuild of it.
   or a dome's surface, schema 1.6), third (on a cone's side) and fourth (on
   a round-ended tab's end) done; its fifth (a torus) waits for 4b.0d1.
   2b's first step (a cut through everything, or up to a face, schema 1.7)
-  done; its second (through the next face that covers it) next.
+  done, and its second (through the next face, schema 1.8, the preview
+  finding how deep before confirmation); next, a leaning item's faces and
+  the rest of its third step.
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and

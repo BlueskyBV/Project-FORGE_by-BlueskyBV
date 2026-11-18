@@ -163,7 +163,7 @@ class MigrationsChainInOrder(unittest.TestCase):
 
     def test_none_yet_and_the_current_version(self) -> None:
         self.assertEqual(versions.MIGRATIONS, ())
-        self.assertEqual(CURRENT, (1, 7))
+        self.assertEqual(CURRENT, (1, 8))
 
 
 if __name__ == "__main__":

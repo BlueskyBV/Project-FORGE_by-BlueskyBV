@@ -58,6 +58,7 @@ from forge_roles.spec_writer import write_spec
 from forge_spec import NumberedBrief, number_words
 from forge_spec.checks import SpecReport, check_draft
 from forge_spec.compare import Difference, differences
+from forge_spec.ends import ThroughNext, end_of
 from forge_spec.lock import ConfirmedSpec, lock
 from forge_spec.questions import (
     Answer,
@@ -285,6 +286,8 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
                     if beside is not None:
                         beside.drop()  # done with, or not wanted: it makes no further call
             assert report.spec is not None
+            report = _resolved(numbered, report, strict, say)
+            assert report.spec is not None
             rounds += 1
             shown = render(report, numbered).text()
             _write(out, f"round-{rounds}", brief=numbered.text, draft=to_wire(report.spec), spec=shown,
@@ -366,6 +369,21 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
         )
     finally:
         _write_spent(out, provider)
+
+
+def _resolved(numbered: NumberedBrief, report: SpecReport, strict: bool, say: Say) -> SpecReport:
+    """The draft with each cut through the next face given how deep it goes, as the preview finds it (item 2b's second
+    step; :mod:`forge_occ.resolve`), checked again: found afresh every round, so an answer that moves what it goes
+    through moves it too. A draft with none is as it is; one the preview can't find is said, and left without it
+    (the spec can't then be confirmed)."""
+    if report.spec is None or not any(isinstance(end_of(item), ThroughNext) for item in report.spec.items):
+        return report
+    from forge_occ.resolve import resolve_draft
+
+    found = resolve_draft(to_wire(report.spec))
+    for item, why in found.notes:
+        say(f"The preview couldn't find how deep {item} goes through the next face: {why}.")
+    return check_draft(numbered, found.draft, strict=strict)
 
 
 def _ending(report: SpecReport) -> list[Any]:

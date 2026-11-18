@@ -14,8 +14,9 @@ box hollowed, round sides on a turned item's faces, a leaning item's edges,
 a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
 3b's last step (a torus) waits for 4b.0d1's certified face-face
 intersections; 2b's first step (a cut through everything, or up to a face,
-schema 1.7) done, its second (through the next face) next, a leaning
-item's faces with it.
+schema 1.7) done, and its second (through the next face, schema 1.8, which
+the preview resolves before confirmation: its third step's resolution, for
+it); next, a leaning item's faces and the rest of 2b's third step.
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1175,6 +1176,53 @@ harness's per-seed proof on 27 generated seeds that end a cut so: all
 passed, and every mutant that changes the shape was caught. Generator
 digests on seeds 0-149, old against new: only the 85 that end a cut
 differ, and the impossible parts whose attempts do.
+
+**2b's second step, as built (revision 16, schema 1.8), with the third's
+resolution for it.** A cut square to a flat face may go
+`{"through_next": true}`: on until it is out of the part all across its
+mouth for the first time, as the shape says (sizes.md, "Through the next
+face"). **The preview resolves it** before confirmation
+(`forge_occ.resolve`): what is made before the cut (the spec's items up to
+it in the order made, its late roundings not yet) is built through the
+build loop, and the cut's mouth, carried along its axis past all of it, is
+taken in common with it; each solid of what is left lies across a stretch
+of depths, exactly (its bounds with the axis turned to be the third), and
+where the stretches that begin at the face end is where it first comes
+out. Every copy must come out at the same depth; that depth is written into
+the draft as the cut's `reaches` (mm, to six places), shown ("right through
+the next face it comes out of (40 mm deep, as the preview found it)"), and
+confirmed with the rest; the spec run finds it afresh every round, and a
+spec without it can't be locked. **The solver** reads `ThroughNext` as a
+through all (`ThroughNext` is one) until it is found, then the depth found
+(`Instance.depth`), asks nothing of what stands on the far face (the shape
+decides), and asks about a body made after it standing within a millimetre
+of where it comes out (`_check_closed`); **the planner** cuts to that
+depth; **the judge** finds the depth again on its own (`_next_depth`: the
+oracle's shape of what is made before the cut, asked at points round the
+mouth's outline and within it every 0.05 mm, then halved to 10⁻⁶ mm),
+refuses a `reaches` it doesn't agree with within the general tolerance for
+that depth, and cuts the oracle's to its own; **the check compiler** checks
+it open as far as that. **The generator** draws it now and then (stream
+"forge-eval through next", 0.3 of the holes, pockets and slots just drawn
+square to a flat face and not ended so already) and decides it on its own
+model: as for through everything, every depth up to where it first comes
+out is material all across its mouth and a gap round it, and it comes out
+on a face the generator keeps and holds it, which is then taken (out into
+a hollow, what stands there after keeps 1.5 mm clear). The exit harness
+and the fingerprints resolve its drafts as the spec run does. The guide
+says it (GUIDE_VERSION 12); its schema takes it (and the `reaches` Forge
+writes). Tests: `tests/test_v2_plan_throughnext.py` (read and written; what
+is a fault; the preview finds 30, 3, 40, 20, 40 and 40 mm through a solid
+box, a hollow box's top wall, a boss made before under it, a pocket from
+the far side, a pocket on through a boss, a row of two; copies that come
+out apart are said; the spec waits for it; a body made after it is asked
+about; built and judged, the judge finding the same depth; a depth the
+preview didn't find is refused, and one never found fails; the second
+kernel agrees; the generator's drafts say 1.8, and its own shape stops
+where it first comes out). The exit harness's per-seed proof on 20
+generated seeds that cut through the next face: all passed, and every
+mutant was caught. Generator digests on seeds 0-149, old against new: only
+the 50 that cut so differ, and the impossible parts whose attempts do.
 
 ### 3.6 The proof, and what each step costs
 

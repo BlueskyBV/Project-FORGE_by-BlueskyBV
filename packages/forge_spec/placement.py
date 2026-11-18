@@ -59,7 +59,7 @@ from .draft import (
     UpTo,
     axis_names,
 )
-from .ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
+from .ends import Blind, ThroughAll, ThroughEverything, ThroughNext, UpToFace, end_of
 from .frames import Rigid
 from .geometry import (
     _REFERENCE,
@@ -1388,14 +1388,18 @@ def _end_depth(item: Item, face: FlatFace, layout: Layout, at: str) -> tuple[boo
     """A cut through everything or up to a face (item 2b's first step), on a flat face: how deep it goes from its point,
     the same from every point of the face. Through everything: as far as everything made so far reaches behind it, and
     on past it; up to a face: to that face's plane, square to the cut, less its offset. Whether it is placed (False:
-    the problem is said), and that depth (None for any other cut)."""
+    the problem is said), and that depth (None for any other cut). Through the next face (its second step): as deep
+    as the preview found it goes (None until it has: the material under its face, as through all)."""
     end = end_of(item)
-    if not isinstance(end, (ThroughEverything, UpToFace)):
+    if not isinstance(end, (ThroughEverything, ThroughNext, UpToFace)):
         return True, None
     if leaning(item):
         layout.issue("unable", at + pointer("depth"),
-                     "Forge cuts a leaning item through everything or up to a face in a later step")  # fmt: skip
+                     "Forge cuts a leaning item through everything, through the next face or up to a face in a later "
+                     "step")  # fmt: skip
         return False, None
+    if isinstance(end, ThroughNext):
+        return True, end.reaches
     n = face.frame.n
     level = sum(face.centre[k] * n[k] for k in range(3))
     if isinstance(end, ThroughEverything):
@@ -1449,20 +1453,23 @@ def _end_depth(item: Item, face: FlatFace, layout: Layout, at: str) -> tuple[boo
 def _flat_end_only(item: Item, layout: Layout, at: str, where: str) -> bool:
     """A cut through everything or up to a face is cut into a flat face, for now (item 2b's first step): whether this
     one, ``where`` it is, isn't such a cut (False: the problem is said)."""
-    if SOLVE[item.kind].cut and isinstance(end_of(item), (ThroughEverything, UpToFace)):
+    if SOLVE[item.kind].cut and isinstance(end_of(item), (ThroughEverything, ThroughNext, UpToFace)):
         layout.issue("unable", at + pointer("depth"),
-                     f"Forge cuts through everything or up to a face from a flat face, for now, not {where}")  # fmt: skip
+                     "Forge cuts through everything, through the next face or up to a face from a flat face, for "
+                     f"now, not {where}")  # fmt: skip
         return False
     return True
 
 
 def cut_depth(item: Item, copy: Instance, layout: Layout) -> float | None:
     """How deep a cut goes from its point, as the solver has it: a blind one's depth, one through everything or up to a
-    face as it worked it out (item 2b's first step); None for one through the material under its face, or none."""
+    face as it worked it out (item 2b's first step), one through the next face as the preview found it (its second);
+    None for one through the material under its face (one through the next face the preview hasn't found yet), or
+    none."""
     end = end_of(item)
     if isinstance(end, Blind):
         return mm(end.depth)
-    if isinstance(end, (ThroughEverything, UpToFace)):
+    if isinstance(end, (ThroughEverything, ThroughNext, UpToFace)):
         return copy.depth
     return None
 
@@ -2401,6 +2408,10 @@ def _meet(a: tuple[Part, dict[str, float]], b: tuple[Part, dict[str, float]], b_
     return _parts_overlap(pa, (ca[first], ca[second]), pb, (cb[first], cb[second]))
 
 
+#: How far past where a cut through the next face comes out a body made after it is in its way (mm).
+_CLOSED_PAST = 1.0
+
+
 def _check_closed(spec: PartSpec, layout: Layout) -> None:
     """A cut through everything (item 2b's first step) goes on past everything made before it; a body made after it in
     its way would close it, the cut ending in that body, which isn't through everything: asked about, with the values
@@ -2415,8 +2426,12 @@ def _check_closed(spec: PartSpec, layout: Layout) -> None:
     for k, item_id in enumerate(layout.order):
         made.setdefault(item_id, k)
     for item in spec.items:
-        if not SOLVE[item.kind].cut or not isinstance(end_of(item), ThroughEverything) or item.id in layout.unplaced:
+        end = end_of(item)
+        if not SOLVE[item.kind].cut or not isinstance(end, (ThroughEverything, ThroughNext)) or item.id in layout.unplaced:
             continue
+        # Through the next face, it comes out at its depth: a body made after it standing over where it does closes it.
+        past = _CLOSED_PAST if isinstance(end, ThroughNext) else 0.0
+        how = "goes through the next face" if isinstance(end, ThroughNext) else "goes through everything made before it"
         for cut in layout.instances.get(item.id, []):
             face = layout.faces.get(cut.host[:2], {}).get(cut.host[2]) if cut.host is not None else None
             if cut.depth is None or not isinstance(face, FlatFace):
@@ -2434,17 +2449,16 @@ def _check_closed(spec: PartSpec, layout: Layout) -> None:
                         continue
                     behind = [level - sum(c[k] * n[k] for k in range(3))
                               for c in itertools.product(*zip(other.lo, other.hi, strict=True))]  # fmt: skip
-                    if max(behind) <= EPS or min(behind) >= cut.depth - EPS:
+                    if max(behind) <= EPS or min(behind) >= cut.depth + past - EPS:
                         continue
                     if not _in_its_way(outline, mouth_turned, cut, face, owner, other, layout):
                         continue
                     values = [*_item_values(item, *_outline_fields(item)), *_place_values(item),
                               *_item_values(owner, *_outline_fields(owner)), *_place_values(owner)]  # fmt: skip
                     layout.problem("question", pointer("items", position[item.id]),
-                                   f"{item.id} copy {cut.index + 1} goes through everything made before it, and "
-                                   f"{owner.id} copy {other.index + 1}, made after it, stands in its way: should "
-                                   f"{owner.id} be cut through too (made first), or {item.id} stop short of it?",
-                                   values)  # fmt: skip
+                                   f"{item.id} copy {cut.index + 1} {how}, and {owner.id} copy {other.index + 1}, "
+                                   f"made after it, stands in its way: should {owner.id} be cut through too (made "
+                                   f"first), or {item.id} stop short of it?", values)  # fmt: skip
                     break
 
 
@@ -2497,6 +2511,7 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
         if (
             not SOLVE[item.kind].cut
             or not isinstance(end_of(item), ThroughAll)  # through everything cuts on through what stands there
+            or isinstance(end_of(item), ThroughNext)  # so does one through the next face: the shape says how far
             or item.id in layout.unplaced
         ):
             continue

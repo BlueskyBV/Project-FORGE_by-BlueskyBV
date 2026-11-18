@@ -65,7 +65,7 @@ from .draft import (
     Through,
     UpTo,
 )
-from .ends import Blind, ThroughAll, ThroughEverything, UpToFace, end_of
+from .ends import Blind, ThroughAll, ThroughEverything, ThroughNext, UpToFace, end_of
 from .geometry import (
     _REFERENCE,
     EPS,
@@ -780,6 +780,8 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
         return (mm(end.depth) if isinstance(end, Blind) else 0.0), False
     if isinstance(end, ThroughEverything):  # through everything behind its mouth (item 2b's first step)
         return max(most, cut_depth(item, copy, layout) or 0.0), not VIEWS[item.kind].lettered and least > EPS
+    if isinstance(end, ThroughNext) and copy.depth is not None:  # as deep as the preview found it goes (its second)
+        return copy.depth, not VIEWS[item.kind].lettered and least > EPS
     blind = cut_depth(item, copy, layout) if isinstance(end, (Blind, UpToFace)) else None
     through = isinstance(end, ThroughAll) or (blind is not None and least > EPS and blind >= least - EPS)
     deep = most if isinstance(end, ThroughAll) else (min(blind, most) if blind is not None else 0.0)

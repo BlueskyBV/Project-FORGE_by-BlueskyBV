@@ -112,7 +112,12 @@ def _field(value: Any) -> Any:
     if isinstance(value, Text):
         return {"text": value.text, "from": provenance_to_wire(value.provenance)}
     if isinstance(value, Through):
-        return {"through_all" if value.everything else "through": True, "from": provenance_to_wire(value.provenance)}
+        key = "through_next" if value.next else "through_all" if value.everything else "through"
+        through: dict[str, Any] = {key: True}
+        if value.reaches is not None:  # how deep the preview found a cut through the next face goes (item 2b)
+            through["reaches"] = value.reaches
+        through["from"] = provenance_to_wire(value.provenance)
+        return through
     if isinstance(value, UpTo):
         found: dict[str, Any] = {"up_to": {"item": value.face.item, "face": value.face.face}}
         if value.offset is not None:

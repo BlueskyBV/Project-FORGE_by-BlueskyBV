@@ -160,10 +160,12 @@ class End:
     """A cut's end by a condition (schema 1.7; V2-stage4b-0c.md 3.5, item 2b's first step): through everything made
     before it, ``face`` None (its feature's ``depth`` None too); or up to the plane of ``face`` (an item's, by the
     item and the face's name), ``offset`` back from it towards its mouth (its feature's ``depth`` how deep that is
-    as drawn; as built, the generator reads it from its own faces)."""
+    as drawn; as built, the generator reads it from its own faces). ``next`` (schema 1.8, its second step): through
+    the next face, out of what is made before it all across its mouth for the first time, as its own shape says."""
 
     face: tuple[str, str] | None = None
     offset: float = 0.0
+    next: bool = False
 
 
 @dataclass(frozen=True)
@@ -777,7 +779,8 @@ class _Part:
     resolved: dict[str, float] = field(default_factory=dict)
     #: Each cut through everything's way (item 2b): the box round its mouth carried along its axis as far as it goes,
     #: which nothing made after it that adds to the part reaches into (the solver asks about a body made after one
-    #: that stands in its way: forge_spec.placement._check_closed).
+    #: that stands in its way: forge_spec.placement._check_closed). A cut through the next face's, a little past
+    #: where it comes out.
     ways: list[tuple[str, Array, Array]] = field(default_factory=list)
 
 
@@ -1471,6 +1474,9 @@ _PAST_ALL = 1.5
 #: How far apart along a cut through everything the generator asks where its lines are in the part, and where it
 #: asks first (mm): off the 0.001 mm grid sizes are drawn on, so that no face's plane falls on one.
 _ALL_STEP, _ALL_FIRST = 0.2468, 0.0123
+#: How far past where a cut through the next face comes out into a hollow what stands in it after keeps clear (mm):
+#: more than the solver's millimetre (forge_spec.placement._CLOSED_PAST) by the gap.
+_NEXT_KEPT = 1.0 + GAP
 
 
 def _up_to_depth(f: Feature, face: _Flat, part: _Part) -> float:
@@ -1510,9 +1516,11 @@ def _footprint_points(half: tuple[float, float], corner: float, grow: float) -> 
 
 
 def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Array, e1: Array, e2: Array, n: Array,
-                        name: str, part: _Part, strict: bool) -> float:  # fmt: skip
+                        name: str, part: _Part, strict: bool, first: bool = False) -> float:  # fmt: skip
     """How deep a copy of a cut through everything goes (item 2b's first step): as far as all that is made before it
-    reaches behind its mouth, and on past it by :data:`_PAST_ALL`, as the generator's own solids say.
+    reaches behind its mouth, and on past it by :data:`_PAST_ALL`, as the generator's own solids say. ``first``:
+    through the next face (its second step), as far as where it first comes out of what is made before it: the plane
+    of the face it comes out on, held as below as far as there (not strict, as far as that where it is so).
 
     Strict, a :class:`DoesNotFitError` unless what it goes through lies all across it: asked at points along lines
     through it, within its outline and just outside it, each depth it is asked at is material all across or air all
@@ -1528,13 +1536,13 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
                 corner = np.array([(lo, hi)[(k >> j) & 1][j] for j in range(3)])
                 reach = max(reach, float(fv.matmul(p - corner, n)))
     depth = reach + _PAST_ALL
-    if strict:  # its way, which nothing made after it that adds to the part reaches into
-        (w1, w2), _ = _footprint(f, face.axes)
-        mouth = [p + s1 * w1 * e1 + s2 * w2 * e2 for s1, s2 in QUADRANTS]
-        ends = np.array([*mouth, *(m - depth * n for m in mouth)])
-        part.ways.append((f"{f.id} copy {name.split(' ')[-1]}", ends.min(axis=0), ends.max(axis=0)))
     if not strict:
-        return depth
+        if not first:
+            return depth
+        try:
+            return _through_everything(f, face, at, p, e1, e2, n, name, part, True, first)
+        except DoesNotFitError:
+            return depth
     (h1, h2), r = _footprint(f, face.axes)
     within = [(0.0, 0.0), *((s1 * h1 / 2, s2 * h2 / 2) for s1, s2 in QUADRANTS), *_footprint_points((h1, h2), r, -0.2)]
     across = np.array([*within, *_footprint_points((h1, h2), r, 0.9 * GAP)])
@@ -1543,10 +1551,15 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
     points = mouth[None, :, :] - ts[:, None, None] * n[None, None, :]
     inside = Truth({}, made).inside(points.reshape(-1, 3)).reshape(len(ts), len(across))
     full = inside.all(axis=1)
-    if np.any(inside.any(axis=1) & ~full):
-        raise DoesNotFitError(f"{f.id} through everything meets something that doesn't lie all across it")
     if not full[0]:
         raise DoesNotFitError(f"{f.id} has no material under its mouth")
+    if first:  # through the next face: only as far as where it first comes out, and just past it
+        out = int(np.argmin(full))
+        if full[out]:
+            raise DoesNotFitError(f"{f.id} doesn't come out of what is made before it")
+        ts, full, inside = ts[: out + 1], full[: out + 1], inside[: out + 1]
+    if np.any(inside.any(axis=1) & ~full):
+        raise DoesNotFitError(f"{f.id} through everything meets something that doesn't lie all across it")
     foot = face.foot(f, at)
     changes = [j for j in range(1, len(ts)) if full[j] != full[j - 1]]
     for m, j in enumerate(changes):
@@ -1568,7 +1581,18 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
                 # Across the hollow, to where it goes in again: kept clear there as what stands in it is.
                 again = (ts[changes[m + 1] - 1] + ts[changes[m + 1]]) / 2
                 part.inside.setdefault(g.hollow, []).append((name, *_box_over(g, mine, again - level)))
-    return depth
+            elif first and g.hollow is not None:
+                # Out into a hollow: what stands in it after keeps clear of its way out, as the solver asks it to.
+                part.inside.setdefault(g.hollow, []).append((name, *_box_over(g, mine, _NEXT_KEPT)))
+    reached = found[0][2] if first else depth
+    # Its way, which nothing made after it that adds to the part reaches into; through the next face, on past where
+    # it comes out as far as the solver asks after.
+    (w1, w2), _ = _footprint(f, face.axes)
+    mouth = [p + s1 * w1 * e1 + s2 * w2 * e2 for s1, s2 in QUADRANTS]
+    way = reached + _NEXT_KEPT if first else depth
+    ends = np.array([*mouth, *(m - way * n for m in mouth)])
+    part.ways.append((f"{f.id} copy {name.split(' ')[-1]}", ends.min(axis=0), ends.max(axis=0)))
+    return reached
 
 
 def _on_flat(
@@ -1651,7 +1675,8 @@ def _on_flat(
                 deep = part.resolved[f.id] = _up_to_depth(f, face, part)
                 if deep < _recess_depth(f) + GAP - 0.001:  # as _sizes_hold holds a blind one's drawn depth
                     raise DoesNotFitError(f"{f.id}: a hole up to a face goes on past its {f.recess[0] if f.recess else ''}")
-            depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict)
+            depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
+                                         first=f.end is not None and f.end.next)
                      if everything else face.material if deep is None else deep)  # fmt: skip
             if strict and deep is not None and deep > face.material - GAP:
                 raise DoesNotFitError(
@@ -2727,7 +2752,9 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
         found[size] = _mm(w, v, before=before, after=after)
     if own.cut_out and f.end is not None:  # through everything, or up to a face (schema 1.7, item 2b's first step)
         w.say(", ")
-        if f.end.face is None:
+        if f.end.next:  # through the next face (schema 1.8, its second step): how deep, the preview finds
+            found["depth"] = {"through_next": True, "from": {"words": w.cite("right through the next face it comes out of")}}
+        elif f.end.face is None:
             found["depth"] = {"through_all": True, "from": {"words": w.cite("right through everything behind it")}}
         else:
             item, face_name = f.end.face
@@ -3978,11 +4005,14 @@ def _names_own_axes(item: Mapping[str, Any]) -> bool:
 
 def draft_of(items: Iterable[Mapping[str, Any]], name: str = "generated") -> dict[str, Any]:
     """A generated part's draft: its items, in the least schema version that reads them (forge_spec.versions):
-    1.7 where a cut goes through everything or up to a face, 1.6 where an item is on a ball's surface (place.latitude), 1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
+    1.8 where a cut goes through the next face, 1.7 where one goes through everything or up to a face, 1.6 where an
+    item is on a ball's surface (place.latitude), 1.5 where a body leans on its face, 1.4 where an item names its face's own axes (u and v), 1.3 where one leans
     on its face (tilt), 1.2 where one is
     turned in it (place.turn), else the first, so a part that does none of these is read, and its spec's digest
     made, as it always was."""
     found = list(items)
+    if any(isinstance(item.get("depth"), Mapping) and "through_next" in item["depth"] for item in found):
+        return {"schema_version": "1.8", "name": name, "items": found}  # through the next face (item 2b's second step)
     if any(isinstance(item.get("depth"), Mapping) and {"through_all", "up_to"} & set(item["depth"]) for item in found):
         return {"schema_version": "1.7", "name": name, "items": found}  # through everything, up to a face (item 2b)
     if any(isinstance(item.get("place"), Mapping) and "latitude" in item["place"] for item in found):
@@ -4726,6 +4756,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         _spelled_now_and_then(spells, plan, part)
         if len(plan) > before:
             _ended_now_and_then(random.Random(f"forge-eval ends {seed} {k}"), before, plan, part)
+            _next_now_and_then(random.Random(f"forge-eval through next {seed} {k}"), before, plan, part)
             _hollowed_now_and_then(seed, k, plan[before], plan, part)
     _decorate(seed, plan, tries)
     return render(tuple(plan))
@@ -4757,6 +4788,32 @@ def _ended_now_and_then(rng: random.Random, at: int, plan: list[Feature], part: 
             ended = replace(f, end=End((item, name), offset))
     if ended is None:
         return
+    trial = [*plan]
+    trial[at] = ended
+    try:
+        render(tuple(trial))
+    except DoesNotFitError:
+        return
+    plan[at] = ended
+
+
+#: How often a hole, a pocket or a slot just drawn square to a flat face, and not ended so already, goes through the
+#: next face instead (schema 1.8; item 2b's second step).
+_NEXT = 0.3
+
+
+def _next_now_and_then(rng: random.Random, at: int, plan: list[Feature], part: _Part) -> None:
+    """Now and then a hole, a pocket or a slot just drawn square to a flat face, through or blind and not ended by a
+    condition already, goes through the next face (item 2b's second step), from a stream of its own (a seed that
+    sends none so stays as it was drawn): as far as where it first comes out of what is made before it, as the
+    generator's own shape says. Where that doesn't fit, it is as drawn."""
+    f = plan[at]
+    if rng.random() >= _NEXT or f.end is not None or not _draw(f.kind).cut_out or f.on is None or f.tilt is not None:
+        return
+    face = part.flats.get((f.on[0], 0, f.on[1]))
+    if face is None or face.turned:
+        return
+    ended = replace(f, depth=None, end=End(next=True))
     trial = [*plan]
     trial[at] = ended
     try:

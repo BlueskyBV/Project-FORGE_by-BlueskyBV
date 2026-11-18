@@ -56,7 +56,7 @@ from forge_spec.draft import (
     UpTo,
     axis_names,
 )
-from forge_spec.ends import ThroughAll, ThroughEverything, UpToFace, end_of
+from forge_spec.ends import ThroughAll, ThroughEverything, ThroughNext, UpToFace, end_of
 from forge_spec.font import missing_letters, text_width
 from forge_spec.schema import KINDS
 from forge_spec.tables import lookup_fit
@@ -1083,6 +1083,8 @@ class _Layout:
         self.diameters: dict[str, float] = {}
         self.hollows: dict[tuple[str, int], Hollow] = {}
         self.shells: dict[str, Item] = {}
+        #: Every item placed so far, in the order made: what a cut through the next face finds its way out of.
+        self.made: list[Item] = []
 
     def close(self, key: tuple[str, int], face: str, why: str) -> None:
         self.faces.setdefault(key, {}).pop(face, None)
@@ -1113,6 +1115,7 @@ def place(spec: PartSpec) -> Placed:
             if on is None:
                 raise PlaceError(item.id, "it says no face it is on")
             layout.copies[item.id] = _on_hosts(item, on, layout)
+        layout.made.append(item)
         first = False
     return Placed(
         kinds={item.id: item.kind for item in spec.items},
@@ -1644,8 +1647,9 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         place = _place(item)
         if (place is not None and place.concentric) or item.id in layout.shells:
             raise PlaceError(item.id, "on a turned item's face, nothing is concentric with another or hollowed, yet")
-        if isinstance(end_of(item), (ThroughEverything, UpToFace)):
-            raise PlaceError(item.id, "on a turned item's face, nothing is cut through everything or up to a face, yet")
+        if isinstance(end_of(item), (ThroughEverything, ThroughNext, UpToFace)):
+            raise PlaceError(item.id, "on a turned item's face, nothing is cut through everything, through the next "
+                             "face or up to a face, yet")  # fmt: skip
         upright = replace(face, local=None)
         for copy in _HOSTS[type(face)](item, upright, host, len(hosts), layout, len(made)):
             made.append(_moved_copy(copy, motion, layout))
@@ -1977,6 +1981,66 @@ def _end_depth(item: Item, face: FlatFace, point: Vec, layout: _Layout) -> float
     return depth
 
 
+#: How far apart the judge asks along a cut through the next face whether its mouth is out of the part all across
+#: (mm), and how close it then finds where it first is (by halving).
+_NEXT_STEP, _NEXT_CLOSE = 0.05, 1e-6
+
+
+def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: _Layout) -> float:
+    """How deep a cut through the next face goes from its point (item 2b's second step), as the judge finds it: on the
+    oracle's shape of what is made before it, the first depth along its axis at which its mouth is out of the part all
+    across (asked at points round its outline and within it, every :data:`_NEXT_STEP`, then found to
+    :data:`_NEXT_CLOSE` between the last two). Where the spec records how deep the preview found it goes, the two
+    must agree within the general tolerance for that depth."""
+    import numpy as np
+    from forge_numeric import vector as fv
+
+    from forge_checks.classes import general
+    from forge_checks.oracle import oracle
+    from forge_checks.outlines import _at
+    from forge_checks.view import Side
+
+    order = tuple(step for step in _order(layout.made, layout)
+                  if step.edges is not None or not _entry(layout.items[step.item].kind).made_last)  # fmt: skip
+    made = Placed(kinds={i.id: i.kind for i in layout.spec.items}, copies=dict(layout.copies),
+                  faces={k: dict(v) for k, v in layout.faces.items()},
+                  closed={k: dict(v) for k, v in layout.closed.items()}, order=order,
+                  diameters=dict(layout.diameters), hollows=dict(layout.hollows))  # fmt: skip
+    shape = oracle(layout.spec, made)
+    across = [_at(side, k / 8) for side in mouth.pieces() for k in range(8)]
+    (c1, c2), (h1, h2) = mouth.centre, mouth.half
+    across += [(c1 + h1 * a, c2 + h2 * b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6)
+               if mouth.contains((c1 + h1 * a, c2 + h2 * b))]  # fmt: skip
+    base = np.array([face.frame.point(u, v) for u, v in across], dtype=np.float64)
+    n = np.asarray(face.frame.n, dtype=np.float64)
+    corners = np.array([[(shape.lo, shape.hi)[(k >> j) & 1][j] for j in range(3)] for k in range(8)])
+    reach = float(np.max(fv.matmul(base[0] - corners, n))) + _NEXT_STEP
+
+    def out(t: np.ndarray) -> np.ndarray:  # whether the mouth, ``t`` in, is out of the part all across
+        points = (base[None, :, :] - t[:, None, None] * n[None, None, :]).reshape(-1, 3)
+        return np.all(shape.classify(points).reshape(len(t), len(base)) == Side.OUT, axis=1)
+
+    ts = _NEXT_STEP * np.arange(1, int(reach / _NEXT_STEP) + 2)
+    clear = out(ts)
+    if clear[0]:
+        raise PlaceError(item.id, "there is no material under its mouth to cut through")
+    if not clear.any():
+        raise PlaceError(item.id, "it doesn't come out of the part")
+    k = int(np.argmax(clear))
+    low, high = float(ts[k - 1]), float(ts[k])
+    while high - low > _NEXT_CLOSE:
+        middle = (low + high) / 2
+        low, high = (low, middle) if out(np.array([middle]))[0] else (middle, high)
+    found = high
+    reaches = end_of(item).reaches if isinstance(end_of(item), ThroughNext) else None  # type: ignore[union-attr]
+    if reaches is not None:
+        band = general(found)
+        if not -band.minus - TOL <= reaches - found <= band.plus + TOL:
+            raise PlaceError(item.id, f"the preview found it comes out {reaches:g} mm in; on the oracle's shape it "
+                             f"comes out {found:.6g} mm in")  # fmt: skip
+    return found
+
+
 def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int, point: Vec,
               layout: _Layout) -> Copy:  # fmt: skip
     at = face.frame.plane(point)
@@ -1984,7 +2048,9 @@ def _flat_cut(item: Item, face: FlatFace, host: tuple[str, int, str], index: int
     entry = _entry(item.kind)
     embossed = entry.embossed(item)
     resolved = _end_depth(item, face, point, layout)
-    if isinstance(end_of(item), ThroughEverything):
+    if isinstance(end_of(item), ThroughNext):  # item 2b's second step: where it comes out, on the oracle's shape
+        resolved = _next_depth(item, face, point, mouth, layout)
+    if isinstance(end_of(item), (ThroughEverything, ThroughNext)):
         entry.cut_through(item)
     if resolved is not None:
         depth = resolved

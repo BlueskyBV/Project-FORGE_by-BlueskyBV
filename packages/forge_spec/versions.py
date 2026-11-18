@@ -21,7 +21,8 @@ turned item; 1.5, a block's and a cylinder's ``tilt`` and ``tilt_towards``
 on a flat face (a body leaning as a post or a boss does); 1.6, a
 placement's ``latitude`` on a ball's or a dome's surface; 1.7, a cut's
 ``depth`` through all, ``{"through_all": true}``, or up to a face,
-``{"up_to": {...}, "offset": size}``.
+``{"up_to": {...}, "offset": size}``; 1.8, through the next face,
+``{"through_next": true}``, with how deep the preview found it ``reaches``.
 
 >>> version_of({"schema_version": "1.1"})
 (1, 1)
@@ -52,7 +53,7 @@ __all__ = [
 Version = tuple[int, int]
 
 #: The version Forge writes, and the latest it reads.
-CURRENT: Version = (1, 7)
+CURRENT: Version = (1, 8)
 
 #: The major steps, in order: (from this major version, to the next, the migration), from :mod:`.migrations`.
 MIGRATIONS: tuple[tuple[int, int, Migration], ...] = STEPS
