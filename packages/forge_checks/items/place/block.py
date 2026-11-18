@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 
 from forge_spec.draft import Item
 
 from forge_checks.items.place.protocol import Edges, PlaceKind
-from forge_checks.outlines import TOL, Outline
+from forge_checks.outlines import TOL, Arc, Outline, Segment
 from forge_checks.place import (
     _INDEX,
     DIRECTIONS,
@@ -55,6 +56,20 @@ class Block(PlaceKind):
 
     def openable(self, item: Item) -> set[str]:
         return set(DIRECTIONS)
+
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """An open face's rim: a frame round the hollow's mouth, ``thickness`` in from its edges, the walls under it.
+        Where a wall round it is open too, its rim isn't a frame and takes nothing yet."""
+        outline = face.outline
+        if outline.shape != "rect" or face.local is not None or any(d in open_faces for d in DIRECTIONS
+                                                                     if d[1] != face.normal[1]):  # fmt: skip
+            return None
+        h1, h2 = outline.half[0] - thickness, outline.half[1] - thickness
+        if min(h1, h2) <= TOL:
+            return None
+        mouth = [Segment(q.b, q.a) if isinstance(q, Segment) else Arc(q.centre, q.radius, q.start + q.sweep, -q.sweep)
+                 for q in reversed(Outline.rect(h1, h2, outline.centre).pieces())]  # fmt: skip
+        return replace(face, outline=Outline.profile([*outline.pieces(), *mouth]))
 
     def hollow(self, item: Item, layout: _Layout, key: tuple[str, int], base: Vec, up: str, lo: Vec, hi: Vec,
                shell: Item, thickness: float, floor: float | None, open_faces: frozenset[str]) -> None:  # fmt: skip

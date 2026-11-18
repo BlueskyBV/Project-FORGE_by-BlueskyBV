@@ -1574,6 +1574,36 @@ inside wall and a hole in its side; holes through two of its inside walls):
 both passed, every mutant caught. Generator digests on seeds 0-149, old
 against new: only the impossible part 41 differs.
 
+**And a hollow's rim (revision 16, with item 3: any face hosts).** A face
+a shell leaves open was closed: nothing went on a hollow's rim, the top of
+an open box's walls or of a cup's. It now keeps its rim (shell.md, "The
+rim"): a cylinder's open end a ring, its outer radius the cylinder's and
+its inner the hollow's; a block's open face a frame round the hollow's
+mouth, `thickness` in from its edges, where the four walls round it are
+there (a turned or leaning body's rim takes nothing yet). Under it is the
+wall all the way down and, standing on a face, what
+is under it there. **The solver** and **the judge** ask each kind for the
+rim of an open face (`SolveKind.rim`, `PlaceKind.rim`) and keep it where
+they closed the face: a ring as a tube's end is; a frame as a profile face
+with the mouth a second outline in it, run the other way round
+(`Shape.reversed`), an outline on it lying wholly on its material with no
+edge of the face within it (`shape_on_face`; the judge's `Outline.within`);
+the solver gives a hollowed body's far face its host's material where it is
+left open (`_left_open`). **The generator** keeps a hollowed first
+cylinder's open end as a ring (`_hollow_cylinder`), a cut through it coming
+out on its other end where that is a face; it draws nothing on a block's
+rim yet. Tests: `tests/test_v2_plan_rim.py` (on a cup's rim a blind hole,
+one right through the wall and out of its foot, a circle of them, a boss; a
+cylinder standing on the plate, a hole into its wall and the plate; on an
+open box's rim a blind hole and one right through a wall into the plate;
+deeper asked about, into the mouth said: where every program puts them,
+built and judged, the second kernel agreeing; the generator's own shape,
+built and graded). The exit harness's per-seed proof on 86 (the one of the
+first 150 whose draw changed: a cylinder hollowed open at both ends, its
+rims now faces of the part): passed, its mutant caught. Generator digests
+on seeds 0-149, old against new: only 86 differs, and the impossible parts
+58 and 63.
+
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
 parts; 2b's first step's pair against that main kept those and held two

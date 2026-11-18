@@ -734,10 +734,11 @@ class Hollows(unittest.TestCase):
             (placed.lo, placed.hi), ((-1.0, -28.0, 2.0), (1.0, 28.0, 25.0))
         )
 
-    def test_nothing_stands_on_an_open_face(self) -> None:
+    def test_nothing_stands_in_an_open_faces_mouth(self) -> None:
+        # Its rim takes things (shell.md, "The rim"); its middle is the hollow's mouth.
         boss = item("b", "boss", on=on("tray", "+z"), diameter=a(5), height=a(5))
         self.assertIn(
-            "leaves tray's +z open",
+            "runs past the edge of face +z",
             issues(layout_of(self.tray, self.hollow, boss))[0][1],
         )
 

@@ -3364,7 +3364,9 @@ def _shell(f: Feature, plan: Plan, part: _Part) -> None:
 
 def _hollow_cylinder(f: Feature, body: Feature, part: _Part, t: float, wall: Callable[[str], float],
                      opened: set[str]) -> None:  # fmt: skip
-    """A cylinder's hollow (shell.md): a cylinder ``t`` less in radius, its ends in by their walls; its ends' inside faces discs."""
+    """A cylinder's hollow (shell.md): a cylinder ``t`` less in radius, its ends in by their walls; its ends' inside faces
+    discs; an open end's rim a ring ``t`` wide, the wall under it all its length, a cut through it coming out on its
+    other end where that is a face (shell.md, "The rim")."""
     r, length = body.sizes["diameter"] / 2, body.sizes["length"]
     top, bottom = wall("+end"), wall("-end")
     inside = r - t
@@ -3377,7 +3379,9 @@ def _hollow_cylinder(f: Feature, body: Feature, part: _Part, t: float, wall: Cal
     for name, height, depth in (("+end", length - top, top), ("-end", bottom, bottom)):
         outer = (body.id, 0, name)
         if name in opened:
-            del part.flats[outer]
+            rim = part.flats[outer]
+            rim.shape, rim.inner = "ring", inside
+            rim.exit = None if OPPOSITE[name] in opened else (body.id, 0, OPPOSITE[name])
             continue
         inner = (body.id, 0, f"inner {name}")
         face = part.flats[outer]

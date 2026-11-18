@@ -448,7 +448,8 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
         if hollowed:
             layout.issue("unable", at, f"Forge doesn't hollow a turned or leaning {item.kind} yet")
             hollowed = False
-    if isinstance(top_face, FlatFace) and host_face is not None and not hollowed:
+    if isinstance(top_face, FlatFace) and host_face is not None and (not hollowed or _left_open(item, far, layout)):
+        # A hollowed body's far face has its wall alone; left open, its rim the wall all the way down, and the host.
         sources = top_face.depth_sources + host_depth
         if isinstance(host_face, FlatFace):
             # Faces facing the same way share their axes (FACE_AXES), so a footprint on one is one on the other; on a
@@ -488,6 +489,13 @@ def _standing(item: Item, inst: Instance, up: str, layout: Layout, at: str,
     return Instance(
         inst.item, inst.index, base, _dir(up), inst.host, inst.face_axes, lo, hi
     )
+
+
+def _left_open(item: Item, name: str, layout: Layout) -> bool:
+    """Whether the shell hollowing ``item`` leaves its face ``name`` open (its rim: shell.md, "The rim")."""
+    shell = layout.shells.get(item.id)
+    opened = shell.get("open") if shell is not None else None
+    return isinstance(opened, Faces) and name in opened.faces
 
 
 #: Why a turned item's faces take nothing.
@@ -794,13 +802,24 @@ def _hollow(item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout:
         if fault is not None:
             layout.issue("fault", shell_at + pointer("floor"), fault)
             return
+    walls = ((shell.id, "thickness"), (shell.id, "floor"))
+    rims: dict[str, FlatFace] = {}
+    square = _turn_value(item) is None and not leaning(item)  # a turned or leaning body's rim takes nothing yet
     for name in sorted(open_faces):
+        # The rim it leaves of an open face (shell.md, "The rim"): a ring round a cylinder's mouth, a frame round a
+        # block's.
+        face = layout.faces.get(key, {}).get(name)
+        rim = entry.rim(face, t, frozenset(open_faces)) if isinstance(face, FlatFace) and square else None
+        if rim is not None:
+            rims[name] = replace(rim, axis_sources=tuple(s + walls for s in rim.axis_sources))  # type: ignore[arg-type]
+            continue
         layout.close(key, name, "unable",
                      f"{shell.id} leaves {item.id}'s {name} open: Forge doesn't place on the rim of an open hollow "
                      "yet; stand things on its inner faces")  # fmt: skip
-    walls = ((shell.id, "thickness"), (shell.id, "floor"))
     entry.hollow(item, key, lo, hi, up, layout, dict(fields),
                  Hollowing(shell, shell_at, t, f, thickness_value, floor_value, frozenset(open_faces), walls))  # fmt: skip
+    if key in layout.cavities:
+        layout.faces[key].update(rims)
 
 
 # ----------------------------------------------------------------------

@@ -45,7 +45,8 @@ Status: **draft, for your approval.**
 - A **round side** has an axis, a radius, and a length between its two ends.
 - Some faces can't take anything, and an item put on one is turned back
   with the reason: the face a standing item is joined by; a face a shell
-  leaves open; and, for now, curved faces other than a round body's side
+  leaves open but for its rim (a ring round a cylinder's mouth, a frame
+  round a block's: shell.md, "The rim"); and, for now, curved faces other than a round body's side
   (a cone's side, a ball's surface, a round-ended tab's end), and the faces
   of an item standing round a side other than its far face (where its foot
   follows the curve, their edges do too).

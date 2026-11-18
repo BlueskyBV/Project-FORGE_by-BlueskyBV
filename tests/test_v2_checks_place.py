@@ -602,7 +602,9 @@ class Hollows(unittest.TestCase):
         self.assertEqual(
             (hollow.lo, hollow.hi), ((-48.0, -28.0, 3.0), (48.0, 28.0, 30.0))
         )
-        self.assertIn("+z", p.closed[("box", 0)])
+        rim = flat(p, "box", "+z")  # its rim, a frame round the hollow's mouth (shell.md, "The rim")
+        self.assertEqual((rim.outline.shape, rim.outline.half), ("profile", (50.0, 30.0)))
+        self.assertTrue(rim.outline.contains((49.0, 0.0)) and not rim.outline.contains((0.0, 0.0)))
         self.assertIn("inner +z", p.closed[("box", 0)])
         floor = flat(p, "box", "inner -z")
         self.assertEqual(

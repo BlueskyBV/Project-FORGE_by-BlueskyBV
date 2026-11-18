@@ -65,7 +65,9 @@ Which way it leans: one of its face's two axes, + or - (turned with it, so it le
 - `inner +x`, `inner -x`, `inner +y`, `inner -y`, `inner +z`, `inner -z`:
   only when a shell hollows it: the inside face of each wall, facing into
   the hollow. `inner -z` is the inside of its -z wall, a tray's floor,
-  facing up. A wall the shell leaves open has no inner face.
+  facing up. A wall the shell leaves open has no inner face; the face is
+  its rim, a frame round the hollow's mouth with the walls under it, where
+  the four walls round it are there (shell.md, "The rim").
 
 ## Edges
 

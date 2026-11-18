@@ -210,6 +210,12 @@ class SolveKind:
                fields: dict[str, str], h: Hollowing) -> None:  # fmt: skip
         """Its hollow: its walls as the material, its cavity and its inner faces."""
 
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """The rim a shell leaves of a face it leaves open, ``thickness`` walls round the hollow (shell.md, "The rim"),
+        ``open_faces`` the faces it leaves open: the face less the hollow's mouth, its material what was under it; None
+        where it takes nothing yet."""
+        return None
+
     def edges(self, which: str, up: str) -> list[tuple[str, str]]:
         """Each edge of its edge set ``which``, as the two faces it lies between (docs/definitions/edges.md)."""
         return []

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import (
@@ -24,6 +25,7 @@ from forge_spec.items.solve._common import (
     _with,
 )
 from forge_spec.items.solve.protocol import SolveKind
+from forge_spec.outline import Shape
 from forge_spec.problems import pointer
 from forge_spec.schema import DIRECTIONS, FACE_AXES
 
@@ -80,6 +82,19 @@ class Block(SolveKind):
                     + ("no opening" if not open_faces else f"none with a wall opposite ({sorted(open_faces)})")
                     + ": leave the floor out")  # fmt: skip
         return None
+
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """An open face's rim: a frame round the hollow's mouth, ``thickness`` in from its edges, the walls under it all
+        the way down. Where a wall round it is open too, its rim isn't a frame and takes nothing yet."""
+        if face.shape != "rect" or face.local is not None or any(d in open_faces for d in DIRECTIONS
+                                                                  if d[1] != face.normal[1]):  # fmt: skip
+            return None
+        inner = (face.half[0] - thickness, face.half[1] - thickness)
+        if min(inner) <= EPS:
+            return None
+        outer = Shape.rect((0.0, 0.0), face.half, face.corners)
+        mouth = Shape.rect((0.0, 0.0), inner).reversed()
+        return replace(face, shape="profile", profile=Shape(outer.pieces + mouth.pieces))
 
     def hollow(self, item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout: Layout,
                fields: dict[str, str], h: Hollowing) -> None:  # fmt: skip

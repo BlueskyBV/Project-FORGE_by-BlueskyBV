@@ -2921,7 +2921,16 @@ def _hollow(
     if not open_faces <= allowed:
         raise PlaceError(shell.id, f"a shell of a {kind} can leave open {sorted(allowed) or 'nothing'}, "
                          f"not {sorted(open_faces - allowed)}")  # fmt: skip
+    rims: dict[str, Face] = {}
+    square = _turn_of(item) is None and not isinstance(item.get("tilt"), Value)  # a turned or leaning one's: not yet
     for name in sorted(open_faces):
+        # The rim it leaves of an open face (shell.md, "The rim"): a ring round a cylinder's mouth, a frame round a
+        # block's.
+        face = layout.faces.get(key, {}).get(name)
+        rim = entry.rim(face, thickness, open_faces) if isinstance(face, FlatFace) and square else None
+        if rim is not None:
+            rims[name] = rim
+            continue
         layout.close(key, name, f"{shell.id} leaves it open")
     lean = _lean(item, axes) if axes is not None else None
     if lean is not None and axes is not None:
@@ -2943,6 +2952,7 @@ def _hollow(
     entry.hollow(
         item, layout, key, base, up, lo, hi, shell, thickness, floor, open_faces
     )
+    layout.faces[key].update(rims)
 
 
 def _walls(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import ClassVar
 
 from forge_spec.draft import Item
@@ -63,6 +64,13 @@ class Cylinder(PlaceKind):
 
     def openable(self, item: Item) -> set[str]:
         return {"+end", "-end"}
+
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """An open end's rim: a ring, ``thickness`` wide round the hollow's mouth, the wall under it."""
+        outline = face.outline
+        if outline.shape != "disc" or outline.radius - thickness <= TOL:
+            return None
+        return replace(face, outline=Outline.ring(outline.radius, outline.radius - thickness, outline.centre))
 
     def hollow(self, item: Item, layout: _Layout, key: tuple[str, int], base: Vec, up: str, lo: Vec, hi: Vec,
                shell: Item, thickness: float, floor: float | None, open_faces: frozenset[str]) -> None:  # fmt: skip

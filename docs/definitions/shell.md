@@ -84,6 +84,20 @@ a wall has no floor.
 None of its own: the body it hollows gains its inner faces (see the body's
 page).
 
+## The rim
+
+A face the shell leaves open is the hollow's mouth, and keeps its rim: a
+cylinder's open end a ring, its outer radius the cylinder's and its inner
+the hollow's (`thickness` less); a block's open face a frame, its outer
+edges the face's and its inner `thickness` in from them, where the four
+walls round it are there (with one of them open too, it takes nothing
+yet; nor does a turned or leaning body's rim). Under the rim is the wall, all the way down (and, standing on a
+face, what is under it there, as under that face before it was hollowed).
+It takes what a face takes: a hole into the wall or right through it and
+out of its other end where that is a face, a circle or a row of them, a
+boss; one reaching into the mouth runs off it. Positions on it are the
+face's, from its centre and its outer edges.
+
 ## Edges
 
 None.

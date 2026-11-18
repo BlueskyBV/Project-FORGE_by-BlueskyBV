@@ -289,6 +289,11 @@ class Shape:
         return Shape(tuple(Line(move(q.a), move(q.b)) if isinstance(q, Line)
                            else Arc(move(q.centre), q.radius, q.start, q.sweep) for q in self.pieces))  # fmt: skip
 
+    def reversed(self) -> Shape:
+        """The same outline run the other way round (a hole in another: shell.md, "The rim")."""
+        return Shape(tuple(Line(q.b, q.a) if isinstance(q, Line) else Arc(q.centre, q.radius, q.start + q.sweep, -q.sweep)
+                           for q in reversed(self.pieces)))  # fmt: skip
+
     def turned(self, c: float, s: float) -> Shape:
         """The outline turned about the origin, by the angle whose cosine and sine are ``c`` and ``s`` (1b's ``turn``)."""
 

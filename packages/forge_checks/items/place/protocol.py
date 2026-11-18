@@ -187,6 +187,12 @@ class PlaceKind:
         """The faces a shell may leave open."""
         return set()
 
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """The rim a shell leaves of a face it leaves open, ``thickness`` walls round the hollow (shell.md, "The rim"),
+        ``open_faces`` the faces it leaves open: the face less the hollow's mouth, its material what was under it; None
+        where it takes nothing yet."""
+        return None
+
     def hollow(self, item: Item, layout: _Layout, key: tuple[str, int], base: Vec, up: str, lo: Vec, hi: Vec,
                shell: Item, thickness: float, floor: float | None, open_faces: frozenset[str]) -> None:  # fmt: skip
         """Hollow one copy: its walls as the material under its faces, its inside faces, and the hollow."""

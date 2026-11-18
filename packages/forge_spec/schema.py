@@ -45,7 +45,9 @@ face is centred on it; a dome stands on its flat face.
 A hollowed body (one a shell item hollows) also has the inside faces of its
 walls: ``inner -z`` is the inside of a block's -z wall, a tray's floor, facing
 up into the hollow; ``inner side`` is the inside of a hollowed cylinder's wall.
-The faces a shell leaves open can't be stood on.
+The faces a shell leaves open can't be stood on but for their rim: a ring
+round a cylinder's mouth, a frame round a block's (its four walls there), the
+wall under it, takes what a face does.
 
 Where a value may come from
 ---------------------------

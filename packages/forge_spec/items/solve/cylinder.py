@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import (
@@ -81,6 +82,14 @@ class Cylinder(SolveKind):
                     + ("no opening" if not open_faces else f"none with a wall opposite ({sorted(open_faces)})")
                     + ": leave the floor out")  # fmt: skip
         return None
+
+    def rim(self, face: FlatFace, thickness: float, open_faces: frozenset[str]) -> FlatFace | None:
+        """An open end's rim: a ring, ``thickness`` wide round the hollow's mouth, the wall under it all the way down
+        to its other end (and what is under that)."""
+        inner = face.half[0] - thickness
+        if face.shape != "disc" or inner <= EPS:
+            return None
+        return replace(face, shape="annulus", inner_radius=inner)
 
     def hollow(self, item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout: Layout,
                fields: dict[str, str], h: Hollowing) -> None:  # fmt: skip

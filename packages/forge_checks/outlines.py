@@ -402,6 +402,8 @@ class Outline:
                 ]:
                     if not outer.contains(_at(side, t), tol):
                         return False
+            if outer.shape == "profile":  # nor any of its edge in this one: a hole in it (a block's rim round its mouth)
+                return not any(self.signed_distance(_at(q, 0.5)) < -tol for q in outer.pieces())
             return not (outer.shape == "ring" and self._inside(outer.centre))
         if outer.shape == "ring":
             return (

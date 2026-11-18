@@ -1621,8 +1621,11 @@ def shape_on_face(face: FlatFace, shape: Shape, p1: float, p2: float) -> bool:
     middle must not lie inside it.
     """
     moved = shape.moved(p1, p2)
-    if not boundary_within(moved.pieces, lambda p: _on_face(face, p), _walls(face)):
+    walls = _walls(face)
+    if not boundary_within(moved.pieces, lambda p: _on_face(face, p), walls):
         return False
+    if face.shape == "profile":  # nor any of its edge within it: a hole in it (a block's rim round its hollow's mouth)
+        return not any(moved.inside(w.at(0.5)) and moved.distance(w.at(0.5)) > EPS for w in walls)
     return face.shape != "annulus" or not moved.inside((0.0, 0.0))
 
 

@@ -71,7 +71,8 @@ Which way it leans: one of its face's two axes, + or -.
 - `inner +end`, `inner -end`, `inner side`: only when a shell hollows it:
   the inside faces of its +end wall, its -end wall (facing into the hollow
   along the axis) and its side wall (facing the axis). An end the shell
-  leaves open has no inner face.
+  leaves open has no inner face, and is its rim: a ring round the hollow's
+  mouth, the wall under it (shell.md, "The rim").
 
 ## Edges
 
