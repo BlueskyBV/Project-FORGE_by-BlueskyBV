@@ -16,7 +16,10 @@ a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
 intersections; 2b's first step (a cut through everything, or up to a face,
 schema 1.7) done, and its second (through the next face, schema 1.8, which
 the preview resolves before confirmation: its third step's resolution, for
-it); next, a leaning item's faces and the rest of 2b's third step.
+it), and a leaning item's far face (revision 16); what the exit pairs
+found is fixed, and a ball's or a cone's seam is kept clear of what is on
+it (revision 16); next, a leaning item's other faces and the rest of 2b's
+third step.
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1076,6 +1079,38 @@ boss, a post, an arc of holes, a tab thick along x, one on the plate's side,
 one all round end, a deep hole, a boss's joint and rim and a hole's mouth
 rounded; turned half a degree more fails; the second kernel agrees).
 
+**A ball's and a cone's seam kept clear, as built (revision 16).**
+OpenCascade makes a ball about the frame's z, its surface's seam the
+half-circle from pole to pole through +x, and a cone about its axis, its
+side's seam the line along it at `gp_Ax2`'s first axis. Something on the
+surface whose foot crosses the seam, or runs round a pole, was joined or
+cut across the seam's two edges, or round the pole's point, and
+OpenCascade left the part holding only loosely, by millimetres, or refused
+it: all 15 of the exit pair's 5,000 parts that were unable (406, 660,
+2270, 2276, 3005, 3295, 3932, 4031, 4989, 2626, 2947 across a ball's seam
+or round its pole; 476, 1073, 2288 by it; 644 across a cone's). **The
+planner** makes such a ball turned about its centre, or such a cone about
+its axis, so that nothing on it comes within a millimetre of its seam or a
+pole (`forge_plan.seams`: of some 14,400 turns of a ball, 360 of a cone;
+a ball a plane cuts through its centre, a dome or one seated in its face,
+with its poles well out of the plane and as little out of its way up as
+keeps everything clear). The ball or cone it cuts each thing on it with is
+turned alike, and
+so is a hollow's inner ball (`Chain.seams`, `Chain.seamed`). Where nothing
+comes so near, it is made as it always was, the same document. **The exact
+view** takes a ball's face's box from its boundary and those of the ball's
+six extremes on it (`_add_face`): OpenCascade's own takes the whole of its
+parameters' rectangle, 4.85 mm past a turned dome's flat face, which face
+accounting held as material past the spec's. **A hole on a ball's surface
+or a cone's side** has its tool carried into the air past its mouth first
+(5.2), as a hole into a round side has: its definition's tool's end
+touches a ball at the mouth's middle, a cone along a line, and 2947's hole
+was made a solid of its own. All 15 parts are built and graded clean now. Tests: `tests/test_v2_plan_ballsurface.py` (a boss
+across a ball's seam, a boss and a hole by a dome's pole, built and judged,
+the second kernel agreeing; turned only where something is near, and
+clear), `tests/test_v2_plan_coneside.py` (a hole across a cone's seam; a
+boss at 0 on it).
+
 ### 3.5 Item 2: depth by geometry
 
 **Today:** a cut's depth is a length or `through`, and `through` means
@@ -1301,9 +1336,9 @@ more. Each is fixed where it was, and the plans that build quickly kept
   everything, up to a face), its side is measured as far as that material
   surely goes (`Copy.wall`, the least under its mouth).
 
-The rest are OpenCascade refusing every way to make a part (15, "unable",
-the same in both), and one mutant it wouldn't build (2629): the build's
-limits, not faults. Tests: `tests/test_v2_plan_build_generated.py` (the
+The rest were OpenCascade refusing every way to make a part (15, "unable",
+the same in both): a ball's or a cone's seam (3.4, "A ball's and a cone's
+seam kept clear"); and one mutant it wouldn't build (2629). Tests: `tests/test_v2_plan_build_generated.py` (the
 kept plans built, judged and graded), `tests/test_v2_eval_truth.py` (the
 refused plans refused), `tests/test_v2_plan_turnedges.py` (only on the
 part), `tests/test_v2_plan_throughall.py` (a ring of round pockets through

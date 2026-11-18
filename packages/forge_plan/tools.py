@@ -269,8 +269,25 @@ def side_air_boxes(
     end's centre is more than :data:`CARRY` from the axis, and, in a
     hollow, within its span along the axis. The other added tools' boxes are
     tested against these by :func:`clear_of`, the host's left out.
+
+    On a ball's surface, or a cone's side (item 3b), from outside: past its
+    mouth, every point of ``E`` is beyond the plane touching the surface at
+    its point, which is beyond the ball or the cone; and past a whole ball's
+    far side alike. Its definition's tool's end touches a ball's surface at
+    the mouth's middle, and a cone's along a line, as a round side's does
+    (generated part 2947: a hole's tool's end touching a dome at a point,
+    OpenCascade made the hole a solid of its own).
     """
     face = ctx.face(copy)
+    mouth: tuple[Vec, Vec] | None
+    if isinstance(face, (BallFace, ConeFace)) and PLAN[item.kind].goes_round_side:
+        radius, widest = PLAN[item.kind].widest(ctx, item)
+        w, d = copy.origin, neg(copy.normal)
+        mouth = _bounds_of_cylinder(add(w, d, -CARRY), d, widest, CARRY)
+        if not _through(item) or not isinstance(face, BallFace) or face.dome:
+            return mouth, None
+        depth = face.most_material_under((disc(radius),))
+        return mouth, _bounds_of_cylinder(add(w, d, depth), d, radius, CARRY)
     if not isinstance(face, SideFace) or not PLAN[item.kind].goes_round_side:
         return None, None
     radius, widest = PLAN[item.kind].widest(ctx, item)
@@ -446,6 +463,8 @@ def _on_ball(chain: Chain, ctx: Context, item: Item, copy: Instance, face: BallF
         turned = Rigid.turn_about(copy.origin, copy.normal, 0.7071067811865476, 0.7071067811865476)
         prism = chain.step(f"{prism}.turned", "transform", transform_params(turned), item=item.id, inputs=(prism,))
     ball = chain.sphere(_id(item.id, k, "ball"), face.centre, 2 * face.radius, item=item.id)
+    if copy.host is not None:  # turned as the ball it is on is made (forge_plan.seams): its foot on the same surface
+        ball = chain.seamed(ball, (copy.host[0], copy.host[1]), item=item.id)
     placed = ctx.layout.instances.get(item.id, [])
     moved = placed[k] if k < len(placed) else None
     if moved is not None and moved.frame is not None:
@@ -483,6 +502,8 @@ def _on_cone(chain: Chain, ctx: Context, item: Item, copy: Instance, face: ConeF
         prism = chain.step(f"{prism}.turned", "transform", transform_params(turned), item=item.id, inputs=(prism,))
     cone = chain.cone(_id(item.id, k, "cone"), frame.origin, frame.n, 2 * face.start_radius, 2 * face.end_radius,
                       face.length, item=item.id)  # fmt: skip
+    if copy.host is not None:  # turned as the cone it is on is made (forge_plan.seams): its foot on the same surface
+        cone = chain.seamed(cone, (copy.host[0], copy.host[1]), item=item.id)
     placed = ctx.layout.instances.get(item.id, [])
     moved = placed[k] if k < len(placed) else None
     if moved is not None and moved.frame is not None:

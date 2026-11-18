@@ -122,7 +122,7 @@ class Hole(CutPlan):
     def into_round_side(self, ctx: Context, item: Item) -> bool:
         for copy in ctx.layout.instances.get(item.id, []):
             face = ctx.face(copy)
-            if isinstance(face, SideFace) and face.outward:
+            if (isinstance(face, SideFace) and face.outward) or isinstance(face, (BallFace, ConeFace)):
                 return True
         return False
 

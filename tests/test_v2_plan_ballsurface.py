@@ -18,6 +18,12 @@ V2-stage4b-0c.md, 3.4, item 3b's second step).
 - **A wrong turn is caught:** each turned half a degree more fails the
   judge.
 - **The second kernel agrees** with the exact part.
+- **Its seam and its poles are kept clear of what is on it:** a boss across
+  the seam OpenCascade makes a ball with, and a boss and a hole by a dome's
+  pole, built with the ball turned about its centre so that none is near
+  either (forge_plan.seams); a ball whose seam and poles are clear made as
+  it always was; a ball seated in a plate keeps its poles out of the plate's
+  plane.
 """
 
 from __future__ import annotations
@@ -100,6 +106,10 @@ CASES: dict[str, Any] = {
                                          _rounding(b, "boss", "joint", where_meets="ball")],
     "a hole's mouth bevelled": lambda b: [_ball(b), _on(b, "hole", 45.0, 30.0), _rounding(b, "hole", "top", "chamfer", 0.5)],
     "a post's edges rounded": lambda b: [_ball(b), _on(b, "post", 45.0, 30.0), _rounding(b, "post", "vertical", size=0.5)],
+    # Where OpenCascade's own seam and poles are (forge_plan.seams): generated parts 406, 3932 and 476.
+    "a boss across a ball's seam": lambda b: [_ball(b), _on(b, "boss", 30.0, 2.0)],
+    "a boss by a dome's pole": lambda b: [_ball(b, "upper_half"), _on(b, "boss", 80.0, 25.0)],
+    "a hole by a dome's pole": lambda b: [_ball(b, "upper_half"), _on(b, "hole", 85.5, 208.0, depth=1.5)],
 }
 
 
@@ -192,6 +202,28 @@ class BuiltAsPlaced(unittest.TestCase):
                 self.assertEqual(failed, [])
 
 
+class ItsSeamAndPolesAreClear(unittest.TestCase):
+    def test_turned_only_where_something_is_near_them(self) -> None:
+        for name, turned in (("a boss and a post on a ball", False), ("a post on a dome", False),
+                             ("a boss across a ball's seam", True), ("a boss by a dome's pole", True),
+                             ("a hole by a dome's pole", True), ("a boss at a ball's pole", True)):  # fmt: skip
+            with self.subTest(name):
+                _, planned = _planned(CASES[name])
+                seams = [s["id"] for s in planned.written().chain.steps if s["id"].endswith(".seam")]
+                self.assertEqual(bool(seams), turned, seams)
+
+    def test_turned_clear(self) -> None:
+        from forge_plan.seams import CLEAR, _clearance
+
+        _, planned = _planned(CASES["a boss across a ball's seam"])
+        (turn,) = planned.written().chain.seams.values()
+        pole, seam = turn.vector((0.0, 0.0, 1.0)), turn.vector((1.0, 0.0, 0.0))
+        # The boss 6 mm across at 30 degrees up and 2 round, on a ball 40 mm across: clear by more than CLEAR.
+        lat, ang = math.radians(30.0), math.radians(2.0)
+        d = (math.cos(lat) * math.cos(ang), math.cos(lat) * math.sin(ang), math.sin(lat))
+        self.assertGreater(_clearance([(d, math.asin((3.0 + CLEAR) / 20.0))], pole, seam), 0.0)
+
+
 @needs_occ
 class AWrongTurnIsCaught(unittest.TestCase):
     def test_turned_half_a_degree_more(self) -> None:
@@ -219,7 +251,8 @@ class TheSecondKernelAgrees(unittest.TestCase):
         from forge_occ.planned import build_plan
 
         for name in ("a boss and a post on a ball", "a post on a dome", "a hole right through a ball",
-                     "on a ball standing on the plate", "a boss's joint rounded"):  # fmt: skip
+                     "on a ball standing on the plate", "a boss's joint rounded", "a boss across a ball's seam",
+                     "a hole by a dome's pole"):  # fmt: skip
             with self.subTest(name):
                 _, planned = _planned(CASES[name])
                 built = build_plan(planned)

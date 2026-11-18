@@ -21,6 +21,10 @@ third step).
 - **A wrong turn is caught:** each turned half a degree more fails the
   judge.
 - **The second kernel agrees** with the exact part.
+- **Its seam is kept clear of what is on it:** a hole across the seam
+  OpenCascade makes a cone's side with is built with the cone turned about
+  its axis so that nothing is near it (forge_plan.seams; generated part
+  644), and so is a boss at 0, on it.
 """
 
 from __future__ import annotations
@@ -127,6 +131,7 @@ CASES: dict[str, Any] = {
     "a boss's joint rounded": lambda b: [_cone(b), _on(b, "boss", 30.0), _rounding(b, "boss", "joint", where_meets="cone")],
     "its rim rounded": lambda b: [_cone(b), _on(b, "boss", 30.0), _rounding(b, "boss", "top")],
     "a hole's mouth bevelled": lambda b: [_cone(b), _on(b, "hole", 30.0), _rounding(b, "hole", "top", "chamfer", 0.3)],
+    "a hole across its seam": lambda b: [_cone(b), _on(b, "hole", 357.5), _on(b, "hole", 2.0, 4.0, item="other")],
 }
 
 
@@ -221,6 +226,16 @@ class BuiltAsPlaced(unittest.TestCase):
                 self.assertIsNone(built.gap, built.refusals)
                 self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
                 self.assertEqual(failed, [])
+
+
+class ItsSeamIsClear(unittest.TestCase):
+    def test_turned_only_where_something_is_near_it(self) -> None:
+        for name, turned in (("a boss at 30 degrees", False), ("a hole across its seam", True),
+                             ("a boss at 0, leaned only", True)):  # fmt: skip
+            with self.subTest(name):
+                _, planned = _planned(CASES[name])
+                seams = [s["id"] for s in planned.written().chain.steps if s["id"].endswith(".seam")]
+                self.assertEqual(bool(seams), turned, seams)
 
 
 @needs_occ

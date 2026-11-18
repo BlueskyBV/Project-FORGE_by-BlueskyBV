@@ -38,11 +38,17 @@ class Cone(BodyPlan):
             _mm(item, "top_diameter"),
             _mm(item, "length"),
         )
-        tool = chain.cone(_id(item.id, k, "cone"), o, u, base, top, long, item=item.id)
+        from forge_plan.seams import cone_motion
+
+        turn = cone_motion(ctx, item.id, k, o, u, min(base, top) / 2)
+        if turn is not None:
+            chain.seams[(item.id, k)] = turn
+        made = chain.cone(_id(item.id, k, "cone"), o, u, base, top, long, item=item.id)
+        tool = chain.seamed(made, (item.id, k), item=item.id)
         if top > 0.0:
-            chain.name(item.id, k, "+end", Ref(tool, "top"))
-        chain.name(item.id, k, "-end", Ref(tool, "base"))
-        chain.name(item.id, k, "side", Ref(tool, "lateral"))
+            chain.name(item.id, k, "+end", Ref(made, "top"))
+        chain.name(item.id, k, "-end", Ref(made, "base"))
+        chain.name(item.id, k, "side", Ref(made, "lateral"))
         chain.add_box(
             Box(*_bounds_of_cylinder(o, u, max(base, top) / 2, long), item.id, k)
         )

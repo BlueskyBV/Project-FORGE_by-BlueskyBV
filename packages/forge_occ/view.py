@@ -74,6 +74,7 @@ from OCP.collections import (
     IndexedMap_TopoDS_Shape_TopTools_ShapeMapHasher as TopTools_IndexedMapOfShape,
 )
 from OCP.collections import List_TopoDS_Shape as TopTools_ListOfShape
+from OCP.ElSLib import ElSLib
 from OCP.GCPnts import GCPnts_AbscissaPoint, GCPnts_UniformAbscissa
 from OCP.GeomAbs import (
     GeomAbs_BezierCurve,
@@ -86,7 +87,7 @@ from OCP.GeomAbs import (
     GeomAbs_SurfaceOfExtrusion,
     GeomAbs_Torus,
 )
-from OCP.gp import gp_Dir, gp_Lin, gp_Pnt, gp_Vec
+from OCP.gp import gp_Dir, gp_Lin, gp_Pnt, gp_Pnt2d, gp_Vec
 from OCP.GProp import GProp_GProps
 from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
 from OCP.IntCurveSurface import IntCurveSurface_In, IntCurveSurface_Out
@@ -176,10 +177,41 @@ def _xyz(p: Any) -> Array:
 
 
 def _box_of(shape: Any) -> Box:
+    """The box round a shape, face by face (:func:`_add_face`), or OpenCascade's optimal one where it has no face."""
     box = Bnd_Box()
-    BRepBndLib.AddOptimal_s(shape, box, False, False)
+    found = faces(shape)
+    if not found:
+        BRepBndLib.AddOptimal_s(shape, box, False, False)
+    for face in found:
+        _add_face(face, box)
     x0, y0, z0, x1, y1, z1 = box_limits(box)
     return Box((x0, y0, z0), (x1, y1, z1))
+
+
+def _add_face(face: Any, box: Any) -> None:
+    """A face's box, added: OpenCascade's optimal box; a ball's face's from its boundary and those of the ball's six
+    extremes that lie on it. OpenCascade takes a ball's face's box from the whole of its parameters' rectangle, far
+    past the face where its boundary isn't one of the ball's own circles (a ball made turned about its centre, then
+    cut by a plane through it: forge_plan.seams; 20 mm across, 4.85 mm past the plane)."""
+    surface = BRepAdaptor_Surface(face, True)
+    if surface.GetType() != GeomAbs_Sphere:
+        BRepBndLib.AddOptimal_s(face, box, False, False)
+        return
+    ball = surface.Sphere()
+    centre, radius = ball.Location(), ball.Radius()
+    for edge in edges(face):
+        BRepBndLib.AddOptimal_s(edge, box, False, False)
+    for vertex in vertices(face):
+        BRepBndLib.Add_s(vertex, box)
+    classifier = IntTools_FClass2d(face, ON_FACE)
+    for k in range(3):
+        for sign in (-1.0, 1.0):
+            at = [centre.X(), centre.Y(), centre.Z()]
+            at[k] += sign * radius
+            point = gp_Pnt(at[0], at[1], at[2])
+            u, v = ElSLib.Parameters_s(ball, point)
+            if classifier.Perform(gp_Pnt2d(u, v)) != TopAbs_OUT:
+                box.Add(point)
 
 
 def _distinct(shapes: Any) -> list[Any]:
@@ -524,7 +556,7 @@ class BrepView:
         found = []
         for face in self._faces:
             box = Bnd_Box()
-            BRepBndLib.AddOptimal_s(face, box, False, False)
+            _add_face(face, box)
             x0, y0, z0, x1, y1, z1 = box_limits(box)
             found.append((np.array([x0, y0, z0]), np.array([x1, y1, z1])))
         return found

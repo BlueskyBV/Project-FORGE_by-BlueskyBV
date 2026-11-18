@@ -277,6 +277,19 @@ class Chain:
     #: box round it as it stands so (None for a cut), and the motion (a ``forge_spec.frames.Rigid``) that moves it.
     #: Its edges are found so, then moved (edges.md, "A turned item's edges").
     motions: dict[tuple[str, int], tuple[Vec | None, Vec | None, Any]] = field(default_factory=dict)
+    #: A ball (or a dome) made turned about its centre, or a cone about its axis, so its seam (and a ball's poles)
+    #: are clear of what is on it (:mod:`forge_plan.seams`): the turn (a ``forge_spec.frames.Rigid``), by its copy.
+    #: What is on it is cut by its ball or cone turned alike, and a ball's hollow's inner ball.
+    seams: dict[tuple[str, int], Any] = field(default_factory=dict)
+
+    def seamed(self, solid: str, key: tuple[str, int], *, item: str) -> str:
+        """A ball's or a cone's step, turned as the one ``key`` is made (:attr:`seams`), or as it is."""
+        turn = self.seams.get(key)
+        if turn is None:
+            return solid
+        from .moved import transform_params
+
+        return self.step(f"{solid}.seam", "transform", transform_params(turn), item=item, inputs=(solid,))
 
     # -- steps -----------------------------------------------------------------------------
     def step(self, step_id: str, op: str, params: Mapping[str, Any], *, item: str,
