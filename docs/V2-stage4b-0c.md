@@ -1,8 +1,9 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
 Status (18 November 2026): items 0, 14, 1a, 2a and 3a done, and 3b's first
-three steps (a standing item round a side at any angle; a hole, a boss or a
-post on a ball's or a dome's surface, schema 1.6; on a cone's side); 1b's first and second
+four steps (a standing item round a side at any angle; a hole, a boss or a
+post on a ball's or a dome's surface, schema 1.6; on a cone's side; on a
+round-ended tab's end); 1b's first and second
 moves done (items turned in their face, schema 1.2; holes, bosses and posts
 leaning on it, schema 1.3); its third move's first step done (positions
 along a face's own axes and a turned item's far face, schema 1.4), its
@@ -11,8 +12,8 @@ neither a schema minor, and its third (a body leans, schema 1.5): its
 schema 2.0 made with item 2b (revision 12). Step 5 (revision 13: a turned
 box hollowed, round sides on a turned item's faces, a leaning item's edges,
 a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
-3b's fourth step (a round-ended tab's end) next, then the torus, then 2b (a
-leaning item's faces with it).
+3b's last step (a torus) waits for 4b.0d1's certified face-face
+intersections; 2b (with a leaning item's faces) next.
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1008,6 +1009,35 @@ and judged: sixteen parts, a boss, a post, holes, a circle, an arc, on cones
 standing, pointing down, lying along x, on a turned block's side, widening,
 coming to a point, a joint, a rim and a mouth rounded; turned half a degree
 more fails; the second kernel agrees).
+
+**3b's fourth step, as built (revision 14).** A round-ended tab's far end
+(closed before) is a round side over its half, named by the way the tab
+sticks out: a hole, a boss or a post goes on it by a position along its
+axis (the tab's thickness) and an angle round it, within a quarter turn of
+its tip, the item's reach round it included; copies go in an arc; no schema
+change. **The solver** keeps it as a `SideFace` with its `half` and how far
+the tab runs on `behind` it, and says what runs off the half, a circle of
+copies, or a hole deeper than the tab holds (the tab's section across its
+thickness is convex: the least is along the lines through the mouth's two
+sides round the axis, on through the half-disc and the straight part, until
+out of its side or at its foot: `_tab_exit`); **the judge** keeps it as a
+`RoundSide` with its `half` and holds a copy to it; **the planner** and
+**the oracle** build what is on it as round any side (a standing item from
+the plane through the axis, outside the side's cylinder); the planner's
+edge queries take a mouth's or a joint's whole box on any face that isn't
+flat, not only on those named as round ones (a tab's end is named `+z`);
+**the generator** puts a hole, a boss or a post on a round tab's end now
+and then (`_onto_end`, a stream of its own), one at a time, where nothing
+rounds the tab's edges. A hole into it is blind, for now; a turned tab's end
+takes nothing yet. With it, the generator's copies of holes on a ball's
+surface or a cone's side keep no axes, as the judge's and the solver's keep
+none (test_v2_eval_truth's three placements failed on c6a62b3). Tests:
+`tests/test_v2_plan_tabend.py` (placed round its half; every program's layout
+agrees; what runs off it, a circle, a hole through or too deep, a turned
+tab's end are said; built and judged: a hole at its tip and at an angle, a
+boss, a post, an arc of holes, a tab thick along x, one on the plate's side,
+one all round end, a deep hole, a boss's joint and rim and a hole's mouth
+rounded; turned half a degree more fails; the second kernel agrees).
 
 ### 3.5 Item 2: depth by geometry
 

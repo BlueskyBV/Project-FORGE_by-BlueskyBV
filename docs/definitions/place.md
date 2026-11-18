@@ -204,6 +204,28 @@ an angle round it.
   only one at a place or a `circle` or `arc` of them: no other pattern, and
   nothing `concentric`.
 
+### On a round-ended tab's end
+
+A round-ended tab's far end (tab.md; item 3b's fourth step, no schema
+change) is a round side over its half: its axis along the tab's
+`thickness_along`, as long as its thickness, its radius half the tab's
+width, the half facing the way the tab sticks out. The face is named by
+that way (a tab standing on +z: its `+z` end).
+
+- A hole, a boss or a post goes on it as on a round side: by a position
+  along its axis and an angle round it, measured as round a side. None is
+  its middle through its thickness, and its tip (the middle of its half),
+  assumptions.
+- All of it stays on the half: no further round from its middle than a
+  quarter turn, its reach round it from its point included. Copies go in an
+  `arc` (it gives a step), not a `circle`.
+- A hole is blind, no deeper than the tab holds under its mouth: on through
+  the half-disc and the tab's straight part behind it, until it would come
+  out of the tab's side or reach its foot. A hole right through waits, for
+  now.
+- Only holes, bosses and posts go on it, for now; a turned tab's end takes
+  nothing yet.
+
 ## On a ball's surface
 
 On a ball's or a dome's curved surface (sphere.md, its `surface` face;

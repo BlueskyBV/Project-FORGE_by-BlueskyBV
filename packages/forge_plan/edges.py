@@ -131,7 +131,7 @@ def edge_reference(chain: Chain, rounding: Item, *, items: Mapping[str, Item],
             raise PlanError("a joint is where the item meets another", item=rounding.id)
         _joint(chain, queries, target, meets, copies, faces or {})
     elif PLAN[target.kind].rimmed_cut:
-        _cut_rims(chain, queries, target, edges.which, copies[target.id])
+        _cut_rims(chain, queries, target, edges.which, copies[target.id], faces or {})
     else:
         for copy in copies[target.id]:
             named[(target.id, copy.index)] = _own(chain, queries, target, copy, edges.which,
@@ -254,8 +254,8 @@ def _inner_rims(chain: Chain, queries: Queries, target: Item, copy: Instance,
 # ----------------------------------------------------------------------
 # Cuts' rims and pockets' floors
 # ----------------------------------------------------------------------
-def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str,
-              copies: Iterable[Instance]) -> None:  # fmt: skip
+def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str, copies: Iterable[Instance],
+              faces: Mapping[tuple[str, int], Mapping[str, Face]]) -> None:  # fmt: skip
     for copy in copies:
         key = (target.id, copy.index)
         names = chain.names_of(target.id, copy.index)
@@ -278,7 +278,7 @@ def _cut_rims(chain: Chain, queries: Queries, target: Item, which: str,
                 or names.get("countersink")
                 or names["wall"]
             )
-            mouth_lo, mouth_hi = _flat_at(box, copy)
+            mouth_lo, mouth_hi = _flat_at(box, copy, faces.get((copy.host[0], copy.host[1]), {}).get(copy.host[2]))
             where: dict[str, Any] = {"within": _within(mouth_lo, mouth_hi)}
             seen_lo, seen_hi = motion.box(mouth_lo, mouth_hi) if motion else (mouth_lo, mouth_hi)
             crossing = _crossing(chain, seen_lo, seen_hi, key)
@@ -300,10 +300,11 @@ def _pieces(cut: Item) -> int:
     return PLAN[cut.kind].pieces(cut)
 
 
-def _flat_at(box: Box, copy: Instance) -> tuple[list[float], list[float]]:
-    """The box flattened to the plane of the face the copy is on, through its point; round a side, the whole box (the curve dips into it)."""
+def _flat_at(box: Box, copy: Instance, face: Face | None) -> tuple[list[float], list[float]]:
+    """The box flattened to the plane of the face the copy is on, through its point; round a side, on a ball's or a
+    cone's surface, or a round-ended tab's end, the whole box (the curve dips into it)."""
     lo, hi = list(box.lo), list(box.hi)
-    if copy.host is not None and copy.host[2] in _ROUND:
+    if copy.host is not None and (copy.host[2] in _ROUND or (face is not None and not isinstance(face, FlatFace))):
         return lo, hi
     k = "xyz".index(axis_of(copy.normal))
     lo[k] = hi[k] = copy.origin[k]
@@ -347,7 +348,7 @@ def _joint(chain: Chain, queries: Queries, target: Item, meets: Item, copies: Ma
             Ref(d.step, "bevel" if d.bevel else "round")
             for d in chain.rounded.get(key, [])
         ]
-        foot_lo, foot_hi = _flat_at(box, copy)
+        foot_lo, foot_hi = _flat_at(box, copy, host_face)
         where = {"within": _within(foot_lo, foot_hi)}
         side_refs = tuple(r for refs in sides for r in refs) + tuple(earlier)
         queries.add(

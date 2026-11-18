@@ -275,7 +275,8 @@ class FeaturesFitExactly(unittest.TestCase):
         }  # inside the box, outside the round end
         layout = layout_of(PLATE, lug, hole("lug", "+y", 4, place=near_corner))
         self.assertIn("runs past the edge", issues(layout)[0][1])
-        self.assertIn(("unable", "lug's round end is curved; Forge places on its flat faces only, for now"),
+        # Its round end takes a blind hole, as a round side over its half (item 3b's fourth step); not one through.
+        self.assertIn(("unable", "Forge cuts a blind hole into a tab's round end, for now: give the hole into lug a depth"),
                       issues(layout_of(PLATE, lug, hole("lug", "+z", 2))))  # fmt: skip
         side = layout_of(PLATE, lug, hole("lug", "+x", 2)).faces[("lug", 0)]["+x"]
         assert isinstance(side, FlatFace)

@@ -1675,12 +1675,15 @@ class _Compiler:
     def _along_side(
         self, item: Item, name: str, position: AxisPosition, side: RoundSide
     ) -> None:
-        """A place along a round side's axis: from its built ends (the end faces of what it is the side of)."""
-        a = _v(side.frame.n)
+        """A place along a round side's axis: from its built ends (the end faces of what it is the side of), each
+        copy's own side's (copies of what it is on, a row of round-ended tabs, are each where they are)."""
         for copy in self.copies(item):
             host = copy.host
             assert host is not None
-            planes = self._side_ends(host, side)
+            own = self.placed.face(host)
+            here = own if isinstance(own, RoundSide) else side
+            a = _v(here.frame.n)
+            planes = self._side_ends(host, here)
             ref = self._centre_ref(item, copy, side.axis)
             if (
                 len(planes) < 2

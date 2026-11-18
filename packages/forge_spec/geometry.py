@@ -331,6 +331,11 @@ class SideFace:
     #: The side of an item standing on a turned item's face (1b's third move, step 5.2): kept as it is with that item
     #: upright, and the motion that takes it onto the part.
     local: Rigid | None = None
+    #: A round-ended tab's end (item 3b's fourth step; tab.md): the half of the side facing this way, its far end's;
+    #: None for a whole side.
+    half: str | None = None
+    #: Behind such a half, how far the tab runs on, as wide as the half, to its foot.
+    behind: float = 0.0
 
     def upright(self) -> SideFace:
         """The side as it is with its item upright (``local`` undone): its axis and start are already so."""
@@ -359,8 +364,32 @@ class SideFace:
     # Item 3a's placeable face, second part: the material a cut along a radius of the side meets, the same wherever on
     # it, asked of the side itself (its foot, the cut's mouth, counts only by how far it reaches).
     def material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
-        """The least material a radial cut of that mouth meets: what a blind one must fit in."""
+        """The least material a radial cut of that mouth meets: what a blind one must fit in. Into a round-ended tab's
+        end, at ``at``'s angle (degrees), in the tab: through its half-disc and on into its straight part, until it
+        comes out of the tab's side or reaches its foot."""
+        if self.half is not None:
+            return min(self._half_exits(_reach_of(footprint), at[0]))
         return side_material(self, _reach_of(footprint))
+
+    @property
+    def middle(self) -> float:
+        """A half's middle: the angle round its axis (degrees, from its first reference axis towards its second) of the
+        way it faces."""
+        assert self.half is not None
+        u, v = self.reference
+        quarter = {("+", u): 0.0, ("+", v): 90.0, ("-", u): 180.0, ("-", v): 270.0}
+        return quarter[(self.half[0], self.half[1])]
+
+    def _half_exits(self, r: float, angle: float) -> tuple[float, float]:
+        """How far a radial cut ``r`` in radius at ``angle`` (degrees) into a round-ended tab's end stays in the tab, along
+        the lines through its mouth's two sides round the axis, from the line square to it at its point: the tab's
+        section across its thickness is convex, so along the rest it stays in further."""
+        c, s = cos_sin(angle - self.middle)  # off the half's middle: along it (y), across it (x)
+        found = []
+        for side in (-r, r):
+            x0, y0 = self.radius * s + side * c, self.radius * c - side * s
+            found.append(_tab_exit(self.radius, self.behind, x0, y0, -s, -c))
+        return found[0], found[1]
 
     def most_material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
         """How far a radial cut of that mouth through the side's wall goes: until it is out all across its mouth."""
@@ -1186,6 +1215,34 @@ def _depth_range(face: FlatFace, near: float, far: float) -> tuple[float, float]
 def material_at(face: FlatFace, p1: float, p2: float, r: float) -> float:
     """The least material under a disc of radius ``r`` at (p1, p2) on the face (a point, ``r`` 0): what a blind cut must fit in."""
     return least_material_under(face, (disc(r),), p1, p2)
+
+
+def _tab_exit(radius: float, behind: float, x0: float, y0: float, dx: float, dy: float) -> float:
+    """How far from (x0, y0) along the unit (dx, dy) a line stays in a round-ended tab's section across its thickness:
+    the half-disc of ``radius`` about the origin on the side of +y, and the strip as wide behind it, ``behind`` long
+    (0 where it never is in it). The section is convex, so the line is in it along one stretch."""
+
+    def inside(t: float) -> bool:
+        x, y = x0 + t * dx, y0 + t * dy
+        if abs(x) > radius + EPS or y < -behind - EPS:
+            return False
+        return y <= EPS or x * x + y * y <= radius * radius + EPS
+
+    found = [0.0]
+    if abs(dx) > 1e-15:
+        found += [(radius - x0) / dx, (-radius - x0) / dx]
+    if abs(dy) > 1e-15:
+        found += [(0.0 - y0) / dy, (-behind - y0) / dy]
+    b = x0 * dx + y0 * dy
+    disc_ = b * b - (x0 * x0 + y0 * y0 - radius * radius)
+    if disc_ >= 0.0:
+        root = math.sqrt(disc_)
+        found += [-b - root, -b + root]
+    last = 0.0
+    for t0, t1 in pairwise(sorted(t for t in found if t >= 0.0)):
+        if t1 - t0 > 1e-12 and inside((t0 + t1) / 2):
+            last = t1
+    return last
 
 
 def side_material(face: SideFace, r: float) -> float:

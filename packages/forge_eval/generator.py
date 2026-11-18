@@ -557,6 +557,18 @@ class _Round:
     #: The stretches along it items standing round it take (from its start): a rounding of its rim or a thread
     #: made after keeps clear of them.
     standing: list[tuple[float, float]] = field(default_factory=list)
+    #: A round-ended tab's end (item 3b's fourth step): the angle round it (degrees) of the middle of its half, the way
+    #: the tab sticks out; None for a whole side.
+    half: float | None = None
+
+    def on_half(self, f: Feature, angles: Sequence[float], across: float) -> None:
+        """On a round-ended tab's end, all of a copy stays on its half: within a quarter turn of its middle, its reach
+        round from its point included, by the gap."""
+        if self.half is None:
+            return
+        spread = math.degrees(fs.asin(min(across / self.radius, 1.0))) + math.degrees(GAP / self.radius)
+        if any(abs(math.remainder(a - self.half, 360.0)) + spread > 90.0 for a in angles):
+            raise DoesNotFitError(f"{f.id} runs off the round end of {self.key[0]}")
 
     @functools.cached_property
     def frame(self) -> _FaceFrame:
@@ -726,6 +738,8 @@ class _Part:
     balls: dict[tuple[str, int, str], _Ball] = field(default_factory=dict)
     #: Cones' sides (item 3b's third step).
     cones: dict[tuple[str, int, str], _Cone] = field(default_factory=dict)
+    #: Round-ended tabs' ends (item 3b's fourth step), as round sides over their halves.
+    ends: dict[tuple[str, int, str], _Round] = field(default_factory=dict)
     kinds: dict[str, str] = field(default_factory=dict)
     #: What stands in each hollow: each copy's item and its box (low and high corners).
     inside: dict[tuple[str, int], list[tuple[str, Array, Array]]] = field(
@@ -1880,8 +1894,8 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
     is cut into it; a rounding of the rod's rim, or a thread on it, keeps
     clear of its stretch.
     """
-    if f.pattern is not None and not _pattern_draw(f.pattern.kind).round_whole:
-        raise DoesNotFitError(f"{f.id}: round a side, copies go round it (a circle)")
+    if f.pattern is not None and (not _pattern_draw(f.pattern.kind).round_whole or side.half is not None):
+        raise DoesNotFitError(f"{f.id}: round a side, copies go round it (a circle); on a tab's round end, one")
     if set(f.place) - {side.axis}:
         raise DoesNotFitError(f"{f.id}: round a side, placed along its axis")
     s = f.sizes
@@ -1890,10 +1904,12 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
         rounded, wide, height = s["diameter"] / 2, s["diameter"] / 2, s["height"]
     else:
         rounded, wide, height = s["length"] / 2, s["width"] / 2, s["height"]
-    start = f.angle or 0.0
+    start = f.angle if f.angle is not None else (side.half or 0.0)
     n = f.pattern.counts["count"] if f.pattern is not None else 1
     angles = [start + k * 360.0 / n for k in range(n)]
     along = _along(f.place.get(side.axis, Position("none")), side, wide)
+    if strict:
+        side.on_half(f, angles, rounded)
     sag = side.radius - math.sqrt(
         max(side.radius * side.radius - rounded * rounded, 0.0)
     )
@@ -2069,7 +2085,7 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
             lo, hi = bounds(replace(solid, low=0.0))
             part.kept.append((f"{f.id} on {host}'s surface", lo - GAP / 2, hi + GAP / 2, f.id))
         meridian, east_name = TURN_AXES[ball.up[1]]
-        made.append(Copy(f.id, copy_index, ball.key, _t(p), _t(out), (east_name, meridian)))
+        made.append(Copy(f.id, copy_index, ball.key, _t(p), _t(out), None if cut else (east_name, meridian)))
     ball.taken += [(a, latitude, spread) for a in angles]
     return made
 
@@ -2162,8 +2178,8 @@ def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> 
         below = 90.0 * math.floor(a / 90.0 + 1e-9)
         c, si = _cos_sin(below)
         up = _named(c * cone.frame.u + si * cone.frame.v)
-        made.append(Copy(f.id, copy_index, cone.key, _t(p), _t(normal),
-                         (next(x for x in "xyz" if x not in (up[1], cone.axis)), cone.axis)))  # fmt: skip
+        axes = (next(x for x in "xyz" if x not in (up[1], cone.axis)), cone.axis)
+        made.append(Copy(f.id, copy_index, cone.key, _t(p), _t(normal), None if cut else axes))
     cone.taken += [(a, spread, along, reach_along + carry * abs(ls)) for a in angles]
     return made
 
@@ -2423,6 +2439,11 @@ def _round_tab(
             (size[axes[0]] / 2, size[axes[1]] / 2), t, (f.id, index, ("-" if sign > 0 else "+") + thin),
             corners=(corners[0], corners[1], corners[2], corners[3]))  # fmt: skip
     straight = length - r
+    if not face.turned:  # its round end takes things, as a round side over its half (item 3b's fourth step)
+        key = (f.id, index, up)
+        u, v = TURN_AXES[thin]
+        middle = {("+", u): 0.0, ("+", v): 90.0, ("-", u): 180.0, ("-", v): 270.0}[(up[0], up[1])]
+        part.ends[key] = _Round(key, thin, base + straight * n - t / 2 * e_thin, t, r, half=middle)
     if straight <= 0:
         return  # all half-disc: no narrow side
     for sign in (1.0, -1.0):
@@ -4436,6 +4457,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue
         if _onto_cone(random.Random(f"forge-eval on cones {seed} {k}"), k, plan, part, len(plan) < size):
             continue
+        if _onto_end(random.Random(f"forge-eval on round ends {seed} {k}"), k, plan, part, len(plan) < size):
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -4657,6 +4680,36 @@ def _cone_item(rng: random.Random, k: int, host: str, cone: _Cone, standing_ok: 
     return Feature(f"i{k}", kind, sizes, (host, "side"), depth, {}, None, place, angle, pattern)
 
 
+#: How often the generator puts a hole, a boss or a post on a round-ended tab's end, where there is one (item 3b's
+#: fourth step).
+_ON_END = 0.5
+
+
+def _onto_end(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, a hole, a boss or a post on a round-ended tab's end (item 3b's fourth
+    step), where the part has one whose edges nothing rounds: at an angle round it within its half, halfway through
+    its thickness. Whether one was added to the plan."""
+    rounded = {f.of for f in plan if _draw(f.kind).rounds_edges}
+    ends = [key for key in part.ends if key[1] == 0 and key[0] not in rounded]
+    if not ends or rng.random() >= _ON_END:
+        return False
+    key = rng.choice(ends)
+    end = part.ends[key]
+    assert end.half is not None
+    for _ in range(10):
+        kind = rng.choice(_weighted("curved_weight", "curved_rank", None if standing_ok else (lambda e: e.cut_out)))
+        sizes, depth, _ = _draw(kind).curved_sizes(rng, min(end.radius, end.length))
+        angle = _q(end.half + rng.uniform(-60.0, 60.0), 0.5)
+        candidate = Feature(f"i{k}", kind, sizes, key[::2], depth, {}, None, {}, angle)
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
 def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
     """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
@@ -4698,8 +4751,10 @@ def impossible(seed: int) -> Case:
     rng = random.Random(seed)
     for attempt in range(40):
         case = generate(seed * 1000 + attempt, 4)
+        # On flat faces only: not round a side, on a ball's surface, or at an angle round a round tab's end.
         cuts = [f for f in case.plan if _draw(f.kind).misfits and f.on is not None and f.pattern is None
-                and f.on[1] not in ("side", "surface") and f.turn is None and f.tilt is None]  # fmt: skip
+                and f.on[1] not in ("side", "surface") and not (f.angle is not None and f.on[1][0] in "+-")
+                and f.turn is None and f.tilt is None]  # fmt: skip
         if not cuts:
             continue
         f = rng.choice(cuts)

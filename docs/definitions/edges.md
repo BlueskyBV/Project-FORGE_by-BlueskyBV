@@ -67,7 +67,8 @@ all round it), is not rounded or chamfered yet.
 
 ### Round a side, and on a ball's surface or a cone's side
 
-An item round a side (place.md, "Round a side"), on a ball's or a dome's
+An item round a side (place.md, "Round a side"; a round-ended tab's end is
+one over its half), on a ball's or a dome's
 surface ("On a ball's surface") or on a cone's side ("On a cone's side")
 has the edge sets it has upright, at the angle or the latitude it is
 placed at: a boss's `top` rim, a post's `vertical` and `top` edges, each

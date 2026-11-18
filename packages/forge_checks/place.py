@@ -604,6 +604,16 @@ class RoundSide:
     #: The side of an item standing on a turned item's face (place.md, "A turned item's faces"): kept as with that item
     #: upright, and the motion onto the part.
     local: Motion | None = None
+    #: A round-ended tab's end (item 3b's fourth step; tab.md): the half of the side facing this way; None for a whole
+    #: side.
+    half: str | None = None
+
+    @property
+    def middle(self) -> float:
+        """A half's middle: the angle round its axis (degrees) of the way it faces."""
+        assert self.half is not None
+        u, v = TURN_AXES[self.axis]
+        return {("+", u): 0.0, ("+", v): 90.0, ("-", u): 180.0, ("-", v): 270.0}[(self.half[0], self.half[1])]
 
     @property
     def placed_frame(self) -> FaceFrame:
@@ -2015,10 +2025,14 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
             item.id,
             f"on a round side, a position along its axis {axis} only, not {others[0]}",
         )
-    start = _angle(place.angle) if place and place.angle is not None else 0.0
+    if side.half is not None and entry.taken and _through(item):
+        raise PlaceError(item.id, "a hole into a tab's round end is blind, for now")
+    start = _angle(place.angle) if place and place.angle is not None else (0.0 if side.half is None else side.middle)
     angles = [start]
     if pattern is not None:
         values, counts = _pattern_values(item, pattern)
+        if side.half is not None and "step" not in values:
+            raise PlaceError(item.id, "round a tab's round end, copies go in an arc over its half: it gives a step")
         extra = sorted(
             set(values)
             - ({"step"} if _pattern_entry(pattern.kind).steps_round else set())
@@ -2059,6 +2073,12 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
                 else (-radial[0] + 0.0, -radial[1] + 0.0, -radial[2] + 0.0)
             )
         up, axes, reach_along = entry.round_frame(item, direction, axis, layout)
+        if side.half is not None:  # on a round-ended tab's end, all of it on its half
+            across = (_footprint(item, layout.diameters, axes).half[0] if axes is not None
+                      else entry.footprint(item, layout.diameters, (axis, axis)).farthest((0.0, 0.0)))  # fmt: skip
+            spread = math.degrees(fs.asin(min(across / side.radius, 1.0)))
+            if abs(math.remainder(angle - side.middle, 360.0)) + spread > 90.0 + TOL:
+                raise PlaceError(item.id, f"at {angle:g} degrees, it runs off the round end it is on")
         along = _anchor(
             item, positions.get(axis), side.length / 2, (-reach_along, reach_along)
         )
@@ -2419,9 +2439,12 @@ def _round_tab(item: Item, faces: dict[str, Face], key: tuple[str, int], point: 
         raise PlaceError(
             item.id, "a round-ended tab sticks out at least half its width"
         )
-    layout.close(key, up, "its end is round: nothing is placed on it, for now")
-    faces.pop(up, None)
     straight = length - radius
+    # Its round end takes a hole, a boss or a post, as a round side over its half (item 3b's fourth step).
+    k = _INDEX[thin]
+    centre = _add(point, unit(up), straight)
+    start = (*centre[:k], centre[k] - sizes[thin] / 2, *centre[k + 1 :])
+    faces[up] = RoundSide(up, thin, (start[0], start[1], start[2]), sizes[thin], radius, True, 0.0, half=up)
     for side in ("+" + wide, "-" + wide):
         if straight <= TOL:
             faces.pop(side, None)
@@ -2836,6 +2859,7 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
                 ("length", face.length, getattr(other, "length", None)),
                 ("radius", face.radius, getattr(other, "radius", None)),
                 ("outward", face.outward, getattr(other, "outward", None)),
+                ("half", face.half, getattr(other, "half", None)),
                 ("frame", (*framed.origin, *framed.u, *framed.v, *framed.n),
                  None if theirs_frame is None else (*theirs_frame.origin, *theirs_frame.u, *theirs_frame.v,
                                                     *theirs_frame.n)),

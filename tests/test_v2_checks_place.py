@@ -773,7 +773,10 @@ class TheMaterialUnderAFace(unittest.TestCase):
         tab = item("t", "tab", on=on("plate", "+z"), length=a(10), width=a(8), thickness=a(2),
                    thickness_along=pick("y"), end=pick("round"))  # fmt: skip
         p = placed(PLATE, tab)
-        self.assertIn("+z", p.closed[("t", 0)])  # its round end
+        end = p.faces[("t", 0)]["+z"]  # its round end: a round side over its half (item 3b's fourth step)
+        assert isinstance(end, RoundSide)
+        self.assertEqual((end.axis, end.start, end.length, end.radius, end.half, end.middle),
+                         ("y", (0.0, -1.0, 11.0), 2.0, 4.0, "+z", 0.0))  # fmt: skip
         broad = flat(p, "t", "+y")
         self.assertEqual(
             (broad.centre, broad.half, broad.outline.corners),

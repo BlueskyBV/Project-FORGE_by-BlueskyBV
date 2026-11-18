@@ -10,13 +10,16 @@ from forge_spec.draft import (
 from forge_spec.geometry import (
     EPS,
     FlatFace,
+    SideFace,
     Vec,
     rect,
 )
 from forge_spec.items.solve._common import (
+    _add,
     _bounds_box,
     _box_faces,
     _choice_of,
+    _dir,
     _item_values,
     _oriented,
     _size,
@@ -49,9 +52,15 @@ def _tab(item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[str, 
     if _choice_of(item, "end") != "round":
         return lo, hi
     radius = width / 2
-    layout.close(key, up, "unable",
-                 f"{item.id}'s round end is curved; Forge places on its flat faces only, for now")  # fmt: skip
     straight = length - radius
+    # Its round end takes a hole, a boss or a post, as a round side over its half (item 3b's fourth step).
+    k = "xyz".index(thin)
+    centre = _add(base, _dir(up), straight)
+    start = (*centre[:k], centre[k] - thickness / 2, *centre[k + 1 :])
+    widths = tuple((item.id, n) for n in ("width",) if item.get(n) is not None)
+    faces[up] = SideFace(up, thin, (start[0], start[1], start[2]), thickness, radius, True, 2 * radius,
+                         radius_sources=widths, length_sources=((item.id, "thickness"),),
+                         depth_sources=(*widths, (item.id, "length")), half=up, behind=straight)  # fmt: skip
     for side in ("+" + wide, "-" + wide):
         if straight > EPS:
             faces[side] = _box_faces(

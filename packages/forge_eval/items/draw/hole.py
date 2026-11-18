@@ -61,10 +61,12 @@ class Hole(DrawKind):
     def on_round(
         self, f: Feature, side: _Round, index: int, part: _Part, strict: bool
     ) -> list[Copy]:
-        if f.pattern is not None and f.pattern.kind != "circle":
+        if f.pattern is not None and (f.pattern.kind != "circle" or side.half is not None):
             raise DoesNotFitError(
-                f"{f.id}: round a side, copies go round it (a circle)"
+                f"{f.id}: round a side, copies go round it (a circle); on a tab's round end, one"
             )
+        if side.half is not None and f.depth is None:
+            raise DoesNotFitError(f"{f.id}: a hole into a tab's round end is blind")
         if set(f.place) - {side.axis} or f.recess is not None:
             raise DoesNotFitError(
                 f"{f.id}: round a side, a plain hole placed along its axis, here"
@@ -72,10 +74,12 @@ class Hole(DrawKind):
         r = f.sizes["diameter"] / 2
         w = side.frame.n
         zero, quarter = side.frame.u, side.frame.v
-        start = f.angle or 0.0
+        start = f.angle if f.angle is not None else (side.half or 0.0)
         n = f.pattern.counts["count"] if f.pattern is not None else 1
         angles = [start + k * 360.0 / n for k in range(n)]
         along = _along(f.place.get(side.axis, Position("none")), side, r)
+        if strict:
+            side.on_half(f, angles, r)
         # Through a tube's wall: until it is in the bore all across its mouth (hole.md); a solid rod's, across it.
         if f.depth is not None:
             deep: float | None = f.depth

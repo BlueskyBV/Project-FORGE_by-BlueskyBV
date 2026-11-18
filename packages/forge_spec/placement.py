@@ -1469,8 +1469,15 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         layout.issue("fault", at + pointer("place", others[0]),
                      f"on a round side, position along {axis} and an angle only")  # fmt: skip
         return []
+    if face.half is not None and entry.cut and _is_through(item):
+        layout.issue("unable", at + pointer("depth"),
+                     f"Forge cuts a blind hole into a tab's round end, for now: give the hole into {host[0]} a depth")  # fmt: skip
+        return []
     if place and place.angle is not None:
         angles = [degrees(place.angle)]
+    elif face.half is not None:  # a round-ended tab's end: at its tip, the middle of its half
+        angles = [face.middle]
+        layout.assume(at, f"{item.id}: at the tip of {host[0]}'s round end; the brief doesn't say where round it")
     else:
         angles = [0.0]
         layout.assume(
@@ -1484,6 +1491,11 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
             )
             return []
         step_value = place.pattern.values.get("step")
+        if face.half is not None and step_value is None:
+            layout.issue("fault", at + pointer("place", "pattern"),
+                         "round a tab's round end, copies go in an arc over its half, not all round: give the arc's "
+                         "step")  # fmt: skip
+            return []
         step = degrees(step_value) if step_value is not None else 360.0 / count.n
         angles = [angles[0] + step * k for k in range(count.n)]
     reference = face.reference
@@ -1551,6 +1563,16 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 f"{item.id} runs past the end of {host[0]}",
                 along_values,
             )
+        if face.half is not None:
+            # On a round-ended tab's end, all of it stays on the half: no further round from its middle than a
+            # quarter turn, its reach round it from its point included.
+            spread = math.degrees(fs.asin(min(across_size / face.radius, 1.0)))
+            if abs(math.remainder(angle - face.middle, 360.0)) + spread > 90.0 + EPS:
+                layout.problem("question", at,
+                               f"{item.id}, at {angle:g}\u00b0, runs off the round end of {host[0]} (its half is "
+                               f"from {face.middle - 90.0:g}\u00b0 to {face.middle + 90.0:g}\u00b0 round it)",
+                               [*across_values, *_place_values(item)])  # fmt: skip
+                return []
         origin = face.frame_at(turn, along).origin
         footprints.append((angle, along, across_size, along_size))
         out.append(
@@ -1568,9 +1590,10 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     if len(footprints) > 1:
         _check_round_overlaps(item, face, footprints, layout, at, first)
     if entry.cut:
-        # Round a side, only how far the mouth reaches counts: any axes give it.
+        # Round a side, only how far the mouth reaches counts: any axes give it; on a round-ended tab's end, where.
         _check_depth(item, _outline(item, layout, ("x", "y")),
-                     lambda mouth: face.material_under(mouth), layout, at, face.depth_sources)  # fmt: skip
+                     lambda mouth: min(face.material_under(mouth, (angle, 0.0)) for angle in angles), layout, at,
+                     face.depth_sources)  # fmt: skip
         bore = face.radius - face.wall
         hole = layout.diameters.get(item.id, 0.0) / 2
         if face.outward and _is_through(item) and 0 < bore <= hole + EPS:
@@ -2097,7 +2120,9 @@ def solve(spec: PartSpec) -> Layout:
             layout.unplaced.add(item.id)
             continue
         hosts = _host_faces(on, layout, at)
-        if hosts is None or not _names_fit(item, on, hosts[0][1], layout, at):
+        # Every copy of the face as it names it: an arc of ribs round a side has its far faces turned with it, past
+        # its first, at angles that aren't a frame axis's.
+        if hosts is None or not all(_names_fit(item, on, face, layout, at) for _, face in hosts):
             layout.unplaced.add(item.id)
             continue
         placed = as_placed(item, _upright(hosts[0][1]), layout)

@@ -144,8 +144,11 @@ WIDENED: dict[str, Callable[[Case], bool]] = {
         for f in c.plan
     ),
     "on a ball's or a dome's surface": lambda c: any(f.on is not None and f.on[1] == "surface" for f in c.plan),
-    # Item 3b's third step: on a cone's side.
+    # Item 3b's third step: on a cone's side; its fourth: on a round-ended tab's end.
     "on a cone's side": lambda c: any(_on_cone(c, f) for f in c.plan),
+    "on a round-ended tab's end": lambda c: any(
+        f.on is not None and f.angle is not None and f.on[1][0] in "+-" for f in c.plan
+    ),
 }
 
 

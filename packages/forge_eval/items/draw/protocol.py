@@ -212,6 +212,8 @@ class DrawKind:
                 made += _on_ball(f, part.balls[key], len(made), part, strict)
             elif key in part.cones:
                 made += _on_cone(f, part.cones[key], len(made), part, strict)
+            elif key in part.ends:
+                made += _on_round(f, part.ends[key], len(made), part, strict)
             else:
                 raise DoesNotFitError(
                     f"{f.id}: {host} has no face {face_name} that takes things"

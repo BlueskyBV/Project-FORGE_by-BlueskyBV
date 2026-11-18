@@ -87,7 +87,9 @@ the rounding.
   faces, except the one it is joined by. With a round end, its two broad
   faces (across its thickness) have the half-circle's outline; its two
   narrow sides stop where the rounding starts, and are none at all when it is
-  all half-disc; its far end is curved, and nothing is placed on it, for now.
+  all half-disc; its far end is curved, a round side over its half: a hole,
+  a boss or a post goes on it ([place.md](place.md), "On a round-ended
+  tab's end").
 
 ## Edges
 
