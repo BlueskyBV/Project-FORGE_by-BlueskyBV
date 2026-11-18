@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 15
+GUIDE_VERSION = 16
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -767,8 +767,14 @@ named as with it upright), unless it is turned or hollowed too, takes a \
 hole, a pocket, a slot or what stands, placed along that face's own "u" \
 and "v" as on it upright, then leaned with it; the material under it is \
 the item's own back along its axis to its face, less on the side it leans \
-to, and nothing goes right through it yet. Its other faces take nothing \
-yet; its far end's edges ("top") and a \
+to, and nothing goes right through it yet. A leaning post's or block's \
+sides (its four faces along its height, named as with it upright) take a \
+hole, a pocket or a slot cut square into them, blind or right through: \
+each is its upright side less the band along its foot as high as the foot \
+rises on the side it leans to (its half size along its lean times \
+tan(tilt)), placed along that side's own "u" and "v" (its middle and its \
+edges are that rectangle's), then leaned with it; nothing stands or leans \
+there yet. Its other faces take nothing yet; its far end's edges ("top") and a \
 box's along its lean ("vertical") are rounded as with it upright, not yet \
 its joint; a leaning rod is threaded along its lean from its far end, \
 clear of its foot (give the thread a length that leaves it so).

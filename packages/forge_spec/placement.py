@@ -554,6 +554,16 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
                 and found.axes == (a1, a2):  # fmt: skip
             # The material under it is its own: from each point back along its axis to the face it leans on.
             faces[name] = _moved(replace(found, depth_model=Slant(lean.way, lean.tan), over=None), leaned)
+        elif leaned is not None and lean is not None and isinstance(found, FlatFace) and name != joined \
+                and up[1] in found.axes:  # fmt: skip
+            # A side: its upright side where it is clear of its foot, leaned so (V2-stage4b-0c.md 3.3, a leaning item's
+            # sides).
+            side = _clear_of_foot(found, up, (a1, a2), lean, lo, hi)
+            if side is None:
+                layout.close(key, name, "unable", f"{item.id} leans so far that its foot reaches all the way up its "
+                             f"{name} side")  # fmt: skip
+            else:
+                faces[name] = _moved(side, leaned)
         elif motion is not None and name == joined and inst.host is not None:
             layout.close(key, name, "fault", f"{item.id}'s {name} face is joined to {inst.host[0]}")
         elif motion is not None and isinstance(found, FlatFace) and (hollowed or not name.startswith("inner ")):
@@ -567,6 +577,22 @@ def _standing_turned(item: Item, inst: Instance, up: str, layout: Layout, at: st
         layout.issue("unable", at, f"Forge doesn't hollow a leaning {item.kind} yet")
     return Instance(inst.item, inst.index, inst.origin, _dir(up), inst.host, inst.face_axes,
                     (low[0], low[1], low[2]), (high[0], high[1], high[2]), inst.direction)  # fmt: skip
+
+
+def _clear_of_foot(face: FlatFace, up: str, axes: tuple[str, str], lean: Lean, lo: Vec, hi: Vec) -> FlatFace | None:
+    """A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides): the side it has upright, less the band
+    along its foot as high as its foot rises on the low side, its half size along its lean times its tilt's tan. Above
+    that its cross-section is wholly clear of the face it leans on, and the side is its upright one leaned, with the
+    box's own size across under all of it. None where the band is all of it."""
+    k = _INDEX[axes[0] if lean.along_first else axes[1]]
+    rise = (hi[k] - lo[k]) / 2 * lean.tan
+    j = face.axes.index(up[1])
+    if 2.0 * face.half[j] <= rise:
+        return None
+    half = (face.half[0] - rise / 2, face.half[1]) if j == 0 else (face.half[0], face.half[1] - rise / 2)
+    lift = _dir(up)
+    return replace(face, centre=(face.centre[0] + lift[0] * rise / 2, face.centre[1] + lift[1] * rise / 2,
+                                 face.centre[2] + lift[2] * rise / 2), half=half)  # fmt: skip
 
 
 def _leaning_motion(inst: Instance, lean: Lean, up: str) -> Rigid:
@@ -2844,6 +2870,15 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
             if not _curved_end(item, layout, at, f"a face of {on.item}, which is turned or leans"):
                 return []
             face = _upright(face)
+            host_item = layout.items.get(on.item)
+            if isinstance(face, FlatFace) and not isinstance(face.depth_model, Slant) and host_item is not None \
+                    and leaning(host_item) and (not SOLVE[item.kind].cut or leaning(item)):  # fmt: skip
+                # A leaning item's side (V2-stage4b-0c.md 3.3): only a cut square to it, which stays where the side is
+                # clear of its foot.
+                layout.issue("unable", at + (pointer("tilt") if leaning(item) else ""),
+                             f"{on.item} leans: Forge only cuts into its side, square to it, and stands or leans "
+                             "nothing on it, for now")  # fmt: skip
+                return []
             if isinstance(face, FlatFace) and isinstance(face.depth_model, Slant) and SOLVE[item.kind].cut \
                     and isinstance(end_of(item), ThroughAll) and not isinstance(end_of(item), ThroughNext):  # fmt: skip
                 layout.issue("unable", at + pointer("depth"),

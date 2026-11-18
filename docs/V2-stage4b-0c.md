@@ -20,8 +20,9 @@ it), and a leaning item's far face (revision 16); what the exit pairs
 found is fixed, and a ball's or a cone's seam is kept clear of what is on
 it (revision 16), and a hole goes through the next face on a round side, a
 ball or a cone, and a cut on a turned or a leaning item's face (2b's third
-step, revision 16); next, a leaning item's other faces, the rest of 2b's
-third step and its fourth (schema 2.0).
+step, revision 16), and a leaning box's sides take cuts (revision 16);
+next, a leaning item's round side, the rest of 2b's third step and its
+fourth (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -827,6 +828,39 @@ seeds that put a cut on a leaning item's far face: all passed, and every
 mutant was caught. Generator digests on seeds 0-149, old against new: only
 the 6 that put one there differ, and the impossible parts whose attempts do.
 
+**Step 5's leaning sides, as built (revision 16, with item 2b).** The four
+sides of a leaning post or block, not turned and not hollowed, take a cut
+square into them, blind or right through (place.md, "A leaning item's
+sides"); no schema change. Each is its upright side less the band along
+its foot as high as the foot rises on the side it leans towards (its half
+size along its lean times its tilt's tan): above that band all of its
+cross-section is clear of the face it leans on, so the side there is its
+upright one leaned, as the far face is, with the box's own size across
+under all of it and a cut through it coming out on the side across.
+Positions are that trimmed rectangle's. **The solver** keeps each side so
+(`_clear_of_foot`, then `_moved` by the leaning motion), closes one the
+band covers, and says it can't put anything standing or leaning there yet;
+**the judge** does the same on its own (its `_clear_of_foot`, its
+`Motion`); **the planner**, the oracle and the check compiler build and
+measure what is on it as on any moved face. **The generator** registers
+each leaning box's sides (`_leaning_sides`), oriented as it leans, its
+`leans` flag keeping them from the turned faces' stream, and cuts a hole,
+a pocket or a slot into one now and then (`_onto_leaning_side`, stream
+"forge-eval leaning sides", 0.5 where a part has one; a cut through the
+next face there too, now and then). Tests: `tests/test_v2_plan_leanside.py`
+(eleven parts placed where every program puts them, one right through the
+way it leans among them; what isn't yet is said, by the judge too; built
+and judged; leaned half a degree more fails; the second kernel agrees;
+the generator's sides and its draws), `tests/test_v2_plan_leanbody.py`
+(a leaning block's sides take things, its foot nothing) and
+`tests/test_v2_plan_throughnext.py` (a hole across a leaning post through
+the next face). The exit harness's per-seed proof on 66, 267, 517, 888,
+914, 975, 998, 1062 and 1162 (the nine of the first 1,200 that cut into a
+leaning box's side; 517's through the next face): all passed, every mutant
+caught (1162's the same shape). Generator digests on seeds
+0-149, old against new: only 66 differs, and the impossible parts 7 and 74,
+made from generated ones.
+
 **1b, the ability:**
 
 - **Item-local face names.** `+x` is the item's own +x side: a block
@@ -1406,6 +1440,31 @@ kept plans built, judged and graded), `tests/test_v2_eval_truth.py` (the
 refused plans refused), `tests/test_v2_plan_turnedges.py` (only on the
 part), `tests/test_v2_plan_throughall.py` (a ring of round pockets through
 a floor 1 mm thick and on past a boss beside them).
+
+**What the next exit pair found, fixed (revision 16).** The exit pair on
+those fixes (09a3be0 against main, 5,000 seeds) passed 4,981; the 15
+OpenCascade refused were the seams above, and three more were the
+generator's, each a part Forge rightly wouldn't make as drawn. Each is
+refused now (`tests/v2_regressions.py`'s `REFUSED`):
+
+- **A leaning item's foot across a cut's way** (2009; an error). A post
+  leaning 48.5 degrees under a block's floor, made after a hole through the
+  next face, has its foot carried back into the block across the hole's
+  way; the generator measured the post as it stands out of its face, and
+  the solver asked whether the post should be cut through too. A leaning
+  copy's way is all of its box now, its foot back into the face too
+  (`_out_of_its_face`).
+- **Copies coming out at different depths** (3633; held). Round pockets
+  through the next face at the corners of a hollow box's side: two over
+  its thick end came out of its far side, two over its hollow into it. The
+  preview records one depth for every copy and says so where they differ;
+  the generator asks the same now (`_Part.outs`).
+- **Out where something stands** (3877; graded wrong). A slot through the
+  next face came out of an extrusion's end under a corner of a turned rib,
+  which the points the generator asks along it missed: the shape says it
+  comes out of the rib's top. Nothing a cut through everything or through
+  the next face comes out through may stand on, or be cut into, the face
+  there now (`_through_everything`).
 
 ### 3.6 The proof, and what each step costs
 

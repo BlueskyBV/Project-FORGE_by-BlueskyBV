@@ -161,8 +161,9 @@ A lean of 0, or of 90 degrees or more, is a fault, as is a lean without its
 `tilt_towards`, a way that isn't one of the face's axes, or a lean round a
 side or with `concentric`. Forge leans an item at most 75 degrees, a plain or
 counterbored hole (not a countersunk one), and only on such a face, for now:
-anything else that leans is CAN'T. A leaning item's far face takes things
-(below); its other faces take nothing, and it is not hollowed, for now; a
+anything else that leans is CAN'T. A leaning item's far face takes things,
+and a leaning box's sides take cuts (below); a leaning boss's or cylinder's
+round side takes nothing, and it is not hollowed, for now; a
 leaning rod is threaded along its lean
 from its far end, clear of its foot (thread.md); its far end's edges and a box's
 along its lean are rounded and chamfered as with it upright, not yet where
@@ -189,6 +190,23 @@ to a face, there, for now. A cut through the next face goes on along its
 axis until it comes out all across its mouth, through the face it leans on
 and what is under that (sizes.md, "Through the next face"), as on a turned
 item's faces.
+
+### A leaning item's sides
+
+The four sides of a leaning post or block, not turned in its face and not
+hollowed, take a hole, a pocket, a slot or letters cut square into them,
+blind or right through. Each is its side as with the item upright, less the
+band along its foot as high as its foot rises on the side it leans towards:
+its half size along its lean times tan(`tilt`). Above that band all of its
+cross-section is clear of the face it leans on, and the side is its upright
+one leaned with it, as its far face is. What goes on it is placed along its
+own axes, `u` and `v`, on that side less the band: its middle, its edges
+and its offsets are that rectangle's. The material under it is the box's
+own size across it, and a cut right through comes out on the side across;
+a cut through the next face goes on until it comes out all across its
+mouth. Nothing stands on a leaning item's side, and nothing leans there,
+for now; and a box leaning so far that its foot reaches all the way up its
+sides has none to take anything.
 
 ## On a round side
 

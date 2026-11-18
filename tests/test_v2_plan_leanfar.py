@@ -243,13 +243,14 @@ class TheGeneratorDrawsIt(unittest.TestCase):
         self.assertAlmostEqual(face.slant[1], s / c, places=12)
 
     def test_it_draws_on_one(self) -> None:
-        from forge_eval.generator import generate
+        from forge_eval.generator import _build, generate
 
         found = []
         for seed in (18, 41, 66):
             plan = generate(seed).plan
-            leaning = {f.id for f in plan if f.tilt is not None}
-            found += [f.id for f in plan if f.on is not None and f.on[0] in leaning]
+            flats = _build(plan, False).flats
+            found += [f.id for f in plan if f.on is not None and (f.on[0], 0, f.on[1]) in flats
+                      and flats[(f.on[0], 0, f.on[1])].slant is not None]  # on its far face, not its sides  # fmt: skip
         self.assertEqual(len(found), 3)
 
 

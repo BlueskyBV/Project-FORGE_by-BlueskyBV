@@ -391,6 +391,9 @@ class _Flat:
     #: and ``tan`` less for each millimetre along ``way`` (in its coordinates). What goes on it is drawn from a stream
     #: of its own (:func:`_onto_leaning`), not as on a turned item's face.
     slant: tuple[tuple[float, float], float] | None = None
+    #: A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides), oriented as above: where it is clear of its
+    #: foot. Only a cut square to it goes on one, from a stream of its own (:func:`_onto_leaning_side`).
+    leans: bool = False
 
     @property
     def turned(self) -> bool:
@@ -787,6 +790,9 @@ class _Part:
     threads: list[tuple[str, Array]] = field(default_factory=list)
     #: How deep each cut up to a face goes, as the generator reads it from its own faces (item 2b's first step).
     resolved: dict[str, float] = field(default_factory=dict)
+    #: How deep each cut through the next face goes from a flat face, its first copy's: every copy's is the same, as
+    #: the preview records one (forge_occ.resolve; item 2b's second step).
+    outs: dict[str, float] = field(default_factory=dict)
     #: Each cut through everything's way (item 2b): the box round its mouth carried along its axis as far as it goes,
     #: which nothing made after it that adds to the part reaches into (the solver asks about a body made after one
     #: that stands in its way: forge_spec.placement._check_closed). A cut through the next face's, a little past
@@ -1071,6 +1077,8 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
             part.steps.append(Step(f.id, copy_index, True, Kept(body, _t(p), _t(n), 0.0, top), (REACH, 0.0)))
             if f.turn is None:
                 _leaning_far(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, face, part)
+                if not _draw(f.kind).leans_round:
+                    _leaning_sides(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, part)
     if strict and not cut:
         _stands_in_air(f, made, part.steps[first:], (*part.steps[:first], *part.late))
     for k, at in enumerate(spots):
@@ -1102,6 +1110,32 @@ def _leaning_far(f: Feature, index: int, p: Array, n: Array, u: Array, w: Array,
     key = (f.id, index, name)
     part.flats[key] = _Flat(key, p + height * u, u.copy(), face.axes, shape, half, height, None,
                             oriented=(leaned(a1), leaned(a2)), slant=(lean.way, lean.tan))  # fmt: skip
+
+
+def _leaning_sides(f: Feature, index: int, p: Array, n: Array, u: Array, w: Array, tilted: Array, side: Array,
+                   height: float, along: float, across: float, lean: _Lean, part: _Part) -> None:  # fmt: skip
+    """A leaning box's sides (V2-stage4b-0c.md 3.3, a leaning item's sides): each its upright side less the band along
+    its foot as high as its foot rises on the low side (its half size along its lean times its tilt's tan), above
+    which its cross-section is wholly clear of the face it leans on; named as with it upright and oriented as it leans,
+    the box's own size across it under it, a cut through it coming out on the side across."""
+    rise = along * lean.tan
+    if height <= rise:
+        return  # its foot reaches all the way up its sides: they take nothing
+
+    def leaned(a: Array) -> Array:
+        return float(fv.matmul(a, w)) * tilted + float(fv.matmul(a, side)) * side + float(fv.matmul(a, n)) * u + 0.0
+
+    extent = {_named(w)[1]: 2.0 * along, _named(side)[1]: 2.0 * across, _named(n)[1]: height - rise}
+    for upright, half in ((w, along), (side, across)):
+        for sign in (1.0, -1.0):
+            d = sign * upright + 0.0
+            name, other = _named(d), _named(-d)
+            b1, b2 = _flat_axes(name)
+            key = (f.id, index, name)
+            part.flats[key] = _Flat(key, p + half * leaned(d) + (height + rise) / 2 * u, leaned(d), (b1, b2), "rect",
+                                    (extent[b1] / 2, extent[b2] / 2), 2.0 * half, (f.id, index, other),
+                                    oriented=(_t(leaned(_v(unit_of("+" + b1)))), _t(leaned(_v(unit_of("+" + b2))))),
+                                    leans=True)  # fmt: skip
 
 
 def _leaned_now_and_then(rng: random.Random, f: Feature, face: _Flat) -> Feature | None:
@@ -1608,6 +1642,11 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
         if not found:
             raise DoesNotFitError(f"{f.id} through everything comes {'out' if leaving else 'in'} where the generator "
                                   "keeps no face that holds it")  # fmt: skip
+        if leaving and any(not mine.clear_of(other, GAP) for g, mine, _ in found for other in g.taken):
+            # Out where something stands on the face, or is cut into it: across part of its mouth only, which the
+            # points it is asked at may miss (generated part 3877: a rib's corner over the end of a slot through the
+            # next face, which comes out of the rib's top).
+            raise DoesNotFitError(f"{f.id} through everything comes out where something is")
         for g, mine, level in found:
             g.taken.append(mine)
             if leaving and g.hollow is not None and m + 1 < len(changes):
@@ -1718,6 +1757,10 @@ def _on_flat(
                 depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
                                              first=f.end is not None and f.end.next)
                          if everything else face.material if deep is None else deep)  # fmt: skip
+            if strict and f.end is not None and f.end.next and abs(part.outs.setdefault(f.id, depth) - depth) > 1e-6:
+                # The preview records one depth for every copy, and can't where they differ (generated part 3633:
+                # pockets at a hollow box's corners, two over its thick end, two over its hollow).
+                raise DoesNotFitError(f"{f.id}'s copies come out at different depths")
             if strict and deep is not None and deep > face.material - GAP:
                 raise DoesNotFitError(
                     f"{f.id} is deeper than the material under {face.key}"
@@ -3080,6 +3123,11 @@ def _out_of_its_face(step: Step, part: _Part) -> tuple[Array, Array]:
     copy = next((c for c in part.copies.get(step.item, ()) if c.index == step.index), None)
     if copy is None:
         return lo, hi
+    if copy.lean is not None and isinstance(step.solid, Kept):
+        # Leaning: all of its box, its foot carried back into the face it leans on too, which the solver counts as
+        # it (generated part 2009: a post leaning under a block's floor, its foot back into the block across the way
+        # of a hole through the next face made before it).
+        return tuple(np.array(x, dtype=np.float64) for x in bounds(step.solid.solid))  # type: ignore[return-value]
     d = _v(copy.direction)
     k = int(np.argmax(np.abs(d)))
     if abs(abs(float(d[k])) - 1.0) > 1e-12:
@@ -4849,6 +4897,9 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         if _onto_leaning(random.Random(f"forge-eval leaning faces {seed} {k}"), k, plan, part):
             _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
             continue
+        if _onto_leaning_side(random.Random(f"forge-eval leaning sides {seed} {k}"), k, plan, part):
+            _next_now_and_then(random.Random(f"forge-eval through next round {seed} {k}"), len(plan) - 1, plan, part)
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -5189,7 +5240,8 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
     """Now and then, from a stream of its own, an item on a turned item's far face (place.md, "A turned item's far
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
     Whether one was added to the plan."""
-    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned and face.slant is None]
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned and face.slant is None
+             and not face.leans]  # fmt: skip
     if not faces or rng.random() >= _ON_TURNED:
         return False
     key = rng.choice(faces)
@@ -5224,6 +5276,33 @@ def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part) 
     for _ in range(10):
         candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
         if not _draw(candidate.kind).cut_out or candidate.depth is None:
+            continue
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+#: How often, where the part has a leaning box's side, a hole, a pocket or a slot is cut square into one
+#: (V2-stage4b-0c.md 3.3, a leaning item's sides), from a stream of its own.
+_ON_LEANING_SIDE = 0.5
+
+
+def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+    """Now and then, from a stream of its own, a hole, a pocket or a slot on a leaning box's side (V2-stage4b-0c.md 3.3,
+    a leaning item's sides): placed along the face's own axes, u and v, as on its upright side where that is clear of
+    its foot; blind or right through it. Whether one was added to the plan."""
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.leans]
+    if not faces or rng.random() >= _ON_LEANING_SIDE:
+        return False
+    key = rng.choice(faces)
+    face = part.flats[key]
+    for _ in range(10):
+        candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
+        if not _draw(candidate.kind).cut_out:
             continue
         try:
             render((*plan, candidate))

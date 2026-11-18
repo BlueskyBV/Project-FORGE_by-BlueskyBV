@@ -1697,6 +1697,11 @@ def _on_hosts(item: Item, on: On, layout: _Layout) -> tuple[Copy, ...]:
         if isinstance(end_of(item), (ThroughEverything, UpToFace)):
             raise PlaceError(item.id, "on a turned or leaning item's face, nothing is cut through everything or up to "
                              "a face, yet")  # fmt: skip
+        if isinstance(face, FlatFace) and not isinstance(face.material, Slant) \
+                and isinstance(layout.items[on.item].get("tilt"), Value) \
+                and (not _entry(item.kind).taken or isinstance(item.get("tilt"), Value)):  # fmt: skip
+            # A leaning item's side (V2-stage4b-0c.md 3.3): a cut square to it only, which stays clear of its foot.
+            raise PlaceError(item.id, "on a leaning item's side, only a cut square to it, yet")
         upright = replace(face, local=None)
         layout.upright = True
         try:
@@ -1843,6 +1848,21 @@ def _as_placed(item: Item, face: FlatFace) -> float | None:
     return face.turn + (own or 0.0)
 
 
+def _clear_of_foot(side: FlatFace, up: str, rise: float) -> FlatFace | None:
+    """A leaning box's side (V2-stage4b-0c.md 3.3, a leaning item's sides): as it is upright, less the band along its
+    foot as high as its foot rises on the low side (``rise``: the box's half size along its lean, times its tilt's
+    tan); above that its cross-section is wholly clear of the face it leans on. None where that is all of it."""
+    j = side.axes.index(up[1])
+    half = side.outline.half
+    if 2.0 * half[j] <= rise:
+        return None
+    lift = unit(up)
+    centre = (side.centre[0] + lift[0] * rise / 2, side.centre[1] + lift[1] * rise / 2,
+              side.centre[2] + lift[2] * rise / 2)  # fmt: skip
+    trimmed = (half[0] - rise / 2, half[1]) if j == 0 else (half[0], half[1] - rise / 2)
+    return replace(side, centre=centre, outline=Outline.rect(*trimmed, _in_plane(centre, side.axes)))
+
+
 def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _Layout) -> Copy:
     """A copy leaning on its face (place.md, "Leaning on the face"), on a face with the same material under all of
     it, ``T`` deep: its own direction; a cut's span along it, from its point (right through, until its whole circle is
@@ -1868,16 +1888,30 @@ def _leaning_copy(item: Item, copy: Copy, face: FlatFace, lean: _Lean, layout: _
     if not (isinstance(upright, FlatFace) and upright.axes == face.axes and item.id not in layout.shells
             and (place is None or place.turn is None)):  # fmt: skip
         upright = None
+    motion = None
+    if upright is not None:
+        axis = (n[1] * w[2] - n[2] * w[1], n[2] * w[0] - n[0] * w[2], n[0] * w[1] - n[1] * w[0])
+        motion = Motion.about(copy.point, axis, (lean.c, lean.s))
     for name in list(layout.faces.get(key, {})) + [n_ for n_ in KINDS[item.kind].faces if n_ not in layout.faces.get(key, {})]:
-        if upright is not None and name == far:
+        found = layout.faces.get(key, {}).get(name)
+        if upright is not None and motion is not None and name == far:
             assert isinstance(upright, FlatFace)
-            axis = (n[1] * w[2] - n[2] * w[1], n[2] * w[0] - n[0] * w[2], n[0] * w[1] - n[1] * w[0])
-            motion = Motion.about(copy.point, axis, (lean.c, lean.s))
             height = _mm(item, _entry(item.kind).rise)
             layout.faces[key][name] = replace(upright, local=motion,
                                               material=Slant(upright.outline.centre, lean.way, lean.s / lean.c, height))  # fmt: skip
+        elif motion is not None and up is not None and isinstance(found, FlatFace) and up[1] in found.axes \
+                and name != opposite(up) and name not in layout.closed.get(key, {}):  # fmt: skip
+            # A side (V2-stage4b-0c.md 3.3, a leaning item's sides): its upright side where it is clear of its foot,
+            # leaned so.
+            foot = _entry(item.kind).footprint(item, layout.diameters, face.axes)
+            side = _clear_of_foot(found, up, (foot.half[0] if lean.first else foot.half[1]) * lean.s / lean.c)
+            if side is None:
+                layout.close(key, name, "it leans so far that its foot reaches all the way up that side")
+            else:
+                layout.faces[key][name] = replace(side, local=motion)
         elif name not in layout.closed.get(key, {}):
-            layout.close(key, name, "it leans on its face: only a leaning item's far face takes anything, for now")
+            layout.close(key, name, "it leans on its face: only a leaning item's far face and sides take anything, "
+                         "for now")  # fmt: skip
     if _entry(item.kind).taken:
         r = layout.diameters[item.id] / 2
         if _through(item):

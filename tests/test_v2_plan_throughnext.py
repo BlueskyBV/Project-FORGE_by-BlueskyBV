@@ -430,6 +430,9 @@ def _moved_cases() -> dict[str, tuple[Any, float]]:
         "a hole down through a turned post and the plate": (lambda b: [_post(b), {**_on_post(b), "depth": _next()}], 18.0),
         "a hole across a turned post from its side": (lambda b: [_post(b), {**_on_post(b, face="-y"), "depth": _next()}],
                                                       20.0),
+        # Out of the side across, square to it: as wide as the post (place.md, "A leaning item's sides").
+        "a hole across a leaning post from its side": (
+            lambda b: [_leaning(b, "post"), {**_on_lean(b, "+y"), "depth": _next()}], 12.0),
     }  # fmt: skip
 
 

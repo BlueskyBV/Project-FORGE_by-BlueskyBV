@@ -85,10 +85,12 @@ class ABodysLeanIsSchema15s(unittest.TestCase):
         for got, want in zip(copy_.direction, (s, 0.0, c), strict=True):
             self.assertAlmostEqual(got, want, places=9)
         self.assertAlmostEqual(copy_.hi[2], 8.0 + 8.0 * c + 10.0 * s, places=9)  # its top's far corner, half its length along its lean
-        # Only its far face takes anything (place.md, "A leaning item's far face").
+        # Its far face and its sides take things (place.md, "A leaning item's far face", "A leaning item's sides");
+        # its foot is joined to the plate.
         self.assertIn("+z", report.layout.faces[("leaning", 0)])
         self.assertNotIn("+z", report.layout.closed[("leaning", 0)])
-        self.assertIn("+x", report.layout.closed[("leaning", 0)])
+        self.assertIn("+x", report.layout.faces[("leaning", 0)])
+        self.assertIn("-z", report.layout.closed[("leaning", 0)])
 
     def test_compared_as_a_post_or_a_boss_leaning(self) -> None:
         from forge_spec.compare import differences

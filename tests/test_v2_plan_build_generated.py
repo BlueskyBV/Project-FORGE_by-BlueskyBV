@@ -37,7 +37,9 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
         from forge_occ.view import BrepView
         from forge_plan.planner import _plan
         from forge_spec.placement import solve
-        from v2_detection import _spec
+        from v2_exit4 import (
+            _spec,  # as a run reads it: a cut through the next face resolved by the preview first
+        )
         from v2_truth_occ import build
 
         case = generate(seed) if plan is None else render(plan)
