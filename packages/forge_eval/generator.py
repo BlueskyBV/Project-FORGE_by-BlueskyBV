@@ -612,6 +612,82 @@ class _Ball:
         return out, east, south
 
 
+@dataclass
+class _Cone:
+    """A cone's tapered side (item 3b's third step; cone.md): its axis (by name), the centre of its end at the smaller
+    coordinate along it, its length and its radius there and at its other end. A point on it is at an angle round its
+    axis, from its frame's ``u``, and a distance from its start along it; its normal leans from the radius there
+    towards its narrower end by its half angle."""
+
+    key: tuple[str, int, str]
+    axis: str
+    start: Array
+    length: float
+    start_radius: float
+    end_radius: float
+    #: What is on it: each copy's angle round it (degrees), how far round it its foot reaches either way from its point
+    #: (degrees, at its narrowest), where along it (from its start) and how far along its axis either way.
+    taken: list[tuple[float, float, float, float]] = field(default_factory=list)
+
+    @functools.cached_property
+    def frame(self) -> _FaceFrame:
+        """Its start; the ways out at 0 and 90 degrees round it; its axis."""
+        u, v = TURN_AXES[self.axis]
+        return _FaceFrame.of_names(self.start, u, v, self.axis)
+
+    @property
+    def lean(self) -> tuple[float, float]:
+        """The cosine and sine of its half angle, from a radius's way out to its normal (towards its narrower end)."""
+        k = (self.end_radius - self.start_radius) / self.length
+        q = math.sqrt(1.0 + k * k)
+        return 1.0 / q, k / q
+
+    def radius_at(self, along: float) -> float:
+        """Its radius ``along`` from its start."""
+        return self.start_radius + (self.end_radius - self.start_radius) * along / self.length
+
+    def ways(self, angle: float, along: float) -> tuple[Array, Array, Array, Array]:
+        """Its point at an angle round it and ``along`` from its start; there its normal, its way round (an item's
+        first axis) and its way up its slope (its second)."""
+        f = self.frame
+        c, s = _cos_sin(angle)
+        radial = c * f.u + s * f.v + 0.0
+        lc, ls = self.lean
+        p = self.start + along * f.n + self.radius_at(along) * radial
+        normal = lc * radial - ls * f.n + 0.0
+        around = -s * f.u + c * f.v + 0.0
+        slant = lc * f.n + ls * radial + 0.0
+        return p, normal, around, slant
+
+    def inside(self, points: Array, by: float = 0.0) -> NDArray[np.bool_]:
+        """Which of the points are in the cone, ``by`` in from its surface and its ends."""
+        f = self.frame
+        d = points - self.start
+        along = fv.matmul(d, f.n)
+        radial = d - along[:, None] * f.n
+        rho = np.sqrt(fv.dot(radial, radial))
+        r = self.start_radius + (self.end_radius - self.start_radius) * along / self.length
+        return np.asarray((along >= by) & (along <= self.length - by) & (rho <= r - by / self.lean[0]), dtype=bool)
+
+    def exit(self, points: Array, way: Array) -> Array:
+        """How far from each point along ``way`` it is last in the cone (0 where it never is), asked a hundredth of a
+        millimetre at a time and settled to a micron."""
+        step, reach = 1e-2, 2.0 * (self.length + 2 * max(self.start_radius, self.end_radius))
+        t = np.arange(0.0, reach, step)
+        found = np.zeros(len(points))
+        for k, p in enumerate(points):
+            on = self.inside(p[None, :] + t[:, None] * way[None, :])
+            if not on.any():
+                continue
+            last = int(np.nonzero(on)[0][-1])
+            lo, hi = t[last], t[last] + step
+            for _ in range(14):
+                mid = (lo + hi) / 2
+                lo, hi = (mid, hi) if bool(self.inside((p + mid * way)[None, :])[0]) else (lo, mid)
+            found[k] = lo
+        return found
+
+
 def _v(a: Any) -> Array:
     return np.asarray(a, dtype=np.float64)
 
@@ -648,6 +724,8 @@ class _Part:
     rounds: dict[tuple[str, int, str], _Round] = field(default_factory=dict)
     #: Balls' and domes' surfaces (item 3b's second step).
     balls: dict[tuple[str, int, str], _Ball] = field(default_factory=dict)
+    #: Cones' sides (item 3b's third step).
+    cones: dict[tuple[str, int, str], _Cone] = field(default_factory=dict)
     kinds: dict[str, str] = field(default_factory=dict)
     #: What stands in each hollow: each copy's item and its box (low and high corners).
     inside: dict[tuple[str, int], list[tuple[str, Array, Array]]] = field(
@@ -1776,7 +1854,7 @@ def _on_round(
     return _draw(f.kind).on_round(f, side, index, part, strict)
 
 
-def _along(pos: Position, side: _Round, half: float) -> float:
+def _along(pos: Position, side: _Round | _Cone, half: float) -> float:
     """Where along a rod's side (from its start) a position puts an item's centre, ``half`` its extent along the axis."""
     if pos.mode in ("none", "centred"):
         return side.length / 2
@@ -1916,7 +1994,7 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
     into the ball past where the surface curves away under it. Its faces take nothing, for now. What it is made of is
     kept clear of everything else made but the ball and what the ball stands on."""
     entry = _draw(f.kind)
-    if not entry.on_ball:
+    if not entry.on_curved:
         raise DoesNotFitError(f"{f.id}: on a ball's surface, a hole, a boss or a post")
     if f.pattern is not None and not _pattern_draw(f.pattern.kind).round_whole:
         raise DoesNotFitError(f"{f.id}: round a ball's pole, copies go round it (a circle)")
@@ -1994,6 +2072,120 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
         made.append(Copy(f.id, copy_index, ball.key, _t(p), _t(out), (east_name, meridian)))
     ball.taken += [(a, latitude, spread) for a in angles]
     return made
+
+
+def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> list[Copy]:
+    """A hole, a boss or a post on a cone's side (item 3b's third step; place.md, "On a cone's side"): at its angle round
+    the axis and its place along it, as round a side, or a circle of them there; along the cone's normal, a hole's
+    depth from its point, a standing one's height out of it, its foot carried into the cone twice as far as the side
+    falls away under its farthest reach, at its narrowest. Its faces take nothing, for now. A hole is blind. What it is
+    made of is kept clear of everything else made but the cone and what the cone stands on."""
+    entry = _draw(f.kind)
+    if not entry.on_curved:
+        raise DoesNotFitError(f"{f.id}: on a cone's side, a hole, a boss or a post")
+    if f.pattern is not None and not _pattern_draw(f.pattern.kind).round_whole:
+        raise DoesNotFitError(f"{f.id}: round a cone, copies go round it (a circle)")
+    if set(f.place) - {cone.axis} or f.turn is not None or f.tilt is not None or f.recess is not None:
+        raise DoesNotFitError(f"{f.id}: on a cone's side, a place along its axis and an angle round it only")
+    if f.latitude is not None:
+        raise DoesNotFitError(f"{f.id}: a latitude is a ball's")
+    cut = entry.cut_out
+    if cut and f.depth is None:
+        raise DoesNotFitError(f"{f.id}: a hole into a cone's side is blind")
+    s = f.sizes
+    if cut or entry.round_foot:
+        h1 = h2 = s["diameter"] / 2
+    else:
+        h1, h2 = s["length"] / 2, s["width"] / 2
+    reach = fs.hypot(h1, h2) if not (cut or entry.round_foot) else h1
+    lc, ls = cone.lean
+    reach_along = h2 * lc
+    along = _along(f.place.get(cone.axis, Position("none")), cone, reach_along)
+    narrowest = min(cone.radius_at(along - reach_along), cone.radius_at(along + reach_along))
+    curve = narrowest / lc
+    sag = curve - math.sqrt(max(curve * curve - reach * reach, 0.0))
+    carry = 2 * sag + REACH
+    start = f.angle or 0.0
+    n = f.pattern.counts["count"] if f.pattern is not None else 1
+    angles = [start + k * 360.0 / n for k in range(n)]
+    if narrowest <= 0.0 or reach >= narrowest / 2:
+        raise DoesNotFitError(f"{f.id} is too wide for the cone, here")
+    spread = math.degrees(fs.asin(min(h1 / narrowest, 1.0)))
+    if strict:
+        foot = reach_along + carry * abs(ls)
+        if along - foot < 2 * GAP or along + foot > cone.length - 2 * GAP:
+            raise DoesNotFitError(f"{f.id} runs past the end of {cone.key[0]}'s side")
+        margin = math.degrees(GAP / narrowest)
+        if cut:
+            p, normal, around, slant = cone.ways(0.0, along)
+            rim = [p + h1 * (c * around + si * slant) for c, si in (_cos_sin(a) for a in range(0, 360, 5))]
+            least = float(np.min(cone.exit(np.asarray(rim), -normal)))
+            if float(f.depth or 0.0) > least - GAP:
+                raise DoesNotFitError(f"{f.id} is deeper than the cone under it")
+        # Apart from the rest on the cone where they come closest: at their feet, and holes where they reach deepest.
+        deep = narrowest - float(f.depth or 0.0) * lc if cut else narrowest
+        mine = [(a, spread, along, foot) for a in angles]
+        for k, here in enumerate(mine):
+            for other in cone.taken + mine[:k]:
+                if abs(here[2] - other[2]) >= here[3] + other[3] + GAP:
+                    continue  # apart along it
+                apart = abs(math.remainder(here[0] - other[0], 360.0))
+                if apart < here[1] + other[1] + 2 * margin:
+                    raise DoesNotFitError(f"{f.id} meets something else on {cone.key[0]}'s side")
+                if cut and other in mine and deep > GAP and 2 * deep * fs.sin(math.radians(apart) / 2) < 2 * h1 + GAP:
+                    raise DoesNotFitError(f"{f.id}'s copies meet inside {cone.key[0]}")
+    host = cone.key[0]
+    beside = {host, *(c.host[0] for c in part.copies.get(host, []) if c.host is not None)}
+    made = []
+    for k, a in enumerate(angles):
+        p, normal, around, slant = cone.ways(a, along)
+        copy_index = index + k
+        corner = h1 if (cut or entry.round_foot) else 0.0
+        if cut:
+            solid = Prism(_t(p), _t(around), _t(slant), _t(normal), (h1, h2), corner, -float(f.depth or 0.0), 0.0)
+            step = Step(f.id, copy_index, False, solid, (0.0, REACH))
+        else:
+            solid = Prism(_t(p), _t(around), _t(slant), _t(normal), (h1, h2), corner, -carry, s["height"])
+            step = Step(f.id, copy_index, True, solid, (REACH, 0.0))
+        if strict:
+            lo, hi = bounds(replace(solid, low=0.0)) if not cut else bounds(solid)
+            for earlier in (*part.steps, *part.late):
+                its_lo, its_hi = bounds(earlier.solid)
+                if earlier.item not in beside and np.all(lo <= its_hi) and np.all(its_lo <= hi):
+                    raise DoesNotFitError(f"{f.id} {'cuts' if cut else 'stands'} into {earlier.item}")
+            if not cut:
+                _foot_in_cone(f, solid, cone, part)
+        part.steps.append(step)
+        if not cut:
+            lo, hi = bounds(replace(solid, low=0.0))
+            part.kept.append((f"{f.id} on {host}'s side", lo - GAP / 2, hi + GAP / 2, f.id))
+        below = 90.0 * math.floor(a / 90.0 + 1e-9)
+        c, si = _cos_sin(below)
+        up = _named(c * cone.frame.u + si * cone.frame.v)
+        made.append(Copy(f.id, copy_index, cone.key, _t(p), _t(normal),
+                         (next(x for x in "xyz" if x not in (up[1], cone.axis)), cone.axis)))  # fmt: skip
+    cone.taken += [(a, spread, along, reach_along + carry * abs(ls)) for a in angles]
+    return made
+
+
+def _foot_in_cone(f: Feature, solid: Prism, cone: _Cone, part: _Part) -> None:
+    """A standing item's foot lies all in its cone (carried in, it comes out of no end, nor out through the side
+    beyond it), and what of it lies within the cone's side lies in the part made so far: it fills no hole drilled into
+    the cone there."""
+    centre, first, second, n = (_v(x) for x in (solid.centre, solid.first, solid.second, solid.normal))
+    h1, h2 = solid.half
+    a, b = np.meshgrid(np.linspace(-h1, h1, 15), np.linspace(-h2, h2, 15), indexing="ij")
+    if solid.corner >= min(h1, h2):  # a boss: a disc
+        keep = a * a + b * b <= solid.corner * solid.corner
+        a, b = a[keep], b[keep]
+    across = centre + a.reshape(-1, 1) * first + b.reshape(-1, 1) * second
+    if not np.all(cone.inside(across + solid.low * n, 1e-3)):
+        raise DoesNotFitError(f"{f.id}'s foot would come out of {cone.key[0]}")
+    depth = np.linspace(solid.low, 0.0, 8)
+    points = (across[:, None, :] + depth[None, :, None] * n).reshape(-1, 3)
+    within = points[cone.inside(points, 1e-3)]
+    if len(within) and not np.all(Truth({}, (*part.steps, *part.late)).inside(within)):
+        raise DoesNotFitError(f"{f.id}'s foot would fill what is cut into {cone.key[0]}")
 
 
 def _foot_in_ball(f: Feature, solid: Prism, ball: _Ball, part: _Part) -> None:
@@ -2103,6 +2295,12 @@ def _standing_cone(
         far = (f.id, index, "+end")
         part.flats[far] = _Flat(far, base + length * n, n.copy(), _flat_axes(_named(n)), "disc", (rt, rt),
                                 length + under, face.exit, flare=(rb, length) if rt > rb else (0.0, 0.0))  # fmt: skip
+    way = _named(n)
+    if not face.turned and abs(float(n["xyz".index(way[1])])) == 1.0:  # its side takes things (item 3b's third step)
+        key = (f.id, index, "side")
+        forward = way[0] == "+"
+        part.cones[key] = _Cone(key, way[1], base.copy() if forward else base + length * n, length,
+                                rb if forward else rt, rt if forward else rb)  # fmt: skip
 
 
 def _standing_profile(
@@ -4236,6 +4434,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue
         if _onto_ball(random.Random(f"forge-eval on balls {seed} {k}"), k, plan, part, len(plan) < size):
             continue
+        if _onto_cone(random.Random(f"forge-eval on cones {seed} {k}"), k, plan, part, len(plan) < size):
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -4390,8 +4590,8 @@ def _ball_item(rng: random.Random, k: int, host: str, ball: _Ball, standing_ok: 
     surface ends up to its pole, at an angle round its pole on a half-degree grid; one copy, or (one in four) a circle
     of two to six."""
     r = ball.radius
-    kind = rng.choice(_weighted("ball_weight", "ball_rank", None if standing_ok else (lambda e: e.cut_out)))
-    sizes, depth, reach = _draw(kind).ball_sizes(rng, r)
+    kind = rng.choice(_weighted("curved_weight", "curved_rank", None if standing_ok else (lambda e: e.cut_out)))
+    sizes, depth, reach = _draw(kind).curved_sizes(rng, r)
     spread = math.degrees(fs.asin(min(reach / r, 1.0)))
     low = min(ball.lowest + spread + 3.0, 89.0)
     latitude = _q(rng.uniform(low, 90.0), 0.5)
@@ -4400,6 +4600,61 @@ def _ball_item(rng: random.Random, k: int, host: str, ball: _Ball, standing_ok: 
     if latitude < 80.0 and rng.random() < 0.25:
         pattern = Pattern("circle", {}, {"count": rng.choice([2, 3, 4, 6])})
     return Feature(f"i{k}", kind, sizes, (host, "surface"), depth, {}, None, {}, angle, pattern, latitude=latitude)
+
+
+#: How often the generator puts a hole, a boss or a post on a cone's side, where there is one (item 3b's third step).
+_ON_CONE = 0.6
+
+
+def _onto_cone(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, a hole, a boss or a post on a cone's side (item 3b's third step), where
+    the part has one: at an angle round it and a place along it, or a circle of them. Whether one was added to the
+    plan."""
+    cones = [key for key in part.cones if key[1] == 0]
+    if not cones or rng.random() >= _ON_CONE:
+        return False
+    key = rng.choice(cones)
+    cone = part.cones[key]
+    for _ in range(10):
+        candidate = _cone_item(rng, k, key[0], cone, standing_ok)
+        if candidate is None:
+            continue
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+def _cone_item(rng: random.Random, k: int, host: str, cone: _Cone, standing_ok: bool) -> Feature | None:
+    """A hole (blind), a boss or a post on a cone's side, sized to it where it goes: halfway along it, offset from its
+    middle or measured from an end (to its centre or its edge), at an angle round it on a half-degree grid; one copy,
+    or (one in four) a circle of two to six. None where the cone is too short or too narrow there."""
+    axis = cone.axis
+    roll = rng.random()
+    along = rng.uniform(0.25, 0.75) * cone.length
+    if roll < 0.25:
+        place, along = {}, cone.length / 2
+    elif roll < 0.85:
+        place = {axis: Position("offset", _q(along - cone.length / 2, 0.5))}
+        along = cone.length / 2 + place[axis].distance
+    else:
+        side = rng.choice("+-") + axis
+        near = cone.length - along if side[0] == "+" else along
+        place = {axis: Position("side", _q(near, 0.5), side, "centre")}
+        along = cone.length - place[axis].distance if side[0] == "+" else place[axis].distance
+    r = cone.radius_at(along)
+    if r < 2.0 or not 0.0 < along < cone.length:
+        return None
+    kind = rng.choice(_weighted("curved_weight", "curved_rank", None if standing_ok else (lambda e: e.cut_out)))
+    sizes, depth, _ = _draw(kind).curved_sizes(rng, r)
+    angle = _q(rng.uniform(0.0, 360.0), 0.5)
+    pattern = None
+    if rng.random() < 0.25:
+        pattern = Pattern("circle", {}, {"count": rng.choice([2, 3, 4, 6])})
+    return Feature(f"i{k}", kind, sizes, (host, "side"), depth, {}, None, place, angle, pattern)
 
 
 def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:

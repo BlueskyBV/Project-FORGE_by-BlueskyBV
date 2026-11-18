@@ -87,6 +87,7 @@ __all__ = [
     "PlaceError",
     "Placed",
     "RoundBall",
+    "RoundCone",
     "RoundSide",
     "Solid",
     "Step",
@@ -693,7 +694,69 @@ class RoundBall:
         return 0.0 if self.dome or self.standing else -90.0
 
 
-Face = FlatFace | RoundSide | RoundBall
+@dataclass(frozen=True)
+class RoundCone:
+    """A cone's tapered side (item 3b's third step; cone.md): its axis, the centre of its end at the smaller coordinate
+    along it (``start``), its length, and its radius at that end and at the other, either of which may be 0; the end
+    it stands on (``joined``: ``"start"`` or ``"end"``), None for the first body. A point on it is at an angle round
+    its axis, from its frame's ``u``, and a distance from its middle along it; its normal leans from the radius there,
+    towards its narrower end, by its half angle."""
+
+    name: str
+    axis: str
+    start: Vec
+    length: float
+    start_radius: float
+    end_radius: float
+    joined: str | None = None
+    #: Kept as with the item it is on upright, and the motion onto the part (as a round side's).
+    local: Motion | None = None
+
+    @property
+    def placed_frame(self) -> FaceFrame:
+        return self.frame if self.local is None else self.local.frame(self.frame)
+
+    @functools.cached_property
+    def frame(self) -> FaceFrame:
+        """The centre of its end at ``start``; ``u`` and ``v`` the ways out at 0 and 90 degrees round it; ``n`` its axis."""
+        u, v = TURN_AXES[self.axis]
+        return FaceFrame.of_names(self.start, u, v, self.axis)
+
+    @property
+    def slope(self) -> float:
+        """How fast its radius grows along its axis."""
+        return (self.end_radius - self.start_radius) / self.length
+
+    @property
+    def lean(self) -> Point:
+        """The cosine and sine of the turn from a radius's way out to its normal, about its way round there."""
+        q = math.sqrt(1.0 + self.slope * self.slope)
+        return 1.0 / q, self.slope / q
+
+    def radius_at(self, along: float) -> float:
+        """Its radius ``along`` from its middle."""
+        return self.start_radius + self.slope * (self.length / 2 + along)
+
+    def frame_at(self, turn: Point, along: float) -> FaceFrame:
+        """Its frame at a point on it: ``turn`` its angle's cosine and sine round the axis, ``along`` from its middle;
+        ``n`` its normal, out of the cone; ``u`` round it, as a round side's; ``v`` up its slope (``u x v = n``)."""
+        frame = self.frame
+        c, s = turn
+        radial = _add(_scale(frame.u, c), frame.v, s)
+        around = _add(_scale(frame.u, -s), frame.v, c)
+        lc, ls = self.lean
+        point = _add(_add(frame.origin, frame.n, self.length / 2 + along), radial, self.radius_at(along))
+        normal = _add(_scale(radial, lc), frame.n, -ls)
+        slant = _add(_scale(frame.n, lc), radial, ls)
+        return FaceFrame(point, around, slant, normal)
+
+    @property
+    def material(self) -> float:
+        """The most material a cut along a radius of it meets: its diameter at its wider end."""
+        return 2 * max(self.start_radius, self.end_radius)
+
+
+Face = FlatFace | RoundSide | RoundBall | RoundCone
 
 
 # ----------------------------------------------------------------------
@@ -903,7 +966,7 @@ def _rod_body(item: Item, layout: _Layout, key: tuple[str, int], point: Vec, up:
               under: tuple[tuple[Outline, ...], Material] | None, faces: dict[str, Face], length: float, base: float,
               top_r: float, inner: float, *, foot_face: bool = True, tapered: bool = False,
               bored: bool = False) -> tuple[Vec, Vec]:  # fmt: skip
-    """A round body or boss: ``base`` its radius at its foot, ``top_r`` at its far end, ``inner`` its bore's, ``length`` along its axis; ``foot_face``, its foot a face of its own (not a boss's); ``tapered``, its side closed (a cone's); ``bored``, a bore (a tube's)."""
+    """A round body or boss: ``base`` its radius at its foot, ``top_r`` at its far end, ``inner`` its bore's, ``length`` along its axis; ``foot_face``, its foot a face of its own (not a boss's); ``tapered``, its side not round (a cone's: its own); ``bored``, a bore (a tube's)."""
     a1, a2 = axes
     u = unit(up)
     widest = max(base, top_r)
@@ -935,13 +998,7 @@ def _rod_body(item: Item, layout: _Layout, key: tuple[str, int], point: Vec, up:
             "-end", point, opposite(up), plane, end_outline(point, base), bottom
         )
     start = point if up[0] == "+" else far_end
-    if tapered:
-        layout.close(
-            key,
-            "side",
-            "a cone's side is tapered: nothing is placed on it, for now",
-        )
-    else:
+    if not tapered:  # a cone's tapered side is its own (items/place/cone.py)
         faces["side"] = RoundSide("side", up[1], start, length, base, True, inner)
     if bored:
         faces["bore"] = RoundSide("bore", up[1], start, length, inner, False, base)
@@ -1602,8 +1659,8 @@ def _names_fit(item: Item, face: Face) -> None:
     named = {axis for _, axis in axis_names(item)}
     if isinstance(face, FlatFace) and (face.turn != 0.0 or face.local is not None) and named - {"u", "v"}:
         raise PlaceError(item.id, f"its face is turned with what it is on: it names its axes by the part's {sorted(named)}")
-    if isinstance(face, RoundSide) and named & {"u", "v"}:
-        raise PlaceError(item.id, "u and v are a flat face's own axes, not a round side's")
+    if isinstance(face, (RoundSide, RoundCone)) and named & {"u", "v"}:
+        raise PlaceError(item.id, "u and v are a flat face's own axes, not a round side's or a cone's")
 
 
 def _on_flat(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
@@ -1624,8 +1681,14 @@ def _on_ball(item: Item, face: Face, host: tuple[str, int, str], host_copies: in
     return _ball_copies(item, face, host, layout, first)
 
 
+def _on_cone(item: Item, face: Face, host: tuple[str, int, str], host_copies: int, layout: _Layout,
+             first: int) -> list[Copy]:  # fmt: skip
+    assert isinstance(face, RoundCone)
+    return _cone_copies(item, face, host, layout, first)
+
+
 #: Each kind of face an item can be put on (item 3a's placeable faces), by its class: how its copies are placed.
-_HOSTS = {FlatFace: _on_flat, RoundSide: _on_round, RoundBall: _on_ball}
+_HOSTS = {FlatFace: _on_flat, RoundSide: _on_round, RoundBall: _on_ball, RoundCone: _on_cone}
 
 
 def _lies_on(item: Item, face: FlatFace, at: Point, layout: _Layout) -> None:
@@ -2017,7 +2080,7 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
     placed as at its pole (standing there on it as on a face facing that way), then turned about its centre, down to its
     latitude and round its pole to its angle."""
     entry = _entry(item.kind)
-    if not entry.goes_on_ball:
+    if not entry.goes_on_curved:
         raise PlaceError(item.id, f"only holes, bosses and posts go on a ball's surface, not a {item.kind}")
     place = _place(item)
     if place is not None and (place.turn is not None or place.concentric or place.axes):
@@ -2070,6 +2133,79 @@ def _ball_copies(item: Item, ball: RoundBall, host: tuple[str, int, str], layout
     return made
 
 
+def _cone_copies(item: Item, cone: RoundCone, host: tuple[str, int, str], layout: _Layout,
+                 first: int) -> list[Copy]:  # fmt: skip
+    """On a cone's side (item 3b's third step; place.md, "On a cone's side"): a hole, a boss or a post at its angle round
+    the axis and its place along it, as round a side, along the cone's normal there. A hole goes in along it; a boss
+    or a post is placed as at the frame axis at or below its angle, standing out along the radius there, then leaned
+    with the side's slope about its way round and turned about the axis by the rest."""
+    entry = _entry(item.kind)
+    if not entry.goes_on_curved:
+        raise PlaceError(item.id, f"only holes, bosses and posts go on a cone's side, not a {item.kind}")
+    place = _place(item)
+    if place is not None and (place.turn is not None or place.concentric or place.latitude is not None):
+        raise PlaceError(item.id, "on a cone's side, a position along its axis and an angle round it only")
+    axis = cone.axis
+    positions = dict(place.axes) if place else {}
+    others = sorted(a for a in positions if a != axis)
+    if others:
+        raise PlaceError(item.id, f"on a cone's side, a position along its axis {axis} only, not {others[0]}")
+    pattern = place.pattern if place else None
+    if pattern is not None and not _pattern_entry(pattern.kind).round:
+        raise PlaceError(item.id, f"round a cone, only a circle or arc of copies, not a {pattern.kind}")
+    if entry.taken and _through(item):
+        raise PlaceError(item.id, "a hole into a cone's side is blind, for now")
+    start = _angle(place.angle) if place is not None and place.angle is not None else 0.0
+    angles = [start]
+    if pattern is not None:
+        values, counts = _pattern_values(item, pattern)
+        steps_round = _pattern_entry(pattern.kind).steps_round
+        extra = sorted(set(values) - ({"step"} if steps_round else set()))
+        if extra:
+            raise PlaceError(item.id, f"round a cone, a {pattern.kind} takes only a count"
+                             + (" and a step" if steps_round else "") + f", not {extra}")  # fmt: skip
+        _needs(item, pattern, {**values, **counts}, "count", *(("step",) if steps_round else ()))
+        step = _pattern_entry(pattern.kind).round_step(values, counts)
+        angles = [start + k * step for k in range(counts["count"])]
+    lc, ls = cone.lean
+    frame = cone.frame
+    if entry.taken:
+        reach = entry.footprint(item, layout.diameters, (axis, axis)).farthest((0.0, 0.0))
+        up, axes = None, None
+    else:
+        up = direction_of(frame.u)
+        assert up is not None
+        axes = (next(a for a in "xyz" if a not in (up[1], axis)), axis)
+        reach = _footprint(item, layout.diameters, axes).half[1]
+    reach_along = reach * lc  # up and down its slope, so far along its axis
+    along = _anchor(item, positions.get(axis), cone.length / 2, (-reach_along, reach_along))
+    if abs(along) + reach_along > cone.length / 2 + TOL:
+        raise PlaceError(item.id, f"{along:g} mm along the cone from its middle, it runs past the side's end")
+    made = []
+    for n, angle in enumerate(angles):
+        index = first + n
+        if entry.taken:
+            here = cone.frame_at(turn(angle), along)
+            made.append(Copy(item.id, index, host, here.origin, here.n, None, span=(0.0, _mm(item, "depth"))))
+            continue
+        below = 90.0 * math.floor(angle / 90.0 + 1e-9)
+        c, s = turn(below)
+        radial = _add(_scale(frame.u, c), frame.v, s)
+        up = direction_of(radial)
+        assert up is not None
+        axes = (next(a for a in "xyz" if a not in (up[1], axis)), axis)
+        upright = cone.frame_at((c, s), along)
+        copy = _standing(item, cone, host, index, upright.origin, up, axes, layout)
+        motion: Motion | None = None
+        if abs(ls) > TOL:  # leaned with the slope, about its way round, from the radius to the normal
+            motion = Motion.about(upright.origin, upright.u, (lc, ls))
+        if abs(angle - below) > TOL:
+            turned = Motion.about(frame.origin, frame.n, turn(angle - below))
+            motion = turned if motion is None else turned.after(motion)
+        made.append(copy if motion is None else _moved_copy(copy, motion, layout))
+    return made
+
+
 def _round_hole(item: Item, side: RoundSide, host: tuple[str, int, str], index: int, point: Vec,
                 direction: Vec, layout: _Layout) -> Copy:  # fmt: skip
     radius = layout.diameters[item.id] / 2
@@ -2098,11 +2234,26 @@ def _standing(item: Item, face: Face, host: tuple[str, int, str], index: int, po
     return _body(item, layout, index, host, point, up, axes, face)
 
 
+def _curve_sag(face: RoundBall | RoundCone, point: Vec, across: float, along: float) -> float:
+    """How far a standing foot reaching ``across`` from its point is carried back into a ball or a cone: on a ball, to
+    the ball's own curve under it; on a cone, twice as far as the side falls away under it, round it at its narrowest
+    under the foot (``along`` up and down its slope from its point), where its curve round it, square to its slope,
+    has that radius over the cosine of its half angle (place.md, "On a cone's side")."""
+    if isinstance(face, RoundBall):
+        r = face.radius
+        return r - math.sqrt(max(r * r - across * across, 0.0))
+    lc, _ = face.lean
+    frame = face.frame
+    at = sum((point[k] - frame.origin[k]) * frame.n[k] for k in range(3)) - face.length / 2
+    r = min(face.radius_at(at - along * lc), face.radius_at(at + along * lc)) / lc
+    return 2 * (r - math.sqrt(max(r * r - across * across, 0.0)))
+
+
 def _host_material(face: Face | None) -> tuple[tuple[Outline, ...], Material] | None:
     """Where a standing item's far face has its host's material under it too, and that material."""
     if face is None:
         return None
-    if isinstance(face, (RoundSide, RoundBall)):
+    if isinstance(face, (RoundSide, RoundBall, RoundCone)):
         return (), Solid(face.material)
     return (face.outline,), face.material
 
@@ -2192,7 +2343,7 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
     entry = _entry(kind)
     key = (item.id, index)
     on_side = isinstance(face, RoundSide)
-    on_ball = isinstance(face, RoundBall)
+    on_ball = isinstance(face, (RoundBall, RoundCone))
     under = _host_material(face)
     faces: dict[str, Face] = {}
     u = unit(up)
@@ -2207,9 +2358,9 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
         else:
             high[k] += foot
         lo, hi = (low[0], low[1], low[2]), (high[0], high[1], high[2])
-    if on_ball and isinstance(face, RoundBall):  # its foot follows the ball's curve back past its point
+    if on_ball and isinstance(face, (RoundBall, RoundCone)):  # its foot follows the curve back past its point
         across = _footprint(item, {}, axes).farthest((0.0, 0.0))
-        foot = face.radius - math.sqrt(max(face.radius * face.radius - across * across, 0.0))
+        foot = _curve_sag(face, point, across, _footprint(item, {}, axes).half[1])
         k = _INDEX[up[1]]
         low, high = list(lo), list(hi)
         if up[0] == "+":
@@ -2232,8 +2383,9 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
                     "it stands round a side: only its far face takes anything, for now",
                 )
     if on_ball:
+        where = "a cone's side" if isinstance(face, RoundCone) else "a ball's surface"
         for name in list(layout.faces[key]):
-            layout.close(key, name, "it stands on a ball's surface: its faces take nothing, for now")
+            layout.close(key, name, f"it stands on {where}: its faces take nothing, for now")
     if item.id in layout.shells:
         _hollow(item, layout, key, point, up, lo, hi)
     for name in KINDS[kind].faces:
@@ -2653,6 +2805,22 @@ def _compare_faces(placed: Placed, layout: SolverLayout, key: tuple[str, int], a
                 ("radius", face.radius, getattr(other, "radius", None)),
                 ("dome", face.dome, getattr(other, "dome", None)),
                 ("standing", face.standing, getattr(other, "standing", None)),
+                ("frame", (*framed.origin, *framed.u, *framed.v, *framed.n),
+                 None if theirs_frame is None else (*theirs_frame.origin, *theirs_frame.u, *theirs_frame.v,
+                                                    *theirs_frame.n)),
+            )
+        elif isinstance(face, RoundCone):
+            if not hasattr(other, "start_radius"):
+                differ(here, "kind of face", "cone", type(other).__name__)
+                continue
+            framed, theirs_frame = face.placed_frame, getattr(other, "frame", None)
+            checks = (
+                ("axis", face.axis, getattr(other, "axis", None)),
+                ("start", face.start, getattr(other, "start", None)),
+                ("length", face.length, getattr(other, "length", None)),
+                ("start radius", face.start_radius, getattr(other, "start_radius", None)),
+                ("end radius", face.end_radius, getattr(other, "end_radius", None)),
+                ("joined", face.joined, getattr(other, "joined", None)),
                 ("frame", (*framed.origin, *framed.u, *framed.v, *framed.n),
                  None if theirs_frame is None else (*theirs_frame.origin, *theirs_frame.u, *theirs_frame.v,
                                                     *theirs_frame.n)),

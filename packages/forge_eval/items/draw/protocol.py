@@ -31,6 +31,7 @@ from forge_eval.generator import (
     _footprint,
     _named,
     _on_ball,
+    _on_cone,
     _on_exit,
     _on_flat,
     _on_round,
@@ -68,11 +69,11 @@ class DrawKind:
     round_far_end = False
     #: Its foot is round, its diameter across (a boss's), standing round a side.
     round_foot = False
-    #: It goes on a ball's or a dome's surface (item 3b's second step): a hole, a boss, a post; drawn there as many
-    #: times in a draw as its weight says, in its rank's order.
-    on_ball = False
-    ball_weight = 0
-    ball_rank = 0
+    #: It goes on a ball's, a dome's or a cone's curved surface (item 3b's second and third steps): a hole, a boss, a
+    #: post; drawn there as many times in a draw as its weight says, in its rank's order.
+    on_curved = False
+    curved_weight = 0
+    curved_rank = 0
     #: It may stand flush with a face's edge (one box or boss).
     stands_flush = False
     #: Published: a thread may go on it, ``rod_length`` the size its length is.
@@ -209,6 +210,8 @@ class DrawKind:
                 made += _on_round(f, part.rounds[key], len(made), part, strict)
             elif key in part.balls:
                 made += _on_ball(f, part.balls[key], len(made), part, strict)
+            elif key in part.cones:
+                made += _on_cone(f, part.cones[key], len(made), part, strict)
             else:
                 raise DoesNotFitError(
                     f"{f.id}: {host} has no face {face_name} that takes things"
@@ -470,10 +473,10 @@ class DrawKind:
             f"{f.id}: the generator hollows a block, a cylinder or a dome, not a {body.kind}"
         )
 
-    def ball_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
-        """Its sizes drawn on a ball's surface ``radius`` in radius (item 3b's second step), its depth (a hole's), and how
-        far its foot reaches from its point."""
-        raise DoesNotFitError(f"the generator doesn't put a {self.key} on a ball's surface")
+    def curved_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
+        """Its sizes drawn on a ball's surface or a cone's side ``radius`` in radius there (item 3b's second and third
+        steps), its depth (a hole's), and how far its foot reaches from its point."""
+        raise DoesNotFitError(f"the generator doesn't put a {self.key} on a ball's surface or a cone's side")
 
     def standing_shell(
         self, rng: random.Random, body: Feature, up: str

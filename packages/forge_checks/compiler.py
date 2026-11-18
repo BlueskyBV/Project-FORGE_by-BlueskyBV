@@ -122,9 +122,11 @@ from .outlines import Arc as OutlineArc
 from .outlines import Segment
 from .place import (
     Copy,
+    Face,
     FlatFace,
     Placed,
     RoundBall,
+    RoundCone,
     RoundSide,
     _entry,
     _named_by,
@@ -588,7 +590,7 @@ class _Compiler:
     def copies(self, item: Item) -> tuple[Copy, ...]:
         return self.placed.copies.get(item.id, ())
 
-    def faces(self, item_id: str, index: int) -> dict[str, FlatFace | RoundSide | RoundBall]:
+    def faces(self, item_id: str, index: int) -> dict[str, Face]:
         return dict(self.placed.faces.get((item_id, index), {}))
 
     def _not_placed(self, item: Item, why: str) -> None:
@@ -1352,11 +1354,13 @@ class _Compiler:
                               "by where its faces are, as the oracle builds them", "face accounting")  # fmt: skip
             return
         face = self.placed.face(copies[0].host)
-        if isinstance(face, RoundBall):
+        if isinstance(face, (RoundBall, RoundCone)):
+            where = ("on a ball's surface: its latitude and its angle round the pole" if isinstance(face, RoundBall)
+                     else "on a cone's side: its place along it and its angle round it")  # fmt: skip
             for name in leaves(item):
                 if name.startswith("place."):
-                    self.skip(item, name, "it is on a ball's surface: its latitude and its angle round the pole are "
-                              "held by where its faces are, as the oracle builds them", "face accounting")  # fmt: skip
+                    self.skip(item, name, f"it is {where} are held by where its faces are, as the oracle builds them",
+                              "face accounting")  # fmt: skip
             return
         given = item.get("place")
         place = given if isinstance(given, Place) else Place({}, None, None, None, None)

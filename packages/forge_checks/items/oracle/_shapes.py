@@ -32,9 +32,11 @@ from forge_checks.place import (
     Face,
     FlatFace,
     Hollow,
+    Motion,
     Placed,
     PlaceError,
     RoundBall,
+    RoundCone,
     RoundSide,
     direction_of,
     opposite,
@@ -46,6 +48,7 @@ from forge_checks.shapes import (
     Complement,
     Disc,
     Frame,
+    Frustum,
     Halfspace,
     Prism,
     Round,
@@ -161,7 +164,7 @@ def leaning_node(copy: Copy, outline: Shape2D, reach: float, height: float, into
 
 
 def _standing_prism(
-    copy: Copy, outline: Shape2D, height: float, face: FlatFace | RoundSide | RoundBall | None
+    copy: Copy, outline: Shape2D, height: float, face: Face | None
 ) -> Node:
     """A standing item's solid: its outline across its direction, from its point out to ``height``."""
     assert copy.axes is not None
@@ -180,6 +183,9 @@ def _standing_prism(
     if isinstance(face, RoundBall):  # from the plane through its centre, outside the ball (item 3b's second step)
         t0, t1 = sorted((-sign * face.radius, sign * height))
         return Inter((Prism(frame, outline, t0, t1), Complement(Ball(face.centre, face.radius))))
+    if isinstance(face, RoundCone):  # from as deep as its foot goes, outside the cone as it sees it (its third step)
+        t0, t1 = sorted((-sign * copy.foot, sign * height))
+        return Inter((Prism(frame, outline, t0, t1), Complement(cone_seen_upright(face, copy))))
     t0, t1 = sorted((0.0, sign * height))
     return Prism(frame, outline, t0, t1)
 
@@ -499,12 +505,22 @@ def _face_loop(
     return _outline_chain(frame, pieces, 0.0, sign, region_inside, False)
 
 
-def round_band(face: RoundSide | RoundBall, reach: float) -> Node:
-    """What lies within ``reach`` of a round side's or a ball's surface, where it is on the part (moved with its item)."""
+def round_band(face: RoundSide | RoundBall | RoundCone, reach: float) -> Node:
+    """What lies within ``reach`` of a round side's, a ball's or a cone's surface, where it is on the part (moved with
+    its item): round a cone, between the cones ``reach`` out from its side and in from it, past its ends as far."""
     at = face.placed_frame
     if isinstance(face, RoundBall):
         inner = Ball(at.origin, max(face.radius - reach, 1e-9))
         return Inter((Ball(at.origin, face.radius + reach), Complement(inner)))
+    if isinstance(face, RoundCone):
+        axis = Frame.along(at.origin, at.n)
+        grow, k = reach / face.lean[0], face.slope
+        r0, r1 = face.start_radius - k * reach, face.end_radius + k * reach
+        outer = Frustum(axis, -reach, face.length + reach, r0 + grow, r1 + grow)
+        if max(r0, r1) - grow <= 1e-9:
+            return outer
+        return Inter((outer, Complement(Frustum(axis, -reach, face.length + reach, max(r0 - grow, 0.0),
+                                                max(r1 - grow, 0.0)))))  # fmt: skip
     axis = Frame.along(at.origin, at.n)
     return Inter(
         (
@@ -515,10 +531,10 @@ def round_band(face: RoundSide | RoundBall, reach: float) -> Node:
 
 
 def _rim_band(
-    item: Item, copy: Copy, face: FlatFace | RoundSide | RoundBall, placed: Placed, size: float
+    item: Item, copy: Copy, face: Face, placed: Placed, size: float
 ) -> Node:
-    """Round a mouth on a round side, a ball's surface (item 3b's second step) or in a bore: no circle; the zone where
-    its rounding must be."""
+    """Round a mouth on a round side, a ball's surface (item 3b's second step), a cone's side (its third) or in a bore:
+    no circle; the zone where its rounding must be."""
     if isinstance(face, FlatFace):
         raise OracleError(
             f"{item.id}: a cut starting inside a bore is on its round side"
@@ -532,9 +548,10 @@ def _rim_band(
             if item.get(n) is not None
         )
     ) / 2
-    # The rim's curve on the side (or the ball) falls back from the mouth's
-    # point, along the way the cut goes, by at most its sagitta over the mouth.
-    sag = face.radius - math.sqrt(max(face.radius * face.radius - radius * radius, 0.0))
+    # The rim's curve on the side (the ball, the cone) falls back from the
+    # mouth's point, along the way the cut goes, by at most its sagitta over
+    # the mouth (round a cone, at its narrowest under it, twice).
+    sag = _sag_under(face, copy, radius)
     radius += reach
     u = np.asarray(copy.direction, dtype=float)
     near = Prism(
@@ -544,6 +561,32 @@ def _rim_band(
         2 * (reach + sag),
     )
     return Inter((near, round_band(face, reach)))
+
+
+def _sag_under(face: RoundSide | RoundBall | RoundCone, copy: Copy, radius: float) -> float:
+    """How far a round side, a ball or a cone falls away under a mouth ``radius`` across from a copy's point, from the
+    plane square to its direction there: round a cone, twice its circle's at its narrowest under the mouth."""
+    if not isinstance(face, RoundCone):
+        return face.radius - math.sqrt(max(face.radius * face.radius - radius * radius, 0.0))
+    at = face.placed_frame
+    lc, _ = face.lean
+    along = sum((copy.point[k] - at.origin[k]) * at.n[k] for k in range(3)) - face.length / 2
+    r = min(face.radius_at(along - radius * lc), face.radius_at(along + radius * lc)) / lc
+    return 2 * (r - math.sqrt(max(r * r - radius * radius, 0.0)))
+
+
+def cone_seen_upright(face: RoundCone, copy: Copy) -> Node:
+    """A cone as a copy standing on its side sees it from where it is placed upright, before it is moved (item 3b's
+    third step): leaned back, against the copy's lean with the slope, about the copy's way round there. Turned about
+    its axis, a cone is itself, so the rest of the copy's motion leaves it as it is."""
+    from forge_checks.moved import moved_node
+
+    frame = face.frame
+    cone = Frustum(Frame.along(frame.origin, frame.n), 0.0, face.length, face.start_radius, face.end_radius)
+    radial = copy.direction
+    around = (frame.n[1] * radial[2] - frame.n[2] * radial[1], frame.n[2] * radial[0] - frame.n[0] * radial[2],
+              frame.n[0] * radial[1] - frame.n[1] * radial[0])  # fmt: skip
+    return moved_node(cone, Motion.about(copy.point, around, face.lean).inverse())
 
 
 def standing_box(
@@ -558,14 +601,14 @@ def standing_box(
 
 
 def rod_node(
-    copy: Copy, face: FlatFace | RoundSide | RoundBall | None, radius: float, height: float
+    copy: Copy, face: Face | None, radius: float, height: float
 ) -> Node:
     """A cylinder's or a boss's solid: ``radius`` round its axis, ``height`` along it."""
     if copy.lean is not None:
         return leaning_node(copy, Disc(radius), radius, height, False)
     u = np.asarray(copy.direction, dtype=float)
     frame = Frame.along(copy.point, u)
-    if isinstance(face, (RoundSide, RoundBall)):
+    if isinstance(face, (RoundSide, RoundBall, RoundCone)):
         assert copy.axes is not None
         return _standing_prism(copy, Disc(radius), height, face)
     return Prism(frame, Disc(radius), 0.0, height)
@@ -594,7 +637,7 @@ def round_rim(
     assert copy.host is not None and copy.span is not None
     face = placed.face(copy.host)
     fill = which == "bottom"
-    if isinstance(face, (RoundSide, RoundBall)) or copy.span[0] < 0:
+    if isinstance(face, (RoundSide, RoundBall, RoundCone)) or copy.span[0] < 0:
         return [], fill, [_rim_band(item, copy, face, placed, size)], None
     return None
 

@@ -37,6 +37,7 @@ from forge_checks.place import (
     Placed,
     PlaceError,
     RoundBall,
+    RoundCone,
     RoundSide,
     Solid,
     Taper,
@@ -215,7 +216,10 @@ class FirstBodies(unittest.TestCase):
             item("cone", "cone", base_diameter=a(40), top_diameter=a(0), length=a(30))
         )
         self.assertIn("+end", p.closed[("cone", 0)])
-        self.assertIn("side", p.closed[("cone", 0)])
+        side = p.faces[("cone", 0)]["side"]  # its tapered side takes things (item 3b's third step)
+        assert isinstance(side, RoundCone)
+        self.assertEqual((side.axis, side.start, side.length, side.start_radius, side.end_radius, side.joined),
+                         ("z", (0.0, 0.0, 0.0), 30.0, 20.0, 0.0, None))  # fmt: skip
         base = flat(p, "cone", "-end")
         self.assertEqual(base.normal, "-z")
         self.assertEqual(material_at(base.material, (0, 0)), 30.0)

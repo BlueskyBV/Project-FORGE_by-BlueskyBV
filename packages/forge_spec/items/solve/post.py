@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class Post(SolveKind):
     key = "post"
-    on_ball = True
+    on_curved = True
 
     def outline_fields(
         self, item: Item, axes: tuple[str, str] | None = None, k: int | None = None

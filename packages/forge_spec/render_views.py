@@ -69,6 +69,7 @@ from .geometry import (
     _REFERENCE,
     EPS,
     BallFace,
+    ConeFace,
     Face,
     FlatFace,
     Part,
@@ -766,6 +767,11 @@ def _cut_span(item: Item, copy: Instance, layout: Layout) -> tuple[float, bool]:
     elif isinstance(face, (SideFace, BallFace)):
         r = layout.diameters.get(item.id, 0.0) / 2
         least, most = face.material_under((disc(r),)), face.most_material_under((disc(r),))
+    elif isinstance(face, ConeFace):
+        r = layout.diameters.get(item.id, 0.0) / 2
+        along = _AXES.index(face.axis)
+        here = (0.0, copy.origin[along] - face.start[along] - face.length / 2)
+        least, most = face.material_under((disc(r),), here), face.most_material_under((disc(r),), here)
     emboss = VIEWS[item.kind].embossed(item)
     end = end_of(item)
     if emboss:
@@ -1309,7 +1315,7 @@ class _Drawing:
             )
         if isinstance(face, FlatFace) and face.axes_are_the_parts:
             self._on_flat(face, local, place, pattern)
-        elif isinstance(face, SideFace):
+        elif isinstance(face, (SideFace, ConeFace)):
             self._on_side(face, local, place)
         elif isinstance(face, BallFace):
             self._on_ball(face, place)
@@ -1426,9 +1432,10 @@ class _Drawing:
             self.say(f"{lead} {_value(place.angle)} round its pole from +{zero}", "place.angle")
 
     def _on_side(
-        self, face: SideFace, local: Sequence[Instance], place: Place | None
+        self, face: SideFace | ConeFace, local: Sequence[Instance], place: Place | None
     ) -> None:
-        """Where on a round side: along its axis from the end its place names, and at what angle round it."""
+        """Where on a round side or a cone's side (item 3b's third step): along its axis from the end its place names,
+        and at what angle round it."""
         k = _AXES.index(face.axis)
         home = self.home
         canvas = (
@@ -1449,10 +1456,13 @@ class _Drawing:
                     self.item, self.layout, first.face_axes or (face.axis, face.axis)
                 )
             )[1]
+        radius = face.radius if isinstance(face, SideFace) else max(face.start_radius, face.end_radius)
+        if isinstance(face, ConeFace):
+            foot *= face.lean[0]  # up its slope, so far along its axis
         ref, target, text, fields = _measured(
             face.axis, position, face.start[k] + half, half, first.origin[k], foot
         )
-        self.line(canvas, along, ref, target, (face.start[across] - face.radius, first.origin[across]), text,
+        self.line(canvas, along, ref, target, (face.start[across] - radius, first.origin[across]), text,
                   *fields, words=_position_words(face.axis, position, "end") if position is not None else None)  # fmt: skip
         zero = _ZERO_ON[face.axis].upper()
         pattern = place.pattern if place is not None else None

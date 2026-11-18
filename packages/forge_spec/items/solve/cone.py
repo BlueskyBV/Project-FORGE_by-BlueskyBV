@@ -8,11 +8,14 @@ from forge_spec.draft import (
     Item,
 )
 from forge_spec.geometry import (
+    ConeFace,
     Vec,
     disc,
 )
 from forge_spec.items.solve._common import (
+    _add,
     _bounds_round,
+    _dir,
     _length_of,
     _round_faces,
     _size,
@@ -52,8 +55,16 @@ class Cone(SolveKind):
         lo, hi = _bounds_round(base, up, length, max(outer, (top or 0.0) / 2))
         layout.faces[key] = _round_faces(item, base, up, length, outer,
                                          None if top is None else top / 2, inner)  # fmt: skip
-        layout.close(key, "side", "unable",
-                     f"{item.id}'s side is tapered; Forge places on a cone's ends only, for now")  # fmt: skip
+        # Its tapered side takes a hole, a boss or a post, round it and along it (item 3b's third step).
+        top_r = outer if top is None else top / 2
+        diameters = tuple((item.id, n) for n in ("base_diameter", "top_diameter") if item.get(n) is not None)
+        lengths = tuple((item.id, n) for n in ("length", "height") if item.get(n) is not None)
+        forward = up[0] == "+"
+        layout.faces[key]["side"] = ConeFace(
+            "side", up[1], base if forward else _add(base, _dir(up), length), length,
+            outer if forward else top_r, top_r if forward else outer,
+            None if host is None else ("start" if forward else "end"),
+            radius_sources=diameters, length_sources=lengths, depth_sources=diameters + lengths)  # fmt: skip
         if "+end" not in layout.faces[key]:
             layout.close(
                 key,

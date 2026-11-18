@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 class Boss(SolveKind):
     key = "boss"
-    on_ball = True
+    on_curved = True
 
     round = True
     round_foot = True

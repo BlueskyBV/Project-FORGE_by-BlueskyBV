@@ -109,6 +109,7 @@ from .place import (
     Motion,
     Placed,
     RoundBall,
+    RoundCone,
     RoundSide,
     body_edges,
     direction_of,
@@ -231,10 +232,11 @@ def probes(normals: Sequence[NDArray[np.float64]]) -> Array:
             w = _unit3(_cross3(circles[i], circles[j]))
             for corner in (w, (-w[0], -w[1], -w[2])):
                 dots = [_dot3(c, corner) for c in circles]
-                through = [
-                    c for c, d in zip(circles, dots, strict=True) if abs(d) <= _THROUGH
-                ]
-                apart = [fs.asin(min(abs(d), 1.0)) for d in dots if abs(d) > _THROUGH]
+                # The two circles that cross here are through it, however nearly they run together (two faces' normals
+                # a hair apart: a corner found from their cross product is that far from square to each).
+                on = [k in (i, j) or abs(d) <= _THROUGH for k, d in enumerate(dots)]
+                through = [c for c, here in zip(circles, on, strict=True) if here]
+                apart = [fs.asin(min(abs(d), 1.0)) for d, here in zip(dots, on, strict=True) if not here]
                 step = 0.5 * min([*apart, 2e-3])
                 tangents: list[Vec3] = []
                 for c in through:
@@ -1342,7 +1344,7 @@ def _joint_chains(
         if copy.host is None or copy.host[0] != host.id:
             continue
         face = placed.face(copy.host)
-        if isinstance(face, (RoundSide, RoundBall)):
+        if isinstance(face, (RoundSide, RoundBall, RoundCone)):
             yield copy.index, [], [_joint_band(standing, copy, face, size)], None
             continue
         box = None if copy.lo is None or copy.hi is None else (copy.lo, copy.hi)
@@ -1399,9 +1401,9 @@ def _face_chains(face: FlatFace, copy: Copy) -> list[rounds.Chain]:
     return found
 
 
-def _joint_band(item: Item, copy: Copy, face: RoundSide | RoundBall, size: float) -> Node:
-    """Where an item stands round a side or on a ball's surface: its foot follows no circle; the zone where the
-    rounding must be."""
+def _joint_band(item: Item, copy: Copy, face: RoundSide | RoundBall | RoundCone, size: float) -> Node:
+    """Where an item stands round a side, on a ball's surface or on a cone's side: its foot follows no circle; the zone
+    where the rounding must be."""
     reach = 4 * size
     assert copy.lo is not None and copy.hi is not None
     lo = np.asarray(copy.lo) - reach

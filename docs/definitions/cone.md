@@ -54,7 +54,8 @@ none.
 - `+end`: its flat +end, a disc. A cone that comes to a point has none.
 - `-end`: its flat -end, a disc. Standing on a face, it is joined by this
   end, which can't be used.
-- `side`: its tapered side. Nothing is placed on it, for now.
+- `side`: its tapered side. A hole, a boss or a post goes on it, along its
+  axis and round it ([place.md](place.md), "On a cone's side").
 
 ## Edges
 

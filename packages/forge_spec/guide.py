@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 8
+GUIDE_VERSION = 9
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -683,6 +683,10 @@ a post is placed by "latitude" (from its equator towards its pole, which is \
 the way it stands; 90 deg is the pole) and "angle" round the pole, as round \
 a side; a circle of them goes round the pole; a hole there has a depth (right \
 through only a whole ball standing on nothing), and its faces take nothing yet. \
+On a cone's "side", a hole, a boss or a post is placed as round a round \
+side, by its position along the cone's axis and an "angle" round it, square \
+to the side (its normal leans towards the narrower end by the half angle); \
+a hole there has a depth (not through), and its faces take nothing yet. \
 "concentric": {{"item": ..., "from": ...}} puts it on the axis \
 of a round item (a hole down a boss). On a flat face, "turn": angle turns a \
 slot, a rectangular pocket, a rib, a tab, a block, a post or a line of \

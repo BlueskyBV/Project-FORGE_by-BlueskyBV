@@ -29,11 +29,11 @@ from forge_eval.truth import Copy
 
 class Post(DrawKind):
     key = "post"
-    on_ball = True
-    ball_weight = 2
-    ball_rank = 3
+    on_curved = True
+    curved_weight = 2
+    curved_rank = 3
 
-    def ball_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
+    def curved_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
         sizes = {"length": _q(rng.uniform(1.5, max(1.6, radius / 3))), "width": _q(rng.uniform(1.5, max(1.6, radius / 3))),
                  "height": _q(rng.uniform(1.0, max(1.1, min(10.0, radius))))}  # fmt: skip
         return sizes, None, fs.hypot(sizes["length"] / 2, sizes["width"] / 2)

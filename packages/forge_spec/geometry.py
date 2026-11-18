@@ -43,6 +43,7 @@ from .outline import Arc, Line, Shape, boundary_within, meet, turned_depth
 __all__ = [
     "EPS",
     "BallFace",
+    "ConeFace",
     "DepthModel",
     "Dome",
     "Face",
@@ -58,6 +59,7 @@ __all__ = [
     "Vec",
     "add_material",
     "bbox",
+    "cone_sag",
     "copies_overlap",
     "disc",
     "face_footprint",
@@ -477,7 +479,172 @@ class BallFace:
         return r + reach_ * c / s if s > EPS else math.inf
 
 
-Face = FlatFace | SideFace | BallFace
+@dataclass(frozen=True)
+class ConeFace:
+    """A cone's tapered side (item 3b's third step; cone.md): its axis, the centre of its end at the smaller coordinate
+    along it (``start``), its length, and its radius at that end (``start_radius``) and at the other (``end_radius``),
+    either of which may be 0 (a point). A point on it is at an angle round its axis (as round a side, from its frame's
+    ``u``) and a distance from its middle along it; its normal leans from the radius there towards the narrower end by
+    the cone's half angle.
+
+    ``joined`` is the end it stands on (``"start"`` or ``"end"``), None for the first body.
+    """
+
+    name: str
+    axis: str  # "z"
+    start: Vec
+    length: float
+    start_radius: float
+    end_radius: float
+    joined: str | None = None
+    radius_sources: tuple[Source, ...] = ()
+    length_sources: tuple[Source, ...] = ()
+    depth_sources: tuple[Source, ...] = ()
+    #: The side of what stands on a turned item's face (as a round side's): kept as with that item upright, and the
+    #: motion onto the part.
+    local: Rigid | None = None
+
+    def upright(self) -> ConeFace:
+        return self if self.local is None else replace(self, local=None)
+
+    @property
+    def sources(self) -> tuple[Source, ...]:
+        return self.radius_sources + tuple(s for s in self.length_sources if s not in self.radius_sources)
+
+    @property
+    def reference(self) -> tuple[str, str]:
+        """The axes 0 and 90 degrees round it point along (as a round side's)."""
+        return _REFERENCE[self.axis]
+
+    @cached_property
+    def frame(self) -> Frame:
+        """The centre of the end at ``start``; ``u`` and ``v`` the ways out at 0 and 90 degrees round it, ``n`` its axis
+        (moved onto the part by ``local``)."""
+        u, v = self.reference
+        found = Frame.of_names(self.start, u, v, self.axis)
+        return found if self.local is None else self.local.frame(found)
+
+    @property
+    def wall(self) -> float:
+        """The most material a cut along a radius of it meets: its diameter at its wider end."""
+        return 2 * max(self.start_radius, self.end_radius)
+
+    @property
+    def slope(self) -> float:
+        """How fast its radius grows along its axis (negative where it narrows)."""
+        return (self.end_radius - self.start_radius) / self.length
+
+    @property
+    def lean(self) -> tuple[float, float]:
+        """The cosine and sine of the turn that takes a radius's way out to its normal, about its way round (``u`` at
+        the point): its half angle, towards its narrower end."""
+        q = math.sqrt(1.0 + self.slope * self.slope)
+        return 1.0 / q, self.slope / q
+
+    def radius_at(self, along: float) -> float:
+        """Its radius ``along`` from its middle."""
+        return self.start_radius + self.slope * (self.length / 2 + along)
+
+    def frame_at(self, turn: tuple[float, float], along: float) -> Frame:
+        """Its frame at a point on it (item 3a's placeable face): ``turn`` the cosine and sine of its angle round the
+        axis, ``along`` how far from its middle along it. Its origin is on the side; ``n`` its normal, out of the
+        material; ``u`` round it (as a round side's); ``v`` up its slope, towards its end (``u x v = n``)."""
+        frame = self.frame
+        r = frame.radial(*turn)
+        a = frame.n
+        c, s = self.lean
+        centre = _plus(frame.origin, a, self.length / 2 + along)
+        origin = _plus(centre, r, self.radius_at(along))
+        normal = (c * r[0] - s * a[0] + 0.0, c * r[1] - s * a[1] + 0.0, c * r[2] - s * a[2] + 0.0)
+        slant = (c * a[0] + s * r[0] + 0.0, c * a[1] + s * r[1] + 0.0, c * a[2] + s * r[2] + 0.0)
+        return Frame(origin, frame.radial(-turn[1], turn[0]), slant, normal)
+
+    def exit(self, point: Vec, way: Vec) -> float:
+        """How far from ``point`` along the unit ``way`` the line through them is last in the cone (0 where it never
+        is): the cone is convex, so the line is in it along one stretch."""
+        frame = self.frame
+        a = frame.n
+        d0 = (point[0] - frame.origin[0], point[1] - frame.origin[1], point[2] - frame.origin[2])
+        s0, ds = _dot3(d0, a), _dot3(way, a)
+        w0 = _plus(d0, a, -s0)
+        dw = _plus(way, a, -ds)
+        k, r0, length = self.slope, self.start_radius, self.length
+
+        def inside(t: float) -> bool:
+            at = s0 + t * ds
+            w = _plus(w0, dw, t)
+            r = r0 + k * at
+            return -EPS <= at <= length + EPS and r >= -EPS and _dot3(w, w) <= r * r + EPS
+
+        found = [0.0]
+        if abs(ds) > 1e-15:
+            found += [(0.0 - s0) / ds, (length - s0) / ds]
+        c0 = r0 + k * s0
+        qa = _dot3(dw, dw) - k * k * ds * ds
+        qb = 2.0 * (_dot3(w0, dw) - k * ds * c0)
+        qc = _dot3(w0, w0) - c0 * c0
+        if abs(qa) > 1e-15:
+            disc_ = qb * qb - 4.0 * qa * qc
+            if disc_ >= 0.0:
+                root = math.sqrt(disc_)
+                found += [(-qb - root) / (2.0 * qa), (-qb + root) / (2.0 * qa)]
+        elif abs(qb) > 1e-15:
+            found.append(-qc / qb)
+        ts = sorted(t for t in found if t >= 0.0)
+        last = 0.0
+        for t0, t1 in pairwise(ts):
+            if t1 - t0 > 1e-12 and inside((t0 + t1) / 2):
+                last = t1
+        return last
+
+    def _rim_exits(self, footprint: Footprint, along: float) -> list[float]:
+        """How far a cut of that mouth along the normal at ``along`` (from its middle; at 0 degrees round it, the same
+        all round) stays in the cone, from each of points all round its rim, from the plane through its point square
+        to its normal."""
+        r = _reach_of(footprint)
+        upright = self.upright()
+        here = upright.frame_at((1.0, 0.0), along)
+        inward = (-here.n[0], -here.n[1], -here.n[2])
+        found = []
+        for k in range(_RIM_POINTS):
+            c, s = cos_sin(360.0 * k / _RIM_POINTS)
+            on = _plus(_plus(here.origin, here.u, r * c), here.v, r * s)
+            found.append(upright.exit(on, inward))
+        return found
+
+    # Item 3a's placeable face: the material a cut along its normal meets, at a place on it (its angle round the
+    # axis, degrees, and how far from its middle along it), the same all round it.
+    def material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
+        """The least material a cut of that mouth along its normal meets: what a blind one must fit in. The cone is
+        convex, so the least is at its mouth's rim; the far side comes first there, or an end."""
+        return min(self._rim_exits(footprint, at[1]))
+
+    def most_material_under(self, footprint: Footprint, at: tuple[float, float] = (0.0, 0.0)) -> float:
+        """How far a cut of that mouth along its normal stays in the cone across its mouth: the most of its rim's and
+        its point's."""
+        upright = self.upright()
+        here = upright.frame_at((1.0, 0.0), at[1])
+        middle = upright.exit(here.origin, (-here.n[0], -here.n[1], -here.n[2]))
+        return max(middle, *self._rim_exits(footprint, at[1]))
+
+
+def cone_sag(face: ConeFace, radius: float, across: float) -> float:
+    """How far a foot reaching ``across`` either way round a cone's side, where its radius is ``radius``, falls from
+    the plane square to its normal at its point to the side: the side's curve round it, square to its slope, has the
+    radius ``radius`` over the cosine of its half angle."""
+    r = radius / face.lean[0]
+    return r - math.sqrt(max(r * r - across * across, 0.0))
+
+
+#: At how many points all round a cut's rim a cone's material under it is asked.
+_RIM_POINTS = 180
+
+
+def _dot3(a: Vec, b: Vec) -> float:
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+Face = FlatFace | SideFace | BallFace | ConeFace
 
 #: Round each axis, the axes at 0 and 90 degrees.
 _REFERENCE = {"z": ("x", "y"), "x": ("y", "z"), "y": ("z", "x")}

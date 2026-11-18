@@ -18,6 +18,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from forge_numeric import scalar as fs
 from forge_spec.draft import (
     Counterbore,
     Item,
@@ -26,9 +27,12 @@ from forge_spec.draft import (
 from forge_spec.geometry import (
     EPS,
     BallFace,
+    ConeFace,
+    Face,
     FlatFace,
     Footprint,
     SideFace,
+    cone_sag,
     disc,
 )
 from forge_spec.outline import Shape
@@ -92,7 +96,7 @@ class Context:
     def items(self) -> Mapping[str, Item]:
         return {item.id: item for item in self.spec.items}
 
-    def face(self, copy: Instance) -> FlatFace | SideFace | BallFace:
+    def face(self, copy: Instance) -> Face:
         """The face a copy stands on or is cut into."""
         if copy.host is None:
             raise PlanError("the first body is on no face", item=copy.item)
@@ -358,6 +362,8 @@ def standing_tool(
         return _round_side(chain, item, copy, face)
     if isinstance(face, BallFace):
         return _on_ball(chain, ctx, item, copy, face)
+    if isinstance(face, ConeFace):
+        return _on_cone(chain, ctx, item, copy, face)
     if copy.direction is not None:  # leaning on its face (1b's second move)
         sizes = PLAN[item.kind].section(item, face.axes) if PLAN[item.kind].box_like(item) else None
         if sizes is None:
@@ -446,6 +452,43 @@ def _on_ball(chain: Chain, ctx: Context, item: Item, copy: Instance, face: BallF
         back = moved.frame.inverse()
         ball = chain.step(f"{ball}.back", "transform", transform_params(back), item=item.id, inputs=(ball,))
     tool = chain.boolean(_id(item.id, k, "on_ball"), "subtract", [prism, ball], item=item.id)
+    chain.add_box(Box(lo, hi, item.id, k))
+    return tool
+
+
+def _on_cone(chain: Chain, ctx: Context, item: Item, copy: Instance, face: ConeFace) -> str:
+    """A boss or a post on a cone's side (item 3b's third step), as at the frame axis at or below its angle, standing
+    out along the radius there: its section from as deep as its foot goes (twice as far as the side falls away under
+    its farthest reach, at its narrowest: place.md) out to its height, less the cone (it is joined to it). The cone it
+    is cut by is the one the part has, seen as from where the item is placed before it is moved (:mod:`.moved`)."""
+    from forge_spec.frames import Rigid
+
+    from .moved import transform_params
+
+    k = copy.index
+    frame = face.frame
+    if PLAN[item.kind].box_like(item):
+        assert copy.face_axes is not None
+        halves, _ = PLAN[item.kind].section(item, copy.face_axes)
+        along_half, far = halves[face.axis], fs.hypot(*halves.values())
+    else:
+        along_half = far = _mm(item, "diameter") / 2
+    lean, _ = face.lean
+    at = sum((copy.origin[i] - frame.origin[i]) * frame.n[i] for i in range(3)) - face.length / 2
+    narrowest = min(face.radius_at(at - along_half * lean), face.radius_at(at + along_half * lean))
+    prism, lo, hi = PLAN[item.kind].round_side_prism(chain, item, copy, 2 * cone_sag(face, narrowest, far))
+    if not PLAN[item.kind].box_like(item):
+        # A round section turned an eighth about its own axis, its seam off the cone's (as on a ball).
+        turned = Rigid.turn_about(copy.origin, copy.normal, 0.7071067811865476, 0.7071067811865476)
+        prism = chain.step(f"{prism}.turned", "transform", transform_params(turned), item=item.id, inputs=(prism,))
+    cone = chain.cone(_id(item.id, k, "cone"), frame.origin, frame.n, 2 * face.start_radius, 2 * face.end_radius,
+                      face.length, item=item.id)  # fmt: skip
+    placed = ctx.layout.instances.get(item.id, [])
+    moved = placed[k] if k < len(placed) else None
+    if moved is not None and moved.frame is not None:
+        back = moved.frame.inverse()
+        cone = chain.step(f"{cone}.back", "transform", transform_params(back), item=item.id, inputs=(cone,))
+    tool = chain.boolean(_id(item.id, k, "on_cone"), "subtract", [prism, cone], item=item.id)
     chain.add_box(Box(lo, hi, item.id, k))
     return tool
 

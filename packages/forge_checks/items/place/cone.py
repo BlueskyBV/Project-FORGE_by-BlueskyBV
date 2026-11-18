@@ -9,7 +9,17 @@ from forge_spec.draft import Item
 
 from forge_checks.items.place.protocol import Edges, PlaceKind
 from forge_checks.outlines import Outline
-from forge_checks.place import Face, Material, Vec, _Layout, _mm, _rod_body
+from forge_checks.place import (
+    Face,
+    Material,
+    RoundCone,
+    Vec,
+    _add,
+    _Layout,
+    _mm,
+    _rod_body,
+    unit,
+)
 
 
 class Cone(PlaceKind):
@@ -37,21 +47,13 @@ class Cone(PlaceKind):
             _mm(item, "top_diameter", zero=True) / 2,
         )
         inner = 0.0
-        return _rod_body(
-            item,
-            layout,
-            key,
-            point,
-            up,
-            axes,
-            under,
-            faces,
-            length,
-            base,
-            top_r,
-            inner,
-            tapered=True,
-        )
+        found = _rod_body(item, layout, key, point, up, axes, under, faces, length, base, top_r, inner, tapered=True)
+        # Its tapered side takes a hole, a boss or a post, round it and along it (item 3b's third step).
+        forward = up[0] == "+"
+        start = point if forward else _add(point, unit(up), length)
+        faces["side"] = RoundCone("side", up[1], start, length, base if forward else top_r, top_r if forward else base,
+                                  None if host is None else ("start" if forward else "end"))  # fmt: skip
+        return found
 
 
 ENTRY = Cone()

@@ -228,7 +228,8 @@ pole**:
 - It is placed as at the pole, then turned about the ball's centre, down to
   its latitude and round to its angle; its faces take nothing, for now. Its
   edges, its joint with the ball and a hole's mouth are rounded or
-  chamfered as edges.md, "Round a side, and on a ball's surface", says.
+  chamfered as edges.md, "Round a side, and on a ball's surface or a cone's
+  side", says.
 - A `circle` or an `arc` of copies goes round the pole at its latitude.
 - What it covers must stay on the surface: above a dome's rim, above a
   standing ball's equator (below it is what it stands on). A hole goes right
@@ -236,6 +237,41 @@ pole**:
   depth no more than the material under it.
 - Only holes, bosses and posts go on a ball's surface, for now, and not on
   a hollowed ball's.
+
+## On a cone's side
+
+On a cone's tapered side (cone.md, its `side` face; item 3b's third step,
+no schema change), an item is placed as round a round side: by a position
+along the cone's axis and an angle round it.
+
+- **Along the axis** and **the angle** are as on a round side (above): the
+  axis is the cone's, measured from its ends; the angle from the first of
+  its reference axes towards the second. None is halfway along, and 0
+  degrees, assumptions.
+- The item's **point** is on the side there. Its **direction** is the
+  side's normal: out along the radius through the point, leaned towards the
+  cone's narrower end by the cone's half angle (square to the side). A hole
+  goes in against it, its depth from its point; a boss or a post stands out
+  along it, its height from its point.
+- A standing feature's length runs round the cone and its width up its
+  slope. It is placed as at the frame axis at or below its angle, standing
+  out along the radius there, then leaned with the slope about the line
+  through its point round the cone, then turned with the side about its
+  axis by the rest; its faces take nothing, for now. Its foot is carried
+  into the cone twice as far as the side falls away under its farthest
+  reach from its point, there where the cone is narrowest under it (the
+  side's curve round it, square to its slope, has that radius over the
+  cosine of the half angle), and all of it stays in the cone: measured
+  from an end to its edge, its width up the slope counts as far along the
+  axis as it reaches there.
+- A `circle` or an `arc` of copies goes round the axis at its place along
+  it.
+- What it covers must stay on the side, short of the cone's ends; it must
+  be narrower than the cone where it is; and a hole is blind, no deeper
+  than the least material under its mouth (the cone is convex, so that is
+  at its rim, where the far side or an end comes first). A hole right
+  through a cone's side waits, for now.
+- Only holes, bosses and posts go on a cone's side, for now.
 
 ## Concentric
 

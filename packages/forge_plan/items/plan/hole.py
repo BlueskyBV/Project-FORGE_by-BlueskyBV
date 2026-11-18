@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
 from forge_spec.draft import Counterbore, Countersink, Item
-from forge_spec.geometry import BallFace, Face, FlatFace, SideFace, disc
+from forge_spec.geometry import BallFace, ConeFace, Face, FlatFace, SideFace, disc
 from forge_spec.placement import Instance
 
 from forge_plan.errors import PlanError
@@ -60,7 +60,7 @@ def _hole(chain: Chain, ctx: Context, item: Item, copy: Instance, face: Face,
         raise PlanError("its diameter wasn't resolved", item=item.id)
     radius = diameter / 2
     start = _start(face)
-    if isinstance(face, (SideFace, BallFace)):
+    if isinstance(face, (SideFace, BallFace, ConeFace)):
         depth = (
             face.most_material_under((disc(radius),)) if _through(item) else _mm(item, "depth")
         )

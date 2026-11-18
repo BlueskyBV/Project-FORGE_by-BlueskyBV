@@ -98,6 +98,12 @@ def _rounded(kind: str, which: str, how: str = "") -> Callable[[Case], bool]:
 #: The sorts of part stage 4 widened the generator to draw (docs/V2-stage4.md, 12.2), each tested on the first
 #: generated part that is one (of the first thousand; most sorts are among the first 200, and their counts there
 #: are tested).
+def _on_cone(case: Case, f: Any) -> bool:
+    """Whether an item is on a cone's side (item 3b's third step)."""
+    hosts = {g.id: g.kind for g in case.plan}
+    return f.on is not None and f.on[1] == "side" and hosts.get(f.on[0]) == "cone"
+
+
 WIDENED: dict[str, Callable[[Case], bool]] = {
     "an extrusion standing": _standing("extrusion"),
     "a revolution standing": _standing("revolution"),
@@ -125,7 +131,7 @@ WIDENED: dict[str, Callable[[Case], bool]] = {
         f.kind == "boss" and _flush(f) for f in c.plan
     ),
     "a boss or a post standing round a rod": lambda c: any(
-        f.kind in ("boss", "post") and f.on is not None and f.on[1] == "side"
+        f.kind in ("boss", "post") and f.on is not None and f.on[1] == "side" and not _on_cone(c, f)
         for f in c.plan
     ),
     # 4b.0c, 1b's third move, step 5.1: a block standing on a face hollowed, upright or turned in it.
@@ -134,9 +140,12 @@ WIDENED: dict[str, Callable[[Case], bool]] = {
     # Item 3b's first two steps: round a side at any angle; on a ball's or a dome's surface.
     "a boss or a post round a side at any angle": lambda c: any(
         f.on is not None and f.on[1] == "side" and f.kind in ("boss", "post") and (f.angle or 0.0) % 90
+        and not _on_cone(c, f)
         for f in c.plan
     ),
     "on a ball's or a dome's surface": lambda c: any(f.on is not None and f.on[1] == "surface" for f in c.plan),
+    # Item 3b's third step: on a cone's side.
+    "on a cone's side": lambda c: any(_on_cone(c, f) for f in c.plan),
 }
 
 

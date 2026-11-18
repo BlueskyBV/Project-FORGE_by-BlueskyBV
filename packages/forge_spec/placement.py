@@ -63,6 +63,7 @@ from .geometry import (
     _REFERENCE,
     EPS,
     BallFace,
+    ConeFace,
     FlatFace,
     Footprint,
     Over,
@@ -74,6 +75,7 @@ from .geometry import (
     _point_in_parts,
     add_material,
     bbox,
+    cone_sag,
     copies_overlap,
     disc,
     face_footprint,
@@ -1673,7 +1675,7 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
     on a face facing that way), then turned about its centre, down to its latitude and round to its angle."""
     place = _place_of(item)
     entry = SOLVE[item.kind]
-    if not entry.on_ball:
+    if not entry.on_curved:
         layout.issue("unable", at + pointer("on"),
                      f"on a ball's surface, Forge cuts round holes and stands bosses and posts; not a {item.kind}, "
                      "for now")  # fmt: skip
@@ -1774,6 +1776,164 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
         out.append(_Copy(Instance(item.id, 0, pole.origin, pole.n, host, axes if entry.adds else None),
                          face.wall, face.depth_sources, motion=motion))  # fmt: skip
     return out
+
+
+def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layout: Layout,
+                    at: str, first: int) -> list[_Copy]:  # fmt: skip
+    """Every copy of a hole, a boss or a post on a cone's side (item 3b's third step; place.md, "On a cone's side"): at
+    its angle round the axis and its place along it, as round a side; along the cone's normal there. A hole goes in
+    along it; a boss or a post is placed as at the frame axis at or below its angle, standing out along the radius
+    there, then leaned with the side's slope about its way round and turned about the axis by the rest."""
+    place = _place_of(item)
+    entry = SOLVE[item.kind]
+    axis = face.axis
+    if not entry.on_curved:
+        layout.issue("unable", at + pointer("on"),
+                     f"on a cone's side, Forge cuts round holes and stands bosses and posts; not a {item.kind}, "
+                     "for now")  # fmt: skip
+        return []
+    if place is not None and ((place.pattern and not PATTERN_SOLVE[place.pattern.kind].round) or place.concentric):
+        layout.issue("unable", at + pointer("place"),
+                     "on a cone's side, Forge places by position along the axis and angle only")  # fmt: skip
+        return []
+    if place is not None and place.latitude is not None:
+        layout.issue("fault", at + pointer("place", "latitude"),
+                     "a latitude places on a ball's surface; on a cone's side, give a position along its axis and an "
+                     "angle round it")  # fmt: skip
+        return []
+    if place is not None and place.pattern is not None:
+        extra = sorted(set(place.pattern.values)
+                       - ({"step"} if PATTERN_SOLVE[place.pattern.kind].steps_round else set()))  # fmt: skip
+        if extra:
+            kind = place.pattern.kind
+            layout.issue("fault", at + pointer("place", "pattern", kind),
+                         f"round a cone, a {kind} pattern takes only a count"
+                         + (" and a step" if PATTERN_SOLVE[kind].steps_round else "")
+                         + f"; give the first one's angle as place.angle, not {extra}")  # fmt: skip
+            return []
+    if place is not None and place.turn is not None:
+        layout.issue("fault", at + pointer("place", "turn"),
+                     "a turn turns an item in a flat face's plane; round a cone, place.angle says where round it is")  # fmt: skip
+        return []
+    if leaning(item):
+        layout.issue("fault", at + pointer("tilt"),
+                     "a tilt leans an item from square to a flat face; on a cone's side, it stands square to the side")  # fmt: skip
+        return []
+    position = place.axes.get(axis) if place else None
+    others = [a for a in (place.axes if place else {}) if a != axis]
+    if others:
+        layout.issue("fault", at + pointer("place", others[0]),
+                     f"on a cone's side, position along {axis} and an angle only")  # fmt: skip
+        return []
+    if position is not None and position.mode == "side" and not position.to_given:
+        layout.assume(at, f"{item.id}: measured from the {position.side} end to its centre, along {axis}; "
+                      "the brief doesn't say to its centre or its near edge")  # fmt: skip
+    if entry.cut and _is_through(item):
+        layout.issue("unable", at + pointer("depth"),
+                     f"Forge cuts a blind hole into a cone's side, for now: give the hole into {host[0]} a depth")  # fmt: skip
+        return []
+    if place and place.angle is not None:
+        angles = [degrees(place.angle)]
+    else:
+        angles = [0.0]
+        layout.assume(at, f"{item.id}: at 0 degrees around the {axis} axis; any angle would do")
+    if place and place.pattern and PATTERN_SOLVE[place.pattern.kind].round:
+        count = place.pattern.counts.get("count")
+        if count is None:
+            layout.issue("fault", at + pointer("place", "pattern"), "say how many around")
+            return []
+        step_value = place.pattern.values.get("step")
+        step = degrees(step_value) if step_value is not None else 360.0 / count.n
+        angles = [angles[0] + step * k for k in range(count.n)]
+    reference = face.reference
+    half = face.length / 2
+    c, s = face.lean
+    frame = face.frame
+    # As round a side: its length round the cone, its width along it (up its slope, once leaned).
+    across_values = [*_item_values(item, *_outline_fields(item, (reference[0], axis), 0)),
+                     *layout.values_of(face.radius_sources)]  # fmt: skip
+    along_values = [*_item_values(item, *_outline_fields(item, (reference[0], axis), 1)),
+                    *_place_values(item, axis), *layout.values_of(face.length_sources)]  # fmt: skip
+    face_axes = (axis, axis)
+    if entry.adds:
+        up = _direction_of(frame.radial(1.0, 0.0))
+        assert up is not None
+        face_axes = (next(a for a in "xyz" if a not in (up[1], axis)), axis)
+        across_size, along_size = bbox(_outline(item, layout, face_axes))
+    else:
+        across_size = along_size = reach(_outline(item, layout, face_axes))
+    # Along the axis its foot reaches its width up and down the slope (measured from an end, to its edge so), and
+    # a little more where the side curves away under it, round it, at its narrowest there.
+    reach_along = along_size * c
+    along = _along(position, half, reach_along) if position else 0.0
+    if position is None:
+        layout.assume(at, f"{item.id}: halfway along the {axis} axis; the brief doesn't say where")
+    if 2 * reach_along > face.length + EPS:
+        layout.problem("question", at,
+                       f"{item.id} ({2 * along_size:g} mm) is longer than the side of {host[0]} it is on "
+                       f"({face.length:g} mm along it)", along_values)  # fmt: skip
+        return []
+    narrowest = min(face.radius_at(along - reach_along), face.radius_at(along + reach_along))
+    if across_size >= narrowest - EPS:
+        layout.problem("question", at,
+                       f"{item.id} ({2 * across_size:g} mm across) is as wide as the side of {host[0]} it is on, "
+                       f"there (\u00d8{2 * max(narrowest, 0.0):g} mm)", across_values)  # fmt: skip
+        return []
+    # Its foot is carried into the cone twice as far as the side falls away under its farthest reach, at its narrowest.
+    far = reach(_outline(item, layout, face_axes)) if entry.adds else across_size
+    foot = reach_along + 2 * cone_sag(face, narrowest, far) * abs(s)
+    if abs(along) + foot > half + EPS:
+        layout.problem("question", at, f"{item.id} runs past the end of {host[0]}'s side", along_values)
+        return []
+    if entry.cut:
+        _check_depth(item, _outline(item, layout, ("x", "y")),
+                     lambda mouth: face.material_under(mouth, (0.0, along)), layout, at, face.depth_sources)  # fmt: skip
+    if len(angles) > 1:
+        _check_cone_overlaps(item, face, angles, along, across_size, layout, at, first)
+    material = face.material_under((disc(across_size),), (0.0, along))
+    out: list[_Copy] = []
+    for angle in angles:
+        here = face.frame_at(_turn(angle), along)
+        if entry.cut:
+            out.append(_Copy(Instance(item.id, 0, here.origin, here.n, host, None), material, face.depth_sources))
+            continue
+        below = 90.0 * math.floor(angle / 90.0 + EPS)
+        upright = face.frame_at(_turn(below), along)
+        radial = frame.radial(*_turn(below))
+        motion: Rigid | None = None
+        if abs(s) > EPS:  # leaned with the slope, about its way round, from the radius to the normal
+            motion = Rigid.turn_about(upright.origin, upright.u, c, s)
+        if abs(angle - below) > EPS:
+            turned = Rigid.turn_about(frame.origin, frame.n, *_turn(angle - below))
+            motion = turned if motion is None else turned.after(motion)
+        up = _direction_of(radial)
+        assert up is not None
+        axes = (next(a for a in "xyz" if a not in (up[1], axis)), axis)
+        out.append(_Copy(Instance(item.id, 0, upright.origin, radial, host, axes), material, face.depth_sources,
+                         motion=motion))  # fmt: skip
+    return out
+
+
+def _check_cone_overlaps(item: Item, face: ConeFace, angles: Sequence[float], along: float, across: float,
+                         layout: Layout, at: str, first: int) -> None:  # fmt: skip
+    """No two copies round a cone overlap where they come closest: standing ones at their feet, holes where they reach
+    deepest (they converge towards its axis)."""
+    entry = SOLVE[item.kind]
+    radius = face.radius_at(along)
+    if entry.cut:
+        end = end_of(item)
+        depth = mm(end.depth) if isinstance(end, Blind) else 0.0
+        radius -= depth * face.lean[0]
+        if radius <= EPS:
+            return
+    for j in range(len(angles)):
+        for i in range(j):
+            turned = math.radians(angles[j] - angles[i])
+            chord = 2 * radius * abs(fs.sin(turned / 2))
+            if chord < 2 * across - EPS:
+                layout.problem("question", at, f"copies {first + i + 1} and {first + j + 1} of {item.id} overlap",
+                               [*_item_values(item, *_outline_fields(item)), *_place_values(item)])  # fmt: skip
+                return
 
 
 def _check_ball_overlaps(item: Item, face: BallFace, angles: Sequence[float], latitude: float, far: float,
@@ -2015,7 +2175,7 @@ def _names_fit(item: Item, on: On, face: Face, layout: Layout, at: str) -> bool:
                      f"face {on.face} of {on.item} is turned with it: name its axes by its own, u and v; the part's "
                      "x, y and z don't run along them")  # fmt: skip
         return False
-    if isinstance(face, SideFace) and spelled == "uv":
+    if isinstance(face, (SideFace, ConeFace)) and spelled == "uv":
         layout.issue("fault", at + where,
                      f"u and v name a flat face's own axes; round the {on.face} of {on.item}, place along its axis "
                      f"({face.axis}) and by angle")  # fmt: skip
@@ -2462,8 +2622,8 @@ def _place_on_hosts(item: Item, placed_item: Item, on: On, hosts: list[tuple[int
                            copy.depth_sources)  # fmt: skip
         if isinstance(_host_face(inst, layout), SideFace):
             _round_footed(item, layout, (item.id, placed.index), up)
-        elif isinstance(_host_face(inst, layout), BallFace):
-            _ball_footed(item, layout, (item.id, placed.index))
+        elif isinstance(_host_face(inst, layout), (BallFace, ConeFace)):
+            _curved_footed(item, layout, (item.id, placed.index), _host_face(inst, layout))
         if motion is not None:
             _moved_faces((item.id, placed.index), motion, layout, item)
             placed = _moved_instance(placed, motion)
@@ -2570,11 +2730,18 @@ def _ball_copies(item: Item, face: Face, host: tuple[str, int, str], host_count:
     return _ball_instances(item, face, host, layout, at, first)
 
 
+def _cone_copies(item: Item, face: Face, host: tuple[str, int, str], host_count: int, layout: Layout, at: str,
+                 first: int) -> list[_Copy]:  # fmt: skip
+    assert isinstance(face, ConeFace)
+    return _cone_instances(item, face, host, layout, at, first)
+
+
 #: Each kind of face an item can be put on, by its class.
 _HOSTS: Mapping[type, _Host] = {
     FlatFace: _Host(_flat_copies, _flat_numbered),
     SideFace: _Host(_side_copies, _nothing_more),
     BallFace: _Host(_ball_copies, _nothing_more),
+    ConeFace: _Host(_cone_copies, _nothing_more),
 }
 
 
@@ -2585,11 +2752,12 @@ def _host_face(inst: Instance, layout: Layout) -> Face | None:
     return layout.faces.get((item_id, index), {}).get(name)
 
 
-def _ball_footed(item: Item, layout: Layout, key: tuple[str, int]) -> None:
-    """A boss or a post standing on a ball's surface (item 3b's second step): its faces take nothing, for now."""
+def _curved_footed(item: Item, layout: Layout, key: tuple[str, int], face: Face | None) -> None:
+    """A boss or a post standing on a ball's surface or a cone's side (item 3b's second and third steps): its faces
+    take nothing, for now."""
+    where = "a cone's side" if isinstance(face, ConeFace) else "a ball's surface"
     for name in list(layout.faces.get(key, {})):
-        layout.close(key, name, "unable",
-                     f"{item.id} stands on a ball's surface: its faces take nothing, for now")  # fmt: skip
+        layout.close(key, name, "unable", f"{item.id} stands on {where}: its faces take nothing, for now")
 
 
 def _round_footed(item: Item, layout: Layout, key: tuple[str, int], up: str) -> None:

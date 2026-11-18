@@ -25,11 +25,11 @@ from forge_eval.truth import Copy
 
 class Boss(DrawKind):
     key = "boss"
-    on_ball = True
-    ball_weight = 3
-    ball_rank = 2
+    on_curved = True
+    curved_weight = 3
+    curved_rank = 2
 
-    def ball_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
+    def curved_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
         sizes = {"diameter": _q(rng.uniform(1.5, max(1.6, radius / 2.5))),
                  "height": _q(rng.uniform(1.0, max(1.1, min(10.0, radius))))}  # fmt: skip
         return sizes, None, sizes["diameter"] / 2

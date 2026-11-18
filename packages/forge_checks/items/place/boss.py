@@ -14,7 +14,7 @@ from forge_checks.place import Face, Material, Vec, _Layout, _mm, _rod_body
 
 class Boss(PlaceKind):
     key = "boss"
-    goes_on_ball = True
+    goes_on_curved = True
     leans = True
 
     rims: ClassVar[Mapping[str, Edges]] = {"top": (("+end", "side"),)}

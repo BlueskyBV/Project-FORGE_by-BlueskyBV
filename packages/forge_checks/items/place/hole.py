@@ -24,7 +24,7 @@ from forge_checks.place import (
 
 class Hole(PlaceKind):
     key = "hole"
-    goes_on_ball = True
+    goes_on_curved = True
     leans = True
 
     @property

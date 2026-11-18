@@ -1,8 +1,8 @@
 # Forge V2, stage 4b.0c: geometry, on the same numbers everywhere
 
-Status (17 November 2026): items 0, 14, 1a, 2a and 3a done, and 3b's first
-two steps (a standing item round a side at any angle; a hole, a boss or a
-post on a ball's or a dome's surface, schema 1.6); 1b's first and second
+Status (18 November 2026): items 0, 14, 1a, 2a and 3a done, and 3b's first
+three steps (a standing item round a side at any angle; a hole, a boss or a
+post on a ball's or a dome's surface, schema 1.6; on a cone's side); 1b's first and second
 moves done (items turned in their face, schema 1.2; holes, bosses and posts
 leaning on it, schema 1.3); its third move's first step done (positions
 along a face's own axes and a turned item's far face, schema 1.4), its
@@ -11,7 +11,7 @@ neither a schema minor, and its third (a body leans, schema 1.5): its
 schema 2.0 made with item 2b (revision 12). Step 5 (revision 13: a turned
 box hollowed, round sides on a turned item's faces, a leaning item's edges,
 a thread on a leaning rod) done but for what waits for item 2b and 4b.0d1;
-3b's third step (a cone's side) next, then the rest of 3b, then 2b (a
+3b's fourth step (a round-ended tab's end) next, then the torus, then 2b (a
 leaning item's faces with it).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
@@ -970,6 +970,44 @@ side, a boss's joint with the ball rounded, a hole's mouth bevelled, a
 post's edges rounded; turned half a degree more fails; the second kernel
 agrees); `tests/test_v2_plan_roundangle.py` gains a joint round an angled
 boss.
+
+**3b's third step, as built (revision 14).** A hole, a boss or a post goes
+on a cone's tapered side (its `side` face, closed before), placed as round
+a round side: a position along the cone's axis from its ends or its middle
+and a `place.angle` round it, and a circle or an arc of them round it; no
+schema change. Its direction is the side's normal, leaned from the radius
+towards the narrower end by the half angle. A hole goes in along it; a boss
+or a post is placed as at the frame axis at or below its angle, standing
+out along the radius there, then leaned with the slope about the line
+through its point round the cone, then turned about the axis by the rest
+(3b's first step's turn, with the lean before it). Its foot is carried in
+twice as far as the side falls away under its farthest reach where the
+cone is narrowest under it. **The solver** keeps the side as a `ConeFace`
+(its axis, start, length and radii at its ends, which end stands on a face;
+the least material under a mouth, from points all round its rim, the cone
+being convex: `exit`) and places through `_HOSTS`, saying what runs past an
+end, is as wide as the cone there, is too deep, or overlaps; **the judge**
+keeps it as a `RoundCone`, its copies leaned and turned so (`Motion.about`),
+and compares the two; **the planner** builds what stands on it from as deep
+as its foot goes, less the cone as the part has it seen from where the item
+is placed before it is moved (turned about its axis a cone is itself, so
+only the lean matters to the oracle's `cone_seen_upright`); **the oracle**
+keeps a standing item outside that cone, and bounds a joint's or a mouth's
+rounding in the band between the cones a reach out from the side and in
+from it; **the generator** puts holes, bosses and posts on cones' sides now
+and then (`_onto_cone`, a stream of its own), alone or in circles of two to
+six, halfway along, offset or from an end. A hole into a cone's side is
+blind, for now; its faces take nothing yet. With it, the oracle's sphere of
+directions round a point always counts the two circles that make a corner
+as through it, however nearly they run together (two faces' normals a hair
+apart made a corner the cross product put just off both, and none counted:
+an `IndexError`, met on a circle of holes round a cone). Tests:
+`tests/test_v2_plan_coneside.py` (placed round it, square to the cone; every
+program's layout agrees; what isn't built yet or doesn't fit is said; built
+and judged: sixteen parts, a boss, a post, holes, a circle, an arc, on cones
+standing, pointing down, lying along x, on a turned block's side, widening,
+coming to a point, a joint, a rim and a mouth rounded; turned half a degree
+more fails; the second kernel agrees).
 
 ### 3.5 Item 2: depth by geometry
 
