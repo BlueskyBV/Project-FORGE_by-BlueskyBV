@@ -12,7 +12,11 @@ how deep that is, on what is made before the cut, built:
    it: each solid of what is left lies across a stretch of depths along the
    axis, exactly (its bounds on the axis, from its own surfaces); where no
    stretch is, the mouth is out of the part all across. Where the stretches
-   that begin at its face end is where it first comes out.
+   that begin at its face end is where it first comes out. Past there, the
+   air under all its mouth is to be at least twice the planner's carry
+   deep (0.1 mm): its tool is carried on into it, so that its end touches
+   nothing (V2-stage4.md, 5.2; generated part 4944: a hole's end touching
+   a flange's underside at a point, OpenCascade left a face across it).
 3. Every copy must come out at the same depth (one depth is recorded); that
    depth is written into the draft as the cut's ``reaches``, which the
    person confirms with the rest, the solver and the planner build to, and
@@ -31,6 +35,7 @@ from typing import Any
 
 from forge_numeric import scalar as fs
 from forge_plan.planner import _plan
+from forge_plan.tools import CARRY
 from forge_spec.draft import Item, PartSpec, read_draft
 from forge_spec.ends import ThroughNext, end_of
 from forge_spec.geometry import FlatFace
@@ -175,6 +180,12 @@ def _comes_out(made: Any, item: Item, instance: Instance, layout: Layout) -> flo
             raise _UnresolvedError("the preview couldn't take its mouth in common with what is made before it")
         stretches = sorted(_along(piece, instance.origin, n) for piece in solids(common.Shape())
                            if volume(piece) > _SOLID)  # fmt: skip
+    return _first_out(stretches, far)
+
+
+def _first_out(stretches: Sequence[tuple[float, float]], far: float) -> float:
+    """Where the stretches of material along a cut (each its depths, in order) that begin at its face end, ``far`` past
+    all of them: and that the air past there is at least twice :data:`CARRY` deep, its tool carried on into it."""
     if not stretches or stretches[0][0] > _MEET:
         raise _UnresolvedError("there is no material under its mouth")
     end = stretches[0][1]
@@ -184,6 +195,10 @@ def _comes_out(made: Any, item: Item, instance: Instance, layout: Layout) -> flo
         end = max(end, stop)
     if end >= far - _PAST / 2:
         raise _UnresolvedError("it doesn't come out of what is made before it")
+    room = min([start for start, _ in stretches if start > end + _MEET] or [far]) - end
+    if room < 2 * CARRY:
+        raise _UnresolvedError(f"where it first comes out, {end:.6g} mm in, there is only {room:.3g} mm of air past it "
+                               f"under its mouth: Forge carries its end on into {2 * CARRY:g} mm of it")  # fmt: skip
     return end
 
 

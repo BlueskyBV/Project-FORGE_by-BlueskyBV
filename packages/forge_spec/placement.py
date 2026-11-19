@@ -3290,13 +3290,17 @@ def _curved_footed(item: Item, layout: Layout, key: tuple[str, int], face: Face 
 
 
 def _round_footed(item: Item, layout: Layout, key: tuple[str, int], up: str) -> None:
-    """A feature standing round a side: only its far face takes anything, for now.
+    """A feature standing round a side: its far face and its flat sides take things (place.md, "Round a side").
 
-    Its other faces end where its foot follows the curve (docs/definitions/frame.md).
-    Its box stays the box from its point, as its height is measured.
+    Its box stays the box from its point, as its height is measured, and its
+    flat sides are that box's: from its point out, wholly clear of the side
+    it stands on, where its foot follows the curve below them
+    (docs/definitions/frame.md). Its other faces (a boss's round side) take
+    nothing, for now.
     """
     far = SOLVE[item.kind].far_face(up)
-    for name in list(layout.faces.get(key, {})):
-        if name != far:
+    for name, face in list(layout.faces.get(key, {}).items()):
+        if name != far and not (isinstance(face, FlatFace) and up[1] in face.axes):
             layout.close(key, name, "unable",
-                         f"{item.id} stands round a side: only its far face takes anything, for now")  # fmt: skip
+                         f"{item.id} stands round a side: only its far face and its flat sides take anything, "
+                         "for now")  # fmt: skip

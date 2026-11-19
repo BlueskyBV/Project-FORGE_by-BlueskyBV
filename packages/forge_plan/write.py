@@ -281,6 +281,28 @@ class Chain:
     #: are clear of what is on it (:mod:`forge_plan.seams`): the turn (a ``forge_spec.frames.Rigid``), by its copy.
     #: What is on it is cut by its ball or cone turned alike, and a ball's hollow's inner ball.
     seams: dict[tuple[str, int], Any] = field(default_factory=dict)
+    #: While a hole's construction that turns its round tools is written (V2-stage4.md, 5.7): each cylinder or cone it
+    #: makes is turned a quarter turn about its own axis, the same points with its seam elsewhere.
+    turning: bool = False
+    #: Each round tool so turned, by its step: what takes it as an input takes the turned one (its names its own).
+    turned: dict[str, str] = field(default_factory=dict)
+
+    def turned_round(self, solid: str, base: Sequence[float], axis: Sequence[float], *, item: str) -> str:
+        """A cylinder's or a cone's step, turned a quarter turn about its own axis while :attr:`turning` (5.7); its
+        own id, which names its faces, either way."""
+        if not self.turning:
+            return solid
+        from forge_numeric import scalar as fs
+        from forge_spec.frames import Rigid
+
+        from .moved import transform_params
+
+        size = fs.hypot(axis[0], axis[1], axis[2])
+        way = (axis[0] / size, axis[1] / size, axis[2] / size)
+        motion = Rigid.turn_about((base[0], base[1], base[2]), way, 0.0, 1.0)
+        self.turned[solid] = self.step(f"{solid}.turned", "transform", transform_params(motion), item=item,
+                                       inputs=(solid,))  # fmt: skip
+        return solid
 
     def seamed(self, solid: str, key: tuple[str, int], *, item: str) -> str:
         """A ball's or a cone's step, turned as the one ``key`` is made (:attr:`seams`), or as it is."""
@@ -299,7 +321,7 @@ class Chain:
         written: dict[str, Any] = {"id": step_id, "op": op, "params": dict(params),
                                    "for_items": [item]}  # fmt: skip
         if inputs:
-            written["inputs"] = list(inputs)
+            written["inputs"] = [self.turned.get(i, i) for i in inputs]
         self.steps.append(written)
         self.owners[step_id] = self.planning or item
         return step_id
@@ -322,15 +344,17 @@ class Chain:
             raise PlanError(
                 f"a cylinder {diameter:g} mm across and {height:g} mm long", item=item
             )
-        return self.step(step_id, "cylinder", {
+        made = self.step(step_id, "cylinder", {
             "diameter": length(diameter), "height": length(height), "origin": point(base),
             "axis": direction(axis)}, item=item)  # fmt: skip
+        return self.turned_round(made, base, axis, item=item)
 
     def cone(self, step_id: str, base: Sequence[float], axis: Sequence[float], bottom: float,
              top: float, height: float, *, item: str) -> str:  # fmt: skip
-        return self.step(step_id, "cone", {
+        made = self.step(step_id, "cone", {
             "bottom_diameter": length(bottom), "top_diameter": length(top), "height": length(height),
             "origin": point(base), "axis": direction(axis)}, item=item)  # fmt: skip
+        return self.turned_round(made, base, axis, item=item)
 
     def sphere(
         self, step_id: str, centre: Sequence[float], diameter: float, *, item: str

@@ -9,7 +9,9 @@ face"; V2-stage4b-0c.md, 3.5, item 2b's second step; schema 1.8).
   a solid box right through, a hollow box's top wall only, on through a
   boss made before under it, out into a pocket cut from the far side, a
   pocket on through a boss, a row of two; copies that come out at
-  different depths are said, and given none.
+  different depths are said, and given none; and past where it comes out,
+  0.1 mm of air under all its mouth, or none found (its end is carried
+  into it).
 - **The spec can't be confirmed without it,** and a body made after it in
   its way is asked about.
 - **What is built is what the preview found.** Each part built by the
@@ -177,6 +179,15 @@ class ThePreviewFindsHowDeep(unittest.TestCase):
         resolved = resolve_draft(_draft(make))
         self.assertEqual(_reaches(resolved.draft), [None])
         self.assertTrue(any("different depths" in why for _, why in resolved.notes), resolved.notes)
+
+    def test_past_where_it_comes_out_air_to_carry_its_end_into(self) -> None:
+        from forge_occ.resolve import _first_out, _UnresolvedError
+
+        # The stretches of material along it: out at 10 mm, in again 0.2 mm on, found; 0.06 mm on, too little air.
+        self.assertEqual(_first_out([(0.0, 6.0), (6.0, 10.0), (10.2, 14.0)], 30.0), 10.0)
+        self.assertEqual(_first_out([(0.0, 10.0)], 30.0), 10.0)
+        with self.assertRaisesRegex(_UnresolvedError, "only 0.06 mm of air past it"):
+            _first_out([(0.0, 10.0), (10.06, 14.0)], 30.0)
 
 
 class TheSpecWaitsForIt(unittest.TestCase):

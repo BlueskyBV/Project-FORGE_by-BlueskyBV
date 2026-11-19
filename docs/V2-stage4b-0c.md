@@ -1604,6 +1604,83 @@ rims now faces of the part): passed, its mutant caught. Generator digests
 on seeds 0-149, old against new: only 86 differs, and the impossible parts
 58 and 63.
 
+**And the flat sides of what stands round a side (revision 16, with item
+3b).** What stood round a rod's side took things only on its far face. Its
+flat sides now do too (place.md, "On a round side"): its box's, from its
+point out, as its height is measured, so they lie wholly clear of the side
+where its foot follows the curve below them; each has its size across it
+under it, a cut right through coming out on the side across (a lug's cross
+hole). **The solver** (`_round_footed`) and **the judge** close only its
+other faces (a boss's round side). **The generator** keeps a post's flat
+sides round a rod (`_Flat.footed`), oriented as it is turned, and cuts
+square into one now and then from a stream of its own
+(`_onto_footed_side`, "forge-eval footed sides", 0.5: blind or right
+through, not yet through the next face or everything, which OpenCascade
+didn't cut cleanly in its first draws). Tests:
+`tests/test_v2_plan_roundsides.py` (holes across a post and along the rod
+through it, at 0, 30 and 200 degrees, blind and right through, one through
+a tab's broad face: where every program puts them, built and judged, the
+second kernel agreeing; a boss's round side said; the generator's own
+shape, built and graded). The exit harness's per-seed proof on 25, 72 and
+77 (the first 150's draws it changed): each passed, its mutant caught (77
+first graded wrong: the generator had a side's up axis signed the wrong
+way, fixed). Generator digests on seeds 0-149, old against new: 25, 72
+and 77 differ, and the impossible parts 13, 14, 19, 20, 33, 57 and 122.
+
+**What the exit pair on 5e162e1 found, fixed (revision 16).** The exit
+pair on 5e162e1 against main at 25418c6 (5,000 seeds) found about twenty
+parts held, graded wrong, unable or in error on both sides alike: brought
+in with 2b's third step and the seams (b_uv23, b_uv24), whose own exit
+pairs had been cancelled for later ones. Three kinds fixed here. **A blind
+hole into a narrow cone's side** (658, 948, 1549, 2446, 3935, 4460, 4524):
+its depth was checked between the plane at its mouth and its floor, and
+round a cone a few millimetres across the side falls away from that plane
+too fast for the part to show it there; **the check compiler** now
+measures the floor from the cone's fitted axis where the hole's own axis
+meets it (`_floor`: the hole runs square to the side, in the plane through
+the cone's axis), less how far its mouth is from there, as round a rod's
+side. **A hole through the next face of a ball coming out of a dome's flat
+face** (816, 1202, 4163): **the generator** didn't take the face where it
+came out, so a boss stood there after, and its foot's carry into the dome
+filled the hole's end in its own shape and not in the built one; it now
+takes every flat face such a hole crosses, as one through everything did
+(`_taken_where_it_crosses`). **One coming out at a glancing slant** (2372:
+out of a dome's flat face 80 degrees from square, the preview and the
+judge 0.3 mm apart, a twentieth of a millimetre of where the face is made
+amplified six times): **the generator** draws one only where a mouth a
+tenth of a millimetre wider is out all across within a quarter of a
+millimetre more. **One through the next face of a ball standing on a
+face, going on into what it stands on or past it into another item**
+(2157, 2515, 3614, 4059, 4237, 4398: OpenCascade left a shell open, or the
+faces built weren't the spec's, where it came out at a joint or a corner):
+**the generator** draws one only where it comes out of the ball itself,
+into the air beyond it. Each part, drawn again, passes the exit harness
+with its mutant caught (2442 and 154 too, drawn again by these). **Two
+holes OpenCascade refused every way** (4599, a hole through the next face
+of a dome, out of its flat face at its middle; 2231, one from the far face
+of a post standing round a rod's side, out into another hole's bore): its
+subtract warned of each, flush and carried alike, where a tenth of a
+millimetre's offset or half a degree's latitude built: where the tools'
+seams fell. **The planner** now offers a hole one more construction, last
+(V2-stage4.md, 5.7): its definition's with each cylinder and cone turned a
+quarter turn about its own axis, the same points; both build so (2231
+with the hole it comes out into made by its definition), graded clean,
+kept as regressions (and, with what follows, carried past their
+ends, they build first). **And a hole's end touching a face at a
+point** (4944: through the next face from a cone's side, out of a
+flange's underside 42 degrees from square): with no air past its end
+shown by the boxes it wasn't carried there, and at the exact depth (the
+preview's, which the underside's plane gives to a tenth of a micrometre)
+OpenCascade left a face across the hole's end without a flag, however it
+was made (the judge's face accounting and topology held it; the
+generator's own shape, its rim asked every half degree, stops 7
+micrometres short and built). **The preview** now asks for 0.1 mm of air
+past where a cut through the next face first comes out, under all its
+mouth, or finds no depth; **the planner** carries such a cut's far end
+into it on that showing, carried first (V2-stage4.md, 5.2); **the
+generator** draws one only where its own shape has that air. Kept as a
+regression; it builds, graded clean.
+
 **What the exit pairs found, fixed (revision 16).** The exit pair on main
 with the fp fix (lean-1b2 against it, 5,000 seeds) passed 4,975 of its new
 parts; 2b's first step's pair against that main kept those and held two

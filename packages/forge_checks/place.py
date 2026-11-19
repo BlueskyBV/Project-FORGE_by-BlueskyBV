@@ -2813,13 +2813,15 @@ def _body(item: Item, layout: _Layout, index: int, host: tuple[str, int, str] | 
         if joined in layout.faces[key]:
             layout.close(key, joined, f"it is joined to {host[0]} by this face")
     if on_side:
+        # Its far face and its flat sides from its point out (its box's), clear of the side where its foot follows
+        # the curve below them; its other faces take nothing, for now.
         far = entry.far(up)
-        for name in list(layout.faces[key]):
-            if name != far:
+        for name, found in list(layout.faces[key].items()):
+            if name != far and not (isinstance(found, FlatFace) and up[1] in found.axes):
                 layout.close(
                     key,
                     name,
-                    "it stands round a side: only its far face takes anything, for now",
+                    "it stands round a side: only its far face and its flat sides take anything, for now",
                 )
     if on_ball:
         where = "a cone's side" if isinstance(face, RoundCone) else "a ball's surface"

@@ -507,12 +507,15 @@ class WhatStandsOrCutsFitsTheRoomItHas(unittest.TestCase):
             ],
         )
 
-    def test_the_rim_of_an_open_box_is_not_a_face_yet(self) -> None:
+    def test_the_rim_of_an_open_box_is_a_face(self) -> None:
+        # Its frame (shell.md, "The rim"): a hole in its wall, at a corner or along a side, placed; one reaching into
+        # its mouth runs off it.
         box = item("box", "block", length=a(60), width=a(40), height=a(30))
-        rim = hole(
-            "box", "+z", 2.5, depth=a(8), place={"x": at("+x", 2), "y": at("+y", 2)}
-        )
-        self.assertEqual(kinds(layout_of(box, shell("box", 4, "+z"), rim)), ["unable"])
+        for place, found in (({"x": at("+x", 2), "y": at("+y", 2)}, []), ({"x": at("+x", 2), "y": centred()}, []),
+                             ({"x": at("+x", 3.5), "y": centred()}, ["question"])):  # fmt: skip
+            with self.subTest(place=place):
+                rim = hole("box", "+z", 2.5, depth=a(8), place=place)
+                self.assertEqual(kinds(layout_of(box, shell("box", 4, "+z"), rim)), found)
 
     def test_one_host_copy_takes_every_partner(self) -> None:
         bosses = item("b", "boss", on=on("plate", "+z"), diameter=a(10), height=a(5),

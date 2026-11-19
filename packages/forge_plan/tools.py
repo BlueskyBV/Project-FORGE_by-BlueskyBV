@@ -24,6 +24,7 @@ from forge_spec.draft import (
     Item,
     PartSpec,
 )
+from forge_spec.ends import ThroughNext, end_of
 from forge_spec.geometry import (
     EPS,
     BallFace,
@@ -350,7 +351,11 @@ def carried_ways(
     """Whether a cut's tool may be carried into the air past its mouth, and past its far side (5.2), on the part made so far.
 
     On a turned item's face, or round the side of what stands on one: worked out as it is cut upright, each region then
-    moved onto the part with it, where the part made so far is (moved.py)."""
+    moved onto the part with it, where the part made so far is (moved.py). Past the far end of a cut through the next
+    face, the preview has shown the air on the part made before it (forge_occ.resolve): under all its mouth, at least
+    twice :data:`CARRY` deep past where it first comes out, or it found no depth."""
+    end = end_of(item)
+    shown = isinstance(end, ThroughNext) and end.reaches is not None
     if copy.frame is not None:
         assert copy.local is not None
         motion, upright = copy.frame, copy.local
@@ -359,7 +364,7 @@ def carried_ways(
         standing = (upright.host[0], upright.host[1])
         return (
             mouth is not None and clear_of(chain, motion.box(*mouth), but=standing),
-            far is not None and clear_of(chain, motion.box(*far), but=standing),
+            far is not None and (shown or clear_of(chain, motion.box(*far), but=standing)),
         )
     face = ctx.face(copy)
     host: tuple[str, int] | None
@@ -372,7 +377,7 @@ def carried_ways(
         host = (copy.host[0], copy.host[1])
     return (
         mouth is not None and clear_of(chain, mouth, but=host),
-        far is not None and clear_of(chain, far, but=host),
+        far is not None and (shown or clear_of(chain, far, but=host)),
     )
 
 

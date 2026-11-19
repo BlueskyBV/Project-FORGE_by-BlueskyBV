@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from forge_ir.v2 import DocumentV2
 from forge_spec.checks import SpecReport
 from forge_spec.draft import Choice, EdgeSet, Item, On, PartSpec, UpTo
+from forge_spec.ends import ThroughNext, end_of
 from forge_spec.geometry import FlatFace
 from forge_spec.lock import ConfirmedSpec
 from forge_spec.placement import Instance, Layout, placed_spec
@@ -246,9 +247,13 @@ def _item_constructions(ctx: Context, item: Item) -> tuple[Construction, ...]:
 
     A hole into a round side from outside has the carried construction first
     (5.2): its definition's tool touches the side along a line at its mouth,
-    which OpenCascade may refuse or cut wrong without a word. Where carrying
-    doesn't hold on the part made so far, its definition's is made instead
-    (:meth:`Plan.written`).
+    which OpenCascade may refuse or cut wrong without a word; and a cut
+    through the next face, whose definition's end touches the face it first
+    comes out of (at a point, out of a face at a slant: generated part 4944,
+    OpenCascade leaving a face across the hole's end without a word). Where
+    carrying doesn't hold on the part made so far, its definition's is made
+    instead (:meth:`Plan.written`). A hole's last is its definition's with
+    its round tools turned about their axes (5.7).
     """
     several = len(ctx.layout.instances.get(item.id, [])) > 1
     found = [_made(ctx, item, "flush", one_by_one=False, proof="4.2")]
@@ -274,10 +279,27 @@ def _item_constructions(ctx: Context, item: Item) -> tuple[Construction, ...]:
                     applies=other[2],
                 )
             )
-    if PLAN[item.kind].into_round_side(ctx, item):
-        # Carried first, the definition's after: each pair of all at once and one by one swapped.
+    if PLAN[item.kind].into_round_side(ctx, item) or isinstance(end_of(item), ThroughNext):
+        # Carried first, the definition's after: each pair of all at once and one by one swapped. Through the next face
+        # too: its definition's end touches the face it first comes out of, by what that means.
         found = [found[i ^ 1] for i in range(len(found))]
+    if PLAN[item.kind].goes_round_side:  # a hole: its definition's, its round tools turned about their axes, last
+        found.append(_turned(found[0] if found[0].name == "flush" else found[1]))
     return tuple(found)
+
+
+def _turned(made: Construction) -> Construction:
+    """A construction with every cylinder and cone it makes turned a quarter turn about its own axis (5.7): the same
+    tools, their seams elsewhere."""
+
+    def write(chain: Chain) -> None:
+        chain.turning = True
+        try:
+            made.write(chain)
+        finally:
+            chain.turning = False
+
+    return Construction(f"{made.name} turned", f"{made.proof}, 5.7", write, made.applies)
 
 
 def _rounding(ctx: Context, item: Item, part: str | None) -> Construction:

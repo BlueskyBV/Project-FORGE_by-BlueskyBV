@@ -5,7 +5,8 @@
   construction builds (their symmetric difference has no volume, and they
   have the same faces): one copy at a time (5.1), carried into the air
   (5.2), sunk into what it stands on (5.3), a dome cut (5.4), a block's
-  vertical edges rounded early (5.5).
+  vertical edges rounded early (5.5), a hole's round tools turned about
+  their axes (5.7).
 - **Roundings made otherwise** (5.5, 5.6): the same solid where nothing
   meets them; where roundings meet, judged (face accounting and every
   check) against the spec; a joint under an overhang, which OpenCascade's
@@ -17,9 +18,13 @@
   axis, a hollow that doesn't hold the hole's span.
 - **The build loop** tries the next construction where OpenCascade
   refuses one (or leaves the part in more than one solid), carried first
-  for a hole into a round side, searches the earlier items that meet a refused one, records
-  every refusal, ends with the refused item as the gap when every way is
-  refused, and stops at its bound. The flush hole that OpenCascade 7.9.3
+  for a hole into a round side and a cut through the next face (its end
+  past where it comes out shown air by the preview: 4944), a hole's round
+  tools turned last, searches
+  the earlier items that meet a refused one, records every refusal, ends
+  with the refused item as the gap when every way is refused, and stops at
+  its bound: two generated holes OpenCascade warned of flush, built turned
+  (2231, 4599). The flush hole that OpenCascade 7.9.3
   left in two solids (seed 10517) is cut right by 8.0.1; the fault is put
   back by hand to keep the after-check held to it.
 """
@@ -147,7 +152,7 @@ class EveryAlternativeMakesTheSameSolid(unittest.TestCase):
         for name, items in ROUND_SIDE_HOLES.items():
             found = plan(confirmed(items))
             with self.subTest(part=name):
-                self.assertEqual(found.applying({}, "h"), [0, 1])
+                self.assertEqual(found.applying({}, "h"), [0, 1, 2])
             self.assertGreaterEqual(self.check(name, found), 1)
 
     def test_vertical_edges_rounded_early(self) -> None:
@@ -396,7 +401,8 @@ class TheBuildLoop(unittest.TestCase):
         self.assertIsNone(built.result)
         assert built.gap is not None
         self.assertEqual(built.gap.item, "corners")
-        self.assertEqual(len(built.refusals), 4)
+        self.assertEqual([r.construction for r in built.refusals],
+                         ["flush", "carried", "flush one by one", "carried one by one", "flush turned"])  # fmt: skip
 
     def test_a_hole_into_a_round_side_is_carried_first(self) -> None:
         """5.2: from outside a round side, the definition's tool touches it along a line; carried goes first there."""
@@ -405,7 +411,7 @@ class TheBuildLoop(unittest.TestCase):
             outside = "out of" not in name
             with self.subTest(part=name):
                 self.assertEqual(
-                    names, ["carried", "flush"] if outside else ["flush", "carried"]
+                    names, (["carried", "flush"] if outside else ["flush", "carried"]) + ["flush turned"]
                 )
         items, _ = PARTS["plate with holes"]()
         self.assertEqual([c.name for c in plan(confirmed(items)).planned("corners").constructions][:2],
@@ -502,11 +508,11 @@ class TheBuildLoop(unittest.TestCase):
 
         found = _kept_plan(4935)
         names = [c.name for c in found.planned("i4").constructions]
-        self.assertEqual(names, ["carried", "flush"])
-        self.assertEqual(found.applying({}, "i4"), [1])
+        self.assertEqual(names, ["carried", "flush", "flush turned"])
+        self.assertEqual(found.applying({}, "i4"), [1, 2])
         written = found.written()
         self.assertEqual((written.made["i4"], written.made_by["i4"]), (1, "flush"))
-        self.assertIsNone(found.next_choice({}, "i4"))
+        self.assertEqual(found.next_choice({}, "i4"), 2)  # its round tools turned (5.7)
         with self.assertRaisesRegex(PlanError, "'carried' doesn't apply here"):
             found.written({"i4": 0})
         built = build_plan(found)
@@ -554,20 +560,114 @@ class TheBuildLoop(unittest.TestCase):
             build_plan(plan(confirmed(items)), most=0)
 
 
+@needs_occ
+class AHolesRoundToolsTurned(unittest.TestCase):
+    """5.7: a hole's last construction, its definition's with each cylinder and cone it makes turned a quarter turn
+    about its own axis (the same points, OpenCascade's seam elsewhere)."""
+
+    def test_its_steps(self) -> None:
+        items, _ = PARTS["plate with holes"]()
+        found = plan(confirmed(items))
+        names = [c.name for c in found.planned("corners").constructions]
+        self.assertEqual(names[-1], "flush turned")
+        steps = [step for component in found.written({"corners": len(names) - 1}).document.as_json()["components"]
+                 for step in component["steps"]]  # fmt: skip
+        by_id = {step["id"]: step for step in steps}
+        round_ = [step for step in steps if step["op"] in ("cylinder", "cone") and step["for_items"] == ["corners"]]
+        self.assertTrue(round_)
+        for step in round_:
+            turned = by_id[f"{step['id']}.turned"]
+            self.assertEqual((turned["op"], turned["inputs"]), ("transform", [step["id"]]))
+            self.assertAlmostEqual(turned["params"]["rotate_angle"]["magnitude"], 90.0, places=6)
+            axis = [c["magnitude"] for c in turned["params"]["rotate_axis"]["vector"]]
+            along = [c["magnitude"] for c in step["params"]["axis"]["vector"]]
+            self.assertAlmostEqual(abs(sum(p * q for p, q in zip(axis, along, strict=True))), 1.0, places=6)
+        takes = [step for step in steps if step.get("inputs") and step["id"].startswith("corners.cut")]
+        self.assertTrue(takes)
+        for step in takes:  # what takes a turned tool takes it turned, never as it was made
+            self.assertFalse(any(i in {s["id"] for s in round_} for i in step["inputs"]), step["inputs"])
+
+    def test_where_opencascade_warned_of_its_definitions(self) -> None:
+        """Generated parts 2231 and 4599 (tests/v2_regressions.py): a hole through the next face from a turned face,
+        and from a dome's surface, OpenCascade's subtract warning of its definition's (and, before its far end was
+        carried, of every other way); turned, it builds (2231's with the hole across the rod it comes out into made
+        by its definition too). Carried past its end (5.2), it builds first."""
+        from forge_occ.cache import StepCache
+        from forge_occ.planned import _Search
+
+        for seed, key, others in ((2231, "i5", {"i0": 1}), (4599, "i1", {})):
+            with self.subTest(seed=seed):
+                found = _kept_plan(seed, resolved=True)
+                names = [c.name for c in found.planned(key).constructions]
+                self.assertEqual(names, ["carried", "flush", "flush turned"])
+                _, refused = _Search(found, StepCache(), 64).build({**others, key: names.index("flush")})
+                self.assertEqual(refused, key)
+                result, refused = _Search(found, StepCache(), 64).build({**others, key: names.index("flush turned")})
+                self.assertIsNone(refused)
+                self.assertIsNotNone(result)
+                self.assertEqual(build_plan(found).made_by[key], "carried")
+
+
+@needs_occ
+class ACutThroughTheNextFaceCarriedFirst(unittest.TestCase):
+    """5.2, past its far end: the air there shown by the preview, so carried first, its end touching nothing."""
+
+    def test_generated_4944(self) -> None:
+        """A hole through the next face from a cone's side, out of a flange's underside at a slant: flush, its end
+        touched the underside at a point, and OpenCascade left a face across it without a flag."""
+        from forge_eval.generator import render
+        from forge_spec.placement import solve
+        from v2_exit4 import _spec
+        from v2_regressions import REGRESSIONS
+
+        found = _kept_plan(4944, resolved=True)
+        self.assertEqual([c.name for c in found.planned("i2").constructions], ["carried", "flush", "flush turned"])
+        spec = _spec(render(REGRESSIONS[4944][1]).items)
+        reaches = spec.item("i2").get("depth").reaches
+        copy = solve(spec).instances["i2"][0]
+        steps = {step["id"]: step for component in found.written().document.as_json()["components"]
+                 for step in component["steps"]}  # fmt: skip
+        bore = steps["i2.0.bore"]["params"]
+        start = [c["magnitude"] for c in bore["origin"]["vector"]]
+        axis = [c["magnitude"] for c in bore["axis"]["vector"]]
+        height = bore["height"]["magnitude"]
+        for k in range(3):  # its far end CARRY past where it first comes out
+            self.assertAlmostEqual(start[k] + height * axis[k], copy.origin[k] - (reaches + CARRY) * copy.normal[k],
+                                   places=6)  # fmt: skip
+        built = build_plan(found)
+        self.assertIsNone(built.gap, built.refusals)
+        self.assertEqual((built.made_by["i2"], built.refusals), ("carried", ()))
+
+    def test_a_countersunk_one_and_the_second_kernel(self) -> None:
+        """Generated part 18: a countersunk hole through the next face, carried first, its mouth's carried air a tool
+        of its own, all air: the exact part has no face of it, and the agreement says why."""
+        from forge_occ.agreement import agree
+
+        found = _kept_plan(18, resolved=True)
+        built = build_plan(found)
+        self.assertIsNone(built.gap, built.refusals)
+        self.assertEqual(built.made_by["i0"], "carried")
+        report = agree(found.document(built.choice), "part", exact=built.result)
+        self.assertTrue(report.holds, (report.disagreements, report.notes, report.names, report.topology))
+        self.assertTrue(any("countersink_air" in why for why in report.names["excused"]), report.names)
+
+
 def _plan_10517() -> Any:
     """Held-out seed 10517's plan: a tube with holes and bosses in its side (tests/v2_regressions.py)."""
     return _kept_plan(10517)
 
 
-def _kept_plan(seed: int) -> Any:
-    """A kept generated part's plan (tests/v2_regressions.py)."""
+def _kept_plan(seed: int, *, resolved: bool = False) -> Any:
+    """A kept generated part's plan (tests/v2_regressions.py); ``resolved``, as a run reads it, a cut through the next
+    face given how deep it goes by the preview first."""
+    import v2_detection
+    import v2_exit4
     from forge_eval.generator import render
     from forge_plan.planner import _plan
     from forge_spec.placement import solve
-    from v2_detection import _spec
     from v2_regressions import REGRESSIONS
 
-    spec = _spec(render(REGRESSIONS[seed][1]).items)
+    spec = (v2_exit4 if resolved else v2_detection)._spec(render(REGRESSIONS[seed][1]).items)
     return _plan(spec, solve(spec), digest=None)
 
 

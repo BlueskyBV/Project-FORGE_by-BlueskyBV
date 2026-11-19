@@ -48,8 +48,9 @@ Status: **draft, for your approval.**
   leaves open but for its rim (a ring round a cylinder's mouth, a frame
   round a block's: shell.md, "The rim"); and, for now, curved faces other than a round body's side
   (a cone's side, a ball's surface, a round-ended tab's end), and the faces
-  of an item standing round a side other than its far face (where its foot
-  follows the curve, their edges do too).
+  of an item standing round a side other than its far face and its flat
+  sides (which are its box's from its point out, clear of where its foot
+  follows the curve).
 
 ## Standing on a face
 

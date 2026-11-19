@@ -397,6 +397,10 @@ class _Flat:
     #: or inside it (step 5.5), oriented as above: where it is clear of its foot. A cut square to it, or what stands
     #: square on it clear of the face it leans on, goes on one, from a stream of its own (:func:`_onto_leaning_side`).
     leans: bool = False
+    #: A flat side of a post standing round a rod's side (place.md, "Round a side"): its box's, from its point out, clear
+    #: of the side where its foot follows the curve below it. A cut square into it goes on one, from a stream of its
+    #: own (:func:`_onto_footed_side`).
+    footed: bool = False
 
     @property
     def turned(self) -> bool:
@@ -1641,11 +1645,12 @@ def _footprint_points(half: tuple[float, float], corner: float, grow: float) -> 
 
 
 def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Array, e1: Array, e2: Array, n: Array,
-                        name: str, part: _Part, strict: bool, first: bool = False) -> float:  # fmt: skip
+                        name: str, part: _Part, strict: bool, first: bool = False, air: bool = True) -> float:  # fmt: skip
     """How deep a copy of a cut through everything goes (item 2b's first step): as far as all that is made before it
     reaches behind its mouth, and on past it by :data:`_PAST_ALL`, as the generator's own solids say. ``first``:
     through the next face (its second step), as far as where it first comes out of what is made before it: the plane
-    of the face it comes out on, held as below as far as there (not strict, as far as that where it is so).
+    of the face it comes out on, held as below as far as there (not strict, as far as that where it is so), with
+    twice :data:`REACH` of air past it under all its mouth (``air``: strict only).
 
     Strict, a :class:`DoesNotFitError` unless what it goes through lies all across it: asked at points along lines
     through it, within its outline and just outside it, each depth it is asked at is material all across or air all
@@ -1665,7 +1670,7 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
         if not first:
             return depth
         try:
-            return _through_everything(f, face, at, p, e1, e2, n, name, part, True, first)
+            return _through_everything(f, face, at, p, e1, e2, n, name, part, True, first, air=False)
         except DoesNotFitError:
             return depth
     (h1, h2), r = _footprint(f, face.axes)
@@ -1715,6 +1720,9 @@ def _through_everything(f: Feature, face: _Flat, at: tuple[float, float], p: Arr
                 # Out into a hollow: what stands in it after keeps clear of its way out, as the solver asks it to.
                 part.inside.setdefault(g.hollow, []).append((name, *_box_over(g, mine, _NEXT_KEPT)))
     reached = found[0][2] if first else depth
+    if first and air and bool(np.any(Truth({}, made).inside(np.array([q - (reached + k * REACH) * n for q in mouth[:len(within)]
+                                                              for k in (1, 2)])))):  # fmt: skip
+        raise DoesNotFitError(_TOO_LITTLE_AIR.format(f.id))
     # Its way, which nothing made after it that adds to the part reaches into; through the next face, on past where
     # it comes out as far as the solver asks after.
     (w1, w2), _ = _footprint(f, face.axes)
@@ -1817,6 +1825,8 @@ def _on_flat(
             past = True
             if sampled:  # how deep from its own shape, round its mouth (item 2b's third step)
                 depth, past = _comes_out_alike(f, [(p, n, e1, e2)], f.sizes["diameter"] / 2, part)
+                if strict and not past:
+                    raise DoesNotFitError(_TOO_LITTLE_AIR.format(f.id))
             else:
                 depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
                                              first=f.end is not None and f.end.next)
@@ -2351,6 +2361,19 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
             half = {third: rounded, side.axis: wide}
             part.flats[far] = _Flat(far, p + height * u, u.copy(), fa, "rect", (half[fa[0]], half[fa[1]]), height,
                                     None, oriented=oriented)  # fmt: skip
+            # Its flat sides, from its point out (place.md, "Round a side"), each its box's size across it under it.
+            ways = {third: e, side.axis: w, up[1]: u if up[0] == "+" else -u}  # each the way its + side faces
+            extent = {third: 2.0 * rounded, side.axis: 2.0 * wide, up[1]: height}
+            for axis in (third, side.axis):
+                for sign in (1.0, -1.0):
+                    name = ("+" if sign > 0 else "-") + axis
+                    b1, b2 = _flat_axes(name)
+                    key = (f.id, copy_index, name)
+                    part.flats[key] = _Flat(
+                        key, p + sign * extent[axis] / 2 * ways[axis] + height / 2 * u, sign * ways[axis] + 0.0,
+                        (b1, b2), "rect", (extent[b1] / 2, extent[b2] / 2), extent[axis],
+                        (f.id, copy_index, ("-" if sign > 0 else "+") + axis),
+                        oriented=None if oriented is None else (_t(ways[b1]), _t(ways[b2])), footed=True)  # fmt: skip
     side.taken += [(along, a, fs.hypot(rounded, wide), carry) for a in angles]
     side.standing.append((along - wide, along + wide))
     return made
@@ -2358,6 +2381,11 @@ def _standing_round(f: Feature, side: _Round, index: int, part: _Part, strict: b
 
 #: Round a hole's mouth, how many points the generator asks whether it is out of the part (item 2b's third step).
 _RIM_ASKED = 720
+
+
+#: Through the next face, past where it first comes out the air under all its mouth is twice REACH deep, or it isn't
+#: drawn: the planner carries its end on into it, and the preview asks that (V2-stage4.md, 5.2; generated part 4944).
+_TOO_LITTLE_AIR = "{} through the next face comes out where there is too little air past it"
 
 
 def _comes_out_alike(f: Feature, ways: Sequence[tuple[Array, Array, Array, Array]], radius: float,
@@ -2390,11 +2418,40 @@ def _comes_out_alike(f: Feature, ways: Sequence[tuple[Array, Array, Array, Array
         while high - low > 1e-9:
             middle = (low + high) / 2
             low, high = (low, middle) if clear(middle) else (middle, high)
+        # Where it comes out squarely enough: a mouth a tenth of a millimetre wider is out all across within a quarter
+        # of a millimetre more. Coming out of a face at a glancing slant, or into a hollow it barely fits, how far in it
+        # is out all across turns on a hair of where that face is, and every program may find it apart (generated part
+        # 2372: a hole through the next face of a ball, out of its flat face 80 degrees from square, 0.3 mm apart).
+        wide = np.array([p + (radius + 0.1) * (c * e1 + s * e2) for c, s in rim])
+        if bool(np.any(so_far.inside(wide - (high + 0.25) * out))):
+            raise DoesNotFitError(f"{f.id} comes out at a glancing slant, or where it barely fits")
         found.append((high, clear(high + REACH) and clear(high + 2 * REACH)))
     depths = [d for d, _ in found]
     if max(depths) - min(depths) > 1e-6:
         raise DoesNotFitError(f"{f.id}'s copies come out at different depths")
+    for p, out, _, _ in ways:  # where it crosses a flat face the generator keeps, it is taken there (as through all)
+        _taken_where_it_crosses(part, p, out, radius, depths[0])
     return round(depths[0], 6) + 0.0, all(past for _, past in found)
+
+
+def _taken_where_it_crosses(part: _Part, p: Array, out: Array, radius: float, depth: float) -> None:
+    """Where a hole from ``p`` in along ``-out``, ``depth`` deep, crosses a flat face the generator keeps, it is taken
+    there: what is put on that face after keeps clear of it (generated part 31, a counterbore at the middle of a dome's
+    flat face cut where a hole through everything from its surface had gone through it; 816, 1202 and 4163, a boss
+    standing on a dome's flat face where a hole through the next face from its surface had come out, its foot's
+    carry into the dome filling the hole's end)."""
+    for g in part.flats.values():
+        slope = float(fv.matmul(out, g.normal))
+        if abs(slope) < 1e-6:
+            continue
+        t = float(fv.matmul(p - g.centre, g.normal)) / slope
+        if not 0.0 < t < depth + REACH:
+            continue
+        spread = radius / abs(slope)
+        at = g.frame.plane(p - t * out)
+        middle = g.coords()
+        if abs(at[0] - middle[0]) <= g.half[0] + spread and abs(at[1] - middle[1]) <= g.half[1] + spread:
+            g.taken.append(_Foot(at, (spread, spread), 0.0))
 
 
 def _everything_round(f: Feature, ways: Sequence[tuple[Array, Array, Array, Array]], radius: float, part: _Part,
@@ -2440,20 +2497,8 @@ def _everything_round(f: Feature, ways: Sequence[tuple[Array, Array, Array, Arra
         ends = np.array([p, p - (depth + _NEXT_KEPT) * out])
         part.ways.append((f"{f.id} copy {k}", ends.min(axis=0) - radius - GAP, ends.max(axis=0) + radius + GAP))
         # Where it crosses a flat face the generator keeps, it is taken there (what is put on that face after keeps
-        # clear of it, as of one through everything coming out of it: generated part 31, a counterbore at the middle
-        # of a dome's flat face cut where a hole through everything from its surface had gone through it).
-        for g in part.flats.values():
-            slope = float(fv.matmul(out, g.normal))
-            if abs(slope) < 1e-6:
-                continue
-            t = float(fv.matmul(p - g.centre, g.normal)) / slope
-            if not 0.0 < t < depth:
-                continue
-            spread = radius / abs(slope)
-            at = g.frame.plane(p - t * out)
-            middle = g.coords()
-            if abs(at[0] - middle[0]) <= g.half[0] + spread and abs(at[1] - middle[1]) <= g.half[1] + spread:
-                g.taken.append(_Foot(at, (spread, spread), 0.0))
+        # clear of it, as of one through everything coming out of it).
+        _taken_where_it_crosses(part, p, out, radius, depth - REACH)
     return found
 
 
@@ -2493,6 +2538,14 @@ def _on_ball(f: Feature, ball: _Ball, index: int, part: _Part, strict: bool) -> 
     if nxt:
         found = _comes_out_alike(f, [(ball.centre + r * ball.ways(a, latitude)[0], *ball.ways(a, latitude)) for a in angles],
                                  h1, part)  # fmt: skip
+        if strict and not found[1]:
+            raise DoesNotFitError(_TOO_LITTLE_AIR.format(f.id))
+        if strict and found[0] > r + math.sqrt(max(r * r - h1 * h1, 0.0)) + 1e-6:
+            # Out of the ball itself, into the air beyond it, or not drawn: on into what it stands on, or another item
+            # past it, it comes out at a joint or a corner, which OpenCascade may not cut cleanly, nor every program
+            # read alike (generated parts 2515, 3614, 4237, 4398, 4599: OpenCascade left a shell open, or the faces
+            # built weren't the spec's).
+            raise DoesNotFitError(f"{f.id} through the next face comes out past the ball, not of it")
     alls = (_everything_round(f, [(ball.centre + r * ball.ways(a, latitude)[0], *ball.ways(a, latitude)) for a in angles],
                               h1, part, strict) if everything else None)  # fmt: skip
     if strict:
@@ -2597,6 +2650,8 @@ def _on_cone(f: Feature, cone: _Cone, index: int, part: _Part, strict: bool) -> 
     found: tuple[float, bool] | None = None
     if nxt:
         found = _comes_out_alike(f, [cone.ways(a, along) for a in angles], h1, part)
+        if strict and not found[1]:
+            raise DoesNotFitError(_TOO_LITTLE_AIR.format(f.id))
     alls = _everything_round(f, [cone.ways(a, along) for a in angles], h1, part, strict) if everything else None
     if strict:
         foot = reach_along + carry * abs(ls)
@@ -5049,11 +5104,13 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             _everything_now_and_then(random.Random(f"forge-eval through everything round {seed} {k}"), len(plan) - 1,
                                      plan, part)  # fmt: skip
             continue
+        if _onto_footed_side(random.Random(f"forge-eval footed sides {seed} {k}"), k, plan, part):
+            continue  # blind or right through: through the next face or everything waits (generated part 2231)
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
-            hosts = [key for key, face in part.flats.items() if key[1] == 0 and not face.turned] + [
+            hosts = [key for key, face in part.flats.items() if key[1] == 0 and not face.turned and not face.footed] + [
                 key for key, side in part.rounds.items() if key[1] == 0 and not side.leans
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
@@ -5437,7 +5494,7 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
     face"): placed along the face's own axes, u and v, turned with it, and now and then turned or leaning there too.
     Whether one was added to the plan."""
     faces = [key for key, face in part.flats.items() if key[1] == 0 and face.turned and face.slant is None
-             and not face.leans]  # fmt: skip
+             and not face.leans and not face.footed]  # fmt: skip
     if not faces or rng.random() >= _ON_TURNED:
         return False
     key = rng.choice(faces)
@@ -5504,6 +5561,31 @@ def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _P
         else:
             candidate = replace(_feature(rng, k, key[0], part.flats[key], standing_ok
                                          and _draw(part.kinds[key[0]]).hosts_standing), own_axes=part.flats[key].axes)
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+#: How often, where the part has a flat side of a post standing round a rod's side, a hole, a pocket or a slot is cut
+#: square into one (place.md, "Round a side"), from a stream of its own.
+_ON_FOOTED_SIDE = 0.5
+
+
+def _onto_footed_side(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+    """Now and then, from a stream of its own, a hole, a pocket or a slot cut square into a flat side of a post
+    standing round a rod's side (place.md, "Round a side"): placed along the face's own axes, u and v, blind or right
+    through it. Whether one was added to the plan."""
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.footed]
+    if not faces or rng.random() >= _ON_FOOTED_SIDE:
+        return False
+    key = rng.choice(faces)
+    face = part.flats[key]
+    for _ in range(10):
+        candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
         try:
             render((*plan, candidate))
         except DoesNotFitError:

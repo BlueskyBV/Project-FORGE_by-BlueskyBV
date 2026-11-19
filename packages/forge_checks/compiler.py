@@ -130,6 +130,7 @@ from .place import (
     RoundSide,
     _entry,
     _named_by,
+    direction_of,
     in_axes,
     section_of,
     unit,
@@ -996,6 +997,26 @@ class _Compiler:
             return
         if host_face is None:  # pragma: no cover - a cut is always on a face
             return
+        if isinstance(host_face, RoundCone):
+            # From the cone's fitted axis where the cut's own axis meets it (it runs square to the side, in the plane
+            # through the cone's axis): the floor's distance from there, less its mouth's. Round a narrow cone the side
+            # falls away from the plane at the mouth too fast for the part to show it (generated parts 658, 1549).
+            frame = host_face.placed_frame
+            a, n = _v(frame.origin), _v(frame.n)
+            u = -_v(copy.direction)
+            b, w0 = float(fv.dot(u, n)), _v(copy.point) - a
+            dd, e = float(fv.dot(u, w0)), float(fv.dot(n, w0))
+            if 1.0 - b * b > 1e-9:
+                s, t = (b * e - dd) / (1.0 - b * b), (e - b * dd) / (1.0 - b * b)
+                cone = Cone(_t(a + t * n), _t(n), (host_face.start_radius, host_face.end_radius),
+                            (-t, host_face.length - t), False)  # fmt: skip
+                if not self.seen(floor):
+                    self.skip(item, name, "its floor isn't on the part's surface")
+                    return
+                self.check(item, name, "depth", depth, tolerance, Position(_t(u), ConeRim(cone, 0.0, 0.0), floor, -s),
+                           copy.index)  # fmt: skip
+                self.size(item, depth)
+                return
         mouth = Plane(copy.point, copy.direction, reach + 4.0)
         if not (self.seen(mouth) and self.seen(floor)):
             self.skip(
@@ -1298,10 +1319,14 @@ class _Compiler:
             )
         if face.outline.shape == "rect":
             seam = self._seam(host, axis)
+            foot = self._foot_edge(host)
             edges: list[Ref | str] = []
             for sign in (-1.0, 1.0):
                 if seam is not None and seam[0] == sign:
                     edges.append(seam[1])
+                    continue
+                if foot == (axis, sign):  # where its foot follows the rod's curve below it: no edge of its own
+                    edges.append(_unseen_edge(axis, sign))
                     continue
                 rounded = self.round_edge(face, axis, sign)
                 if rounded is not None:
@@ -1336,6 +1361,21 @@ class _Compiler:
         if found is None:
             return f"a round face of a {owner.kind}: its edge isn't fitted, for now"
         return found
+
+    def _foot_edge(self, host: tuple[str, int, str]) -> tuple[str, float] | None:
+        """Where a flat side of an item standing round a rod's side meets its foot (place.md, "On a round side"): the
+        axis and the side of its edge there, as the face names them; None for any other face. The side runs on down
+        below it to where its foot follows the curve, so that edge isn't a face of the part."""
+        owner = self.spec.item(host[0])
+        if owner is None:
+            return None
+        copy = self.copies(owner)[host[1]]
+        if copy.host is None or not isinstance(self.placed.face(copy.host), RoundSide):
+            return None
+        up = direction_of(copy.local.direction if copy.local is not None else copy.direction)
+        if up is None:
+            return None
+        return up[1], (-1.0 if up[0] == "+" else 1.0)
 
     def _place(self, item: Item) -> None:
         """Where the item is on the face it is on: as its place gives it, and where that gives nothing, centred (or at 0 degrees round a side), the assumptions the spec records (place.md)."""

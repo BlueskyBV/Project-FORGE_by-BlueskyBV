@@ -88,6 +88,25 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
             with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
                 self.graded(seed, REGRESSIONS[seed][1])
 
+    def test_the_holes_opencascade_refused_built_judged_and_graded(self) -> None:
+        """Kept plans whose hole through the next face OpenCascade refused flush, and carried at its mouth only
+        (tests/v2_regressions.py): one from the far face of a post standing round a rod's side, out into a bore (2231);
+        one from a dome's surface, out of its flat face at its middle (4599). Each built with its round tools turned
+        about their axes (V2-stage4.md, 5.7) and, now, carried past its end first (5.2)."""
+        from v2_regressions import REGRESSIONS
+
+        for seed in (2231, 4599):
+            with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
+                self.graded(seed, REGRESSIONS[seed][1])
+
+    def test_a_cut_carried_past_where_it_comes_out_built_judged_and_graded(self) -> None:
+        """A kept plan whose hole through the next face OpenCascade made wrong without a flag, its end touching a
+        flange's underside at a point (4944; tests/v2_regressions.py): carried past its end into the air the preview
+        shows there (V2-stage4.md, 5.2)."""
+        from v2_regressions import REGRESSIONS
+
+        self.graded(4944, REGRESSIONS[4944][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge

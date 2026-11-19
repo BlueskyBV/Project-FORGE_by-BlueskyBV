@@ -484,7 +484,8 @@ def agree(document: DocumentV2, component: str, *, exact: BuildResult | None = N
             continue
         found = published.get(entity.name)
         if not found:
-            excuse = (_lost_fairly(entity, document, component, exact, implicit_part.solid, view)
+            excuse = (_carried_into_air(entity)
+                      or _lost_fairly(entity, document, component, exact, implicit_part.solid, view)
                       or _gone_inside(entity, document, component, exact, implicit_part.solid, view)
                       or _blended_away(entity, exact, zones, implicit_part.solid, meshed))  # fmt: skip
             if excuse is None:
@@ -668,6 +669,16 @@ def _moved_after(steps: Sequence[Any], owner: str, since: int = -1, until: int |
         elif after and k > since and (until is None or k < until) and step.op in _MOVES and from_owner(step.id):
             return True
     return False
+
+
+def _carried_into_air(entity: Any) -> str | None:
+    """Why a face V1 finds has no face of the exact part named for it, when it is a countersink's mouth carried into
+    the air (V2-stage4.md, 5.2): that tool is all air by the carry's own proof, so it leaves no face; a band as tall as
+    the carry, too thin for :func:`_gone_inside` to find points well clear of its rim (generated part 18, a countersunk
+    hole through the next face, carried first)."""
+    if str(entity.owning_feature).endswith(".countersink_air"):
+        return "a countersink's mouth carried into the air: all of that tool is air (5.2)"
+    return None
 
 
 def _lost_fairly(entity: Any, document: DocumentV2, component: str, exact: BuildResult, solid: Any,

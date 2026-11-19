@@ -266,6 +266,13 @@ an angle round it.
   `along` and a tab's `thickness_along` name the axis it runs along there,
   or the side's axis), and what is put on its far face is placed along
   that face's own axes, `u` and `v`, as on a turned item's faces.
+- Its far face and its flat sides take things (a lug's cross hole): its
+  sides are its box's, from its point out (its height is measured from
+  it), so they lie wholly clear of the side where its foot follows the
+  curve below them; each has the item's size across it under it, and a
+  cut right through comes out on the side across. Positions on a side are
+  along its own axes, from its edges and its middle, its edge towards the
+  rod at its point's level. A boss's round side takes nothing yet.
 - Only holes, bosses, posts, tabs and ribs go on a round side, for now, and
   only one at a place or a `circle` or `arc` of them: no other pattern, and
   nothing `concentric`.

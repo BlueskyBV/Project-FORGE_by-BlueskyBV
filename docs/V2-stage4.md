@@ -451,8 +451,10 @@ rest built and previewed.
 ## 5. Proven-equal alternatives
 
 An item's first construction is its definition's (section 4). When
-OpenCascade refuses it (section 8), the next is tried. There is one
-exception: a hole into a round side from outside (5.2). Its definition's
+OpenCascade refuses it (section 8), the next is tried. There are two
+exceptions: a hole into a round side from outside (5.2), and a cut through
+the next face (5.2, its far end), whose definition's end touches the face
+it comes out of. The hole's definition's
 tool touches the side along a line at its mouth. OpenCascade's boolean
 may refuse that tool, or, worse, cut it wrong without a word: held-out
 seed 10,890 warned, and seed 10,517 left its hole's plug in place. So
@@ -486,7 +488,8 @@ carried (5.2) and sunk (5.3) tools, one copy at a time.
 
 The constructions of an item, in the order they are tried: its
 definition's; carried (a cut), sunk (a standing feature) or cut (a dome);
-one by one; carried or sunk one by one. A rounding's: on the part made so
+one by one; carried or sunk one by one; a hole's, its round tools turned
+about their axes (5.7). A rounding's: on the part made so
 far (its definition's); early (5.5); as its regions (5.6). An alternative
 whose proof holds for no copy isn't offered: it would make the first again.
 
@@ -561,6 +564,29 @@ so no wrong part was released. Two changes fix it at the root:
 - **The part stays one solid** after each item's join or cut (section 8,
   step 2). Where the definition's tool is still used, a cut misread this
   way is a refusal, and the next construction is tried.
+
+**Past the far end of a cut through the next face** (V2-stage4b-0c.md,
+3.5), `E` is shown air by the preview itself, not by boxes. Its
+definition's end is where it first comes out of the part all across its
+mouth, so it touches the face it comes out of: across it, out of a face
+square to it; along a line; or at a point, out of a face at a slant or a
+curved one, where the boxes round `E` meet the host's or another's box
+across that face and prove nothing. The preview (`forge_occ.resolve`)
+finds that depth on the part made before the cut, built, from the
+stretches of material under its whole mouth along its axis; it now also
+asks that the next stretch begin at least `2c` past it, or it finds no
+depth (and says so). So under all its mouth `P` holds nothing from that
+depth to `c` past it: `E ∩ P = ∅` on the part made so far, which is the
+part the preview built, the same items made in the same order (any
+construction of each makes the same points). A cut through the next face
+is carried first, as a hole into a round side is (section 5's opening).
+Found by generated part 4944: a hole through the next face from a cone's
+side, out of a flange's underside 42 degrees from square, its end touching
+the underside at a point. Flush, or carried at its mouth only (the body's
+box over its end), OpenCascade left a face across the hole's end without
+a flag (the judge held the part: face accounting, topology); carried past
+it, it builds. The generator draws a cut through the next face only where
+its own shape has that air past it.
 
 ### 5.3 Sunk into what it stands on
 
@@ -707,6 +733,28 @@ Where OpenCascade's own fillet can't run round a joint under an overhang,
 this makes it; a fillet's cylinder meets the faces it rounds tangentially,
 which OpenCascade's booleans sometimes warn of, and the build loop then
 goes on to the next.
+
+### 5.7 A hole's round tools turned about their axes
+
+A cylinder or a cone turned about its own axis, by any angle, is the
+same set of points: `R(T) = T` for a turn `R` about the line it is
+round. OpenCascade makes each with its seam (the one edge along its side)
+and its end circles' vertex where its frame's first axis points, and a
+boolean can go wrong for where they fall: generated part 2231, a hole
+through the next face from the far face of a post standing round a rod's
+side, out into another hole's bore, and 4599, one from a dome's surface
+out of its flat face at its middle, each warned of flush (the subtract's
+"bad positioning"), and of carried while only its mouth was, and with an
+offset of a tenth of a millimetre, or a latitude half a degree off, each
+built. So a hole's last construction is its definition's with each
+cylinder and cone it makes turned a quarter turn about its own axis, a
+`transform` written after it; what takes the tool takes it turned, and its
+faces keep the names its own step gives them (a transform moves names with
+the faces). Offered for every hole, always: its bore is a cylinder. Tested
+as every alternative is (the same solid, the same faces), and on those two
+parts, which build so where flush warns (2231 with the hole it comes out
+into made by its definition too; tests/v2_regressions.py); carried past
+their ends now (5.2), they build first.
 
 ## 6. Extrusions and revolutions
 
@@ -3186,7 +3234,7 @@ fp25 and fp26 drafted for $2.93 and $4.04, fp27 for $0.41.
 |---|---|
 | `test_v2_plan.py` | Each kind's tool on every face kind: steps and numbers against hand-worked ones; determinism across runs; `for_items`; names (4.6); refusals and gaps (4.9) |
 | `test_v2_plan_refs.py` | Every edge set of every kind compiled to queries that find exactly the spec's edges: plain; cut across; after an earlier rounding; flush; overhanging; on a hollowed body |
-| `test_v2_plan_alternatives.py` | Each alternative of section 5 built both ways on parts where its proof holds: the same solid; where it fails: not offered. Holes into round sides carried (5.2): through a tube's wall from outside and out of its bore, blind, across a rod (counterbored too), through a hollowed cylinder's wall and out of its hollow; the host's box left out but no other's |
+| `test_v2_plan_alternatives.py` | Each alternative of section 5 built both ways on parts where its proof holds: the same solid; where it fails: not offered. Holes into round sides carried (5.2): through a tube's wall from outside and out of its bore, blind, across a rod (counterbored too), through a hollowed cylinder's wall and out of its hollow; the host's box left out but no other's. A cut through the next face carried first, past its end into the air the preview shows (5.2): generated part 4944. A hole's round tools turned about their axes (5.7): each a transform after it, taken turned; generated parts 2231 and 4599, refused flush, built so |
 | `test_v2_plan_build.py` (split into files under 3 minutes) | The stage-2 reference parts' specs and generated specs, planned, built and judged; graded against the truth |
 | `test_v2_occ_outline.py`, `test_v2_occ_text.py`, `test_v2_occ_thread.py` | The three new operations: build, after-check, names, down-conversion; the glyph table against fontTools; letters' areas; threads held to the profile by stage 2's check, both constructions |
 | `test_v2_spec_outlines.py` | The solver: extrusions and revolutions placed; outline faces; the overhang's material; outlines on varying material; the ink held to the face |

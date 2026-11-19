@@ -432,8 +432,11 @@ class RoundSides(unittest.TestCase):
         self.assertAlmostEqual(copy.lo[0], 10 - foot, places=12)
         self.assertEqual((copy.lo[1:], copy.hi), ((-3.0, 18.0), (15.0, 3.0, 22.0)))
         self.assertEqual(
-            set(p.faces[("p", 0)]), {"+x"}
-        )  # only its far face takes anything
+            set(p.faces[("p", 0)]), {"+x", "+y", "-y", "+z", "-z"}
+        )  # its far face and its flat sides, from its point out
+        across = flat(p, "p", "+y")
+        self.assertEqual((across.centre, across.axes, across.half, across.material),
+                         ((12.5, 3.0, 20.0), ("x", "z"), (2.5, 2.0), Solid(6.0)))  # fmt: skip
         top = flat(p, "p", "+x")
         self.assertEqual(
             (top.centre, top.axes, top.half, top.material),
