@@ -3,7 +3,7 @@
 The checks, in order, each printed as it is done (``ok`` or ``FAIL``, and
 what was found):
 
-1. Python is 3.10 or later.
+1. Python is 3.14 or later.
 2. The exact kernel's pins: the OCP wheel Forge is built and tested against
    (``cadquery-ocp-novtk``, OpenCascade 8.0.1) and lib3mf.
 3. A probe part built by the exact kernel, every step after-checked: a plate
@@ -33,7 +33,7 @@ __all__ = ["LIB3MF", "PROBE", "add_doctor_parser", "probe_volume", "run_doctor"]
 #: The lib3mf release Forge writes 3MF with.
 LIB3MF = "2.5.0"
 #: The oldest Python Forge runs on (pyproject's requires-python).
-MINIMUM_PYTHON = (3, 10)
+MINIMUM_PYTHON = (3, 14)
 
 
 def _mm(value: float) -> dict[str, Any]:

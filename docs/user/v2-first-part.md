@@ -11,10 +11,10 @@ behind it is in [V2-plan.md](../V2-plan.md); `forge build` is section 9 of
 
 ```console
 $ forge doctor
-ok    python  Python 3.13.16
-ok    pins    OpenCascade 7.9.3 (cadquery-ocp-novtk 7.9.3.1.1), lib3mf 2.5.0
+ok    python  Python 3.14.10
+ok    pins    OpenCascade 8.0.1 (cadquery-ocp-novtk 8.0.1.1.0), lib3mf 2.5.0
 ok    probe   probe built in 4 steps, every one after-checked; 14021.493 mm³ as worked out; its faces named
-ok    step    STEP written (50,420 bytes) and read back: within 1.5e-09 of the part
+ok    step    STEP written (50,425 bytes) and read back: within 1.5e-09 of the part
 ok    meshes  STL and 3MF written and read back: 1,416 triangles, within 0.0030 mm of the surface (tolerance 0.01 mm)
 all checks passed
 ```

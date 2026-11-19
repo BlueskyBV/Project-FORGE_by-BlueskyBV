@@ -318,6 +318,16 @@ class Role(ABC, Generic[T]):
         """
 
     # -- optional hooks -------------------------------------------------
+    def received(self, structured: Any, schema: Mapping[str, Any]) -> Any:
+        """The answer as this role reads what the transport handed over.
+
+        Called first, before any check. The default returns it unchanged,
+        which is what every role does unless it says otherwise; a role that
+        overrides it reads only the same content in another form, so
+        nothing a check holds changes (V2's spec writer:
+        :func:`forge_roles.spec_writer.as_drafted`)."""
+        return structured
+
     def salvage(
         self,
         structured: Mapping[str, Any],
@@ -549,7 +559,7 @@ class Role(ABC, Generic[T]):
                         ["No tool call and no JSON object came back. Answer "
                          "by calling the tool once, with the complete "
                          "structure as its input."])
-                structured = response.structured
+                structured = self.received(response.structured, schema)
                 self._reject_an_echo(structured, schema)
                 structured = answer_in_shape(structured, schema)
                 value = self._parse_guarded(structured, inputs)

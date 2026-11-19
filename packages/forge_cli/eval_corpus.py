@@ -57,7 +57,7 @@ from forge_models import (
     Provider,
 )
 from forge_roles.base import RepairExhaustedError
-from forge_roles.spec_writer import write_spec
+from forge_roles.spec_writer import read_answer, write_spec
 from forge_spec import NumberedBrief, number_words
 from forge_spec.checks import SpecReport, check_draft
 from forge_spec.lock import lock
@@ -252,7 +252,7 @@ def _one(
     answer = json.loads((folder / "answer.json").read_text(encoding="utf-8"))
     if answer is None:
         return _ended(brief, "refused", "the writer gave no answer", drafted)
-    report = check_draft(numbered, answer, strict=strict)
+    report = check_draft(numbered, read_answer(answer), strict=strict)
     if report.spec is not None:
         _write(folder, "draft.json", to_wire(report.spec))
         (folder / "spec.txt").write_text(

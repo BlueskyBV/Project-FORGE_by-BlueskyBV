@@ -27,6 +27,8 @@ business (:mod:`forge_models`): nothing here reads a secret.
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -35,9 +37,9 @@ from forge_spec import NumberedBrief, number_words
 from forge_spec.checks import SpecReport, check_draft
 from forge_spec.guide import GUIDE_VERSION, brief_message, draft_schema, instructions
 
-from .base import Role, RoleOutputError, RoleResult
+from .base import Role, RoleOutputError, RoleResult, answer_in_shape
 
-__all__ = ["SpecWriter", "write_spec"]
+__all__ = ["SpecWriter", "as_drafted", "read_answer", "write_spec"]
 
 
 class SpecWriter(Role[SpecReport]):
@@ -88,6 +90,9 @@ class SpecWriter(Role[SpecReport]):
             )
         return report
 
+    def received(self, structured: Any, schema: Mapping[str, Any]) -> Any:
+        return as_drafted(structured, schema)
+
     def schema_description(self) -> str:
         return (
             "Submit the part spec you drafted from the brief. The arguments you pass ARE the "
@@ -100,6 +105,112 @@ class SpecWriter(Role[SpecReport]):
             "The checks sent your spec back. Each problem below names where it is. Fix each "
             "one, keep everything else as it was, and submit the whole corrected spec."
         )
+
+
+_A_FIGURE = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
+
+
+def read_answer(answer: Any) -> Any:
+    """A recorded answer read as the writer read it when it was drafted.
+
+    A run's ``answer.json`` holds what the transport handed over; replayed,
+    it goes through the same readings the live writer's did before its
+    checks (:func:`as_drafted`, then the role framework's
+    :func:`forge_roles.base.answer_in_shape`), or a replay would refuse a
+    draft its own run accepted."""
+    schema = draft_schema()
+    drafted = as_drafted(answer, schema)
+    try:
+        return answer_in_shape(drafted, schema)
+    except RoleOutputError:  # read as it was: the checks say what is wrong with it
+        return drafted
+
+
+def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
+    """A draft as the writer wrote it, from what the transport handed over.
+
+    The same content in another form, so nothing a check holds changes. Each
+    was observed live, on a blind set's drafts:
+
+    - **A text the schema fixes, given as the number it reads as.** Every
+      draft's ``"schema_version": "1.9"`` arrived as the number 1.9 and was
+      refused; told so, the writer wrote it the same way again, and all 30
+      briefs gave up. The schema names the one text it may be: 1.9 is
+      "1.9", and 1.1 is "1.10" where "1.10" is the text it names.
+    - **The whole draft under a lone wrapper the schema doesn't have**:
+      ``{"spec": {"schema_version": ..., "items": [...]}}``. A wrapper whose
+      one field is the schema's own is left alone.
+    - **Items given as JSON text**: one item, or a list of them, as a string.
+    """
+    schema = draft_schema() if schema is None else schema
+    properties = schema.get("properties")
+    if not isinstance(properties, Mapping):
+        return answer
+    answer = _unwrapped(answer, properties)
+    if not isinstance(answer, Mapping):
+        return answer
+    out = dict(answer)
+    for name, value in answer.items():
+        spec = properties.get(name)
+        if isinstance(spec, Mapping) and _a_number(value):
+            same = [text for text in _texts_of(spec) if _reads_as(text, value)]
+            if len(same) == 1:
+                out[name] = same[0]
+    items = out.get("items")
+    if isinstance(items, str):
+        items = _decoded(items)
+    if isinstance(items, Mapping):
+        items = [items]  # one item where the list of them goes
+    if isinstance(items, list):
+        spliced: list[Any] = []
+        for item in items:
+            decoded = _decoded(item) if isinstance(item, str) else item
+            if isinstance(decoded, list):
+                spliced.extend(decoded)
+            else:
+                spliced.append(decoded)
+        out["items"] = spliced
+    elif items is not None:
+        out["items"] = items
+    return out
+
+
+def _unwrapped(answer: Any, properties: Mapping[str, Any]) -> Any:
+    if not isinstance(answer, Mapping) or len(answer) != 1:
+        return answer
+    ((name, inner),) = answer.items()
+    if name in properties:
+        return answer
+    inner = _decoded(inner) if isinstance(inner, str) else inner
+    if isinstance(inner, Mapping) and set(inner) & set(properties):
+        return inner
+    return answer
+
+
+def _decoded(text: str) -> Any:
+    """JSON text read as what it holds, where it holds an object or a list."""
+    try:
+        decoded = json.loads(text)
+    except ValueError:
+        return text
+    return decoded if isinstance(decoded, (dict, list)) else text
+
+
+def _a_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _texts_of(spec: Mapping[str, Any]) -> list[str]:
+    """The texts a schema allows and nothing else: its const, or its enum."""
+    if isinstance(spec.get("const"), str):
+        return [spec["const"]]
+    named = spec.get("enum")
+    return [text for text in named if isinstance(text, str)] if isinstance(named, list) else []
+
+
+def _reads_as(text: str, number: int | float) -> bool:
+    """Whether a text is a figure, and that figure is the number."""
+    return _A_FIGURE.fullmatch(text) is not None and float(text) == float(number)
 
 
 def _brief(inputs: Mapping[str, Any]) -> NumberedBrief:

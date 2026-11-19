@@ -33,6 +33,20 @@ class TheProbe(unittest.TestCase):
         )
 
 
+class ThePythonFloor(unittest.TestCase):
+    def test_it_is_pyproject_s(self) -> None:
+        # It said 3.10 while pyproject asked for 3.14: the doctor passed a Python Forge can't be installed on.
+        import re
+        from pathlib import Path
+
+        from forge_cli.doctor import MINIMUM_PYTHON
+
+        text = (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text(encoding="utf-8")
+        found = re.search(r'requires-python\s*=\s*">=\s*(\d+)\.(\d+)"', text)
+        assert found is not None
+        self.assertEqual(MINIMUM_PYTHON, (int(found.group(1)), int(found.group(2))))
+
+
 @needs_occ
 class TheChecks(unittest.TestCase):
     def test_every_check_passes_here(self) -> None:

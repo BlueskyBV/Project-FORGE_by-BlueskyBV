@@ -3228,6 +3228,70 @@ Not changed:
 
 fp25 and fp26 drafted for $2.93 and $4.04, fp27 for $0.41.
 
+### 14.5 Blind set 1's first run: every draft gave up, and why
+
+The owner ran `forge eval-spec eval\blind\set1` with Claude Sonnet 5 on
+19 November, on 389db2f (guide 26, schema 1.9). **All 30 briefs gave up**
+("the writer couldn't clear its own faults"): no fact was graded right,
+for $9.25. Every refused draft is kept with its problems
+(`refused.json`), and they all said one thing: `/schema_version: schema_version
+is a major and a minor number, "1.9"`. The writer wrote `"1.9"`, as the
+guide and the schema's `const` ask; it arrived as the **number** 1.9. Told
+so, it wrote it the same way again, and the run stopped each brief when the
+same problem came back. Inside a wrapper the same draft's version arrived
+as text: the number is the transport's reading of a top-level field, not
+the writer's. The November false-pass drafts never met it: they were
+written before drafts named a version.
+
+Fixed in the writer, V1's roles unchanged. The role framework gives a role
+a hook to read what the transport hands over before any check
+(`Role.received`, by default unchanged); the spec writer's
+(`forge_roles.spec_writer.as_drafted`) reads only the same content in
+another form, so nothing a check holds changes:
+
+- **A text the schema fixes, given as the number it reads as**, is that
+  text: 1.9 is "1.9", and 1.1 is "1.10" where "1.10" is the text named.
+  A number that reads as none of them, or as two, is left as given, and
+  the fault now says what to write: `schema_version is a major and a minor
+  number written as text, in quotes: "1.9", not the number 1.8`.
+- **The whole draft under a lone wrapper the schema doesn't have**
+  (`{"spec": {...}}`, on seven briefs, six of them redrafts) is the draft.
+- **Items as JSON text**, the list, one item, or a list inside the list,
+  are the items.
+
+**A replay reads a record the same way** (`read_answer`): a run's
+`answer.json` holds what was handed over. `forge eval-corpus` read it raw
+after drafting, so every one of its drafts would have been refused the
+same way; nothing was spent on it, the owner having been told to stop
+before it.
+
+**Proof without a model call.** With the owner's leave, the run's 91
+refused answers were read again on the fixed code against the set's
+briefs: 29 of the 30 briefs have an answer that now checks clean, 17 of
+them the first answer drafted, before any repair. The 30th (B1-15) had no
+clean answer: its redrafts broke its items' JSON, put an assumption past
+200 characters, and leaned its backrest past the material under its foot.
+Tests: `test_v2_spec_writer.py` (`WhatTheTransportHandsOverIsReadAsWritten`:
+each reading, a number naming no text still a fault, a wrapper named as
+the schema's own field left alone, a replay read as the live writer read
+it); `test_v2_eval_spec.py` (a set drafted with numeric versions, graded
+and regraded from its records alike).
+
+**Set 1 is no longer blind.** The report's list of what each brief got
+wrong prints the keys' facts, and it was pasted whole; the owner then
+gave leave to read the run. Set 1 is a practice set from here: its
+numbers measure a change against itself (schema 2.0 against 1.9), not
+Forge against new briefs. An honest blind number needs a fresh set
+(plan, section 7). Its first measurement is the rerun into a new folder:
+the first one's records are of other code, and a folder is one
+measurement.
+
+Two other things the run showed: `forge doctor` passed any Python from
+3.10, while pyproject has asked for 3.14 since 4b.0b (its floor is now
+pyproject's, held by a test); and `tests/test_v2_eval_keys.py`'s check of
+the blind set fails wherever `eval/` isn't, which is everywhere but the
+owner's machine (it is skipped there now, with that reason).
+
 ## 15. What is tested
 
 | Test file | What |

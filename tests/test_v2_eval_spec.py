@@ -551,6 +551,24 @@ class TheSetRunner(RunFolder):
             2,
         )
 
+    def test_a_version_handed_over_as_a_number_is_read_live_and_replayed(self) -> None:
+        """Every draft of blind set 1 gave up: its "schema_version": "1.9"
+        arrived as the number 1.9, and was refused after each repair."""
+        texts = script("bad", "cube", "deep", "plate")
+        numbers = copy.deepcopy(texts)
+        for answer in numbers:
+            if isinstance(answer.get("schema_version"), str):
+                answer["schema_version"] = float(answer["schema_version"])
+        first = self.run_it(numbers)
+        self.assertEqual({g.key: g.ending for g in first.grade.grades},
+                         {"bad": "gave up", "cube": "refused", "deep": "asked", "plate": "assumed"})  # fmt: skip
+        plate = json.loads((self.out / "plate" / "answer.json").read_text(encoding="utf-8"))
+        self.assertIsInstance(plate["schema_version"], float)  # the record is what was handed over
+        again = self.run_it([])
+        self.assertEqual((again.drafted, again.reused), (0, 4))
+        self.assertEqual([g.as_dict() for g in again.grade.grades],
+                         [g.as_dict() for g in first.grade.grades])  # fmt: skip
+
     def test_marks_are_read_and_tied_to_their_draft(self) -> None:
         self.run_it(script("bad", "cube", "deep", "plate"))
         path = self.out / "marks.json"

@@ -90,8 +90,10 @@ def version_of(raw: Mapping[str, Any]) -> Version:
         text = raw["schema_version"]
         found = _VERSION.fullmatch(text) if isinstance(text, str) else None
         if found is None:
+            number = isinstance(text, (int, float)) and not isinstance(text, bool)
             raise VersionError(
-                f'schema_version is a major and a minor number, "{written(CURRENT)}"'
+                "schema_version is a major and a minor number written as text, in quotes: "
+                f'"{written(CURRENT)}"' + (f", not the number {text}" if number else "")
             )
         return int(found.group(1)), int(found.group(2))
     if old:

@@ -68,12 +68,11 @@ from forge_models import (
     Provider,
     Usage,
 )
-from forge_roles.base import RepairExhaustedError, RoleOutputError, answer_in_shape
-from forge_roles.spec_writer import SpecWriter, write_spec
+from forge_roles.base import RepairExhaustedError
+from forge_roles.spec_writer import SpecWriter, read_answer, write_spec
 from forge_spec import number_words
 from forge_spec.checks import SpecReport, check_draft
 from forge_spec.compare import differences
-from forge_spec.guide import draft_schema
 from forge_spec.render import render
 from forge_spec.wire import to_wire
 
@@ -430,11 +429,7 @@ def _recorded(
         raise RecordError(
             f"{folder}: the model's recorded answer was changed after drafting, or is missing"
         )
-    try:
-        shaped = answer_in_shape(answer, draft_schema())
-    except RoleOutputError:  # read as it was: the checks say what is wrong with it
-        shaped = answer
-    return True, check_draft(number_words(key.brief), shaped, strict=strict)
+    return True, check_draft(number_words(key.brief), read_answer(answer), strict=strict)
 
 
 def _draft(provider: Provider, key: AnswerKey, folder: Path, strict: bool, *, second: bool = False,

@@ -21,7 +21,7 @@ from typing import Any
 
 from forge_models import ScriptedProvider
 from forge_roles.base import RepairExhaustedError
-from forge_roles.spec_writer import SpecWriter, write_spec
+from forge_roles.spec_writer import SpecWriter, as_drafted, read_answer, write_spec
 from forge_spec import number_words
 from forge_spec.guide import EXAMPLE_BRIEF, EXAMPLE_DRAFT, draft_schema, instructions
 
@@ -110,6 +110,60 @@ class AQuestionIsThePersons(unittest.TestCase):
         # In --auto, a sentence taken as silent is asked about.
         self.assertTrue(result.value.problems)
         self.assertEqual(SpecWriter(strict=True).strict, True)
+
+
+class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
+    """Each observed live on blind set 1, where all 30 drafts gave up: the
+    same content in another form, read as the writer wrote it."""
+
+    def test_the_version_as_a_number(self) -> None:
+        answer = good()
+        answer["schema_version"] = 1.9
+        result = write_spec(ScriptedProvider([answer]), EXAMPLE_BRIEF)
+        self.assertEqual(result.attempts, 1)
+        self.assertEqual(result.value.problems, ())
+
+    def test_a_number_the_schema_names_no_text_for_is_still_a_fault(self) -> None:
+        answer = good()
+        answer["schema_version"] = 1.8  # the schema asks for "1.9"
+        with self.assertRaises(RepairExhaustedError) as caught:
+            write_spec(ScriptedProvider([answer, answer]), EXAMPLE_BRIEF)
+        said = " ".join(caught.exception.detail["last_problems"])
+        self.assertIn('written as text, in quotes: "1.9", not the number 1.8', said)
+
+    def test_a_figure_is_matched_to_the_text_the_schema_names(self) -> None:
+        schema = {"properties": {"schema_version": {"const": "1.10"}, "items": {}}}
+        self.assertEqual(as_drafted({"schema_version": 1.1, "items": []}, schema)["schema_version"], "1.10")
+        self.assertIs(as_drafted({"schema_version": True, "items": []}, schema)["schema_version"], True)
+        enum = {"properties": {"schema_version": {"enum": ["1.1", "1.10"]}}}
+        self.assertEqual(as_drafted({"schema_version": 1.1}, enum)["schema_version"], 1.1)  # either: left as given
+
+    def test_the_whole_draft_under_a_wrapper(self) -> None:
+        result = write_spec(ScriptedProvider([{"spec": good()}]), EXAMPLE_BRIEF)
+        self.assertEqual(result.attempts, 1)
+        self.assertEqual(result.value.problems, ())
+        as_text = write_spec(ScriptedProvider([{"spec": json.dumps(good())}]), EXAMPLE_BRIEF)
+        self.assertEqual(as_text.value.problems, ())
+
+    def test_a_wrapper_named_as_the_schema_s_own_field_is_left_alone(self) -> None:
+        wrapped = {"items": good()}
+        self.assertEqual(as_drafted(wrapped)["items"], [good()])  # read as one item, not unwrapped
+
+    def test_items_as_json_text(self) -> None:
+        whole = good()
+        whole["items"] = json.dumps(good()["items"])
+        inside = good()
+        inside["items"] = [json.dumps(good()["items"])]
+        each = good()
+        each["items"] = [json.dumps(item) for item in good()["items"]]
+        for answer in (whole, inside, each):
+            result = write_spec(ScriptedProvider([answer]), EXAMPLE_BRIEF)
+            self.assertEqual((result.attempts, result.value.problems), (1, ()))
+
+    def test_a_replayed_record_is_read_as_the_live_writer_read_it(self) -> None:
+        answer = {"spec": good()}
+        answer["spec"]["schema_version"] = 1.9
+        self.assertEqual(read_answer(answer), good())
 
 
 if __name__ == "__main__":

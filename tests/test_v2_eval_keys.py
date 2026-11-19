@@ -72,6 +72,7 @@ class SetsAreLocked(unittest.TestCase):
                 verify_manifest(Path(tmp))
 
 
+@unittest.skipUnless(SET1.is_dir(), "the blind set stays on the owner's machine: eval/ is never pushed")
 class BlindSetOne(unittest.TestCase):
     def test_it_is_locked_and_intact(self) -> None:
         keys = verify_manifest(SET1)
