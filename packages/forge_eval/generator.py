@@ -824,6 +824,11 @@ class _Part:
     #: that stands in its way: forge_spec.placement._check_closed). A cut through the next face's, a little past
     #: where it comes out.
     ways: list[tuple[str, Array, Array]] = field(default_factory=list)
+    #: A cut through the next face from a turned item's face: its point, its face's normal, the part's axes its face's
+    #: are named by (as upright), its mouth's half size and how far in it goes, a little past where it comes out. What
+    #: is made after it is in its way as the solver reads it (forge_spec.placement._in_its_way): its box behind the
+    #: mouth within that depth, and over the mouth along each of those axes.
+    turned_ways: list[tuple[str, Array, Array, tuple[int, int], float, float]] = field(default_factory=list)
 
 
 def _footprint(f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], float]:
@@ -1835,6 +1840,12 @@ def _on_flat(
                 depth, past = _comes_out_alike(f, [(p, n, e1, e2)], f.sizes["diameter"] / 2, part)
                 if strict and not past:
                     raise DoesNotFitError(_TOO_LITTLE_AIR.format(f.id))
+                # Its way, which nothing made after it that adds to the part reaches into, on past where it comes
+                # out as far as the solver asks after, as the solver reads it (generated part 2356: a hole through
+                # the next face from a turned tab's side, a revolution standing after it in its way).
+                part.turned_ways.append((f"{f.id} copy {copy_index}", p.copy(), n.copy(),
+                                         ("xyz".index(face.axes[0]), "xyz".index(face.axes[1])),
+                                         f.sizes["diameter"] / 2 + GAP, depth + _NEXT_KEPT))  # fmt: skip
             else:
                 depth = (_through_everything(f, face, at, p, e1, e2, n, f"{f.id} {copy_index}", part, strict,
                                              first=f.end is not None and f.end.next)
@@ -3302,6 +3313,13 @@ def _build(plan: Plan, strict: bool) -> _Part:
                 for who, a, b in part.ways:
                     if who.split(" ")[0] != f.id and np.all(lo < b - 1e-9) and np.all(a < hi - 1e-9):
                         raise DoesNotFitError(f"{f.id} stands in the way of {who}, made before it")
+                corners = np.array([[(lo, hi)[(j >> i) & 1][i] for i in range(3)] for j in range(8)])
+                for who, p, n, ks, half, deep in part.turned_ways:
+                    behind = float(fv.matmul(p, n)) - fv.matmul(corners, n)
+                    if (who.split(" ")[0] == f.id or float(behind.max()) <= 1e-9 or float(behind.min()) >= deep
+                            or any(hi[k] <= p[k] - half or lo[k] >= p[k] + half for k in ks)):  # fmt: skip
+                        continue
+                    raise DoesNotFitError(f"{f.id} stands in the way of {who}, made before it")
         # A shell's hollow is made to follow its body's roundings (_shell); everything else keeps clear of them.
         if strict and not _draw(f.kind).follows_roundings:
             chain = _chain(f, plan)
@@ -4227,6 +4245,10 @@ def _walls_crossed(plan: Plan, steps: list[Step]) -> None:
         across1, across2, along = (e2, -h2, h2), (e1, -h1, h1), (n, s.low, s.high)
         walls = [(e1, h1, across1, along), (e1, -h1, across1, along), (e2, h2, across2, along),
                  (e2, -h2, across2, along), (n, s.low, across2, across1), (n, s.high, across2, across1)]  # fmt: skip
+        # An end it may be carried past into air isn't the part's (a keyway's mouth, on the plane touching the rod
+        # along the line through its point: slot.md, "Round a side").
+        walls = [wall for k, wall in enumerate(walls) if not (k == 4 and step.reach[0] > 0)
+                 and not (k == 5 and step.reach[1] > 0)]  # fmt: skip
         for item, p, w, r, lo, hi in rods:
             if item == step.item or (adds.get(item) and hosts.get(item) == step.item):
                 continue
@@ -5121,6 +5143,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue
         if _onto_rim(random.Random(f"forge-eval box rims {seed} {k}"), k, plan, part, len(plan) < size):
             continue
+        if _onto_keyway(random.Random(f"forge-eval keyways {seed} {k}"), k, plan, part):
+            continue
         if _onto_footed_side(random.Random(f"forge-eval footed sides {seed} {k}"), k, plan, part):
             continue  # blind or right through: through the next face or everything waits (generated part 2231)
         before = len(plan)
@@ -5629,6 +5653,39 @@ def _onto_rim(rng: random.Random, k: int, plan: list[Feature], part: _Part, stan
     face = part.flats[key]
     for _ in range(10):
         candidate = _feature(rng, k, key[0], face, standing_ok and _draw(part.kinds[key[0]]).hosts_standing)
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+#: How often, where the part has a rod's side, a keyway is cut along it (slot.md, "Round a side"), from a stream of its
+#: own.
+_KEYWAY = 0.15
+
+
+def _onto_keyway(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+    """Now and then, from a stream of its own, a keyway along a rod's side (slot.md, "Round a side"): a slot along its
+    axis, at an angle round it (now and then a circle of them), blind or right through. Whether one was added."""
+    sides = [key for key, side in part.rounds.items() if key[1] == 0 and key[2] == "side" and not side.leans
+             and side.half is None]  # fmt: skip
+    if not sides or rng.random() >= _KEYWAY:
+        return False
+    key = rng.choice(sides)
+    side = part.rounds[key]
+    for _ in range(10):
+        wide = _q(rng.uniform(1.5, max(1.6, min(side.radius / 1.5, 8.0))))
+        long = _q(wide + rng.uniform(1.0, max(1.2, side.length / 2)))
+        depth = None if rng.random() < 0.3 else _q(rng.uniform(0.5, max(0.6, 0.6 * side.radius)))
+        pattern = Pattern("circle", {}, {"count": rng.choice([2, 3, 4])}) if depth is not None and rng.random() < 0.2 \
+            else None
+        candidate = Feature(f"i{k}", "slot", {"length": long, "width": wide}, (key[0], "side"), depth,
+                            {"along": side.axis, "ends": "round" if rng.random() < 0.7 else "square"}, None,
+                            {side.axis: _position(rng, side.axis, side.length * 0.25, False)},
+                            _q(rng.uniform(0, 359), 0.5), pattern)  # fmt: skip
         try:
             render((*plan, candidate))
         except DoesNotFitError:

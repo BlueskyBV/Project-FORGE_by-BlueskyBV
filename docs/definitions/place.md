@@ -254,7 +254,9 @@ an angle round it.
   Its **direction** is along the radius through the point: outward from a
   rod's or tube's outside, inward towards the axis from a bore or the inside
   of a hollowed cylinder's wall. A hole goes in against that direction; a
-  standing feature stands out along it.
+  standing feature stands out along it. A slot (a keyway, slot.md, "Round a
+  side") goes in against it too, its outline on the plane touching the side
+  along the line through its point, along the side's axis, at any angle.
 - A standing feature round a side has its length running round the side
   (along the third frame axis, the one that is neither the side's axis nor
   its own direction) and its width along the side's axis. It stands at any

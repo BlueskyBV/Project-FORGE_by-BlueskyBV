@@ -15,8 +15,30 @@ along `along`, `width` wide across it.
 - With square ends: a rectangle `length` by `width`.
 
 The outline goes in from the face, at right angles to it, to its depth, with
-a flat bottom, and takes away every point of the part inside it. A slot is
-cut into flat faces only, for now.
+a flat bottom, and takes away every point of the part inside it.
+
+## Round a side
+
+A slot is also cut into a rod's, a boss's or a tube's round side from
+outside, as a keyway: it runs `along` the side's axis, and its outline lies
+in the plane that touches the side along the line through its point (`place`
+puts that point, by its position along the axis and its `angle` round it, as
+it does a hole's: [place.md](place.md), "Round a side"): `width` round the
+side, `length` along it. It goes in square to that plane, towards the axis,
+to its `depth` from that plane, with a flat bottom, and takes away every
+point of the part inside it: its walls run down from where they leave the
+side to its floor. A keyway is so deep that the material under it is the
+least under its outline: into a solid rod, the far side comes first along
+its long edges, `R + √(R² − (width/2)²)` in; into a tube's wall, the bore.
+`through`, it goes on until it is out of the part all across its outline:
+a tube's wall until it is in the bore all across (`R − √(r² − (width/2)²)`,
+`r` the bore's radius), a solid rod right across it, out of its far side
+(a slotted rod). Copies go round the side in a circle, as holes do.
+
+Not yet: one running round the side, or from inside a bore, on a round-ended
+tab's end or round what stands on a turned item's face; through the next
+face, through everything or up to a face. Its `top` edge, where its walls
+and ends meet the side, is rounded or chamfered as any edge is.
 
 ## Fields
 

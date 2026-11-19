@@ -24,6 +24,9 @@ if TYPE_CHECKING:
 class Slot(SolveKind):
     key = "slot"
 
+    #: A keyway (slot.md, "Round a side"): along the side's axis, square to the plane touching it.
+    on_round_side = True
+
     def outline_fields(
         self, item: Item, axes: tuple[str, str] | None = None, k: int | None = None
     ) -> tuple[str, ...]:

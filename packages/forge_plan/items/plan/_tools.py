@@ -282,12 +282,20 @@ def _extrude_into(chain: Chain, item: Item, k: int, face: FlatFace, w: Vec, dept
     Carried (5.2), the profile is ``mouth`` out from the face and pushed
     ``mouth + depth + far``: its floor stays ``depth`` in.
     """
-    normal = unit(face.normal)
+    return _extrude_along(chain, item, k, face.normal, face.axes, w, depth, op, params, mouth, far)
+
+
+def _extrude_along(chain: Chain, item: Item, k: int, normal_: str, axes: tuple[str, str], w: Vec, depth: float,
+                   op: str, params: Mapping[str, object], mouth: float = 0.0,
+                   far: float = 0.0) -> tuple[str, str, str]:  # fmt: skip
+    """As :func:`_extrude_into`, on the plane through ``w`` square to ``normal_`` (a frame axis's way, named), its ``axes``
+    the face's that faces it would have (a keyway made upright: slot.md, "Round a side")."""
+    normal = unit(normal_)
     axis = axis_of(normal)
     plane = chain.datum(
         _id(item.id, k, "plane"), axis, along(add(w, normal, mouth), axis), item=item.id
     )
-    a1, a2 = face.axes
+    a1, a2 = axes
     profile = chain.profile(_id(item.id, k, "outline"), op, plane, {
         **params, "center_u": length(along(w, a1)), "center_v": length(along(w, a2))}, item=item.id)  # fmt: skip
     _, datum_sign = DATUMS[axis]

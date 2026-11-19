@@ -242,7 +242,9 @@ kind modules on the same foundation, never as a rebuild of it.
   a hollow's open end is a face (a cylinder's a ring, a square block's a
   frame), and the flat sides of what stands round a side take cuts; a
   hole's last construction turns its round tools about their axes
-  (V2-stage4.md, 5.7); next, its fourth step (schema 2.0).
+  (V2-stage4.md, 5.7), and a cut through the next face is carried past
+  its end (5.2); a slot goes round a side as a keyway; next, its fourth
+  step (schema 2.0).
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and

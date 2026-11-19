@@ -13,8 +13,8 @@ from forge_checks.items.oracle._shapes import (
     flat_cut_node,
 )
 from forge_checks.items.oracle.protocol import OracleKind
-from forge_checks.place import Copy, Face, Placed, in_axes
-from forge_checks.shapes import RoundRect, Shape2D
+from forge_checks.place import Copy, Face, Placed, RoundSide, in_axes
+from forge_checks.shapes import Frame, Prism, RoundRect, Shape2D
 
 
 class Slot(OracleKind):
@@ -24,6 +24,8 @@ class Slot(OracleKind):
         self, item: Item, copy: Copy, face: Face | None, placed: Placed
     ) -> Node:
         assert face is not None
+        if isinstance(face, RoundSide):
+            return _keyway(item, copy, face)
         return flat_cut_node(self, item, copy, face)
 
     def outline(self, item: Item, axes: tuple[str, str]) -> Shape2D:
@@ -36,6 +38,19 @@ class Slot(OracleKind):
     def cut_chains(self, item: Item, copy: Copy, which: str, placed: Placed, size: float
                    ) -> tuple[list[rounds.Chain], bool, list[Node], Node | None]:  # fmt: skip
         return flat_cut_chains(self, item, copy, which, placed, size)
+
+
+def _keyway(item: Item, copy: Copy, side: RoundSide) -> Node:
+    """A slot round a side (slot.md, "Round a side"): its outline on the plane touching the side along the line through
+    its point, its width round the side and its length along its axis, from that plane in square to it to its depth."""
+    assert copy.span is not None
+    start, depth = copy.span
+    a = side.placed_frame.n
+    w = (-copy.direction[0] + 0.0, -copy.direction[1] + 0.0, -copy.direction[2] + 0.0)
+    u = (a[1] * w[2] - a[2] * w[1], a[2] * w[0] - a[0] * w[2], a[0] * w[1] - a[1] * w[0])
+    length, width = _mm(item.get("length")), _mm(item.get("width"))
+    r = width / 2 if _choice(item, "ends") == "round" else 0.0
+    return Prism(Frame(copy.point, u, a, w), RoundRect(width / 2, length / 2, (r, r, r, r)), start, depth)
 
 
 ENTRY = Slot()

@@ -2190,6 +2190,8 @@ def _everything_at(point: Vec, direction: Vec, layout: _Layout) -> float:
 #: How far apart the judge asks along a cut through the next face whether its mouth is out of the part all across
 #: (mm), and how close it then finds where it first is (by halving).
 _NEXT_STEP, _NEXT_CLOSE = 0.05, 1e-6
+#: How many points round a hole's rim the judge asks where it comes out, through the next face from a curved face.
+_RIM = 128
 
 
 def _next_depth(item: Item, face: FlatFace, point: Vec, mouth: Outline, layout: _Layout) -> float:
@@ -2262,7 +2264,10 @@ def _next_round(item: Item, point: Vec, direction: Vec, radius: float, layout: _
     e1 = np.cross(helper, n)
     e1 = e1 / fs.hypot(float(e1[0]), float(e1[1]), float(e1[2]))
     e2 = np.cross(n, e1)
-    across = [(radius * c, radius * s) for c, s in (fs.sincos(2.0 * math.pi * (k + 0.5) / 16)[::-1] for k in range(16))]
+    # Round its rim every 2.8 degrees: where it comes out of a face at a slant (a dome's flat face, 16.5 degrees off
+    # square, generated part 4599), the point of its rim out last lies between two asked, and sixteen of them found it
+    # 4 micrometres short, its mouth 13 off where it leaves the face.
+    across = [(radius * c, radius * s) for c, s in (fs.sincos(2.0 * math.pi * (k + 0.5) / _RIM)[::-1] for k in range(_RIM))]
     across += [(radius * a, radius * b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6)
                if a * a + b * b < 1.0]  # fmt: skip
     p = np.asarray(point, dtype=np.float64)
@@ -2653,6 +2658,20 @@ def _round_hole(item: Item, side: RoundSide, host: tuple[str, int, str], index: 
         0.0 if side.outward else -side.radius
     )  # inside a bore, it starts at the side's axis
     return Copy(item.id, index, host, point, direction, None, span=(begins, depth))
+
+
+def _round_slot(item: Item, side: RoundSide, host: tuple[str, int, str], index: int, point: Vec,
+                direction: Vec) -> Copy:  # fmt: skip
+    """A keyway (slot.md, "Round a side"): its outline in the plane touching the side along the line through its point,
+    its length along the side's axis and its width round it, in square to that plane to its depth from it, or right
+    through (out of a solid rod's far side; into a tube's bore, until it is in it all across)."""
+    if not side.outward or side.half is not None or side.local is not None:
+        raise PlaceError(item.id, "a slot goes into the side of a rod, a boss or a tube from outside, not round what "
+                         "stands on a turned item's face, for now")  # fmt: skip
+    if isinstance(end_of(item), (ThroughNext, ThroughEverything, UpToFace)):
+        raise PlaceError(item.id, "round a side, a slot goes in to a depth or right through, for now")
+    depth = _side_through(item, side, _mm(item, "width") / 2) if _through(item) else _mm(item, "depth")
+    return Copy(item.id, index, host, point, direction, None, span=(0.0, depth))
 
 
 # ----------------------------------------------------------------------

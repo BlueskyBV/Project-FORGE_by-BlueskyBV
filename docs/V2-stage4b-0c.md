@@ -1622,6 +1622,61 @@ open at its top, on a side, or at both ends; and 120, a cut up to the
 plane of an open bottom's rim): each passed, its mutant caught. Generator
 digests on seeds 0-149, old against new: only those differ.
 
+**A keyway: a slot round a side (revision 16, with item 3b).** Round a
+side Forge cut round holes only. A slot now goes into a rod's, a boss's or
+a tube's side from outside too (slot.md, "Round a side"): along the side's
+axis, its outline on the plane touching the side along the line through
+its point, square to that plane to its depth from it, or right through (a
+tube's wall into its bore; a solid rod across it, a slotted rod); at any
+angle, a circle of them too. **The solver** sizes it round the side by its
+width and along it by its length, and the material under it by its width
+(into a solid rod the far side comes first along its long edges); it says
+what isn't yet (one running round the side, from inside a bore, on a tab's
+end or round what stands on a turned item's face, through the next face
+or everything). **The judge** places it the same way (`_round_slot`), and
+**the oracle** makes it a prism of its outline square to that plane.
+**The check compiler** holds its width between its walls, its length
+between its ends, its depth to its floor from the side's fitted axis, its
+angle round the side by the middle of its walls, its place along the axis
+by its ends, and a circle's count by a wall of each. **The planner** makes
+it upright, as at the quarter turn round the side at or below it, on the
+plane touching the side there, then turns it with the side about its axis
+by the rest; carried first (5.2): its definition's tool touches the side
+along a line, and past its mouth, and past the far side of a solid rod,
+every point of the carry is beyond a plane touching the side. **The
+generator** draws one from a stream of its own (`_onto_keyway`,
+"forge-eval keyways", 0.15: blind or right through, now and then a circle
+of short ones), its truth a prism as the oracle's; a cut's end it may be
+carried past into air is no longer taken for a wall a rod touches along a
+line (`_walls_crossed`). Tests: `tests/test_v2_plan_keyway.py` (where each
+goes; deeper asked about; every program's layout agrees; round or square
+ended, at 30 degrees, a circle of four, right through a tube's wall and a
+solid rod: built and judged, every check held; one 0.5 mm shallower or
+turned 5 degrees caught; the second kernel agreeing; what isn't yet said;
+the generator's own shape, built and graded). The exit harness's per-seed
+proof on the 18 of the first 150 whose draws changed (11, 21, 24, 26, 67,
+68, 77, 78, 82, 84, 86, 88, 94, 95, 106, 140, 144, 147: keyways in rods,
+tubes and bosses, blind, right through, a circle of them) and on 2356
+drawn again: each passed, its mutant caught (67's and 77's made the same
+shape). Generator digests on seeds 0-149, old against new: those 18
+differ, and 17 impossible parts.
+
+**And a hole through the next face from a turned item's face keeps its way
+(revision 16).** The exit pair on 77fa304 found generated part 2356: a hole
+through the next face from the side of a tab turned 120 degrees, and a
+revolution standing after it on the body's end, which the solver found in
+its way (behind its mouth within its depth, and over it along the face's
+axes, by its box) and asked about. The generator kept a way for such a cut
+only from a face of the part's axes; it now keeps one from a turned item's
+face too, as the solver reads it (`_Part.turned_ways`). Kept in
+`REFUSED`. **And the judge's own depth through the next face from a curved
+face** (`_next_round`, where the spec has none yet: the reference parts'
+test) asked 16 points round the hole's rim; out of a face at a slant the
+point out last lies between two of them, and on generated part 4599 (a
+dome's flat face, 16.5 degrees off square) it came 4 micrometres short,
+its mouth 13 off where the part leaves the face, past the accounting's
+tolerance. It asks 128 now.
+
 **And the flat sides of what stands round a side (revision 16, with item
 3b).** What stood round a rod's side took things only on its far face. Its
 flat sides now do too (place.md, "On a round side"): its box's, from its

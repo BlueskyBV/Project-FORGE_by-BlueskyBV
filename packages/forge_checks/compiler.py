@@ -1913,10 +1913,11 @@ class _Compiler:
                 surfaces.append(ends[1])
                 continue
             sides = self._sides_along(item, copy, copy.axes[0]) if copy.axes else None
-            if sides is None:
+            own = COMPILE[item.kind].own_surface(self, item, copy) if sides is None else sides[0]
+            if own is None:
                 self.skip(item, at, "the copies' own surfaces can't be found")
                 return
-            surfaces.append(sides[0])
+            surfaces.append(own)
         expected = n if name == "count" else len(group)
         self.check(
             item,

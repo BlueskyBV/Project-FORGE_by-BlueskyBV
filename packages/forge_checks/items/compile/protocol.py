@@ -104,6 +104,11 @@ class CompileKind:
             return None
         return sides[0] if sign > 0 else sides[1]
 
+    def own_surface(self, c: CompileContext, item: Item, copy: Copy) -> Round | Plane | None:
+        """A surface of a copy's own, to count its copies by, where it has no frame axes to find its sides along (a
+        keyway round a side); None where it has none."""
+        return None
+
     def round_copy(
         self, c: CompileContext, item: Item, copy: Copy, side: RoundSide
     ) -> tuple[Round | Middle, float, float] | None:

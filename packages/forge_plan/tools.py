@@ -305,6 +305,8 @@ def side_air_boxes(
             return mouth, None
         depth = face.most_material_under((disc(radius),))
         return mouth, _bounds_of_cylinder(add(w, d, depth), d, radius, CARRY)
+    if isinstance(face, SideFace) and PLAN[item.kind].keyway:
+        return _keyway_air_boxes(item, copy, face)
     if not isinstance(face, SideFace) or not PLAN[item.kind].goes_round_side:
         return None, None
     radius, widest = PLAN[item.kind].widest(ctx, item)
@@ -325,6 +327,22 @@ def side_air_boxes(
         if not _inside_holds(ctx, copy, face, radius):
             return mouth, None
     return mouth, _bounds_of_cylinder(add(w, d, depth), d, radius, CARRY)
+
+
+def _keyway_air_boxes(item: Item, copy: Instance, face: SideFace) -> tuple[tuple[Vec, Vec] | None, tuple[Vec, Vec] | None]:
+    """The boxes of ``E`` past a keyway's mouth, and past its far side right through a solid rod (5.2; slot.md, "Round a
+    side"): from outside, beyond the plane touching the side along the line through its point, and beyond the plane
+    touching the far side, which a keyway right through a rod reaches, every point of ``E`` is beyond a plane touching
+    the side, as past a hole's. Through a tube's wall its far side isn't carried. The box round each is the box round
+    the cylinder about its axis as wide as the slot's corner reaches."""
+    if not face.outward or face.half is not None:
+        return None, None
+    reach = fs.hypot(_mm(item, "length") / 2, _mm(item, "width") / 2)
+    w, d = copy.origin, neg(copy.normal)
+    mouth = _bounds_of_cylinder(add(w, d, -CARRY), d, reach, CARRY)
+    if not _through(item) or face.wall < 2 * face.radius - EPS:
+        return mouth, None
+    return mouth, _bounds_of_cylinder(add(w, d, 2 * face.radius), d, reach, CARRY)
 
 
 def _inside_holds(ctx: Context, copy: Instance, face: SideFace, radius: float) -> bool:

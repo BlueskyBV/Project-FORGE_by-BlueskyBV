@@ -88,6 +88,7 @@ from .geometry import (
     reach,
     shape_holds,
     shapes_overlap,
+    side_material,
 )
 from .items.solve import SOLVE
 from .items.solve._common import (
@@ -1734,9 +1735,24 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     entry = SOLVE[item.kind]
     if not entry.on_round_side:
         layout.issue("unable", at + pointer("on"),
-                     f"on a round side, Forge cuts round holes and stands bosses, posts, tabs and ribs; "
+                     f"on a round side, Forge cuts round holes and keyways and stands bosses, posts, tabs and ribs; "
                      f"not a {item.kind}, for now")  # fmt: skip
         return []
+    # A slot round a side (slot.md, "Round a side"): a keyway, along the side's axis, square to the plane touching it.
+    keyway = entry.cut and not entry.round_foot
+    if keyway:
+        why = None
+        if not face.outward or face.half is not None or face.local is not None:
+            why = ("round a side, Forge cuts a slot into the side of a rod, a boss or a tube from outside, not round "
+                   "what stands on a turned item's face, for now")  # fmt: skip
+        elif _choice_of(item, "along") != axis:
+            why = (f"round a side, Forge cuts a slot along the side's axis ({axis}), a keyway, for now, not along "
+                   f"{_choice_of(item, 'along')}")  # fmt: skip
+        elif isinstance(end_of(item), (ThroughNext, ThroughEverything)):
+            why = "round a side, a slot goes in to a depth or right through, for now"
+        if why is not None:
+            layout.issue("unable", at, why)
+            return []
     if place is not None and (
         (place.pattern and not PATTERN_SOLVE[place.pattern.kind].round)
         or place.concentric
@@ -1847,6 +1863,8 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                                  f"{around} (around) or {axis} (along the axis)")  # fmt: skip
                     return []
             across_size, along_size = bbox(_outline(item, layout, face_axes))
+        elif keyway:  # its width round the side, its length along it
+            across_size, along_size = bbox(_outline(item, layout, (reference[0], axis)))
         else:
             across_size = along_size = reach(_outline(item, layout, (axis, axis)))
         if 2 * across_size >= 2 * face.radius - EPS:
@@ -1894,10 +1912,15 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     if len(footprints) > 1:
         _check_round_overlaps(item, face, footprints, layout, at, first)
     if entry.cut:
-        # Round a side, only how far the mouth reaches counts: any axes give it; on a round-ended tab's end, where.
-        _check_depth(item, _outline(item, layout, ("x", "y")),
-                     lambda mouth: min(face.material_under(mouth, (angle, 0.0)) for angle in angles), layout, at,
-                     face.depth_sources)  # fmt: skip
+        # Round a side, only how far the mouth reaches counts: any axes give it; on a round-ended tab's end, where. A
+        # keyway's, how far it reaches round the side: along the axis the side is the same all the way.
+        if keyway:
+            _check_depth(item, _outline(item, layout, (reference[0], axis)),
+                         lambda mouth: side_material(face, bbox(mouth)[0]), layout, at, face.depth_sources)  # fmt: skip
+        else:
+            _check_depth(item, _outline(item, layout, ("x", "y")),
+                         lambda mouth: min(face.material_under(mouth, (angle, 0.0)) for angle in angles), layout, at,
+                         face.depth_sources)  # fmt: skip
         bore = face.radius - face.wall
         hole = layout.diameters.get(item.id, 0.0) / 2
         if face.outward and _is_through(item) and not isinstance(end_of(item), ThroughNext) and 0 < bore <= hole + EPS:

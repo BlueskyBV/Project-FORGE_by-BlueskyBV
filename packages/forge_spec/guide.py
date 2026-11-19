@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 23
+GUIDE_VERSION = 24
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -698,7 +698,12 @@ at one that isn't 0, 90, 180 or 270 deg its faces and axes are named as at \
 the one of those at or below it, turned with the side about its axis, and \
 what goes on its far face is placed along that face's own "u" and "v"; its \
 flat sides, from its point out, take things too (a lug's cross hole), \
-placed along their own "u" and "v". On \
+placed along their own "u" and "v". A slot goes round a rod's, a boss's or \
+a tube's side as a keyway: "along" the side's axis, its outline on the \
+plane touching the side along the line through its point ("width" round \
+the side, "length" along it), square to that plane to its "depth" from it, \
+or "through" (a tube's wall into its bore, a solid rod across it); at any \
+"angle", a circle of them too. On \
 a ball's or a dome's "surface" ("schema_version": "1.6"), a hole, a boss or \
 a post is placed by "latitude" (from its equator towards its pole, which is \
 the way it stands; 90 deg is the pole) and "angle" round the pole, as round \

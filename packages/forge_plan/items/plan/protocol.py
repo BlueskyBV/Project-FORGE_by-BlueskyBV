@@ -60,6 +60,8 @@ class PlanKind:
     bottom_edges = False
     #: It goes into a round side (a hole).
     goes_round_side = False
+    #: It is cut into a round side square to the plane touching it, along its axis (a slot: a keyway; slot.md).
+    keyway = False
 
     @property
     def planned(self) -> bool:
