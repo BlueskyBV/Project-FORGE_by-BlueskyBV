@@ -273,6 +273,14 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
     return found
 
 
+def outline_area(item: Item) -> float | None:
+    """The area its outline of lines and arcs holds (a profile's, written as it is); None where it has none."""
+    from forge_spec.items.solve._common import _profile_shape
+
+    shape = _profile_shape(item)
+    return None if shape is None else shape.area()
+
+
 def corner_rounded(item: Item, h1: float, h2: float) -> float:
     """How a square-edged cut's corners are rounded, seen looking into it: its corner radius, at most its half sizes."""
     return min(_length(item, "corner_radius") or 0.0, h1, h2)

@@ -140,6 +140,14 @@ class DrawKind:
         outline. What fits, and keeps clear, by its box; its solid, its side and its rims, by these."""
         return None
 
+    def own_outline(self, f: Feature, axes: tuple[str, str]) -> Outline2 | None:
+        """An outline of its own its footprint is the box round (a hexagonal pocket's, a pocket's drawn outline): about
+        its point along the face's axes, before any turn; None where its footprint is its outline."""
+        corners = self.corners(f, axes)
+        if corners is None:
+            return None
+        return Outline2(corners[0], tuple((c, None, False) for c in (*corners[1:], corners[0])))
+
     def extent(
         self, f: Feature, axes: tuple[str, str]
     ) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -424,9 +432,8 @@ class DrawKind:
     ) -> tuple[Prism | Pushed, float]:
         """What a cut takes away at ``p``, ``depth`` deep: its footprint's prism, or its outline of straight sides
         pushed so (:meth:`corners`); and its round radius (none)."""
-        corners = self.corners(f, face.axes)
-        if corners is not None:
-            outline = Outline2(corners[0], tuple((c, None, False) for c in (*corners[1:], corners[0])))
+        outline = self.own_outline(f, face.axes)
+        if outline is not None:
             return Pushed(_t(p), _t(e1), _t(e2), _t(n), outline, -depth, 0.0), 0.0
         (h1, h2), r = _footprint(f, face.axes)
         return Prism(_t(p), _t(e1), _t(e2), _t(n), (h1, h2), r, -depth, 0.0), 0.0

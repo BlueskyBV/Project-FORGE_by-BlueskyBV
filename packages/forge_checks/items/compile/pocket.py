@@ -5,10 +5,15 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from forge_numeric import scalar as fs
+from forge_numeric import vector as fv
 from forge_spec.draft import Item
+from forge_spec.ends import ThroughAll, ThroughEverything, UpToFace, end_of
 
-from forge_checks.classes import RADIUS
+from forge_checks.classes import RADIUS, general
+from forge_checks.convex import convex_pieces
 from forge_checks.items.compile._common import (
+    _RAYS,
     _STRAIGHT,
     _mm,
     _t,
@@ -17,10 +22,13 @@ from forge_checks.items.compile._common import (
     side_end,
 )
 from forge_checks.items.compile.protocol import CompileKind
+from forge_checks.kinds.depth import Open
 from forge_checks.kinds.position import Centre, Corner, Middle, Position, Ref, RoundEdge
 from forge_checks.kinds.size import Between
 from forge_checks.kinds.surfaces import Plane, Round
-from forge_checks.place import Copy
+from forge_checks.outlines import Arc as OutlineArc
+from forge_checks.outlines import Outline, Segment
+from forge_checks.place import Copy, section_of
 
 if TYPE_CHECKING:
     from forge_checks.items.compile._context import CompileContext
@@ -31,6 +39,9 @@ class Pocket(CompileKind):
 
     def checks(self, c: CompileContext, item: Item) -> None:
         shape = c._choice_value(item, "shape")
+        if shape == "profile":
+            _profile_checks(c, item)
+            return
         for copy in c.copies(item):
             assert copy.axes is not None and copy.span is not None
             n = _v(copy.direction)
@@ -113,7 +124,7 @@ class Pocket(CompileKind):
     ) -> tuple[Plane, Plane] | None:
         if copy.span is None or copy.axes is None:
             return None
-        if c._choice_value(item, "shape") == "circle":
+        if c._choice_value(item, "shape") in ("circle", "profile"):
             return None
         if c._choice_value(item, "shape") == "hexagon":  # its flats square to the face's second axis; none to the first
             if axis != copy.axes[1]:
@@ -172,8 +183,15 @@ class Pocket(CompileKind):
             return corners[0] if sign > 0 else corners[1]
         return super().edge_ref(c, item, copy, axis, sign)
 
+    def placed_by_its_outline(self, c: CompileContext, item: Item) -> bool:
+        return c._choice_value(item, "shape") == "profile"
+
     def own_surface(self, c: CompileContext, item: Item, copy: Copy) -> Round | Plane | None:
-        if c._choice_value(item, "shape") != "hexagon" or copy.span is None:
+        if copy.span is None:
+            return None
+        if c._choice_value(item, "shape") == "profile":
+            return _profile_wall(c, item, copy)
+        if c._choice_value(item, "shape") != "hexagon":
             return None
         return _hexagon_walls(c, copy, _mm(item.get("across_flats")) / 2)[1]  # its flat on its second axis' + side
 
@@ -204,6 +222,76 @@ def _hexagon_corners(c: CompileContext, item: Item, copy: Copy, axis: str) -> tu
         return None
     walls = _hexagon_walls(c, copy, _mm(item.get("across_flats")) / 2)
     return Corner(walls[0], walls[5]), Corner(walls[2], walls[3])
+
+
+def _profile_checks(c: CompileContext, item: Item) -> None:
+    """A pocket of its own outline (pocket.md): its outline, and where it is, held by face accounting, as an
+    extrusion's is (docs/V2-stage4.md, 6.6); its depth, from the face round its mouth to its floor over the box round
+    its outline, or right through, open along its axis round a point well within it."""
+    section = section_of(item)
+    c._profile(item)
+    inside = _well_within(section)
+    reach = max(fs.hypot(p[0], p[1]) for side in section.pieces() for p in side.ends()) + max(section.half)
+    for copy in c.copies(item):
+        assert copy.axes is not None and copy.span is not None
+        first, second = (_v(c.along(copy, a)) for a in copy.axes)
+        n = _v(copy.direction)
+        depth = copy.span[1]
+        if isinstance(end_of(item), (ThroughAll, ThroughEverything)) or inside is None:
+            if inside is None:
+                c.skip(item, "depth", "no point is well within its outline: face accounting holds it",
+                       "face accounting")  # fmt: skip
+                continue
+            (x, y), r = inside
+            mouth = _v(copy.point) + x * first + y * second
+            c.check(item, "depth", "depth", depth, None, Open(_t(mouth), _t(-n), depth, r), copy.index, _RAYS)
+            continue
+        (m1, m2), (h1, h2) = section.centre, section.half
+        floor = Plane(_t(_v(copy.point) + m1 * first + m2 * second - depth * n), copy.direction, min(h1, h2))
+        end = end_of(item)
+        tolerance = general(depth) if isinstance(end, UpToFace) else c.tol(item.get("depth"))
+        c._floor(item, "depth", copy, floor, depth, tolerance, reach)
+    c._choice(item, "shape")
+    c._cut_fields(item)
+
+
+def _well_within(section: Outline) -> tuple[tuple[float, float], float] | None:
+    """A point well within an outline and how far round it is all within: a convex piece's middle, half as far as
+    the outline is from it; None where none is within it."""
+    best: tuple[tuple[float, float], float] | None = None
+    for polygon in convex_pieces(section).polygons:
+        p = (sum(q[0] for q in polygon) / len(polygon), sum(q[1] for q in polygon) / len(polygon))
+        if not section.contains(p, tol=0.0):
+            continue
+        room = min(side.distance(p) for side in section.pieces()) / 2
+        if room > 0 and (best is None or room > best[1]):
+            best = (p, room)
+    return best
+
+
+def _profile_wall(c: CompileContext, item: Item, copy: Copy) -> Plane | Round | None:
+    """A wall of a pocket of its own outline, to count its copies by: its first straight side's, facing back into it,
+    or, where it has none, its first arc's."""
+    assert copy.axes is not None and copy.span is not None
+    section = section_of(item)
+    first, second = (_v(c.along(copy, a)) for a in copy.axes)
+    n = _v(copy.direction)
+    for side in section.pieces():
+        if isinstance(side, Segment):
+            (ax, ay), (bx, by) = side.a, side.b
+            length = fs.hypot(bx - ax, by - ay)
+            dx, dy = (bx - ax) / length, (by - ay) / length
+            mx, my = (ax + bx) / 2, (ay + by) / 2
+            out = (dy, -dx) if not section.contains((mx + 1e-6 * dy, my - 1e-6 * dx), tol=0.0) else (-dy, dx)
+            way = out[0] * first + out[1] * second
+            along = dx * first + dy * second
+            at = float(fv.matmul(mx * first + my * second, way))
+            return c.cut_wall(copy, way, at, along, length / 4)
+    arc = next((side for side in section.pieces() if isinstance(side, OutlineArc)), None)
+    if arc is None:
+        return None
+    centre = _v(copy.point) + arc.centre[0] * first + arc.centre[1] * second
+    return Round(_t(centre), _t(-n), arc.radius, 0.0, side_end(copy), True)
 
 
 ENTRY = Pocket()

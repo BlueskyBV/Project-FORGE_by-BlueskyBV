@@ -556,21 +556,22 @@ KINDS: Mapping[str, KindSpec] = {
         KindSpec(
             "pocket",
             Category.CUT,
-            "a flat-bottomed recess or cut-out, rectangular, round or hexagonal",
+            "a flat-bottomed recess or cut-out, rectangular, round, hexagonal or of any outline",
             (
                 _ON,
                 _PLACE,
                 _f(
                     "shape",
                     FieldType.CHOICE,
-                    "rectangle, circle or hexagon",
-                    choices=("rectangle", "circle", "hexagon"),
+                    "rectangle, circle, hexagon or profile (an outline of lines and arcs)",
+                    choices=("rectangle", "circle", "hexagon", "profile"),
                     synonyms={
                         "rectangle": ("rectangle", "rectangular", "square", "oblong"),
                         "circle": ("circle", "circular", "round", "cylindrical"),
                         "hexagon": ("hexagon", "hexagonal", "hex", "six-sided"),
+                        "profile": ("profile", "outline", "outlined", "shaped", "drawing", "drawn"),
                     },
-                    since={"hexagon": (1, 9)},
+                    since={"hexagon": (1, 9), "profile": (1, 9)},
                 ),
                 _f(
                     "length",
@@ -591,6 +592,13 @@ KINDS: Mapping[str, KindSpec] = {
                     "a hexagon's size between two opposite flats (a nut's spanner size); two of its corners on "
                     "the face's first axis",
                     only_when=("shape", "hexagon"),
+                ),
+                _f(
+                    "profile",
+                    FieldType.PROFILE,
+                    "its outline, a closed curve of lines and arcs in mm along the face's axes from the point "
+                    "place puts it at (its point (0, 0))",
+                    only_when=("shape", "profile"),
                 ),
                 _f(
                     "corner_radius",

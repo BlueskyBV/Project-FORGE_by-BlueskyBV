@@ -10,7 +10,8 @@ from __future__ import annotations
 import math
 
 from forge_numeric import scalar as fs
-from forge_spec.draft import Item
+from forge_spec.draft import Item, Profile
+from forge_spec.outline import Shape
 from forge_spec.placement import Layout, mm
 from forge_spec.values import Value
 
@@ -32,6 +33,12 @@ class Pocket(GradeKind):
             return size["diameter"] / 2 if "diameter" in size else None
         if _choice(item, "shape") == "hexagon":  # to a corner: across its flats over sqrt(3)
             return size["across_flats"] / math.sqrt(3.0) if "across_flats" in size else None
+        if _choice(item, "shape") == "profile":  # to the farthest corner of the box round its outline, from its point
+            profile = item.get("profile")
+            if not isinstance(profile, Profile):
+                return None
+            (l1, l2), (h1, h2) = Shape.of_profile(profile).box()
+            return fs.hypot(max(-l1, h1), max(-l2, h2))
         if "length" in size and "width" in size:
             return fs.hypot(size["length"], size["width"]) / 2
         return None

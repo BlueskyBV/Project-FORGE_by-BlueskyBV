@@ -20,7 +20,10 @@ from forge_spec.items.solve._common import (
     _choice_of,
     _item_values,
     _length_of,
+    _profile_shape,
     _size,
+    _turn,
+    degrees,
     route,
 )
 from forge_spec.items.solve.protocol import SolveKind
@@ -42,6 +45,8 @@ class Pocket(SolveKind):
             return ("diameter",)
         if _choice_of(item, "shape") == "hexagon":
             return ("across_flats",)
+        if _choice_of(item, "shape") == "profile":
+            return ("profile",)
         if k is None or axes is None:
             return ("length", "width", "corner_radius")
         return ("length",) if k == 0 else ("width",)
@@ -51,20 +56,23 @@ class Pocket(SolveKind):
     ) -> tuple[Part, ...]:
         if _choice_of(item, "shape") == "circle":
             return (disc(_size(item, "diameter") / 2),)
-        if _choice_of(item, "shape") == "hexagon":  # the box round it: it is placed by its own outline (shape)
-            (l1, l2), (h1, h2) = _hexagon(item).box()
-            return (rect((h1 - l1) / 2, (h2 - l2) / 2),)
+        own = self.shape(item, layout, axes)
+        if own is not None:  # the box round it, where it is about its point: placed by its own outline (shape)
+            (l1, l2), (h1, h2) = own.box()
+            return (rect((h1 - l1) / 2, (h2 - l2) / 2, (l1 + h1) / 2, (l2 + h2) / 2),)
         h1, h2 = _size(item, "length") / 2, _size(item, "width") / 2
         return rounded_rect(h1, h2, min(_size(item, "corner_radius"), h1, h2))
 
     def shape(self, item: Item, layout: Layout, axes: tuple[str, str]) -> Shape | None:
-        return _hexagon(item) if _choice_of(item, "shape") == "hexagon" else None
+        if _choice_of(item, "shape") == "hexagon":
+            return _hexagon(item)
+        return _profile_shape(item) if _choice_of(item, "shape") == "profile" else None
 
     def turnable(
         self, item: Item, layout: Layout, axes: tuple[str, str]
     ) -> tuple[float, float, float] | None:
-        if _choice_of(item, "shape") in ("circle", "hexagon"):
-            return None  # a round pocket turned is the same pocket; a hexagon turns as its own outline (shape)
+        if _choice_of(item, "shape") in ("circle", "hexagon", "profile"):
+            return None  # a round pocket turned is the same pocket; a hexagon or a profile turns as its own outline
         h1, h2 = _size(item, "length") / 2, _size(item, "width") / 2
         return h1, h2, min(_size(item, "corner_radius"), h1, h2)
 
@@ -120,13 +128,23 @@ class Pocket(SolveKind):
             diameter = ((item.id, "diameter"),)
             floor = FlatFace("bottom", centre, face.normal, face.axes, "disc", (r, r), 0.0, material - deep,
                              axis_sources=(diameter, diameter), depth_sources=depths, less=less)  # fmt: skip
-        elif _choice_of(item, "shape") == "hexagon":
-            hexagon = _hexagon(item)
-            (l1, l2), (h1, h2) = hexagon.box()
-            flats = ((item.id, "across_flats"),)
+        elif _choice_of(item, "shape") in ("hexagon", "profile"):
+            # Its own outline, about the middle of the box round it (a profile's may be off its point), where that
+            # middle is, turned with it where it is turned.
+            own = self.shape(item, layout, face.axes)
+            assert own is not None
+            (l1, l2), (h1, h2) = own.box()
+            m1, m2 = (l1 + h1) / 2, (l2 + h2) / 2
+            place = item.get("place")
+            turn = getattr(place, "turn", None)
+            c, s = _turn(degrees(turn)) if turn is not None else (1.0, 0.0)
+            frame = face.frame
+            centre = _add(_add(centre, frame.u, c * m1 - s * m2), frame.v, s * m1 + c * m2)
+            less = Less(face, face.frame.on(centre), deep)
+            own_sizes = ((item.id, "across_flats" if _choice_of(item, "shape") == "hexagon" else "profile"),)
             floor = FlatFace("bottom", centre, face.normal, face.axes, "profile", ((h1 - l1) / 2, (h2 - l2) / 2), 0.0,
-                             material - deep, axis_sources=(flats, flats), depth_sources=depths, profile=hexagon,
-                             less=less)  # fmt: skip
+                             material - deep, axis_sources=(own_sizes, own_sizes), depth_sources=depths,
+                             profile=own.moved(-m1, -m2), less=less)  # fmt: skip
         else:
             h1, h2 = _size(item, "length") / 2, _size(item, "width") / 2
             radius = min(_size(item, "corner_radius"), h1, h2)

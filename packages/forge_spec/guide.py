@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 25
+GUIDE_VERSION = 26
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -720,8 +720,11 @@ turn of its tip (an "arc" of them, not a "circle"), a hole there with a depth. \
 of a round item (a hole down a boss). A pocket may be a "hexagon" \
 ("schema_version": "1.9"), "across_flats" between two opposite flats (a nut \
 trap: the nut's spanner size, and the clearance the brief gives), two of \
-its corners on the face's first axis. On a flat face, "turn": angle turns a \
-slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of \
+its corners on the face's first axis; or a "profile" (1.9), its "profile" an \
+outline as an extrusion's is, along the face's axes from the point "place" \
+puts it at (a D-shaped hole, a window of any outline), its edges not yet \
+rounded or bevelled. On a flat face, "turn": angle turns a \
+slot, a pocket that isn't round, a rib, a tab, a block, a post or a line of \
 letters in the face's plane, from the face's first axis towards its second, \
 about its own point ("schema_version": "1.2" or later); its edges are then not along \
 the face's axes, so a position measured "to": "edge" is to its turned \

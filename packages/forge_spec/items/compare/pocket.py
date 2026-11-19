@@ -11,6 +11,7 @@ from forge_spec.items.compare._common import (
     corner_rounded,
     cut_features,
     cut_material,
+    outline_area,
 )
 from forge_spec.items.compare.protocol import CompareKind
 from forge_spec.placement import Layout
@@ -32,11 +33,18 @@ class Pocket(CompareKind):
                 if _choice(item, "shape") == "circle"
                 else None
             )
-            hexagon = _choice(item, "shape") == "hexagon"  # its box across the face, and its size across its flats
+            # Its box across the face, and a hexagon's size across its flats, an outline's area.
+            shape = _choice(item, "shape")
+            own: tuple[object, ...] = ()
+            if shape == "hexagon":
+                own = (_r(_length(item, "across_flats") or 0.0),)
+            elif shape == "profile":
+                area = outline_area(item)
+                own = (_r(area),) if area is not None else ()
             found += cut_features(n, item, copy, layout, material, diameter,
                                   lambda h1, h2: corner_rounded(item, h1, h2),
-                                  "hexagonal cut" if hexagon else "square cut",
-                                  (_r(_length(item, "across_flats") or 0.0),) if hexagon else ())  # fmt: skip
+                                  {"hexagon": "hexagonal cut", "profile": "profiled cut"}.get(str(shape), "square cut"),
+                                  own)  # fmt: skip
         return found
 
 

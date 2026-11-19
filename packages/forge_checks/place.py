@@ -1358,7 +1358,7 @@ def _turn_of(item: Item) -> Point | None:
     if not _entry(item.kind).turnable(item):
         raise PlaceError(
             item.id,
-            "a turn turns a slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of letters in "
+            "a turn turns a slot, a pocket that isn't round, a rib, a tab, a block, a post or a line of letters in "
             "its face's plane",
         )
     return turn(_angle(place.turn))
@@ -2093,8 +2093,12 @@ def _turned_floor(item: Item, faces: dict[str, Face], face: FlatFace, degrees: f
     if not isinstance(floor, FlatFace) or host is None or not isinstance(floor.material, Less):
         return None
     turned = replace(floor, turn=degrees)
-    c1, c2 = turned.frame.plane(floor.centre)
-    foot = _entry(item.kind).footprint(item, layout.diameters, face.axes).moved(c1, c2)
+    own = _entry(item.kind).footprint(item, layout.diameters, face.axes)
+    m1, m2 = own.centre  # its own box's middle, off its point (a pocket of its own outline), turned with it
+    frame = turned.frame
+    turned = replace(turned, centre=_add(_add(floor.centre, frame.u, m1), frame.v, m2))
+    c1, c2 = turned.frame.plane(turned.centre)
+    foot = own.moved(c1 - m1, c2 - m2)
     return replace(turned, outline=foot, material=Solid(host - floor.material.depth))
 
 
@@ -2368,6 +2372,12 @@ def _pocket_floor(item: Item, face: FlatFace, index: int, point: Vec, mouth: Out
         )
         return
     centre = _add(point, face.frame.n, -depth)
+    # Centred where its outline's box is (a pocket of its own outline may be off its point); turned, where its own
+    # box is, turned with it (_turned_floor).
+    if _turn_of(item) is None:
+        at = face.frame.plane(point)
+        frame = face.frame
+        centre = _add(_add(centre, frame.u, mouth.centre[0] - at[0]), frame.v, mouth.centre[1] - at[1])
     layout.faces[key]["bottom"] = FlatFace(
         "bottom", centre, face.normal, face.axes, mouth, Less(face.material, depth)
     )

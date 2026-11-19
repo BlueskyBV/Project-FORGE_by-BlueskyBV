@@ -244,8 +244,8 @@ kind modules on the same foundation, never as a rebuild of it.
   hole's last construction turns its round tools about their axes
   (V2-stage4.md, 5.7), and a cut through the next face is carried past
   its end (5.2); a slot goes round a side as a keyway, and a pocket may
-  be a hexagon (a nut trap, schema 1.9); next, its fourth step (schema
-  2.0).
+  be a hexagon (a nut trap) or of its own outline (schema 1.9); next, its
+  fourth step (schema 2.0).
 - **4b.0d, the rest, in four parts, old against new after each:** d1 the
   oracle and the reader (items 4, 5, 9, 24, the continuity check kind, and
   the oracle's certified face-face intersections with convex, concave and

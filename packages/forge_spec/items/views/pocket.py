@@ -32,6 +32,8 @@ class Pocket(ViewKind):
         depth = item.get("depth")
         if _choice(item, "shape") == "circle":
             d.say(f"round pocket Ø{_value(item.get('diameter'))}", "diameter")
+        elif _choice(item, "shape") == "profile":
+            d.say("pocket of its outline", "profile")
         elif _choice(item, "shape") == "hexagon":
             d.say(f"hex pocket {_value(item.get('across_flats'))} across flats", "across_flats")
         else:

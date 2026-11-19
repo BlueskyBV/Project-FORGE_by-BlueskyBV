@@ -22,7 +22,8 @@ it (revision 16), and a hole goes through the next face on a round side, a
 ball or a cone, and a cut on a turned or a leaning item's face (2b's third
 step, revision 16), and through everything there too, and a leaning
 item's sides, flat and round, take cuts (revision 16), a slot goes round a
-side as a keyway and a pocket may be a hexagon (schema 1.9); next, 2b's
+side as a keyway and a pocket may be a hexagon or of its own outline
+(schema 1.9); next, 2b's
 fourth step (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
@@ -1703,6 +1704,28 @@ smaller caught; the second kernel agreeing; the words, the views and the
 comparison; the generator's own shape, built and graded). Generator
 digests on seeds 0-149, old against new: 23 drawn otherwise, 25 impossible
 parts.
+
+**And a pocket of its own outline (revision 16, schema 1.9).** A pocket may
+also be `"shape": "profile"`, its `profile` an outline of lines and arcs as
+an extrusion's (pocket.md): along the face's axes from the point `place`
+puts it at, which may lie off it (a D-shaped hole for a shaft's flat, a
+window of any outline); placed, turned and patterned as the hexagon is, by
+its own outline (`SolveKind.shape`), its floor a profile face about the
+middle of the box round it, turned with it. **The judge** reads its
+outline as an extrusion's (`section_of`), its floor centred where that box
+is (and, turned, where its own box is turned to). **The oracle** makes it
+its convex pieces, each pushed from its mouth to its depth, and its bulges,
+as an extrusion's outline is made. **The check compiler** holds its depth
+(to its floor over the box round its outline, or right through, open round
+a point well within it); its outline and its place, as an extrusion's are,
+by face accounting; a pattern's count by a wall of each. Its edges aren't
+rounded or bevelled yet: said ("unable"). **The generator** cuts one now and
+then from a stream of its own (`_onto_outlined_pocket`, "forge-eval outlined
+pockets", 0.03 at each item: an L, a T, a stadium or a plate's corner, sized
+from the face, blind or right through, now and then a pattern of them), its
+truth its outline pushed, its side checked built (points past it, round its
+arcs too), its straight walls kept from a rod touching them along a line.
+Tests: `tests/test_v2_plan_outlined.py`.
 
 **And a hole through the next face from a turned item's face keeps its way
 (revision 16).** The exit pair on 77fa304 found generated part 2356: a hole

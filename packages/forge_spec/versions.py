@@ -23,7 +23,8 @@ placement's ``latitude`` on a ball's or a dome's surface; 1.7, a cut's
 ``depth`` through all, ``{"through_all": true}``, or up to a face,
 ``{"up_to": {...}, "offset": size}``; 1.8, through the next face,
 ``{"through_next": true}``, with how deep the preview found it ``reaches``;
-1.9, a hexagonal pocket, ``"shape": "hexagon"`` with its ``across_flats``.
+1.9, a hexagonal pocket, ``"shape": "hexagon"`` with its ``across_flats``,
+and a pocket of any outline, ``"shape": "profile"`` with its ``profile``.
 
 >>> version_of({"schema_version": "1.1"})
 (1, 1)

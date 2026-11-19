@@ -1394,6 +1394,12 @@ class _Compiler:
                     self.skip(item, name, "it is turned in, or leans on, its face: where it is, and its turn, are held "
                               "by where its faces are, as the oracle builds them", "face accounting")  # fmt: skip
             return
+        if COMPILE[item.kind].placed_by_its_outline(self, item):
+            for name in leaves(item):
+                if name.startswith("place."):
+                    self.skip(item, name, "it is an outline of its own: where it is is held by where its faces are, "
+                              "as the oracle builds them, as its outline is", "face accounting")  # fmt: skip
+            return
         face = self.placed.face(copies[0].host)
         if isinstance(face, (RoundBall, RoundCone)):
             where = ("on a ball's surface: its latitude and its angle round the pole" if isinstance(face, RoundBall)

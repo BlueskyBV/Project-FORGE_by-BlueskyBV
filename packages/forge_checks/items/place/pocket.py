@@ -18,6 +18,7 @@ from forge_checks.place import (
     _mm,
     _mm_or,
     _pocket_floor,
+    section_of,
 )
 
 
@@ -38,6 +39,8 @@ class Pocket(PlaceKind):
             r = 2 * h / math.sqrt(3.0)
             corners = [(r, 0.0), (r / 2, h), (-r / 2, h), (-r, 0.0), (-r / 2, -h), (r / 2, -h)]
             return Outline.profile([Segment(a, b) for a, b in zip(corners, [*corners[1:], corners[0]], strict=True)])
+        if _choice(item, "shape") == "profile":  # its outline as written, about its point (0, 0) (pocket.md)
+            return section_of(item)
         h1, h2 = _mm(item, "length") / 2, _mm(item, "width") / 2
         r = _mm_or(item, "corner_radius", 0.0) or 0.0
         if r > min(h1, h2) + TOL:

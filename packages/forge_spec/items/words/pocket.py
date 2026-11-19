@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from forge_spec.items.words._common import _c, _count, _depth, _Line, _where
+from forge_spec.items.words._common import _c, _count, _depth, _generic, _Line, _where
 from forge_spec.items.words.protocol import WordsKind
 
 
@@ -14,6 +14,9 @@ class Pocket(WordsKind):
             "circle"
         ):
             shape = f"round pocket {line.item.id} ({_c(line.get('shape'))}): Ø{line.v('diameter')}"
+        elif line.item.get("shape") is not None and _c(line.item.get("shape")).startswith("profile"):
+            shape = (f"pocket {line.item.id} of its own outline ({_c(line.get('shape'))}): "
+                     f"{_generic(line.get('profile'))}, about the point where it is placed")  # type: ignore[arg-type]
         elif line.item.get("shape") is not None and _c(line.item.get("shape")).startswith("hexagon"):
             shape = (f"hexagonal pocket {line.item.id} ({_c(line.get('shape'))}): {line.v('across_flats')} across "
                      "its flats, two corners on the face's first axis")  # fmt: skip

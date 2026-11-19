@@ -2,7 +2,8 @@
 
 Status: **draft, for your approval.**
 
-A recess: a rectangular, round or hexagonal cut with a flat floor.
+A recess: a rectangular, round or hexagonal cut, or one of any outline, with
+a flat floor.
 
 ## The shape
 
@@ -16,7 +17,12 @@ Its outline on the face is centred where `place` puts it:
   opposite sides (a nut trap: the nut's spanner size), two of its corners on
   the face's first axis, `across_flats / √3` from its centre, its other
   four at 60° steps round it (two of its sides run along the face's first
-  axis, `across_flats / 2` from its centre either way along its second).
+  axis, `across_flats / 2` from its centre either way along its second);
+- or (schema 1.9) its own `profile`: a closed outline of lines and arcs, as
+  an extrusion's is ([extrusion.md](extrusion.md)), its two coordinates
+  along the face's axes from the point `place` puts it at (its point
+  `(0, 0)`), which may lie off it (a D-shaped hole for a shaft's flat, a
+  window of any outline).
 
 The outline goes in from the face, at right angles to it, to its depth, and
 takes away every point of the part inside it. A blind pocket's floor is flat
@@ -37,6 +43,7 @@ Where on the face ([place.md](place.md)).
 - `rectangle`: a rectangle, `length` by `width`.
 - `circle`: a circle of `diameter`.
 - `hexagon`: a regular hexagon, `across_flats` (schema 1.9).
+- `profile`: its own outline, `profile` (schema 1.9).
 
 ### `length`
 
@@ -58,6 +65,14 @@ centre, or by its edge, its farthest point along that axis (along the
 face's first axis, a corner; along its second, a flat); turned in the face
 by `place.turn` about its centre, as a rectangle is. A ring of them, a row
 or a grid, as of any pocket.
+
+### `profile`
+
+A pocket's own outline (schema 1.9), written as an extrusion's is. Placed
+as an extrusion standing on a face is ([place.md](place.md)): its point
+`(0, 0)` where `place` puts it, centred by that point, measured to its edge
+by the box round its outline; turned in the face by `place.turn` about that
+point. Its edges are not rounded or bevelled yet.
 
 ### `corner_radius`
 
@@ -93,4 +108,7 @@ How many pockets there are in the whole part ([place.md](place.md)).
 Exact. A hexagon's size across its flats is measured between each pair of
 opposite sides, its place along the face's second axis from the middle of
 its two sides there, and along its first from the middle of its two corners
-there, each where its two sides meet.
+there, each where its two sides meet. A pocket of its own outline: its
+depth from the face round its mouth to its floor, or right through, open
+round a point well within it; its outline, and where it is, held by face
+accounting, as an extrusion's outline is.

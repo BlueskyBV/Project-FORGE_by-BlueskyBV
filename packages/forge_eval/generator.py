@@ -3157,7 +3157,7 @@ def _item_said(f: Feature, w: Writer, names: Mapping[str, str], found: dict[str,
         w.say(", ")
         found["corner_radius"] = _mm(w, s["corner_radius"], before="its corners rounded to ")  # fmt: skip
     if profile is not None:
-        w.say(" of " if s else "")
+        w.say(" of " if s or own.cut_out else "")  # a pocket's outline after its depth
         assert f.outline is not None
         w.cite(
             _OUTLINE_WORDS[f.outline[0]] + " drawn with this brief", profile["words"]
@@ -3979,6 +3979,9 @@ def _round_cut(f: Feature, target: Feature, copy: Copy, which: str, size: float,
                 RingCorner(_t(p), _t(n), r, t, (a, 0.0), (0.0, b), size, round_),
             )
         )
+    elif (copy.axes is not None and _draw(target.kind).own_outline(target, copy.axes) is not None
+          and _draw(target.kind).corners(target, copy.axes) is None):  # fmt: skip
+        raise DoesNotFitError(f"{f.id}: the generator doesn't round the rims of a pocket of its own outline")
     elif copy.axes is not None and _draw(target.kind).corners(target, copy.axes) is not None:
         # An outline of straight sides (a hexagon): each side's straight run exact, carried on into its sharp
         # corners, which the definitions bound, zones.
@@ -4254,7 +4257,7 @@ def _walls_crossed(plan: Plan, steps: list[Step]) -> None:
     rods = _round_solids(steps)
     for step in steps:
         s = step.solid.solid if isinstance(step.solid, Kept) else step.solid  # a leaning one's whole prism
-        if isinstance(s, Pushed) and all(centre is None for _, _, centre, *_ in s.outline.pieces()):
+        if isinstance(s, Pushed):  # its straight sides (an arc's touching a rod waits)
             c, walls = _v(s.origin), _pushed_walls(s)
         elif not isinstance(s, Prism) or (all(s.rounded) and s.corner >= max(s.half)):
             continue
@@ -4291,7 +4294,9 @@ def _pushed_walls(s: Pushed) -> list[tuple[Array, float, tuple[Array, float, flo
     far it runs; then its two ends, as a prism's (the box round its outline, across them)."""
     e1, e2, n = (_v(x) for x in (s.first, s.second, s.normal))
     found = []
-    for a, b, *_ in s.outline.pieces():
+    for a, b, centre, *_ in s.outline.pieces():
+        if centre is not None:
+            continue
         length = fs.dist(a, b)
         d = ((b[0] - a[0]) / length) * e1 + ((b[1] - a[1]) / length) * e2
         out = np.cross(d, n)
@@ -4375,6 +4380,8 @@ _SIDE_ROUND = 64
 _SIDE_LAYERS = 8
 #: The least share of them that must be in the part.
 _SIDE_BUILT = 0.1
+#: How far apart the points round an outline of its own are spread (mm): its arcs followed by chords that short.
+_SIDE_STEP = 0.25
 
 
 def _cuts_sided(plan: Plan, truth: Truth) -> None:
@@ -4418,17 +4425,19 @@ def _cuts_sided(plan: Plan, truth: Truth) -> None:
 
 
 def _past_sides(s: Pushed) -> Array:
-    """Points :data:`_SIDE_OFF` past an outline of straight sides pushed along its normal (anticlockwise), spread along
-    each side by its share of the outline and through its height."""
-    pieces = s.outline.pieces()
-    total = sum(fs.dist(a, b) for a, b, *_ in pieces)
+    """Points :data:`_SIDE_OFF` past an outline of lines and arcs pushed along its normal, spread round it (each
+    between two of its points the same way along it, carried out square to the chord between them, to whichever side
+    is out of it) and through its height."""
+    ring = s.outline.followed(_SIDE_STEP)
     found: list[tuple[float, float]] = []
-    for a, b, *_ in pieces:
-        length = fs.dist(a, b)
-        dx, dy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
-        n = max(1, round(_SIDE_ROUND * length / total))
-        found += [(a[0] + (k + 0.5) / n * (b[0] - a[0]) + _SIDE_OFF * dy, a[1] + (k + 0.5) / n * (b[1] - a[1])
-                   - _SIDE_OFF * dx) for k in range(n)]  # fmt: skip
+    for (x0, y0), (x1, y1) in itertools.pairwise(ring.tolist()):
+        length = fs.dist((x0, y0), (x1, y1))
+        if length <= 1e-9:
+            continue
+        mx, my, dx, dy = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / length, (y1 - y0) / length
+        out = (mx + _SIDE_OFF * dy, my - _SIDE_OFF * dx)
+        found.append(out if not bool(s.outline.inside(np.array([out[0]]), np.array([out[1]]))[0])
+                     else (mx - _SIDE_OFF * dy, my + _SIDE_OFF * dx))  # fmt: skip
     u, v = np.array([p[0] for p in found]), np.array([p[1] for p in found])
     t = s.low + (np.arange(_SIDE_LAYERS) + 0.5) / _SIDE_LAYERS * (s.high - s.low)
     first, second, normal = (np.asarray(w, dtype=np.float64) for w in (s.first, s.second, s.normal))
@@ -5226,6 +5235,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             continue  # blind or right through: through the next face or everything waits (generated part 2231)
         if _onto_nut_trap(random.Random(f"forge-eval nut traps {seed} {k}"), k, plan, part):
             continue
+        if _onto_outlined_pocket(random.Random(f"forge-eval outlined pockets {seed} {k}"), k, plan, part):
+            continue
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
@@ -5779,6 +5790,62 @@ def _onto_nut_trap(rng: random.Random, k: int, plan: list[Feature], part: _Part)
                 place[axis] = _position(rng, axis, room, whole)
         candidate = replace(f, place=place, pattern=pattern)
         candidate = _turned_now_and_then(rng, candidate, face) or candidate
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+#: How often, at each item drawn, a pocket of an outline of its own is cut into a flat face (pocket.md; schema 1.9),
+#: from a stream of its own.
+_OUTLINED = 0.03
+
+
+def _onto_outlined_pocket(rng: random.Random, k: int, plan: list[Feature], part: _Part) -> bool:
+    """Now and then, from a stream of its own, a pocket of one of the outlines an extrusion is drawn with (an L, a T, a
+    stadium, a plate's corner: pocket.md), in a flat face, sized from it, blind or right through, now and then a
+    pattern of them. What fits, and keeps clear, by the box round its outline; its solid and its side by its outline
+    (DrawKind.own_outline). Whether one was added to the plan."""
+    hosts = [key for key, face in part.flats.items()
+             if key[1] == 0 and not face.turned and not face.footed and face.shape in ("rect", "disc", "profile")]  # fmt: skip
+    if not hosts or rng.random() >= _OUTLINED:
+        return False
+    key = rng.choice(hosts)
+    face = part.flats[key]
+    room = (face.widest,) * 2 if face.shape == "profile" else (0.7 * face.half[0],) * 2 if face.shape == "disc" \
+        else face.half
+    for _ in range(10):
+        shape = rng.choice(PUSHED)
+        a, b = (_q(2 * h * rng.uniform(0.2, 0.6)) for h in room)
+        if shape == "L":
+            values = {"a": a, "b": b, "t": _q(rng.uniform(min(a, b) / 6, min(a, b) / 2.5))}
+        elif shape == "T":
+            w, h = _q(a, 0.002), _q(b, 0.002)
+            values = {"w": w, "h": h, "t": _even(rng, h / 6, h / 2.5), "s": _even(rng, w / 6, w / 2.5)}
+        elif shape == "stadium":
+            w = _even(rng, 0.4 * b, b)
+            values = {"l": _even(rng, w + 1.5, max(w + 1.6, a)), "w": w}
+        else:
+            values = {"a": a, "b": b, "r": _q(rng.uniform(min(a, b) / 8, min(a, b) / 2.5)),
+                      "c": _q(rng.uniform(min(a, b) / 8, min(a, b) / 2.5))}  # fmt: skip
+        depth = (None if face.exit is not None and rng.random() < 0.3
+                 else _q(rng.uniform(0.5, max(0.6, face.material - GAP - 0.1))))  # fmt: skip
+        f = Feature(f"i{k}", "pocket", {}, (key[0], key[2]), depth, {"shape": "profile"},
+                    outline=(shape, tuple(values.items())))  # fmt: skip
+        try:
+            (h1, h2), _ = _footprint(f, face.axes)
+        except DoesNotFitError:
+            continue
+        pattern = _pattern(rng, face, 2 * max(h1, h2)) if rng.random() < 0.2 else None
+        fixed = (set(face.axes) if pattern is not None and _pattern_draw(pattern.kind).at_the_corners
+                 else set())  # fmt: skip
+        whole = pattern is not None and _pattern_draw(pattern.kind).round_whole
+        place = {axis: _position(rng, axis, (face.half[i] if face.shape in ("rect", "profile") else face.half[0]) * 0.4,
+                                 whole) for i, axis in enumerate(face.axes) if axis not in fixed}  # fmt: skip
+        candidate = replace(f, place=place, pattern=pattern)
         try:
             render((*plan, candidate))
         except DoesNotFitError:

@@ -26,5 +26,12 @@ class Pocket(SpecCheckKind):
             return None if depth is None else min(depth, most)
         return deepest
 
+    def edges_missing(self, target: Item, which: str, layout: Layout) -> tuple[str, str] | None:
+        choice = target.get("shape")
+        if getattr(choice, "value", None) == "profile":
+            return "unable", (f"{target.id} is a pocket of its own outline: Forge doesn't round or bevel its edges "
+                              "yet")  # fmt: skip
+        return super().edges_missing(target, which, layout)
+
 
 ENTRY = Pocket()

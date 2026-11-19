@@ -61,8 +61,9 @@ axis (its reach is half the size of the box round it there). A pattern's
 copies are placed as an unturned item's would be, each turned about its own
 point.
 
-What turns: a slot, a rectangular or hexagonal pocket, a rib, a tab, a
-block, a post and a line of letters (up the face's second axis turned; they
+What turns: a slot, a rectangular or hexagonal pocket or one of its own
+outline (about its point), a rib, a tab, a block, a post and a line of
+letters (up the face's second axis turned; they
 read along their up across outward, as unturned letters do). A hexagon
 turned 60° is the same hexagon. A round footprint turns into
 itself, so a turn of a hole, a boss, a round pocket or any other kind is a

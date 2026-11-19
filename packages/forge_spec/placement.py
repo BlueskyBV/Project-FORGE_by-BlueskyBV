@@ -1370,7 +1370,7 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         parts = SOLVE[item.kind].outline(item, layout, face.axes)
         what = f"a {item.kind}" + (" with a round outline" if len(parts) == 1 and parts[0].disc else "")
         layout.issue("fault", here,
-                     f"Forge turns a slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
+                     f"Forge turns a slot, a pocket that isn't round, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
         return []
     if place is not None and place.concentric:
         layout.issue(
