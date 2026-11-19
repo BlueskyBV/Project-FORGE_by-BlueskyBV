@@ -14,6 +14,9 @@ class Pocket(WordsKind):
             "circle"
         ):
             shape = f"round pocket {line.item.id} ({_c(line.get('shape'))}): Ø{line.v('diameter')}"
+        elif line.item.get("shape") is not None and _c(line.item.get("shape")).startswith("hexagon"):
+            shape = (f"hexagonal pocket {line.item.id} ({_c(line.get('shape'))}): {line.v('across_flats')} across "
+                     "its flats, two corners on the face's first axis")  # fmt: skip
         else:
             corners = (
                 f", corners R{line.v('corner_radius')}"

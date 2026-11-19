@@ -235,10 +235,15 @@ class FieldSpec:
     choices: tuple[str, ...] = ()
     only_when: tuple[str, str] | None = None
     synonyms: Mapping[str, tuple[str, ...]] | None = None
+    #: For a choice, the schema version each option arrived in, where it is later than the field
+    #: (ADR-0026: a minor version adds an option as it adds a field); an option not named is as old as the field.
+    since: Mapping[str, tuple[int, int]] | None = None
 
     def __post_init__(self) -> None:
         if self.synonyms is not None and set(self.synonyms) != set(self.choices):
             raise ValueError(f"{self.name}: synonyms must name every choice")
+        if self.since is not None and not set(self.since) <= set(self.choices):
+            raise ValueError(f"{self.name}: since names options it doesn't have")
 
 
 @dataclass(frozen=True)
@@ -272,10 +277,11 @@ class KindSpec:
 
 def _f(name: str, type_: FieldType, meaning: str, *, required: bool = True,
        choices: tuple[str, ...] = (), only_when: tuple[str, str] | None = None,
-       synonyms: Mapping[str, tuple[str, ...]] | None = None) -> FieldSpec:  # fmt: skip
+       synonyms: Mapping[str, tuple[str, ...]] | None = None,
+       since: Mapping[str, tuple[int, int]] | None = None) -> FieldSpec:  # fmt: skip
     if type_ is FieldType.CHOICE and choices in (AXES, IN_FACE_AXES) and synonyms is None:
         synonyms = {axis: AXIS_WORDS[axis] for axis in choices}
-    return FieldSpec(name, type_, meaning, required, choices, only_when, synonyms)
+    return FieldSpec(name, type_, meaning, required, choices, only_when, synonyms, since)
 
 
 L, A, C = FieldType.LENGTH, FieldType.ANGLE, FieldType.COUNT
@@ -550,19 +556,21 @@ KINDS: Mapping[str, KindSpec] = {
         KindSpec(
             "pocket",
             Category.CUT,
-            "a flat-bottomed recess or cut-out, rectangular or round",
+            "a flat-bottomed recess or cut-out, rectangular, round or hexagonal",
             (
                 _ON,
                 _PLACE,
                 _f(
                     "shape",
                     FieldType.CHOICE,
-                    "rectangle or circle",
-                    choices=("rectangle", "circle"),
+                    "rectangle, circle or hexagon",
+                    choices=("rectangle", "circle", "hexagon"),
                     synonyms={
                         "rectangle": ("rectangle", "rectangular", "square", "oblong"),
                         "circle": ("circle", "circular", "round", "cylindrical"),
+                        "hexagon": ("hexagon", "hexagonal", "hex", "six-sided"),
                     },
+                    since={"hexagon": (1, 9)},
                 ),
                 _f(
                     "length",
@@ -577,6 +585,13 @@ KINDS: Mapping[str, KindSpec] = {
                     only_when=("shape", "rectangle"),
                 ),
                 _f("diameter", L, "its diameter", only_when=("shape", "circle")),
+                _f(
+                    "across_flats",
+                    L,
+                    "a hexagon's size between two opposite flats (a nut's spanner size); two of its corners on "
+                    "the face's first axis",
+                    only_when=("shape", "hexagon"),
+                ),
                 _f(
                     "corner_radius",
                     L,

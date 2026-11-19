@@ -246,7 +246,7 @@ class TheGeneratorDrawsIt(unittest.TestCase):
         from forge_eval.generator import _build, generate
 
         found = []
-        for seed in (18, 41, 66):
+        for seed in (18, 95):  # generated parts 41 and 66 are drawn otherwise since (box rims; nut traps)
             plan = generate(seed).plan
             flats = _build(plan, False).flats
             found += [f.id for f in plan if f.on is not None and (f.on[0], 0, f.on[1]) in flats

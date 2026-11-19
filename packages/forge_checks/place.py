@@ -1358,15 +1358,16 @@ def _turn_of(item: Item) -> Point | None:
     if not _entry(item.kind).turnable(item):
         raise PlaceError(
             item.id,
-            "a turn turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in its face's plane",
+            "a turn turns a slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of letters in "
+            "its face's plane",
         )
     return turn(_angle(place.turn))
 
 
 def _turned(item: Item, outline: Outline, by: Point) -> Outline:
     """An outline turned about the origin of the face's coordinates: its sides and arcs, each turned."""
-    if outline.shape != "rect":
-        raise PlaceError(item.id, "only a rectangle, rounded or not, is turned")
+    if outline.shape not in ("rect", "profile"):
+        raise PlaceError(item.id, "only a rectangle, rounded or not, or an outline of lines is turned")
     c, s = by
     angle = fs.atan2(s, c)
 

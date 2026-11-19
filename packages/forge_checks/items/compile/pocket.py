@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import Item
@@ -16,7 +17,7 @@ from forge_checks.items.compile._common import (
     side_end,
 )
 from forge_checks.items.compile.protocol import CompileKind
-from forge_checks.kinds.position import Centre, Position, Ref, RoundEdge
+from forge_checks.kinds.position import Centre, Corner, Middle, Position, Ref, RoundEdge
 from forge_checks.kinds.size import Between
 from forge_checks.kinds.surfaces import Plane, Round
 from forge_checks.place import Copy
@@ -40,6 +41,17 @@ class Pocket(CompileKind):
                            Round(copy.point, _t(-n), r, 0.0, side, True), copy.index)  # fmt: skip
                 c.size(item, r)
                 c._cut_depth(item, copy, r, r, depth)
+                continue
+            if shape == "hexagon":
+                # Across its flats between each pair of opposite walls; its floor within the circle in it.
+                h = _mm(item.get("across_flats")) / 2
+                walls = _hexagon_walls(c, copy, h)
+                for j in range(3):
+                    pair = Between(walls[j], walls[j + 3], _t(-_v(walls[j].normal)))
+                    c.check(item, "across_flats", "size", 2 * h, c.tol(item.get("across_flats")), pair,
+                            copy.index * 3 + j)  # fmt: skip
+                c.size(item, h)
+                c._cut_depth(item, copy, h, h, depth)
                 continue
             sizes = {"length": copy.axes[0], "width": copy.axes[1]}
             half = {name: _mm(item.get(name)) / 2 for name in sizes}
@@ -103,6 +115,11 @@ class Pocket(CompileKind):
             return None
         if c._choice_value(item, "shape") == "circle":
             return None
+        if c._choice_value(item, "shape") == "hexagon":  # its flats square to the face's second axis; none to the first
+            if axis != copy.axes[1]:
+                return None
+            walls = _hexagon_walls(c, copy, _mm(item.get("across_flats")) / 2)
+            return walls[1], walls[4]
         if c._round_ends(item, copy, axis) is not None:
             return None
         a = _v(c.along(copy, axis))
@@ -143,12 +160,50 @@ class Pocket(CompileKind):
                       True) for s in (-1, 1)]  # fmt: skip
         return ends[0], ends[1]
 
+    def centre_ref(self, c: CompileContext, item: Item, copy: Copy, axis: str) -> Ref | None:
+        corners = _hexagon_corners(c, item, copy, axis)
+        if corners is not None:  # along its corners' axis: half way between them
+            return Middle(*corners)
+        return super().centre_ref(c, item, copy, axis)
+
+    def edge_ref(self, c: CompileContext, item: Item, copy: Copy, axis: str, sign: float) -> Ref | None:
+        corners = _hexagon_corners(c, item, copy, axis)
+        if corners is not None:  # along its corners' axis: the corner on that side
+            return corners[0] if sign > 0 else corners[1]
+        return super().edge_ref(c, item, copy, axis, sign)
+
+    def own_surface(self, c: CompileContext, item: Item, copy: Copy) -> Round | Plane | None:
+        if c._choice_value(item, "shape") != "hexagon" or copy.span is None:
+            return None
+        return _hexagon_walls(c, copy, _mm(item.get("across_flats")) / 2)[1]  # its flat on its second axis' + side
+
     def face_refs(
         self, c: CompileContext, owner: Item, copy: Copy, face: str
     ) -> tuple[Ref, Ref, Ref] | None:
         if c._choice_value(owner, "shape") != "circle":
             return None
         return main_face_refs(c, owner, copy)
+
+
+def _hexagon_walls(c: CompileContext, copy: Copy, h: float) -> list[Plane]:
+    """A hexagonal pocket's six walls, ``h`` (half across its flats) from its centre, each facing back into it: their
+    ways out at 30, 90, ..., 330 degrees from its first axis towards its second (two corners on its first axis,
+    pocket.md), each a rectangle along its straight run but a quarter of it at each end, where its neighbours meet it."""
+    assert copy.axes is not None
+    e1, e2 = _v(c.along(copy, copy.axes[0])), _v(c.along(copy, copy.axes[1]))
+    root = math.sqrt(3.0)
+    # (cos, sin) of each way out, exactly: 30 degrees is (sqrt(3)/2, 1/2), 90 is (0, 1), and so on round.
+    ways = [(root / 2, 0.5), (0.0, 1.0), (-root / 2, 0.5), (-root / 2, -0.5), (0.0, -1.0), (root / 2, -0.5)]
+    half = h / root / 2  # half of a quarter-trimmed side's run: each side is 2h / sqrt(3) long
+    return [c.cut_wall(copy, cw * e1 + sw * e2, h, -sw * e1 + cw * e2, half) for cw, sw in ways]
+
+
+def _hexagon_corners(c: CompileContext, item: Item, copy: Copy, axis: str) -> tuple[Corner, Corner] | None:
+    """A hexagonal pocket's two corners on its first axis, the + one first, where ``axis`` is that axis; else None."""
+    if c._choice_value(item, "shape") != "hexagon" or copy.axes is None or axis != copy.axes[0]:
+        return None
+    walls = _hexagon_walls(c, copy, _mm(item.get("across_flats")) / 2)
+    return Corner(walls[0], walls[5]), Corner(walls[2], walls[3])
 
 
 ENTRY = Pocket()

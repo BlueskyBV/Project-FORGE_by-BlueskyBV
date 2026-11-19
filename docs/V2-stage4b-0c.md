@@ -21,8 +21,9 @@ found is fixed, and a ball's or a cone's seam is kept clear of what is on
 it (revision 16), and a hole goes through the next face on a round side, a
 ball or a cone, and a cut on a turned or a leaning item's face (2b's third
 step, revision 16), and through everything there too, and a leaning
-item's sides, flat and round, take cuts (revision 16); next, 2b's fourth
-step (schema 2.0).
+item's sides, flat and round, take cuts (revision 16), a slot goes round a
+side as a keyway and a pocket may be a hexagon (schema 1.9); next, 2b's
+fourth step (schema 2.0).
 Companion to [V2-stage4b.md](V2-stage4b.md),
 2.1 (4b.0c) and 2.2 items 1 to 3 and 14; the decision is
 [ADR-0037](adr/0037-the-same-numbers-on-every-machine.md).
@@ -1663,6 +1664,45 @@ tubes and bosses, blind, right through, a circle of them) and on 2356
 drawn again: each passed, its mutant caught (67's and 77's made the same
 shape). Generator digests on seeds 0-149, old against new: those 18
 differ, and 17 impossible parts.
+
+**A hexagonal pocket: a nut trap (revision 16, schema 1.9).** A pocket was
+a rectangle or a circle. It may now be a regular hexagon (pocket.md):
+`"shape": "hexagon"`, `across_flats` between each two opposite sides, two
+of its corners on the face's first axis; placed by its centre or its edge
+(a corner along the first axis, a flat along the second), turned in the
+face by `place.turn` as a rectangle is, in a pattern as any pocket; its
+floor a face of its own, the hexagon. A choice's option may now arrive in a
+later minor version (`FieldSpec.since`): below 1.9 a hexagon is a fault.
+**The solver** places it by its own outline (`SolveKind.shape`, which
+`turned_outline` turns where it is turned): fitted to its face, held apart,
+its depth held, its floor a profile face, as a turned rectangle is; its
+parts are the box round it. **The judge** makes it an outline of six
+straight sides, **the oracle** a convex polygon's prism. **The check
+compiler** holds its size across its flats between each of its three pairs
+of opposite sides, its place along its second axis by the middle of its
+two flats there and along its first by the middle of its two corners
+there, each where two fitted walls meet (a new reference,
+`kinds.position.Corner`: the point both planes' fitted places give, along a
+way in the plane of their normals), a pattern's count by a flat of each;
+turned, its place is held by the face accounting, as any turned item's.
+**The planner** draws its outline as a profile of lines (as a turned
+rectangle's). **The comparison** reads it as a hexagonal cut, its box and
+its size across its flats. **The generator** cuts one into a flat face now
+and then from a stream of its own (`_onto_nut_trap`, "forge-eval nut
+traps", 0.04 at each item: blind or right through, a pattern of them, turned
+now and then), keeping clear by the box round it (`DrawKind.corners`), its
+truth its outline pushed (`Pushed`), its side checked built, its rims
+rounded or bevelled along each side, its sharp corners zones, a rod
+touching one of its walls along a line refused as a box's is; its draft
+says 1.9. Tests: `tests/test_v2_plan_hexagon.py` (its outline, placed by a
+corner and a flat; off its face asked; below 1.9 a fault; every program's
+layout agrees; blind, turned, right through, a row, near two edges, its
+rim rounded or bevelled, its floor's edge rounded: built and judged, every
+check held; one moved 0.3 mm either way, turned 5 degrees or 0.2 mm
+smaller caught; the second kernel agreeing; the words, the views and the
+comparison; the generator's own shape, built and graded). Generator
+digests on seeds 0-149, old against new: 23 drawn otherwise, 25 impossible
+parts.
 
 **And a hole through the next face from a turned item's face keeps its way
 (revision 16).** The exit pair on 77fa304 found generated part 2356: a hole

@@ -7,6 +7,8 @@ pocket's branches here (V2-stage4b-0b.md, 7).
 
 from __future__ import annotations
 
+import math
+
 from forge_numeric import scalar as fs
 from forge_spec.draft import Item
 from forge_spec.placement import Layout, mm
@@ -23,11 +25,13 @@ class Pocket(GradeKind):
     def reach(self, item: Item, layout: Layout) -> float | None:
         size = {
             n: mm(v)
-            for n in ("length", "width", "diameter")
+            for n in ("length", "width", "diameter", "across_flats")
             if isinstance(v := item.get(n), Value)
         }
         if _choice(item, "shape") == "circle":
             return size["diameter"] / 2 if "diameter" in size else None
+        if _choice(item, "shape") == "hexagon":  # to a corner: across its flats over sqrt(3)
+            return size["across_flats"] / math.sqrt(3.0) if "across_flats" in size else None
         if "length" in size and "width" in size:
             return fs.hypot(size["length"], size["width"]) / 2
         return None

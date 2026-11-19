@@ -20,7 +20,7 @@ class Pocket(SpecCheckKind):
             # An inside rounding round the floor: its ball within the pocket, and round a rounded corner within
             # the corner's own radius (it can't reach past the corner's axis).
             depth = s("depth")
-            across = s("diameter") or min(s("length") or 0.0, s("width") or 0.0)
+            across = s("diameter") or s("across_flats") or min(s("length") or 0.0, s("width") or 0.0)
             corner = s("corner_radius") or 0.0
             most = corner if corner > 0 else across / 2
             return None if depth is None else min(depth, most)

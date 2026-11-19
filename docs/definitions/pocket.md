@@ -2,7 +2,7 @@
 
 Status: **draft, for your approval.**
 
-A recess: a rectangular or round cut with a flat floor.
+A recess: a rectangular, round or hexagonal cut with a flat floor.
 
 ## The shape
 
@@ -11,7 +11,12 @@ Its outline on the face is centred where `place` puts it:
 - a rectangle, `length` along the face's first axis and `width` along its
   second, its four corners rounded to `corner_radius` (seen from above the
   face) when it has one;
-- or a circle of `diameter`.
+- or a circle of `diameter`;
+- or (schema 1.9) a regular hexagon `across_flats` between each two
+  opposite sides (a nut trap: the nut's spanner size), two of its corners on
+  the face's first axis, `across_flats / √3` from its centre, its other
+  four at 60° steps round it (two of its sides run along the face's first
+  axis, `across_flats / 2` from its centre either way along its second).
 
 The outline goes in from the face, at right angles to it, to its depth, and
 takes away every point of the part inside it. A blind pocket's floor is flat
@@ -31,6 +36,7 @@ Where on the face ([place.md](place.md)).
 
 - `rectangle`: a rectangle, `length` by `width`.
 - `circle`: a circle of `diameter`.
+- `hexagon`: a regular hexagon, `across_flats` (schema 1.9).
 
 ### `length`
 
@@ -43,6 +49,15 @@ A rectangular pocket's size along the face's second axis.
 ### `diameter`
 
 A round pocket's diameter.
+
+### `across_flats`
+
+A hexagonal pocket's size between two opposite sides (its flats), the same
+across each pair. Placed as any outline is ([place.md](place.md)): by its
+centre, or by its edge, its farthest point along that axis (along the
+face's first axis, a corner; along its second, a flat); turned in the face
+by `place.turn` about its centre, as a rectangle is. A ring of them, a row
+or a grid, as of any pocket.
 
 ### `corner_radius`
 
@@ -75,4 +90,7 @@ How many pockets there are in the whole part ([place.md](place.md)).
 
 ## Checked as
 
-Exact.
+Exact. A hexagon's size across its flats is measured between each pair of
+opposite sides, its place along the face's second axis from the middle of
+its two sides there, and along its first from the middle of its two corners
+there, each where its two sides meet.

@@ -1239,6 +1239,16 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                     problems.fault(pointer("items", n, "depth"),
                                    'a depth through the next face is schema 1.8\'s: give the draft\'s '
                                    '"schema_version": "1.8"')  # fmt: skip
+                for field_spec in KINDS[item.kind].fields:  # an option a later minor version added (ADR-0026)
+                    chosen = item.get(field_spec.name)
+                    if not isinstance(chosen, Choice):
+                        continue
+                    since = (field_spec.since or {}).get(chosen.value)
+                    if since is not None and version < since:
+                        problems.fault(pointer("items", n, field_spec.name),
+                                       f'a {item.kind}\'s {field_spec.name} {chosen.value} is schema '
+                                       f'{since[0]}.{since[1]}\'s: give the draft\'s "schema_version": '
+                                       f'"{since[0]}.{since[1]}"')  # fmt: skip
                 # A body leans in 1.5 (step 3), a hole, a boss or a post in 1.3.
                 since = (1, 5) if KINDS[item.kind].category is Category.BODY else (1, 3)
                 for leans in ("tilt", "tilt_towards"):

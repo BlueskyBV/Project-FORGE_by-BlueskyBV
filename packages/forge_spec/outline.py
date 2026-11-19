@@ -276,6 +276,17 @@ class Shape:
         return cls(tuple(found))
 
     @classmethod
+    def hexagon(cls, centre: Point, across_flats: float) -> Shape:
+        """A regular hexagon ``across_flats`` between opposite flats about ``centre``, two of its corners on the first
+        axis, ``across_flats / √3`` out: anticlockwise from the one on its + side (pocket.md)."""
+        c1, c2 = centre
+        h = across_flats / 2
+        r = across_flats / math.sqrt(3.0)
+        points = [(c1 + r, c2), (c1 + r / 2, c2 + h), (c1 - r / 2, c2 + h), (c1 - r, c2), (c1 - r / 2, c2 - h),
+                  (c1 + r / 2, c2 - h)]  # fmt: skip
+        return cls(tuple(Line(a, b) for a, b in zip(points, [*points[1:], points[0]], strict=True)))
+
+    @classmethod
     def of_profile(cls, profile: Profile, at: Point = (0.0, 0.0)) -> Shape:
         """A spec's ``Profile`` (forge_spec.draft) as an outline, moved by ``at``."""
         return cls.of(

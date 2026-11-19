@@ -696,11 +696,20 @@ class UpToAFaceFromATurnedOrALeaningItemsFace(unittest.TestCase):
                 self.assertEqual(failed, [])
 
     def test_the_generator_draws_it(self) -> None:
-        from forge_eval.generator import _build, generate
+        from forge_eval.generator import End, Feature, Position, _build, render
 
-        case = generate(66)  # a hole into a leaning post's side, up to the block's side
-        part = _build(case.plan, False)
-        found = [f.end.face for f in case.plan if f.on is not None and f.end is not None and f.end.face is not None
+        # Generated part 66 as it was drawn before nut traps came (its body, its post leaning and the hole into the
+        # post's side): a hole into a leaning post's side, up to the block's side.
+        centred = Position("centred", 0.0, "", "centre")
+        plan = (Feature("body", "block", {"length": 74.767, "width": 44.775, "height": 16.142}),
+                Feature("i0", "post", {"length": 3.601, "width": 5.177, "height": 5.841}, ("body", "-z"),
+                        place={"x": Position("none", 0.0, "", "centre"), "y": Position("none", 0.0, "", "centre")},
+                        tilt=(15.0, "-y")),
+                Feature("i2", "hole", {"diameter": 1.58}, ("i0", "+x"), 0.963, place={"y": centred, "z": centred},
+                        own_axes=("y", "z"), end=End(face=("body", "-x"), offset=38.221, next=False)))  # fmt: skip
+        render(plan)
+        part = _build(plan, False)
+        found = [f.end.face for f in plan if f.on is not None and f.end is not None and f.end.face is not None
                  and (key := (f.on[0], 0, f.on[1])) in part.flats and part.flats[key].leans]  # fmt: skip
         self.assertEqual(found, [("body", "-x")])
 
@@ -710,7 +719,7 @@ class TheGeneratorDrawsThroughEverythingThere(unittest.TestCase):
         from forge_eval.generator import _build, generate
 
         found = set()
-        for seed in (0, 16, 29, 85):
+        for seed in (0, 16, 29, 209):  # generated part 85 is drawn otherwise since nut traps came
             case = generate(seed)
             part = _build(case.plan, False)
             for f in case.plan:

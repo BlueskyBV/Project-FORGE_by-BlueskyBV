@@ -1221,7 +1221,8 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
         layout.issue("fault", at + pointer("place", "angle"),
                      "an angle places an item round a round side; on a flat face, place it along the face's axes")  # fmt: skip
         return []
-    if face.turn != 0.0 and SOLVE[item.kind].turnable(item, layout, face.axes) is None and not _round(item, layout, face):
+    if (face.turn != 0.0 and SOLVE[item.kind].turnable(item, layout, face.axes) is None and not _round(item, layout, face)
+            and SOLVE[item.kind].shape(item, layout, face.axes) is None):  # fmt: skip
         layout.issue("unable", at + pointer("on", "face"),
                      f"face {face.name} of {host[0]} is turned with it, and so is what is placed on it: Forge turns a "
                      f"{item.kind} in a later step")  # fmt: skip
@@ -1229,7 +1230,9 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     placeable, resolved = _end_depth(item, face, layout, at) if SOLVE[item.kind].cut else (True, None)
     if not placeable:
         return []
-    if (place is not None and place.turn is not None) or leaning(item):
+    if ((place is not None and place.turn is not None) or leaning(item)
+            or SOLVE[item.kind].shape(item, layout, face.axes) is not None):  # fmt: skip
+        # Turned, leaning, or an outline of lines of its own (a hexagonal pocket): placed by that outline.
         return _turned_copies(item, place, face, host, layout, at, first, resolved)
     if place is not None and place.concentric:
         found = _concentric_positions(item, place, face, host, host_count, layout, at)
@@ -1279,11 +1282,15 @@ def _round(item: Item, layout: Layout, face: FlatFace) -> bool:
 # ----------------------------------------------------------------------
 def turned_outline(item: Item, layout: Layout, axes: tuple[str, str]) -> Shape | None:
     """An item's outline on a flat face, turned by its ``place.turn``, about its point; leaning (``tilt``), its section
-    by the face's plane (:mod:`forge_spec.lean`); None if it neither turns nor leans."""
+    by the face's plane (:mod:`forge_spec.lean`); an outline of lines its parts can't make (a hexagonal pocket's:
+    SolveKind.shape), as it is or turned; None if it neither turns nor leans and its outline is its parts."""
     lean = lean_of(item, axes) if leaning(item) else None
     if lean is not None:
         return _leaning_outline(item, layout, axes, lean)
     place = _place_of(item)
+    own = SOLVE[item.kind].shape(item, layout, axes)
+    if own is not None:
+        return own if place is None or place.turn is None else own.turned(*_turn(degrees(place.turn)))
     if place is None or place.turn is None:
         return None
     sizes = SOLVE[item.kind].turnable(item, layout, axes)
@@ -1358,11 +1365,12 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         if lean is None:
             return []
     here = at + pointer("place", "turn")
-    if lean is None and SOLVE[item.kind].turnable(item, layout, face.axes) is None:
+    if (lean is None and SOLVE[item.kind].turnable(item, layout, face.axes) is None
+            and SOLVE[item.kind].shape(item, layout, face.axes) is None):  # fmt: skip
         parts = SOLVE[item.kind].outline(item, layout, face.axes)
         what = f"a {item.kind}" + (" with a round outline" if len(parts) == 1 and parts[0].disc else "")
         layout.issue("fault", here,
-                     f"Forge turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
+                     f"Forge turns a slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of letters in a face's plane, not {what}")  # fmt: skip
         return []
     if place is not None and place.concentric:
         layout.issue(
@@ -1389,11 +1397,13 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
     ]
     how = (f"turned {turn:g}\u00b0" if lean is None
            else f"leaning {lean.tilt:g}\u00b0" + (f" and turned {turn:g}\u00b0" if turn else ""))  # fmt: skip
+    if lean is None and (place is None or place.turn is None):  # an outline of its own, not turned (a hexagon)
+        how = ""
     for n, (p1, p2) in enumerate(positions):
         if not face.holds(covered, (p1, p2)):
             severs = entry.cut and _is_through(item)
             layout.problem("question", at,
-                           f"{item.id} copy {first + n + 1}, {how}, runs off face {face.name}"
+                           f"{item.id} copy {first + n + 1}" + (f", {how}," if how else "") + f" runs off face {face.name}"
                            + (": cut through, it could cut the part apart" if severs else ""),
                            [*values, *layout.values_of(face.sources)])  # fmt: skip
             return []
@@ -3264,7 +3274,10 @@ def _turned_floor(item: Item, placed: Instance, face: FlatFace, copy: _Copy, lay
     turn = _turn_value(item)
     for name in KINDS[item.kind].faces:
         found = layout.faces[key].get(name)
-        if isinstance(found, FlatFace) and face.uniform and turn is not None:
+        if isinstance(found, FlatFace) and turn is None:  # unturned, an outline of its own (a hexagonal pocket's)
+            if face.turn != 0.0:
+                layout.faces[key][name] = replace(found, turn=face.turn, turn_sources=face.turn_sources)
+        elif isinstance(found, FlatFace) and face.uniform and turn is not None:
             layout.faces[key][name] = replace(found, less=None, turn=degrees(turn), turn_sources=((item.id, "place"),))
         elif name not in layout.closed.get(key, {}):
             layout.close(key, name, "unable", _TURNED_FACES.format(item.id))

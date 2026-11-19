@@ -338,13 +338,21 @@ class TheGeneratorDrawsIt(unittest.TestCase):
         self.assertAlmostEqual(side.length, 20.0 - rise, places=12)
 
     def test_it_draws_on_one(self) -> None:
-        from forge_eval.generator import _build, generate
+        from forge_eval.generator import End, Feature, Position, _build, generate
 
+        # Generated part 66 as it was drawn before nut traps came: its body, its post leaning, the hole into the post.
+        centred = Position("centred", 0.0, "", "centre")
+        drawn_66 = (Feature("body", "block", {"length": 74.767, "width": 44.775, "height": 16.142}),
+                    Feature("i0", "post", {"length": 3.601, "width": 5.177, "height": 5.841}, ("body", "-z"),
+                            place={"x": Position("none", 0.0, "", "centre"), "y": Position("none", 0.0, "", "centre")},
+                            tilt=(15.0, "-y")),
+                    Feature("i2", "hole", {"diameter": 1.58}, ("i0", "+x"), 0.963, place={"y": centred, "z": centred},
+                            own_axes=("y", "z"), end=End(face=("body", "-x"), offset=38.221, next=False)))  # fmt: skip
         for seed, item, face in ((66, "i2", "+x"), (129, "i4", "side")):
             with self.subTest(seed=seed):
-                case = generate(seed)
-                part = _build(case.plan, False)
-                found = [(f.id, f.on[1]) for f in case.plan if f.on is not None
+                plan = drawn_66 if seed == 66 else generate(seed).plan
+                part = _build(plan, False)
+                found = [(f.id, f.on[1]) for f in plan if f.on is not None
                          and (((key := (f.on[0], 0, f.on[1])) in part.flats and part.flats[key].leans)
                               or (key in part.rounds and part.rounds[key].leans))]  # fmt: skip
                 self.assertEqual(found, [(item, face)])

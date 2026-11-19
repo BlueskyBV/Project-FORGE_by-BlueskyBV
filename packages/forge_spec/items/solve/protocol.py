@@ -150,6 +150,13 @@ class SolveKind:
         face's two axes and its corners' radius; None for a kind ``place.turn`` doesn't turn (1b's first move)."""
         return None
 
+    def shape(self, item: Item, layout: Layout, axes: tuple[str, str]) -> Shape | None:
+        """Its outline on a flat face about its point, before any turn, where it is an outline of lines that parts
+        can't make (a hexagonal pocket's); None where its outline is its parts. Placed, held apart and its depth
+        held as a turned item's is, by this outline (turned too where it is: :func:`~forge_spec.placement.
+        turned_outline`); its :meth:`outline`, the box round it."""
+        return None
+
     def check_shape(self, item: Item, at: str, layout: Layout) -> None:
         """What can't be true of its own sizes, wherever it is placed."""
 

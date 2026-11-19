@@ -31,7 +31,17 @@ class Pocket(DrawKind):
         if f.choices.get("shape") == "circle":
             r = s["diameter"] / 2
             return (r, r), r
+        if f.choices.get("shape") == "hexagon":  # the box round it: its corners on the first axis
+            h = s["across_flats"] / 2
+            return (2 * h / math.sqrt(3.0), h), 0.0
         return (s["length"] / 2, s["width"] / 2), s.get("corner_radius", 0.0)
+
+    def corners(self, f: Feature, axes: tuple[str, str]) -> list[tuple[float, float]] | None:
+        if f.choices.get("shape") != "hexagon":
+            return None
+        h = f.sizes["across_flats"] / 2
+        r = 2 * h / math.sqrt(3.0)
+        return [(r, 0.0), (r / 2, h), (-r / 2, h), (-r, 0.0), (-r / 2, -h), (r / 2, -h)]
 
     def limits(self, f: Feature) -> None:
         s = f.sizes

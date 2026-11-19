@@ -80,7 +80,7 @@ class ATurnIsReadWrittenAndCited(unittest.TestCase):
                 "place": {"turn": {"value": 30, "unit": "deg", "from": said(B, "30 degrees")}}}  # fmt: skip
         report = _report(hole)
         self.assertTrue(
-            _says(report, "Forge turns a slot, a rectangular pocket, a rib, a tab, a block, a post or a line of letters")
+            _says(report, "Forge turns a slot, a rectangular or hexagonal pocket, a rib, a tab, a block, a post or a line of letters")
         )
 
 

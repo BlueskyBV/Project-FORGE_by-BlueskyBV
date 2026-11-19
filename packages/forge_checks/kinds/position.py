@@ -11,7 +11,8 @@ measured from the wrong end is.
 - **from the centre** (``offset``, ``centred``): from the middle of the
   host face's two fitted edges to the item's centre.
 
-Each end is a :data:`Ref`: a fitted plane, the middle of two, a fitted round
+Each end is a :data:`Ref`: a fitted plane, the middle of two, where two meet
+(a hexagon's corner, :class:`Corner`), a fitted round
 surface's axis, or its edge on one side (the axis and the fitted radius), a
 fitted cone's axis or its rim at one end, the mean of several built centres
 (a pattern's centre), or the centre of the circle through them (an arc's,
@@ -53,6 +54,7 @@ __all__ = [
     "BallCentre",
     "Centre",
     "ConeRim",
+    "Corner",
     "Hub",
     "Mean",
     "Middle",
@@ -77,6 +79,15 @@ class Middle:
 
     a: Ref
     b: Ref
+
+
+@dataclass(frozen=True)
+class Corner:
+    """Where two fitted planes meet: the line along both (a hexagonal pocket's corner, between two of its walls),
+    measured along a way in the plane their normals span (the face's)."""
+
+    a: Plane
+    b: Plane
 
 
 @dataclass(frozen=True)
@@ -133,7 +144,7 @@ class Hub:
     plane: tuple[Vec, Vec]
 
 
-Ref = Plane | Middle | Centre | BallCentre | RoundEdge | ConeRim | Mean | Hub
+Ref = Plane | Middle | Corner | Centre | BallCentre | RoundEdge | ConeRim | Mean | Hub
 
 
 @dataclass(frozen=True)
@@ -229,6 +240,8 @@ def locate(
         normal /= float(fv.norm(normal))
         at = float(fv.dot(ref.point, along)) + offset * float(fv.matmul(normal, along))
         return at, u * abs(float(fv.matmul(normal, along))), len(window)
+    if isinstance(ref, Corner):
+        return _corner(ref, along, width, probe)
     if isinstance(ref, Middle):
         a = locate(ref.a, along, width, probe)
         b = locate(ref.b, along, width, probe)
@@ -303,6 +316,28 @@ def locate(
     )
     at += found.fit.radius * across
     return at, found.uncertainty_along(along, across), found.found
+
+
+def _corner(ref: Corner, along: Array, width: float, probe: Probe) -> tuple[float, float, int] | str:
+    """Where two fitted planes meet, along ``along`` (in the plane of their normals): the point ``x`` in that plane
+    with ``n_a . x = s_a`` and ``n_b . x = s_b``, each ``s`` its plane's fitted place along its normal; how far it may be
+    off, each plane's added as it moves the point."""
+    found = []
+    for plane in (ref.a, ref.b):
+        window, offset, u = plane_offset(plane, width, probe)
+        if len(window) < FEWEST:
+            return f"no built face within {width:.3g} mm of the spec's plane through {plane.point}"
+        normal = np.asarray(plane.normal, dtype=np.float64)
+        normal /= float(fv.norm(normal))
+        found.append((normal, float(fv.dot(plane.point, normal)) + offset, u, len(window)))
+    (na, sa, ua, ka), (nb, sb, ub, kb) = found
+    c = float(fv.matmul(na, nb))
+    if 1.0 - c * c < 1e-6:
+        return "two planes that don't meet at a corner"
+    ea, eb = float(fv.matmul(na, along)), float(fv.matmul(nb, along))
+    # x = alpha n_a + beta n_b, along: alpha e_a + beta e_b; each s moves it by its own share.
+    da, db = (ea - c * eb) / (1.0 - c * c), (eb - c * ea) / (1.0 - c * c)
+    return da * sa + db * sb, abs(da) * ua + abs(db) * ub, ka + kb
 
 
 def measure(

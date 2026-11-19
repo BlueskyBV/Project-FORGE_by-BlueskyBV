@@ -49,7 +49,7 @@ from forge_eval.generator import (
     _turned_sides,
     outline_of,
 )
-from forge_eval.truth import Copy, Prism, Step, Turned
+from forge_eval.truth import Copy, Outline2, Prism, Pushed, Step, Turned
 
 
 class DrawKind:
@@ -133,6 +133,12 @@ class DrawKind:
         s = f.sizes
         # a block or a post: its length along the face's first axis
         return (s["length"] / 2, s["width"] / 2), 0.0
+
+    def corners(self, f: Feature, axes: tuple[str, str]) -> list[tuple[float, float]] | None:
+        """An outline of straight sides its footprint is the box round (a hexagonal pocket's): its corners in turn,
+        anticlockwise, about its centre along the face's axes, before any turn; None where its footprint is its
+        outline. What fits, and keeps clear, by its box; its solid, its side and its rims, by these."""
+        return None
 
     def extent(
         self, f: Feature, axes: tuple[str, str]
@@ -415,8 +421,13 @@ class DrawKind:
         n: Array,
         depth: float,
         face: _Flat,
-    ) -> tuple[Prism, float]:
-        """What a cut takes away at ``p``, ``depth`` deep: its footprint's prism; and its round radius (none)."""
+    ) -> tuple[Prism | Pushed, float]:
+        """What a cut takes away at ``p``, ``depth`` deep: its footprint's prism, or its outline of straight sides
+        pushed so (:meth:`corners`); and its round radius (none)."""
+        corners = self.corners(f, face.axes)
+        if corners is not None:
+            outline = Outline2(corners[0], tuple((c, None, False) for c in (*corners[1:], corners[0])))
+            return Pushed(_t(p), _t(e1), _t(e2), _t(n), outline, -depth, 0.0), 0.0
         (h1, h2), r = _footprint(f, face.axes)
         return Prism(_t(p), _t(e1), _t(e2), _t(n), (h1, h2), r, -depth, 0.0), 0.0
 

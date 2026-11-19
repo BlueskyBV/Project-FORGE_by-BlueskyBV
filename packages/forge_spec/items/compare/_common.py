@@ -211,11 +211,14 @@ def turned_box(item: Item, layout: Layout, axes: tuple[str, str]) -> tuple[float
 
 
 def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: float,
-                 diameter: float | None, corner: Callable[[float, float], float]) -> list[Feature]:  # fmt: skip
+                 diameter: float | None, corner: Callable[[float, float], float], outline: str = "square cut",
+                 own: tuple[object, ...] = ()) -> list[Feature]:  # fmt: skip
     """A cut by its mouth and depth, or right through by its line; its counterbore and countersink at the mouth.
 
     ``diameter`` a round cut's (None: a square-edged one, its outline across
-    the face, ``corner`` how its corners are rounded, seen looking into it).
+    the face, ``corner`` how its corners are rounded, seen looking into it;
+    ``outline`` what it is, "square cut" or another, with sizes of its
+    ``own``: a hexagon, its across flats).
     """
     kind = item.kind
     # In against the way out of its mouth: its face's outward normal, or leaning, its direction.
@@ -239,9 +242,9 @@ def cut_features(n: int, item: Item, copy: Instance, layout: Layout, material: f
             2 * h2,
         )
         shape, sizes, head, tail = (
-            "square cut",
+            outline,
             (extent[0], extent[1], extent[2]),
-            (),
+            own,
             (_r(corner(h1, h2)),),
         )
     turned = (

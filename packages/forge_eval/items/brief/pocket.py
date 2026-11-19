@@ -17,7 +17,7 @@ class Pocket(BriefKind):
     key = "pocket"
     cut_out = True
     option_words: ClassVar[Mapping[str, Mapping[str, str]]] = {
-        "shape": {"rectangle": "rectangular", "circle": "round"}
+        "shape": {"rectangle": "rectangular", "circle": "round", "hexagon": "hexagonal"}
     }
 
 

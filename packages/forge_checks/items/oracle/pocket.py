@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from forge_spec.draft import Item
 
 from forge_checks import rounds
@@ -14,7 +16,7 @@ from forge_checks.items.oracle._shapes import (
 )
 from forge_checks.items.oracle.protocol import OracleKind
 from forge_checks.place import Copy, Face, Placed
-from forge_checks.shapes import Disc, RoundRect, Shape2D
+from forge_checks.shapes import Disc, Polygon, RoundRect, Shape2D
 
 
 class Pocket(OracleKind):
@@ -29,6 +31,10 @@ class Pocket(OracleKind):
     def outline(self, item: Item, axes: tuple[str, str]) -> Shape2D:
         if _choice(item, "shape") == "circle":
             return Disc(_mm(item.get("diameter")) / 2)
+        if _choice(item, "shape") == "hexagon":  # two corners on the first axis (pocket.md), anticlockwise
+            h = _mm(item.get("across_flats")) / 2
+            c = 2 * h / math.sqrt(3.0)
+            return Polygon(((c, 0.0), (c / 2, h), (-c / 2, h), (-c, 0.0), (-c / 2, -h), (c / 2, -h)))
         r = (
             _mm(item.get("corner_radius"))
             if item.get("corner_radius") is not None
