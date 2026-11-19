@@ -1752,6 +1752,26 @@ own there, and no built face where the check looked. A corners or ends
 pattern's inset from that edge is now held by face accounting, as a
 position from it already was (`_foot_edge`). Kept in `REGRESSIONS`.
 
+**And what the exit pair on 6229409 found (revision 16).** Of 4,999
+generated parts, 47 new ones failed, each of them with a hexagon or a
+pocket of its own outline in it, every one the generator's own model of
+the part or the solver's reading, never what was built or judged. A
+turned hexagon placed by its edge: the generator measured it by the box
+round its rectangle turned, the solver by the hexagon turned (43 of them);
+the generator now turns the hexagon's own corners (`_turned_half`). A
+pocket of its own outline: what it covers was taken about its point in the
+generator's checks of the dome over it, where it comes out and what it
+leaves (generated parts 2451, 3295); the generator now draws such an
+outline about the middle of the box round it, so it covers its footprint
+about its point as every other cut does, and those checks take what a copy
+covers. A leaning counterbored hole's way out (2345): the generator kept
+what stands on the far face clear of its bore, the solver of its widest
+circle, as place.md has it; the generator now keeps it clear of that too.
+And the solver read the foot of an extrusion or a revolution standing
+beside a pocket of its own outline as nothing, wholly within it, and asked
+whether it was held up (2279); a profiled item's foot is now its outline
+there.
+
 **And the flat sides of what stands round a side (revision 16, with item
 3b).** What stood round a rod's side took things only on its far face. Its
 flat sides now do too (place.md, "On a round side"): its box's, from its

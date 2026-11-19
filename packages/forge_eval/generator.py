@@ -857,14 +857,17 @@ def _turned_half(
     footprint), or round ``foot`` (what it covers, placed at its point: letters' ink's box, off their line's
     middle): its rectangle's corners' circles' centres turned, and their radius past them (a rounded rectangle
     is its inner rectangle widened by its corner's radius all round)."""
+    turn = _turn_of(f)
+    assert turn is not None
+    c, s = turn
+    corners = _draw(f.kind).corners(f, axes) if foot is None else None
+    if corners is not None:  # an outline of straight sides (a hexagon): the box round its corners turned, exactly
+        return (max(abs(c * x - s * y) for x, y in corners) + 0.0, max(abs(s * x + c * y) for x, y in corners) + 0.0)
     if foot is None:
         (h1, h2), r = _footprint(f, axes)
         m1, m2 = 0.0, 0.0
     else:
         (h1, h2), r, (m1, m2) = foot.half, foot.corner, foot.at
-    turn = _turn_of(f)
-    assert turn is not None
-    c, s = turn
     reach = [0.0, 0.0]
     for q1 in (-1.0, 1.0):
         for q2 in (-1.0, 1.0):
@@ -1117,7 +1120,10 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
     for k, at in enumerate(spots):
         face.taken.append(covers[k])
         if cut and f.depth is None and out is not None:
-            r = f.sizes["diameter"] / 2
+            # Where it comes out, as the solver keeps what stands there clear of it: its widest circle (its
+            # counterbore's, where it has one) across its section, moved to where its axis meets the far face
+            # (generated part 2345: a boss over a leaning counterbored hole's way out).
+            r = max(_own_halves(f, face.axes, lean))
             out.taken.append(_on_exit(face, out, _lean_box(lean, at, -thick * lean.tan, r / lean.c, r)))
         elif cut:
             face.dug.append((covers[k], deepest))
@@ -1590,7 +1596,8 @@ def _first_revolution(f: Feature, part: _Part) -> None:
 def _outline_draft(f: Feature, source: dict[str, Any]) -> dict[str, Any]:
     """An outline as the draft writes it (extrusion.md): its start and each side, to a point, round a centre where an arc; ``source`` where it comes from."""
     assert f.outline is not None
-    shape = outline_of(f.outline[0], dict(f.outline[1]))
+    # A pocket's drawn outline about the middle of the box round it (its own); an extrusion's or a revolution's as drawn.
+    shape = _draw(f.kind).own_outline(f, ("x", "y")) or outline_of(f.outline[0], dict(f.outline[1]))
     segments: list[dict[str, Any]] = []
     for to, centre, clockwise in shape.sides:
         if centre is None:
@@ -1866,13 +1873,13 @@ def _on_flat(
                 strict
                 and deep is not None
                 and (face.dome > 0 or face.slant is not None)
-                and deep > face.material_under(_Foot(at, half, corner)) - GAP
+                and deep > face.material_under(feet[k]) - GAP
             ):
                 # Under a dome's flat face the material is the dome's height over a point: least at the cut's
                 # farthest from the centre (its box's corner, a bound).
                 raise DoesNotFitError(f"{f.id} is deeper than the dome over it")
             if strict and face.flare[1] > 0:
-                room = face.material_under(_Foot(at, half, corner))
+                room = face.material_under(feet[k])
                 if deep is None and not everything and room < face.material:
                     # Past a flared cone's base, a line down comes out of its flank into the air under it, and
                     # in again further down: right through has no one meaning (generated part 3375).
@@ -1902,7 +1909,7 @@ def _on_flat(
                     )
             elif strict and face.exit is not None and not everything:  # through everything: its own (above)
                 out = part.flats[face.exit]
-                mine = _on_exit(face, out, _Foot(at, half, corner))
+                mine = _on_exit(face, out, feet[k])  # what it covers (a drawn outline's box is off its point)
                 if through and not out.holds(mine):
                     raise DoesNotFitError(
                         f"{f.id} doesn't come out wholly on {face.exit}"

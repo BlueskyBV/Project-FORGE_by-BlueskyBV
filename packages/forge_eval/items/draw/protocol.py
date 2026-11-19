@@ -456,11 +456,14 @@ class DrawKind:
             return
         if f.end is not None and f.end.face is None:
             return  # through everything: where it comes out, taken as it is made (_through_everything)
+        # What it covers: turned, the box round its turned outline; else its own foot (a drawn outline's box is off
+        # its point).
+        foot = _Foot(at, half, corner) if f.turn is not None else self.foot_of(f, face, at)
         if f.depth is None and face.exit is not None:
             out = part.flats[face.exit]
-            out.taken.append(_on_exit(face, out, _Foot(at, half, corner)))
+            out.taken.append(_on_exit(face, out, foot))
         elif f.depth is not None:
-            face.dug.append((_Foot(at, half, corner), part.resolved.get(f.id, f.depth)))
+            face.dug.append((foot, part.resolved.get(f.id, f.depth)))
 
     def limits(self, f: Feature) -> None:
         """Its own page's limits on its sizes, besides every size being more than 0: a :class:`DoesNotFitError` where one is broken."""

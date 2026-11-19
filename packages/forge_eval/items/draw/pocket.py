@@ -14,8 +14,7 @@ from forge_eval.generator import (
     DoesNotFitError,
     Feature,
     _Flat,
-    _Foot,
-    _footprint,
+    _moved,
     _q,
     outline_of,
 )
@@ -49,32 +48,21 @@ class Pocket(DrawKind):
             return ((h1 - l1) / 2, (h2 - l2) / 2), 0.0
         return (s["length"] / 2, s["width"] / 2), s.get("corner_radius", 0.0)
 
-    def own_outline(self, f: Feature, axes: tuple[str, str]) -> Outline2 | None:
-        if f.choices.get("shape") == "profile" and f.outline is not None:
-            return outline_of(f.outline[0], dict(f.outline[1]))
-        return super().own_outline(f, axes)
-
-    def extent(self, f: Feature, axes: tuple[str, str]) -> tuple[tuple[float, float], tuple[float, float]]:
-        own = self.own_outline(f, axes) if f.choices.get("shape") == "profile" else None
-        if own is None:
-            return super().extent(f, axes)
-        (l1, l2), (h1, h2) = own.box()  # its drawn outline, from its point (0, 0) (pocket.md)
-        return (l1, h1), (l2, h2)
-
-    def foot_of(self, f: Feature, face: _Flat, at: tuple[float, float]) -> _Foot:
-        own = self.own_outline(f, face.axes) if f.choices.get("shape") == "profile" else None
-        if own is None:
-            return super().foot_of(f, face, at)
-        half, _ = _footprint(f, face.axes)
-        (l1, l2), (h1, h2) = own.box()  # the box round its outline, which runs along the face's axes from its point
-        return _Foot((at[0] + (l1 + h1) / 2, at[1] + (l2 + h2) / 2), half, 0.0)
-
     def corners(self, f: Feature, axes: tuple[str, str]) -> list[tuple[float, float]] | None:
         if f.choices.get("shape") != "hexagon":
             return None
         h = f.sizes["across_flats"] / 2
         r = 2 * h / math.sqrt(3.0)
         return [(r, 0.0), (r / 2, h), (-r / 2, h), (-r, 0.0), (-r / 2, -h), (r / 2, -h)]
+
+    def own_outline(self, f: Feature, axes: tuple[str, str]) -> Outline2 | None:
+        if f.choices.get("shape") == "profile" and f.outline is not None:
+            # Drawn about the middle of the box round it, so that what it covers is its footprint about its point,
+            # as every other cut's is (generated part 2451; pocket.md lets a profile lie off its point).
+            shape = outline_of(f.outline[0], dict(f.outline[1]))
+            (l1, l2), (h1, h2) = shape.box()
+            return _moved(shape, -(l1 + h1) / 2, -(l2 + h2) / 2)
+        return super().own_outline(f, axes)
 
     def limits(self, f: Feature) -> None:
         s = f.sizes

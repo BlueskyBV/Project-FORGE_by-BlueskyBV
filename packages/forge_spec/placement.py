@@ -3020,6 +3020,10 @@ def _check_over_openings(item: Item, copy: Instance, face: FlatFace, host: tuple
     there. Letters are left out: their box isn't their shape.
     """
     turned = turned_outline(item, layout, face.axes)
+    if turned is None and SOLVE[item.kind].profiled:
+        # An extrusion's or a revolution's foot is its outline, not parts (generated part 2279: a pulley's foot, read
+        # as nothing, was taken for wholly within a pocket of its own outline beside it).
+        turned = _footing(item)
     if turned is None:
         parts = _outline(item, layout, face.axes)
         here = _Print(
