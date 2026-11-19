@@ -1743,6 +1743,15 @@ dome's flat face, 16.5 degrees off square) it came 4 micrometres short,
 its mouth 13 off where the part leaves the face, past the accounting's
 tolerance. It asks 128 now.
 
+**And a pattern's insets on such a side (revision 16).** The exit pair on
+53f3a9f found generated part 1911: four holes at the corners of a post's
+flat side, the post standing round a tube. The check compiler measured
+their inset from the side's edge where it meets the post's foot, which runs
+on down to where the foot follows the tube's curve: no edge of the side's
+own there, and no built face where the check looked. A corners or ends
+pattern's inset from that edge is now held by face accounting, as a
+position from it already was (`_foot_edge`). Kept in `REGRESSIONS`.
+
 **And the flat sides of what stands round a side (revision 16, with item
 3b).** What stood round a rod's side took things only on its far face. Its
 flat sides now do too (place.md, "On a round side"): its box's, from its

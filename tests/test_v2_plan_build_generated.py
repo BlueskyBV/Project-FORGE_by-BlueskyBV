@@ -107,6 +107,14 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
 
         self.graded(4944, REGRESSIONS[4944][1])
 
+    def test_insets_from_a_footed_side_built_judged_and_graded(self) -> None:
+        """A kept plan whose corners pattern on a post's flat side, the post standing round a tube, had its inset
+        measured from where the post's foot follows the tube's curve (1911; tests/v2_regressions.py): no edge of the
+        side's own there, so its place there is held by face accounting."""
+        from v2_regressions import REGRESSIONS
+
+        self.graded(1911, REGRESSIONS[1911][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge

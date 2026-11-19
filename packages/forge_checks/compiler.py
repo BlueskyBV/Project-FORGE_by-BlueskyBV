@@ -1892,6 +1892,12 @@ class _Compiler:
                     if float(fv.dot(_v(copy.point) - _v(face.centre), a)) > 0
                     else -1.0
                 )
+                if copy.host is not None and self._foot_edge(copy.host) == (axis, sign):
+                    # Where a side of what stands round a rod meets its foot, it runs on down to where its foot
+                    # follows the rod's curve: no edge of its own there (_face_refs; generated part 1911).
+                    self.skip(item, at, "the face's edge on that side is where its foot follows the rod's curve: it "
+                              "has no edge of its own there", "face accounting")  # fmt: skip
+                    return
                 edge = self.edge_plane(face, axis, sign)
                 ref = self._centre_ref(item, copy, axis)
                 if ref is None or not self.seen(edge):
