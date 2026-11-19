@@ -1633,7 +1633,9 @@ width and along it by its length, and the material under it by its width
 (into a solid rod the far side comes first along its long edges); it says
 what isn't yet (one running round the side, from inside a bore, on a tab's
 end or round what stands on a turned item's face, through the next face
-or everything). **The judge** places it the same way (`_round_slot`), and
+or everything), and asks about one right through a tube's wall as wide as
+its bore or wider (one wall only, or across through both: the generator
+keeps it narrower). **The judge** places it the same way (`_round_slot`), and
 **the oracle** makes it a prism of its outline square to that plane.
 **The check compiler** holds its width between its walls, its length
 between its ends, its depth to its floor from the side's fitted axis, its
@@ -1649,7 +1651,8 @@ generator** draws one from a stream of its own (`_onto_keyway`,
 of short ones), its truth a prism as the oracle's; a cut's end it may be
 carried past into air is no longer taken for a wall a rod touches along a
 line (`_walls_crossed`). Tests: `tests/test_v2_plan_keyway.py` (where each
-goes; deeper asked about; every program's layout agrees; round or square
+goes; deeper asked about, and right through as wide as the bore; every
+program's layout agrees; round or square
 ended, at 30 degrees, a circle of four, right through a tube's wall and a
 solid rod: built and judged, every check held; one 0.5 mm shallower or
 turned 5 degrees caught; the second kernel agreeing; what isn't yet said;

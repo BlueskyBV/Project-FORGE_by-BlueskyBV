@@ -33,7 +33,10 @@ its long edges, `R + √(R² − (width/2)²)` in; into a tube's wall, the bore.
 `through`, it goes on until it is out of the part all across its outline:
 a tube's wall until it is in the bore all across (`R − √(r² − (width/2)²)`,
 `r` the bore's radius), a solid rod right across it, out of its far side
-(a slotted rod). Copies go round the side in a circle, as holes do.
+(a slotted rod). One `through` a tube's wall as wide as its bore, or
+wider, would open its far wall too: Forge asks whether through one wall
+only or right across through both. Copies go round the side in a circle, as
+holes do.
 
 Not yet: one running round the side, or from inside a bore, on a round-ended
 tab's end or round what stands on a turned item's face; through the next

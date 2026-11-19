@@ -1928,6 +1928,11 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                            f"{item.id} (\u00d8{2 * hole:g} mm) is as wide as the bore of {host[0]} "
                            f"(\u00d8{2 * bore:g} mm): through one wall only, or right across through both?",
                            [item.get("diameter"), *layout.values_of(face.radius_sources)])  # fmt: skip
+        if keyway and _is_through(item) and 0 < bore <= across_size + EPS:
+            layout.problem("question", at + pointer("depth"),
+                           f"{item.id} ({2 * across_size:g} mm wide) is as wide as the bore of {host[0]} "
+                           f"(\u00d8{2 * bore:g} mm): through one wall only, or right across through both?",
+                           [item.get("width"), *layout.values_of(face.radius_sources)])  # fmt: skip
     if entry.adds and not face.outward:
         height = height_of(item)
         if height is not None and height[0] >= 2 * face.radius - EPS:

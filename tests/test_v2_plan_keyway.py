@@ -130,6 +130,13 @@ class AlongTheSidesAxisSquareToThePlaneTouchingIt(unittest.TestCase):
         self.assertTrue(any("5.5 mm deep in 5 mm of material" in p.message for p in wall.problems),
                         [p.message for p in wall.problems])  # fmt: skip
 
+    def test_through_as_wide_as_the_bore_is_asked_about(self) -> None:
+        # Right through a tube's wall as wide as its bore (Ø20) it would open the far wall too: one wall, or both?
+        wide = _report(lambda b: [_shaft(b, "tube"), _keyway(b, None, width=20.0)])
+        self.assertTrue(any("as wide as the bore of shaft" in p.message for p in wide.problems),
+                        [p.message for p in wide.problems])  # fmt: skip
+        self.assertEqual(_report(lambda b: [_shaft(b, "tube"), _keyway(b, None, width=19.0)]).problems, ())
+
     def test_every_programs_layout_agrees(self) -> None:
         from forge_checks.place import compare_layouts, place
         from forge_spec.placement import solve
