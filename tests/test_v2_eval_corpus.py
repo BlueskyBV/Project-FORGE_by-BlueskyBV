@@ -123,6 +123,17 @@ class ARun(Folder):
         ]
         self.assertEqual([line["key"] for line in ledger], ["P02", "odd", "P02", "odd"])
 
+    def test_a_version_handed_over_as_a_number_builds_live_and_replayed(self) -> None:
+        # Blind set 1's drafts arrived with "schema_version" the number 1.9; the corpus read its records raw.
+        answer = dict(drafted("P02"))
+        answer.pop("spec_format", None)
+        answer["schema_version"] = 1.9
+        briefs = [Brief("P02", BLOCK)]
+        ended, _ = run_briefs(briefs, ScriptedProvider([answer]), self.out, strict=False, say=self.said.append)
+        again, _ = run_briefs(briefs, None, self.out, strict=False, say=self.said.append)
+        self.assertEqual([(e.ending, e.drafted) for e in ended + again],
+                         [("BUILT TO DRAFT", True), ("BUILT TO DRAFT", False)])  # fmt: skip
+
     def test_a_false_pass_caught_or_not(self) -> None:
         right = drafted("P02")
         briefs = [Brief("right", BLOCK, "the right block", right, True),

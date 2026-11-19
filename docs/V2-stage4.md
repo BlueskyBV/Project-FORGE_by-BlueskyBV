@@ -3275,7 +3275,8 @@ Tests: `test_v2_spec_writer.py` (`WhatTheTransportHandsOverIsReadAsWritten`:
 each reading, a number naming no text still a fault, a wrapper named as
 the schema's own field left alone, a replay read as the live writer read
 it); `test_v2_eval_spec.py` (a set drafted with numeric versions, graded
-and regraded from its records alike).
+and regraded from its records alike); `test_v2_eval_corpus.py` (a corpus
+brief drafted so, built, and replayed at no cost: it fails on the old code).
 
 **Set 1 is no longer blind.** The report's list of what each brief got
 wrong prints the keys' facts, and it was pasted whole; the owner then
