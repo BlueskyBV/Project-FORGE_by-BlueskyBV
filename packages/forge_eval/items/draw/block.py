@@ -197,10 +197,21 @@ class Block(DrawKind):
         else:
             part.steps.append(Step(f.id, 0, False, Prism(_t(middle), *frame, (half[0], half[1]), corner, -span, span),
                                    ends))  # fmt: skip
+        # Its rim, where nothing rounds its edges: the face less the hollow's mouth, its walls all the way under it
+        # (shell.md, "The rim"); a cut through one comes out of its far face, where that is closed.
+        rimmed = not any(_draw(g.kind).rounds_edges and g.of == body.id for g in plan)
         for name in self.openable:
             outer = (body.id, 0, name)
             if name in opened:
-                del part.flats[outer]
+                fa = _flat_axes(name)
+                rim = part.flats[outer]
+                mouth = tuple(float(high["xyz".index(a)] - low["xyz".index(a)]) / 2 for a in fa)
+                off = [float(middle["xyz".index(a)] - rim.centre["xyz".index(a)]) for a in fa]
+                if not rimmed or rim.shape != "rect" or any(abs(o) > 1e-9 for o in off):
+                    del part.flats[outer]
+                    continue
+                rim.shape, rim.mouth = "frame", (mouth[0], mouth[1])
+                rim.exit = None if OPPOSITE[name] in opened else (body.id, 0, OPPOSITE[name])
                 continue
             a = name[1]
             i = "xyz".index(a)

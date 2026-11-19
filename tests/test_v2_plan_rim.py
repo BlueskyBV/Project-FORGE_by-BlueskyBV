@@ -17,7 +17,10 @@
   passing.
 - **The second kernel agrees** with the exact part.
 - **The generator draws it:** an open cylinder's rim a ring, a cut through
-  it coming out on its other end, built as its own shape.
+  it coming out on its other end, built as its own shape; an open box's
+  rim a frame round its mouth, a hole blind or right through one of its
+  walls, a boss on one, from a stream of its own, built as its own shape,
+  and nothing drawn reaching into its mouth.
 """
 
 from __future__ import annotations
@@ -225,6 +228,46 @@ class TheGeneratorDrawsIt(unittest.TestCase):
 
         for plan in self._plans():
             with self.subTest(depth=plan[2].depth):
+                case = render(plan)
+                _, built = _built(_spec(case.items))
+                self.assertIsNone(built.gap, built.refusals)
+                self.assertEqual(_graded(built.result.shape, case.truth, 0), [])
+
+
+class TheGeneratorDrawsABoxsRim(unittest.TestCase):
+    def _plans(self) -> list[Any]:
+        from forge_eval.generator import Feature, Position
+
+        box = Feature("body", "block", {"length": 40.0, "width": 30.0, "height": 20.0})
+        shell = Feature("hollow", "shell", {"thickness": 4.0}, of="body", faces=("+z",))
+        on = ("body", "+z")
+        return [(box, shell, Feature("i0", "hole", {"diameter": 2.0}, on, 6.0, place={"x": Position("offset", 18.0)})),
+                (box, shell, Feature("i0", "hole", {"diameter": 2.0}, on, None, place={"y": Position("offset", -13.0)})),
+                (box, shell, Feature("i0", "boss", {"diameter": 3.0, "height": 2.0}, on, None,
+                                     place={"x": Position("offset", -18.0)}))]  # fmt: skip
+
+    def test_its_rim_a_frame(self) -> None:
+        from forge_eval.generator import _build
+
+        rim = _build(self._plans()[0][:2], True).flats[("body", 0, "+z")]
+        self.assertEqual((rim.shape, rim.half, rim.mouth, rim.material, rim.exit),
+                         ("frame", (20.0, 15.0), (16.0, 11.0), 20.0, ("body", 0, "-z")))  # fmt: skip
+
+    def test_nothing_reaching_into_its_mouth(self) -> None:
+        from forge_eval.generator import DoesNotFitError, Feature, Position, render
+
+        box, shell, _ = self._plans()[0]
+        into = Feature("i0", "hole", {"diameter": 2.0}, ("body", "+z"), 6.0, place={"x": Position("offset", 16.5)})
+        with self.assertRaises(DoesNotFitError):
+            render((box, shell, into))
+
+    @needs_occ
+    def test_its_own_shape(self) -> None:
+        from forge_eval.generator import render
+        from v2_exit4 import _built, _graded, _spec
+
+        for plan in self._plans():
+            with self.subTest(item=plan[2].kind, depth=plan[2].depth):
                 case = render(plan)
                 _, built = _built(_spec(case.items))
                 self.assertIsNone(built.gap, built.refusals)

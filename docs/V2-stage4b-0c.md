@@ -1604,6 +1604,24 @@ rims now faces of the part): passed, its mutant caught. Generator digests
 on seeds 0-149, old against new: only 86 differs, and the impossible parts
 58 and 63.
 
+**And the generator draws on a box's rim (revision 16).** A hollowed first
+block's open face, where nothing rounds its edges, stays a face of the
+generator's part too: a `frame`, its mouth the hollow's (`_Flat.mouth`),
+the wall under it all the way down, a cut right through coming out of its
+far face where that is closed. What lies on it keeps the gap clear of its
+mouth as of its outer edges (`_Flat.holds`); what is drawn there is sized
+from the walls' thickness and placed at the middle of one of them. Drawn
+from a stream of its own (`_onto_rim`, "forge-eval box rims", 0.5: a hole,
+a pocket, a slot or what stands; not in the main loop's hosts, nor among
+the decorations'), so a seed with no open box draws as it did. Tests:
+`tests/test_v2_plan_rim.py` (its rim a frame; nothing reaching into its
+mouth drawn; a blind hole, one right through, a boss: the generator's own
+shape, built and graded). The exit harness's per-seed proof on 41, 58, 64, 107,
+120 and 121 (the first 150's draws it changed: things on the rim of a box
+open at its top, on a side, or at both ends; and 120, a cut up to the
+plane of an open bottom's rim): each passed, its mutant caught. Generator
+digests on seeds 0-149, old against new: only those differ.
+
 **And the flat sides of what stands round a side (revision 16, with item
 3b).** What stood round a rod's side took things only on its far face. Its
 flat sides now do too (place.md, "On a round side"): its box's, from its

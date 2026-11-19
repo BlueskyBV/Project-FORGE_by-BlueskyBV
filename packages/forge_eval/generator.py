@@ -361,6 +361,9 @@ class _Flat:
     outline: Outline2 | None = None
     #: A ``ring``'s inner radius.
     inner: float = 0.0
+    #: A ``frame``'s mouth (shell.md, "The rim"): an open box's rim, the face less its hollow's mouth, which lies about
+    #: its centre, these half sizes along its axes.
+    mouth: tuple[float, float] = (0.0, 0.0)
     #: A ``profile`` face's widest disc within it, about (its radius): what is put on it is sized from that.
     widest: float = 0.0
     #: A dome's flat face: the dome's radius, its material under a point the dome's height over it (frame.md).
@@ -504,6 +507,11 @@ class _Flat:
             far = max(fs.hypot(foot.at[0] - cu + su * (foot.half[0] - r), foot.at[1] - cv + sv * (foot.half[1] - r))
                       for su, sv in QUADRANTS) + r  # fmt: skip
             return near >= self.inner + gap and far <= self.half[0] - gap - self.rim
+        if self.shape == "frame":  # on its walls: clear of its mouth by the gap, and within it as a rectangle
+            apart = fs.hypot(max(abs(foot.at[0] - cu) - (foot.half[0] - r) - self.mouth[0], 0.0),
+                             max(abs(foot.at[1] - cv) - (foot.half[1] - r) - self.mouth[1], 0.0)) - r  # fmt: skip
+            if flush or beyond or apart < gap:
+                return False
         shrink = gap + r + (self.rim if self.shape == "disc" else 0.0)
         radii = (self.half[0],) * 4 if self.shape == "disc" else self.corners
         # How far in from each side (its low end and high along the first axis, then the second) it must keep.
@@ -4674,6 +4682,7 @@ def _feature(
         "ring": (face.half[0] - face.inner) / 2,
         "disc": face.half[0],
         "profile": face.widest,
+        "frame": min(face.half[0] - face.mouth[0], face.half[1] - face.mouth[1]),
     }.get(face.shape, min(face.half))
     kind = rng.choice(
         _weighted("flat_weight", "flat_rank", lambda e: standing_ok or e.cut_out)
@@ -4712,9 +4721,14 @@ def _feature(
     for i, axis in enumerate(face.axes):
         if axis not in fixed:
             room = (
-                face.half[i] if face.shape in ("rect", "profile") else face.half[0]
+                face.half[i] if face.shape in ("rect", "profile", "frame") else face.half[0]
             ) * 0.6
             place[axis] = _position(rng, axis, room, whole)
+    if face.shape == "frame" and not fixed:
+        # On one of its walls: at its middle across it (shell.md, "The rim").
+        i = rng.randrange(2)
+        across = (face.half[i] + face.mouth[i]) / 2
+        place[face.axes[i]] = Position("offset", _q(across if rng.random() < 0.5 else -across))
     return replace(f, place=place, pattern=pattern)
 
 
@@ -4979,7 +4993,8 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
             continue
         part = _build(tuple(plan), True)
         # Not on a turned item's far face: what goes there is drawn from a stream of its own (_onto_turned).
-        hosts = sorted(key for key, face in part.flats.items() if key[1] == 0 and not face.turned)
+        hosts = sorted(key for key, face in part.flats.items()
+                       if key[1] == 0 and not face.turned and face.shape != "frame")  # a rim's: _onto_rim
         for _ in range(tries if hosts else 0):
             key = rng.choice(hosts)
             candidates = draw(rng, _next_index(plan), key[0], part.flats[key])
@@ -5104,13 +5119,16 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             _everything_now_and_then(random.Random(f"forge-eval through everything round {seed} {k}"), len(plan) - 1,
                                      plan, part)  # fmt: skip
             continue
+        if _onto_rim(random.Random(f"forge-eval box rims {seed} {k}"), k, plan, part, len(plan) < size):
+            continue
         if _onto_footed_side(random.Random(f"forge-eval footed sides {seed} {k}"), k, plan, part):
             continue  # blind or right through: through the next face or everything waits (generated part 2231)
         before = len(plan)
         for _ in range(tries):
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
-            hosts = [key for key, face in part.flats.items() if key[1] == 0 and not face.turned and not face.footed] + [
+            hosts = [key for key, face in part.flats.items()
+                     if key[1] == 0 and not face.turned and not face.footed and face.shape != "frame"] + [
                 key for key, side in part.rounds.items() if key[1] == 0 and not side.leans
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
@@ -5586,6 +5604,31 @@ def _onto_footed_side(rng: random.Random, k: int, plan: list[Feature], part: _Pa
     face = part.flats[key]
     for _ in range(10):
         candidate = replace(_feature(rng, k, key[0], face, False), own_axes=face.axes)
+        try:
+            render((*plan, candidate))
+        except DoesNotFitError:
+            continue
+        plan.append(candidate)
+        return True
+    return False
+
+
+#: How often, where the part has an open box's rim, something is cut into or stands on it (shell.md, "The rim"), from a
+#: stream of its own.
+_ON_RIM = 0.5
+
+
+def _onto_rim(rng: random.Random, k: int, plan: list[Feature], part: _Part, standing_ok: bool) -> bool:
+    """Now and then, from a stream of its own, a hole, a pocket, a slot or what stands on an open box's rim (shell.md,
+    "The rim"): on one of its walls, blind, right through and out of its far face, or standing on it. Whether one was
+    added to the plan."""
+    faces = [key for key, face in part.flats.items() if key[1] == 0 and face.shape == "frame"]
+    if not faces or rng.random() >= _ON_RIM:
+        return False
+    key = rng.choice(faces)
+    face = part.flats[key]
+    for _ in range(10):
+        candidate = _feature(rng, k, key[0], face, standing_ok and _draw(part.kinds[key[0]]).hosts_standing)
         try:
             render((*plan, candidate))
         except DoesNotFitError:
