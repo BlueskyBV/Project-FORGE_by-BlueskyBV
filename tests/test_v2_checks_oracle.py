@@ -817,6 +817,14 @@ class TwoPiecesMeeting(unittest.TestCase):
         met = _meet_steeply(floor, tilted, x)
         assert met is not None
         np.testing.assert_allclose(met, [1.0, 0.0, 0.0], atol=1e-9)
+        # From a point on either one (part 5035: a built point on a floor, beside a leaning hole's window).
+        for on in ([1.0, 1e-6, 0.0], [1.0, 1e-6 * math.cos(angle), 1e-6 * math.sin(angle)]):
+            for first, second in ((floor, tilted), (tilted, floor)):
+                met = _meet_steeply(first, second, np.array(on))
+                assert met is not None
+                self.assertLessEqual(float(np.abs(first.foot(met) - met).max()), 1e-12)
+                self.assertLessEqual(float(np.abs(second.foot(met) - met).max()), 1e-12)
+                np.testing.assert_allclose(met, [1.0, 0.0, 0.0], atol=1e-9)
 
     def test_steeply_where_they_meet_squarely(self) -> None:
         from forge_checks.oracle import _meet, _meet_steeply

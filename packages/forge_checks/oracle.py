@@ -2363,7 +2363,10 @@ def _meet_steeply(first: Patch, second: Patch, x: Array) -> Array | None:
     line where the two pieces' tangent planes at its feet meet (their
     normals the ways to it from its feet), as Newton's method does, and the
     point found is on both. A foot the point is already on keeps the normal
-    last found there; two pieces parallel where it is don't meet there.
+    last found there; a point on a piece with none found yet goes first to
+    the other (a built point on a pocket's floor, at the tip of the window a
+    leaning hole cuts in it: generated part 5035); two pieces parallel
+    where it is don't meet there.
     """
     q = np.asarray(x, dtype=float)
     ways: list[Array | None] = [None, None]
@@ -2380,7 +2383,8 @@ def _meet_steeply(first: Patch, second: Patch, x: Array) -> Array | None:
             break
         a, b = ways
         if a is None or b is None:
-            q = feet[0] if a is None else feet[1]
+            # On one piece and no way to it known yet: onto the other first, to come off it.
+            q = feet[1] if a is None else feet[0]
             continue
         c = float(fv.dot(a, b))
         apart = 1.0 - c * c

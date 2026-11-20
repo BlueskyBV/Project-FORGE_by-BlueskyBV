@@ -2128,10 +2128,15 @@ judged, now:
   window's nearly tangent tips, a few billionths of a millimetre off one,
   in the air. Where two pieces meet loosely or not at all, the witness also
   tries Newton's steps to where their tangent planes meet
-  (`oracle._meet_steeply`), which only adds points it may find.
+  (`oracle._meet_steeply`), which only adds points it may find. From a
+  point on one piece they go first to the other (generated part 5035, from
+  the exit harness on seeds 5,000 on: a hole leaning 5.5 degrees cuts a long
+  window in a through pocket's floor; the exact kernel put the window's tip
+  1e-8 mm inside the hole, and the built point there on the floor, judged
+  on the B-rep, found the spec's tip only so).
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
-(3610), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`
+(3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`
 (1880), `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
 `tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,
 `tests/test_v2_spec_placement.py`.

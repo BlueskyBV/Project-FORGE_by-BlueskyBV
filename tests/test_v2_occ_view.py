@@ -660,6 +660,28 @@ class AReadersTinyLoops(unittest.TestCase):
 
 
 @needs_occ
+class AWindowsTip(unittest.TestCase):
+    def test_the_built_point_there_is_accounted_for(self) -> None:
+        """Generated part 5035: a hole leaning 5.5 degrees cuts a long window in a through pocket's floor. The exact kernel put the window's tip 1e-8 mm inside the hole, the spec's surface ends some 1e-7 mm along the floor from it, and the B-rep's coverage has a point there; its witness is the spec's tip, found where the floor and the hole meet at that small angle from a point on the floor."""
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_checks.accounting import account_faces
+        from forge_checks.classes import Verdict
+        from forge_checks.judge import Judge
+        from forge_eval.generator import render
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        spec = _spec(render(REGRESSIONS[5035][1]).items)
+        _, built = _built(spec)
+        judge = Judge.of(spec)
+        found = account_faces(judge.part, ViewProxy(BrepView(built.result.shape)), judge.suite.resolution)
+        self.assertIs(found.verdict, Verdict.PASS, found.misses[:2])
+
+
+@needs_occ
 class TheTopologyIsTheMeshViews(unittest.TestCase):
     """The same counts as the stage-2 mesh view of a fine mesh of the same part (11.1)."""
 
