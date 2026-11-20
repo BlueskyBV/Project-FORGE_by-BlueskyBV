@@ -1788,23 +1788,31 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
             layout.issue("unable", at, why)
             return []
     if place is not None and (
-        (place.pattern and not PATTERN_SOLVE[place.pattern.kind].round)
+        (place.pattern and not PATTERN_SOLVE[place.pattern.kind].round
+         and not (PATTERN_SOLVE[place.pattern.kind].along_a_side and face.half is None))
         or place.concentric
     ):
         layout.issue("unable", at + pointer("place"),
-                     "on a round side, Forge places by position along the axis and angle only")  # fmt: skip
+                     "on a round side, Forge places by position along the axis and angle only, and copies in a circle or "
+                     "an arc round it or a row along it")  # fmt: skip
         return []
     if place is not None and place.pattern is not None:
+        kind = place.pattern.kind
+        row = PATTERN_SOLVE[kind].along_a_side
         extra = sorted(
             set(place.pattern.values)
-            - ({"step"} if PATTERN_SOLVE[place.pattern.kind].steps_round else set())
+            - ({"step"} if PATTERN_SOLVE[kind].steps_round else {"pitch"} if row else set())
         )
         if extra:
-            kind = place.pattern.kind
             layout.issue("fault", at + pointer("place", "pattern", kind),
                          f"round a side, a {kind} pattern takes only a count"
-                         + (" and a step" if PATTERN_SOLVE[kind].steps_round else "")
-                         + f"; give the first one's angle as place.angle, not {extra}")  # fmt: skip
+                         + (" and a step" if PATTERN_SOLVE[kind].steps_round else " and a pitch" if row else "")
+                         + (f", along the side's axis {axis}" if row else "; give the first one's angle as place.angle")
+                         + f", not {extra}")  # fmt: skip
+            return []
+        if row and place.pattern.axis != axis:
+            layout.issue("fault", at + pointer("place", "pattern", kind, "axis"),
+                         f"round a side, a row runs along the side's axis, {axis}, not {place.pattern.axis}")  # fmt: skip
             return []
     if place is not None and place.turn is not None:
         layout.issue("fault", at + pointer("place", "turn"),
@@ -1852,6 +1860,18 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
             return []
         step = degrees(step_value) if step_value is not None else 360.0 / count.n
         angles = [angles[0] + step * k for k in range(count.n)]
+    # A row along the side (place.md, "On a round side"): copy k (k - (count - 1)/2) * pitch along its axis from the
+    # row's centre, from its minus end; from an end, the position is to its nearest copy.
+    steps = [0.0]
+    if place and place.pattern and PATTERN_SOLVE[place.pattern.kind].along_a_side:
+        count, pitch = place.pattern.counts.get("count"), place.pattern.values.get("pitch")
+        if count is None or pitch is None:
+            layout.issue("fault", at + pointer("place", "pattern"), "say how many along the side, and their pitch")
+            return []
+        steps = [(k - (count.n - 1) / 2) * mm(pitch) for k in range(count.n)]
+    nearest = 0.0
+    if position is not None and position.mode == "side":
+        nearest = min(steps) if (position.side or "+").startswith("-") else max(steps)
     reference = face.reference
     half = face.length / 2
     # Blame only what binds: the item's size across and the side's radius for
@@ -1865,7 +1885,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     footprints: list[
         tuple[float, float, float, float]
     ] = []  # angle, along, half around, half along
-    for angle in angles:
+    for angle, step in [(a, s) for a in angles for s in steps]:
         turn = _turn(angle)
         r = face.frame.radial(*turn)
         outward = r if face.outward else (-r[0], -r[1], -r[2])
@@ -1911,7 +1931,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                            f"{item.id} ({2 * along_size:g} mm) is longer than the {face.name} it is on "
                            f"({face.length:g} mm)", along_values)  # fmt: skip
             return []
-        along = _along(position, half, along_size) if position else 0.0
+        along = (_along(position, half, along_size) if position else 0.0) - nearest + step
         if abs(along) + along_size > half + EPS:
             layout.problem(
                 "question",

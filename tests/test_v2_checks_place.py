@@ -483,20 +483,13 @@ class RoundSides(unittest.TestCase):
             self.assertAlmostEqual(
                 copy.point[1], 10 * math.sin(math.radians(angle)), places=12
             )
-        with self.assertRaises(PlaceError):
-            placed(
-                ROD,
-                hole(
-                    "rod",
-                    "side",
-                    3,
-                    place={
-                        "pattern": {
-                            "row": {"axis": pick("z"), "count": n(2), "pitch": a(5)}
-                        }
-                    },
-                ),
-            )
+        # A row along it (pattern row, its axis the side's): pitch apart along the axis, about its centre.
+        row = placed(ROD, hole("rod", "side", 3, place={"pattern": {"row": {"axis": pick("z"), "count": n(2),
+                                                                            "pitch": a(5)}}})).copies["h"]  # fmt: skip
+        self.assertEqual([round(c.point[2] - row[0].point[2], 12) for c in row], [0.0, 5.0])
+        with self.assertRaises(PlaceError):  # along another axis
+            placed(ROD, hole("rod", "side", 3, place={"pattern": {"row": {"axis": pick("x"), "count": n(2),
+                                                                         "pitch": a(5)}}}))  # fmt: skip
         # A standing feature at an angle that isn't a frame axis's (item 3b's first step): placed as at the one at or
         # below it, then turned with the side about its axis by the rest.
         (boss,) = placed(ROD, item("b", "boss", on=on("rod", "side"), diameter=a(3), height=a(2),

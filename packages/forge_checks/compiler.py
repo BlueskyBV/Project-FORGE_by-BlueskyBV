@@ -1697,14 +1697,19 @@ class _Compiler:
                         group,
                         count_name,
                     )
+                if PATTERN_COMPILE[pattern.kind].in_a_line:  # a row along the side: its pitch between its copies
+                    for value_name, value in pattern.values.items():
+                        self._pitches(item, f"place.pattern.{pattern.kind}.{value_name}", pattern, value_name, value,
+                                      group)  # fmt: skip
         for name, position in place.axes.items():
-            self._along_side(item, f"place.{name}", position, side)
+            self._along_side(item, f"place.{name}", position, side, pattern)
         if not place.axes:
             self._along_side(
                 item,
                 f"place.{side.axis}",
                 AxisPosition("centred", None, None, "centre", None),
                 side,
+                pattern,
             )
 
     def _side_ends(
@@ -1736,10 +1741,15 @@ class _Compiler:
         return planes
 
     def _along_side(
-        self, item: Item, name: str, position: AxisPosition, side: RoundSide
+        self, item: Item, name: str, position: AxisPosition, side: RoundSide, pattern: Pattern | None = None
     ) -> None:
         """A place along a round side's axis: from its built ends (the end faces of what it is the side of), each
-        copy's own side's (copies of what it is on, a row of round-ended tabs, are each where they are)."""
+        copy's own side's (copies of what it is on, a row of round-ended tabs, are each where they are). A row along
+        the side is placed as on a flat face: from an end to its nearest copy, else by its centre (the mean of its
+        copies' built centres)."""
+        if pattern is not None and PATTERN_COMPILE[pattern.kind].in_a_line:
+            self._row_along_side(item, name, position, side, pattern)
+            return
         for copy in self.copies(item):
             host = copy.host
             assert host is not None
@@ -1775,6 +1785,43 @@ class _Compiler:
                 offset, tolerance = 0.0, general(side.length / 2)
             self.check(item, name, "position", offset, tolerance,
                        Position(_t(a), Middle(planes[1.0], planes[-1.0]), ref), copy.index)  # fmt: skip
+
+    def _row_along_side(self, item: Item, name: str, position: AxisPosition, side: RoundSide,
+                        pattern: Pattern) -> None:  # fmt: skip
+        """A row's place along a round side's axis (place.md, "On a round side"): from an end to its nearest copy, or
+        its centre, from the side's built ends, on each copy of what it is on."""
+        for group in self._groups(item):
+            host = group[0].host
+            assert host is not None
+            own = self.placed.face(host)
+            here = own if isinstance(own, RoundSide) else side
+            a = _v(here.frame.n)
+            planes = self._side_ends(host, here)
+            if len(planes) < 2 or not all(self.seen(plane) for plane in planes.values()):
+                self.skip(item, name, "the side's ends can't be fitted")
+                return
+            if position.mode == "side":
+                assert position.side is not None and position.distance is not None
+                sign = 1.0 if position.side[0] == "+" else -1.0
+                copy = sorted(group, key=lambda c: -sign * float(fv.dot(c.point, a)))[0]
+                ref = (self._edge_ref(item, copy, side.axis, sign) if position.to == "edge"
+                       else self._centre_ref(item, copy, side.axis))  # fmt: skip
+                if ref is None:
+                    self.skip(item, name, "the item can't be fitted there")
+                    return
+                self.check(item, name, "position", _mm(position.distance), self.tol(position.distance),
+                           Position(_t(-sign * a), planes[sign], ref), copy.index)  # fmt: skip
+                continue
+            centre = self._pattern_centre(item, group, side.axis, pattern)
+            if centre is None or isinstance(centre, str):
+                self.skip(item, name, centre or self._no_centre(item, group, side.axis))
+                return
+            if position.mode == "offset" and position.distance is not None:
+                offset, tolerance = _mm(position.distance), self.tol(position.distance)
+            else:
+                offset, tolerance = 0.0, general(side.length / 2)
+            self.check(item, name, "position", offset, tolerance,
+                       Position(_t(a), Middle(planes[1.0], planes[-1.0]), centre), group[0].index)  # fmt: skip
 
     def _pattern(self, item: Item, pattern: Pattern, face: FlatFace) -> None:
         """A pattern's values and counts on a flat face, between its copies as built; its axis, told from the face's other."""

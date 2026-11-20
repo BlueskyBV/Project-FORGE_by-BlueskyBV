@@ -278,8 +278,8 @@ an angle round it.
   along its own axes, from its edges and its middle, its edge towards the
   rod at its point's level. A boss's round side takes nothing yet.
 - Only holes, bosses, posts, tabs and ribs go on a round side, for now, and
-  only one at a place or a `circle` or `arc` of them: no other pattern, and
-  nothing `concentric`.
+  only one at a place, a `circle` or `arc` of them round it, or a `row` of
+  them along its axis: no other pattern, and nothing `concentric`.
 
 ### On a round-ended tab's end
 
@@ -431,6 +431,10 @@ them. Only on a rectangular face.
 
 `count` copies in a line along `axis`, `pitch` apart: copy k (from 0) at
 (k − (count − 1)/2) × pitch from the pattern's centre.
+
+Round a side: along the side's axis (its `axis` must be that), all at
+`place.angle`, placed along the axis as on a flat face: from an end to its
+nearest copy, else by its centre. It takes a count and a pitch only.
 
 ### `grid`
 

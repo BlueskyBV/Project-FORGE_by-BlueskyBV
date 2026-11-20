@@ -87,6 +87,12 @@ class Row(PatternCompile):
     def pitch_axis(self, pattern: Pattern, name: str) -> str:
         return str(pattern.axis)
 
+    def round_step(self, pattern: Pattern, count: int) -> float:
+        return 0.0  # round a side, all along it at one angle (place.md, "On a round side")
+
+    def told(self, count: int) -> tuple[int, ...]:
+        return tuple(range(count))
+
 
 class Grid(PatternCompile):
     key = "grid"

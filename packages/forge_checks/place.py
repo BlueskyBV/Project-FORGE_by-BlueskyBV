@@ -2417,10 +2417,11 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
     if place is not None and place.concentric:
         raise PlaceError(item.id, "nothing is concentric on a round side, for now")
     pattern = place.pattern if place else None
-    if pattern is not None and not _pattern_entry(pattern.kind).round:
+    row = pattern is not None and _pattern_entry(pattern.kind).along_a_side and side.half is None
+    if pattern is not None and not _pattern_entry(pattern.kind).round and not row:
         raise PlaceError(
             item.id,
-            f"round a side, only a circle or arc of copies, not a {pattern.kind}",
+            f"round a side, only a circle or arc of copies or a row along it, not a {pattern.kind}",
         )
     positions = dict(place.axes) if place else {}
     others = sorted(a for a in positions if a != axis)
@@ -2433,7 +2434,17 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
         raise PlaceError(item.id, "a hole into a tab's round end is blind, or through the next face, for now")
     start = _angle(place.angle) if place and place.angle is not None else (0.0 if side.half is None else side.middle)
     angles = [start]
-    if pattern is not None:
+    steps = [0.0]  # a row's copies along the side, from its centre (place.md, "On a round side")
+    if pattern is not None and row:
+        values, counts = _pattern_values(item, pattern)
+        if pattern.axis != axis:
+            raise PlaceError(item.id, f"round a side, a row runs along the side's axis {axis}, not {pattern.axis}")
+        extra = sorted(set(values) - {"pitch"})
+        if extra:
+            raise PlaceError(item.id, f"round a side, a row takes only a count and a pitch, not {extra}")
+        _needs(item, pattern, {**values, **counts}, "count", "pitch")
+        steps = [(k - (counts["count"] - 1) / 2) * values["pitch"] for k in range(counts["count"])]
+    elif pattern is not None:
         values, counts = _pattern_values(item, pattern)
         if side.half is not None and "step" not in values:
             raise PlaceError(item.id, "round a tab's round end, copies go in an arc over its half: it gives a step")
@@ -2454,8 +2465,12 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
         step = _pattern_entry(pattern.kind).round_step(values, counts)
         angles = [start + k * step for k in range(counts["count"])]
     zero, quarter = side.frame.u, side.frame.v
+    position = positions.get(axis)
+    nearest = 0.0
+    if position is not None and position.mode == "side" and position.side is not None:
+        nearest = min(steps) if position.side[0] == "-" else max(steps)  # from an end, to the row's nearest copy
     made = []
-    for n, angle in enumerate(angles):
+    for n, (angle, step) in enumerate((a, s) for a in angles for s in steps):
         c, s = turn(angle)
         radial = _add(_add((0.0, 0.0, 0.0), zero, c), quarter, s)
         direction = (
@@ -2485,7 +2500,7 @@ def _round_copies(item: Item, side: RoundSide, host: tuple[str, int, str], layou
                 raise PlaceError(item.id, f"at {angle:g} degrees, it runs off the round end it is on")
         along = _anchor(
             item, positions.get(axis), side.length / 2, (-reach_along, reach_along)
-        )
+        ) - nearest + step
         if abs(along) + reach_along > side.length / 2 + TOL:
             raise PlaceError(
                 item.id,

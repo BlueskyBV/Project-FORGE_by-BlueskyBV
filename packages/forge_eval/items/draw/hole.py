@@ -62,10 +62,13 @@ class Hole(DrawKind):
     def on_round(
         self, f: Feature, side: _Round, index: int, part: _Part, strict: bool
     ) -> list[Copy]:
-        if f.pattern is not None and (f.pattern.kind != "circle" or side.half is not None):
+        row = f.pattern is not None and f.pattern.kind == "row"
+        if f.pattern is not None and (f.pattern.kind not in ("circle", "row") or side.half is not None):
             raise DoesNotFitError(
-                f"{f.id}: round a side, copies go round it (a circle); on a tab's round end, one"
+                f"{f.id}: round a side, copies go round it (a circle) or along it (a row); on a tab's round end, one"
             )
+        if row and (f.pattern is None or f.pattern.axis != side.axis):
+            raise DoesNotFitError(f"{f.id}: round a side, a row runs along its axis")
         if side.half is not None and f.depth is None:
             raise DoesNotFitError(f"{f.id}: a hole into a tab's round end is blind")
         if set(f.place) - {side.axis} or f.recess is not None:
@@ -81,11 +84,21 @@ class Hole(DrawKind):
         zero, quarter = side.frame.u, side.frame.v
         start = f.angle if f.angle is not None else (side.half or 0.0)
         n = f.pattern.counts["count"] if f.pattern is not None else 1
-        angles = [start + k * 360.0 / n for k in range(n)]
-        along = _along(f.place.get(side.axis, Position("none")), side, r)
-        if everything and (side.half is not None or side.bore > 0):
+        angles = [start + k * 360.0 / n for k in range(n)] if not row else [start]
+        pos = f.place.get(side.axis, Position("none"))
+        along = _along(pos, side, r)
+        # A row along the side (place.md, "On a round side"): from an end, its nearest copy where the position puts
+        # it, the rest on away from that end; else about its centre. From its minus end.
+        steps = [0.0]
+        if row and f.pattern is not None:
+            pitch, count = f.pattern.values["pitch"], f.pattern.counts["count"]
+            steps = [(k - (count - 1) / 2) * pitch for k in range(count)]
+            if pos.mode == "side":
+                along -= max(steps) if pos.side[0] == "+" else min(steps)
+        if everything and (side.half is not None or side.bore > 0 or row):
             raise DoesNotFitError(f"{f.id}: through everything round a rod's whole side, here")
         radials = [fs.cos(math.radians(a)) * zero + fs.sin(math.radians(a)) * quarter for a in angles]
+        spots = [(a, u, along + st) for a, u in zip(angles, radials, strict=True) for st in steps]
         alls = (_everything_round(f, [(side.frame_at(u, along).origin, u, w, np.asarray(np.cross(u, w), dtype=np.float64))
                                       for u in radials], r, part, strict) if everything else None)  # fmt: skip
         if strict:
@@ -99,10 +112,11 @@ class Hole(DrawKind):
             deep = side.radius - math.sqrt(side.bore * side.bore - r * r)
         else:
             deep = None
+        low, high = min(sp[2] for sp in spots), max(sp[2] for sp in spots)
         if strict:
             if (
-                along - r < GAP + side.margin[0]
-                or along + r > side.length - GAP - side.margin[1]
+                low - r < GAP + side.margin[0]
+                or high + r > side.length - GAP - side.margin[1]
             ):
                 raise DoesNotFitError(
                     f"{f.id} runs past the side's end, or onto a rounding of its rim"
@@ -110,7 +124,7 @@ class Hole(DrawKind):
             if (
                 f.depth is None
                 and side.bore > 0
-                and (along - r < side.bored[0] + GAP or along + r > side.bored[1] - GAP)
+                and (low - r < side.bored[0] + GAP or high + r > side.bored[1] - GAP)
             ):
                 # Through the wall only where the bore is all across its mouth: by a hollowed cylinder's end, it
                 # would come out half into the hollow and half into the end's wall (generated part 566).
@@ -127,7 +141,7 @@ class Hole(DrawKind):
                 raise DoesNotFitError(f"{f.id} is deeper than the tube's wall")
             if r > side.radius / 2 or (side.bore > 0 and r > side.bore - GAP):
                 raise DoesNotFitError(f"{f.id} is too wide for the rod, here")
-            mine = [(along, a, r, deep) for a in angles]
+            mine = [(at, a, r, deep) for a, _, at in spots]
             for k, hole in enumerate(mine):
                 for other in side.taken + mine[:k]:
                     if not _holes_apart(hole, other, side.radius):
@@ -135,8 +149,8 @@ class Hole(DrawKind):
                             f"{f.id} meets another hole round the side"
                         )
         made = []
-        for k, radial in enumerate(radials):
-            p = side.frame_at(radial, along).origin
+        for k, (_, radial, at) in enumerate(spots):
+            p = side.frame_at(radial, at).origin
             copy_index = index + k
             made.append(Copy(f.id, copy_index, side.key, _t(p), _t(radial), None))
             depth = alls[k] if alls is not None else 2 * side.radius if deep is None else deep
@@ -144,7 +158,7 @@ class Hole(DrawKind):
             e2 = np.asarray(np.cross(radial, w), dtype=np.float64)
             part.steps.append(Step(f.id, copy_index, False, Prism(_t(p), _t(e1), _t(e2), _t(radial), (r, r), r, -depth, 0.0),
                                    (REACH if f.depth is None else 0.0, REACH)))  # fmt: skip
-        side.taken += [(along, a, r, deep) for a in angles]
+        side.taken += [(at, a, r, deep) for a, _, at in spots]
         return made
 
     def cut_solid(

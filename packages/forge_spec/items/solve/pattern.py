@@ -30,6 +30,8 @@ class PatternSolve:
     along_its_axis = False
     #: Its copies are placed round its circle's centre (a circle's, an arc's).
     round = False
+    #: Round a side it runs along the side's axis, ``pitch`` apart (a row's: place.md, "On a round side").
+    along_a_side = False
     #: Round a side it takes a step too (an arc's).
     steps_round = False
     #: Its offsets are its copies' places as they stand: at the face's corners (a corners pattern's).
@@ -117,6 +119,7 @@ class Ends(PatternSolve):
 class Row(PatternSolve):
     key = "row"
     along_its_axis = True
+    along_a_side = True
 
     def offsets(self, pattern: Pattern, face: FlatFace, item: Item, layout: Layout, here: str, v: dict[str, float],
                 n: dict[str, int], need: Callable[..., bool], a1: str, a2: str) -> list[tuple[float, float]] | None:  # fmt: skip

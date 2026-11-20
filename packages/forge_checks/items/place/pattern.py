@@ -32,6 +32,8 @@ class PatternPlace:
     pinned_along_axis = False
     #: From an edge it is measured to its nearest copy (a rectangle, a row, a grid).
     nearest_from_edge = False
+    #: Round a side it runs along the side's axis, ``pitch`` apart (a row's: place.md, "On a round side").
+    along_a_side = False
 
     def fixed_axes(self, pattern: Pattern, a1: str, a2: str) -> set[str]:
         """The face's axes its copies' places are set along by the pattern itself."""
@@ -101,6 +103,7 @@ class Row(PatternPlace):
     key = "row"
     along_its_axis = True
     nearest_from_edge = True
+    along_a_side = True
 
     def offsets(self, item: Item, pattern: Pattern, values: Mapping[str, float], counts: Mapping[str, int],
                 half: tuple[float, float], a1: str, a2: str) -> list[Point]:  # fmt: skip

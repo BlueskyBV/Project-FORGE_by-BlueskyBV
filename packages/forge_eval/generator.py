@@ -5075,6 +5075,21 @@ def _angled_now_and_then(rng: random.Random, f: Feature) -> Feature | None:
     return replace(f, angle=angle, pattern=pattern)
 
 
+#: How often a single hole drawn round a rod's side is a row of them along it instead (place.md, "On a round side").
+_SIDE_ROWS = 0.25
+
+
+def _row_now_and_then(rng: random.Random, f: Feature, side: _Round) -> Feature | None:
+    """Now and then, from a stream of its own, a single hole round a rod's side made a row of two to four along the
+    side's axis, its pitch its diameter and a little more; None where it isn't (a seed that draws none stays as it
+    was)."""
+    if rng.random() >= _SIDE_ROWS or f.pattern is not None or f.end is not None or side.half is not None:
+        return None
+    count = rng.choice([2, 3, 4])
+    pitch = _q(f.sizes["diameter"] + rng.uniform(GAP + 0.5, 6.0))
+    return replace(f, pattern=Pattern("row", {"pitch": pitch}, {"count": count}, side.axis))
+
+
 def _side_hole(rng: random.Random, k: int, host: str, side: _Round) -> Feature:
     r = _q(rng.uniform(0.75, max(0.8, min(side.radius / 2.5, side.length / 6))))
     depth = None if rng.random() < 0.5 else _q(rng.uniform(0.5, side.radius * 0.8))
@@ -5263,6 +5278,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         hang = random.Random(f"forge-eval overhang {seed} {k}")
         touch = random.Random(f"forge-eval tangent {seed} {k}")
         around = random.Random(f"forge-eval round standing {seed} {k}")
+        rows = random.Random(f"forge-eval side rows {seed} {k}")
         turns = random.Random(f"forge-eval turns {seed} {k}")
         leans = random.Random(f"forge-eval leans {seed} {k}")
         onto = random.Random(f"forge-eval turned faces {seed} {k}")
@@ -5323,11 +5339,15 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             turned = leaned = None
             if key in part.rounds:
                 candidate = _side_hole(rng, k, key[0], part.rounds[key])
+                # Now and then a row of them along the side, from a stream of its own: tried first, as drawn else.
+                row = _row_now_and_then(rows, candidate, part.rounds[key])
                 if standing_ok and around.random() < _AROUND:
                     candidate = _side_standing(around, k, key[0], part.rounds[key])
                     # At any angle round it now and then, from a stream of its own (item 3b's first step): tried
                     # first, and where it doesn't fit, as drawn.
                     turned = _angled_now_and_then(angling, candidate)
+                else:
+                    turned = row
             else:
                 candidate = _feature(rng, k, key[0], part.flats[key], standing_ok)
                 # Flush with a side, over one or touching one, it isn't turned: it is placed by that side.
