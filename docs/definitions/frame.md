@@ -109,6 +109,13 @@ direction.
   material under the host's face there too. Where the item overhangs its
   host, a point over the overhang has only the item's own height under it.
 
+What stands on a body's far face is not under the body's faces: it is made
+on top of the body. A blind cut up through a knob's neck into the knob
+standing on the neck is deeper than the material under the neck's end; made
+the other way round, the knob first and the neck standing on it, the
+material under the neck's far end is the neck and the knob, and the cut goes
+on into the knob. The writer is told so.
+
 Under a cut's mouth the material may vary (on a cone, a dome, a round side,
 an overhang). A blind cut must fit in the **least** material under its mouth.
 A cut **through** goes through the **most**: it comes out of the far side

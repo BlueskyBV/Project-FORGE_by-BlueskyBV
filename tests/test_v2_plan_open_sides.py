@@ -1,4 +1,4 @@
-"""Cuts whose sides lie along their face's edge, and roundings round bevelled corners: built and judged (revision 19).
+"""Parts once accepted and then held, built and judged now (V2-stage4b-0c.md, revision 19).
 
 A rebate along a plate's edge, a groove right across a bar, a notch in its
 corner: a straight side along the face's edge only opens the cut there
@@ -14,6 +14,10 @@ What these hold:
 - **Round bevelled corners:** a box's top edges bevelled or rounded after
   its corners were bevelled, the short stretches round each corner within
   the zones at their ends no longer measured for nothing.
+- **A stud bevelled at both ends**, threaded all along: its thread stops in
+  the foot's bevel.
+- **A knob's bore** up its neck into the knob: the writer told to make the
+  knob first, the neck standing on it; so made, built and judged.
 
 The briefs are written here, not taken from any blind set.
 """
@@ -167,6 +171,58 @@ class AStudBevelledAtBothEnds(unittest.TestCase):
              "hand": {"choose": "right", "from": {"assumed": "a standard thread"}}},
         ]), strict=False)  # fmt: skip
         self.assertEqual(report.problems, ())
+        spec = lock(report, b, by="draft", strict=False)
+        built, accounting, failed = judged_plan(spec.spec, plan(spec))
+        self.assertIsNone(built.gap, built.refusals)
+        self.assertIs(accounting.verdict, Verdict.PASS, accounting.misses[:3])
+        self.assertEqual(failed, [])
+
+
+_KNOB = ("A knob: a cylinder 30 mm across and 15 mm tall, on a neck 12 mm across and 10 mm long, with a 6 mm hole "
+         "20 mm deep up into it from the neck's end.")  # fmt: skip
+
+
+def _knob(b: Any, neck_first: bool) -> list[dict[str, Any]]:
+    knob = {"id": "knob", "kind": "cylinder", "words": cite(b, "cylinder"), "diameter": mm(b, 30, "30 mm across"),
+            "length": mm(b, 15, "15 mm tall")}  # fmt: skip
+    neck = {"id": "neck", "kind": "cylinder", "words": cite(b, "neck"), "diameter": mm(b, 12, "12 mm across"),
+            "length": mm(b, 10, "10 mm long")}  # fmt: skip
+    up = {"choose": "z", "from": {"assumed": "upright"}}
+    centred = {"x": {"centred": {"assumed": "on its axis"}}, "y": {"centred": {"assumed": "on its axis"}}}
+    hole = {"id": "bore", "kind": "hole", "words": cite(b, "6 mm hole"), "diameter": mm(b, 6, "6 mm hole"),
+            "depth": mm(b, 20, "20 mm deep"), "place": centred}  # fmt: skip
+    if neck_first:  # the knob standing on the neck's top: the hole up from the neck's foot can't go on into it
+        return [neck | {"axis": up}, knob | {"on": {"item": "neck", "face": "+end"}, "place": centred},
+                hole | {"on": {"item": "neck", "face": "-end"}}]  # fmt: skip
+    return [knob | {"axis": up}, neck | {"on": {"item": "knob", "face": "-end"}, "place": centred},
+            hole | {"on": {"item": "neck", "face": "+end"}}]  # fmt: skip
+
+
+class AKnobsBore(unittest.TestCase):
+    """A blind cut stays in the body it is cut into and what that stands on (frame.md): a bore up a knob's neck into
+    the knob standing on the neck was asked about as too deep, which the person couldn't settle. The writer is told
+    to make the knob first and the neck standing on it; made so, the bore goes on into the knob."""
+
+    def test_the_writer_is_told_to_make_them_the_other_way_round(self) -> None:
+        from forge_spec.checks import check_draft
+        from forge_spec.words import number_words
+
+        b = number_words(_KNOB)
+        found = [(p.kind, p.message) for p in check_draft(b, draft("knob", _knob(b, True)), strict=False).problems]
+        self.assertEqual([k for k, m in found if "Make knob first" in m], ["fault"], found)
+        self.assertEqual(check_draft(b, draft("knob", _knob(b, False)), strict=False).problems, ())
+
+    @needs_occ
+    def test_made_the_other_way_round_it_is_built_and_judged(self) -> None:
+        from forge_checks.classes import Verdict
+        from forge_plan import plan
+        from forge_spec.checks import check_draft
+        from forge_spec.lock import lock
+        from forge_spec.words import number_words
+        from test_v2_plan_build import judged_plan
+
+        b = number_words(_KNOB)
+        report = check_draft(b, draft("knob", _knob(b, False)), strict=False)
         spec = lock(report, b, by="draft", strict=False)
         built, accounting, failed = judged_plan(spec.spec, plan(spec))
         self.assertIsNone(built.gap, built.refusals)

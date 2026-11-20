@@ -267,8 +267,11 @@ def _rounded_face(face: FlatFace, name: str, pairs: list[tuple[str, str]], size:
                   bevel: bool) -> tuple[FlatFace, tuple[float, float]] | None:  # fmt: skip
     """A body's flat face as a rounding (a bevel) of its edges leaves it, made after what is on it, and where its old
     centre is from the new one; None where it takes none of the face. A rectangle's side along a rounded edge is
-    ``size`` further in, a corner where a rounded edge square to it ends is rounded (bevelled) by ``size``; a disc's
-    rim, ``size`` in. (Faces at right angles: a block's, a cylinder's ends and its side.)"""
+    ``size`` further in, a corner where a rounded edge square to it ends is rounded (bevelled) by ``size``, unless a
+    side at that corner is further in already: the corner's round lies within that side's (a block's top edges
+    bevelled, on its sides: generated part 3063's post, by its side's corner, was asked about for a bevel cut at the
+    corner of what was left, not of the side); a disc's rim, ``size`` in. (Faces at right angles: a block's, a
+    cylinder's ends and its side.)"""
     if face.shape == "disc":
         if not any(name in pair for pair in pairs):
             return None
@@ -279,11 +282,13 @@ def _rounded_face(face: FlatFace, name: str, pairs: list[tuple[str, str]], size:
     a1, a2 = face.axes
     lo, hi = [-face.half[0], -face.half[1]], [face.half[0], face.half[1]]
     corners: dict[tuple[int, int], float] = {}
+    further: set[tuple[int, int]] = set()  # the sides further in: along which axis, and which way
     for a, b in pairs:
         if name in (a, b):  # along one of its sides: that side further in
             other = b if a == name else a
             if other[1] in (a1, a2):
                 k = (a1, a2).index(other[1])
+                further.add((k, 1 if other[0] == "+" else -1))
                 if other[0] == "+":
                     hi[k] -= size
                 else:
@@ -291,6 +296,7 @@ def _rounded_face(face: FlatFace, name: str, pairs: list[tuple[str, str]], size:
         elif {a[1], b[1]} == {a1, a2}:  # square to it, at a corner
             first, second = (a, b) if a[1] == a1 else (b, a)
             corners[(1 if first[0] == "+" else -1, 1 if second[0] == "+" else -1)] = size
+    corners = {q: v for q, v in corners.items() if (0, q[0]) not in further and (1, q[1]) not in further}
     if hi[0] - lo[0] <= EPS or hi[1] - lo[1] <= EPS:
         return None
     middle = ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)

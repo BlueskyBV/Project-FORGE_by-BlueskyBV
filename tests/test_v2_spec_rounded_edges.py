@@ -100,6 +100,23 @@ class WhatALaterRoundingRunsInto(unittest.TestCase):
         self.assertEqual(plate(6, "top", 1.5, bevel=True, counterbore=True), [])
         self.assertEqual(runs_into(plate(5, "top", 1.5, bevel=True, counterbore=True)), ["question"])
 
+    def test_by_a_side_s_corner_below_the_bevel_of_the_top_edges(self) -> None:
+        # The top edge of the side the post is on, and the one square to it at the side's corner, are bevelled: the
+        # corner's bevel lies within the top's band, not at the corner of what is left under it (generated part 3063).
+        brief = "A block 60 x 40 x 20 mm, its top edges bevelled 3 mm, with a post on its front by its right edge."
+        b = number_words(brief)
+        found = asked(brief, [
+            {"id": "block", "kind": "block", "words": cite(b, "block"), "length": mm(b, 60, "60"),
+             "width": mm(b, 40, "40"), "height": mm(b, 20, "20 mm")},
+            {"id": "post", "kind": "post", "words": cite(b, "post"), "on": {"item": "block", "face": "-y"},
+             "length": assumed("long", 4.0), "width": assumed("tall", 5.0), "height": assumed("out", 6.0),
+             "place": {"x": {"side": "+x", "distance": assumed("by it", 1.0), "to": "edge"},
+                       "z": {"side": "+z", "distance": assumed("below it", 4.0), "to": "edge"}}},
+            {"id": "top", "kind": "chamfer", "words": cite(b, "bevelled"),
+             "edges": {"of": "block", "which": "top", "words": cite(b, "its top edges")}, "size": mm(b, 3, "3 mm")},
+        ])  # fmt: skip
+        self.assertEqual(runs_into(found), [], found)
+
     def test_a_rods_end_and_side_near_its_rounded_rim(self) -> None:
         self.assertEqual(rod("+end", 14), [])
         self.assertEqual(runs_into(rod("+end", 17)), ["question"])  # its edge 19 mm out, the rim's round from 17

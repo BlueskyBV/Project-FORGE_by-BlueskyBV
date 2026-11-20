@@ -1304,7 +1304,8 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if entry.cut and out:
         _check_depth(item, parts,
                      lambda mouth: min(face.material_under(mouth, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions))  # fmt: skip
+                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions),
+                     beyond=_standing_beyond(item, face, host, [o.instance for o in out], layout))  # fmt: skip
     return out
 
 
@@ -1468,7 +1469,8 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         )
     if entry.cut and out:
         _check_depth(item, (), lambda _mouth: min(face.material_under(covered, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions, covered))  # fmt: skip
+                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions, covered),
+                     beyond=_standing_beyond(item, face, host, [o.instance for o in out], layout))  # fmt: skip
     return out
 
 
@@ -1718,6 +1720,43 @@ def cut_depth(item: Item, copy: Instance, layout: Layout) -> float | None:
     return None
 
 
+def _standing_beyond(item: Item, face: FlatFace, host: tuple[str, int, str], copies: Sequence[Instance],
+                     layout: Layout) -> tuple[str, str] | None:  # fmt: skip
+    """What stands on the far face of the body a cut goes into, over the cut's mouth there: the body that a blind
+    cut deeper than its own would go on into (a knob's bore up through its neck into the knob standing on it), and
+    that face's name; None where nothing does, or the body's far face isn't straight across from it.
+
+    A blind cut stays in the body it is cut into and in what that stands on (frame.md): what stands on its far face
+    is made on top of it. Made the other way round, the knob first and the neck standing on it, the bore up the neck
+    goes on into the knob."""
+    name = host[2]
+    if name not in _ACROSS or face.depth_model is not None or face.less is not None or face.over is not None:
+        return None
+    far_key = (host[0], host[1], _ACROSS[name])
+    back = layout.faces.get((host[0], host[1]), {}).get(far_key[2])
+    if not isinstance(back, FlatFace) or back.local is not None or face.local is not None:
+        return None
+    far = back.upright()
+    across = abs(sum((a - b) * d for a, b, d in zip(far.centre, face.centre, face.frame.n, strict=True)))
+    if abs(face.depth_below - across) > EPS:
+        return None
+    for other_id, instances in layout.instances.items():
+        owner = layout.items.get(other_id)
+        if owner is None or not SOLVE[owner.kind].solid or other_id == item.id:
+            continue
+        for other in instances:
+            if other.host != far_key or other.local is not None:
+                continue
+            over = _in_plane(far, other.origin, _outline(owner, layout, far.axes))
+            for cut in copies:
+                # A drawn or turned outline, by the disc round it.
+                mouth = _in_plane(face, cut.origin, _outline(item, layout, face.axes)
+                                  or (disc(reach(_covered(item, layout, face))),))  # fmt: skip
+                if any(_meet(m, o, far.axes, face.axes) for m in mouth for o in over):
+                    return other_id, far_key[2]
+    return None
+
+
 def _most_of_flat(face: FlatFace, positions: Sequence[tuple[float, float]],
                   footprint: Footprint | None = None) -> Callable[[tuple[Part, ...]], float] | None:
     """The most material under a mouth on a flat face, where the face's far side curves or slopes away under it (its
@@ -1740,7 +1779,8 @@ def _most_round_a_side(face: SideFace, mouth: tuple[Part, ...], angle: float) ->
 
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
                  layout: Layout, at: str, sources: Iterable[Source], up_to: float | None = None,
-                 most_of: Callable[[tuple[Part, ...]], float] | None = None) -> None:  # fmt: skip
+                 most_of: Callable[[tuple[Part, ...]], float] | None = None,
+                 beyond: tuple[str, str] | None = None) -> None:  # fmt: skip
     """A blind cut, a counterbore, a countersink or engraving no deeper than the material.
 
     Each is measured against the least material under its own mouth
@@ -1756,6 +1796,12 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
     A set screw's hole into a collar's wall, as deep as the wall, met the
     bore along its middle and was built with its faces touching there (held:
     its surface wasn't closed).
+
+    Deeper than its body, where a body stands on the far face over its mouth
+    (``beyond``: a knob's bore up through its neck, the knob standing on the
+    neck), it would go on into that body, which a blind cut doesn't: the
+    writer's to make the two the other way round, the cut then going on into
+    what its body stands on.
     """
     deep: list[tuple[str, float, tuple[Part, ...], list[object], bool]] = []
     end = end_of(item)
@@ -1795,6 +1841,14 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
         )
     for name, how_deep, mouth, values, inclusive in deep:
         material = material_of(mouth)
+        if name == "depth" and beyond is not None and how_deep > material + 1e-9:
+            other, far = beyond
+            layout.issue("fault", at + pointer(name),
+                         f"{item.id} is {how_deep:g} mm deep, past the {material:g} mm of the body it is cut into, on "
+                         f"into {other}, which stands on that body's {far} face: a blind cut stays in its body and "
+                         f"what that stands on. Make {other} first, and stand the body {item.id} is cut into on it, "
+                         "so that it goes on into it")  # fmt: skip
+            continue
         touching = (not inclusive and most_of is not None and abs(how_deep - material) <= 1e-9
                     and most_of(mouth) > material + EPS)  # fmt: skip
         if how_deep > material + 1e-9 or (inclusive and how_deep >= material - 1e-9) or touching:

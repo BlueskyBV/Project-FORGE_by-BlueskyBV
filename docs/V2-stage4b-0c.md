@@ -2048,6 +2048,26 @@ judged, now:
   (`compiler._still_on`), and such a rounding is less than 1.707 times the
   corners' bevel, leaving some of it to run along (OpenCascade made none
   bigger: `checks._common.earlier_roundings`).
+- A hole just touching where a rod's rounded rim starts: not built. A
+  round's band, touched, is reached into (`checks._common.reached_into`);
+  a bevel's isn't (it is made).
+- A stud bevelled at both ends and threaded all along: its thread stops in
+  the foot's bevel, short of its end; its length is held to that.
+- A knob's bore up through its neck into the knob standing on the neck:
+  asked as too deep, which the person can't settle. The writer is told to
+  make the knob first and the neck standing on it (frame.md; the guide,
+  version 31), the bore then going on into the knob
+  (`placement._standing_beyond`).
+- Generated parts 3063 and 3703 (the spec checks over 5,000 generated
+  drafts): a post by a block's side's corner, below its top edges' bevel,
+  was asked about as within it. The round or bevel of the edge square to
+  the side at its corner was put at the corner of what the side's own band
+  left, not of the side; it lies within that band, and is left out
+  (`checks._common._rounded_face`).
+- Generated part 1570: the second kernel missed a slim boss's base on a
+  cone's side, the boss's foot 0.04 mm under the side and trimmed to it. A
+  face a step lost is taken for kept only within the exact kernel's own
+  tolerance (`agreement._gone_inside`).
 
 Tests: `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
 `tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,

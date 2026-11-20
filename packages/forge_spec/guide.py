@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 30
+GUIDE_VERSION = 31
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -779,7 +779,12 @@ under it; out into a pocket cut from the far side), which the preview finds \
 of an item made before it, parallel to the face it is cut into, the offset \
 back towards its mouth, so that it follows that face (a pocket down to a \
 ledge's height). The face is an item's with one copy, and the depth that \
-comes to must fit in the material under the mouth. "up_to" goes square \
+comes to must fit in the material under the mouth. A blind cut stays in the \
+body it is cut into and in what that body stands on, never in what stands \
+on its far face: a bore up through a knob's neck into the knob is cut into \
+the neck's far end, the knob made first and the neck standing on it (so a \
+stepped shaft's deep centre hole is cut from the end of the step made last). \
+"up_to" goes square \
 to a flat face for now (a turned or leaning item's too, square to it where \
 it is): not leaning, round a side, on a surface or a tab's end. A hole may \
 also go "through_next" from a round side's outside, a \
