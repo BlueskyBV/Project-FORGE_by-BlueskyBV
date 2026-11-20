@@ -337,15 +337,18 @@ class WhereTheLayoutCantTellItSaysSo(unittest.TestCase):
         voids = next(f for f in grade_spec(key_, report).facts if "hollow" in f.fact)
         self.assertEqual((voids.verdict, voids.by), ("not graded", "built part"))
 
-    def test_a_cut_through_at_an_edge_may_shorten_the_part(self) -> None:
-        bar = "A PLA bar 70 mm long, 20 mm wide and 5 mm thick, with a 10 mm by 20 mm notch right through one end."
+    def test_a_cut_through_at_an_edge_may_change_the_part_s_bounds(self) -> None:
+        # A notch right through one end, part of its width: the bar's corners there are left, but what a cut at an
+        # edge leaves the bounds is the built part's to say. (Right across the end, it would take the end away,
+        # the bar only shorter: asked about at the spec, placement._check_severs.)
+        bar = "A PLA bar 70 mm long, 20 mm wide and 5 mm thick, with a 10 mm by 8 mm notch right through one end."
         b = number_words(bar)
         d = draft("bar", [
             {"id": "bar", "kind": "block", "words": cite(b, "bar"), "length": mm(b, 70, "70 mm"),
              "width": mm(b, 20, "20 mm"), "height": mm(b, 5, "5 mm")},
-            {"id": "notch", "kind": "pocket", "words": cite(b, "notch"), "on": {"item": "bar", "face": "+z"},
-             "shape": choose("rectangle", said(b, "10 mm by 20 mm")), "length": mm(b, 10, "10 mm"),
-             "width": mm(b, 20, "20 mm", nth=2), "depth": {"through": True, "from": said(b, "right through")},
+            {"id": "notch", "kind": "pocket", "words": cite(b, "notch") + cite(b, "one end"),
+             "on": {"item": "bar", "face": "+z"}, "shape": choose("rectangle", said(b, "10 mm by 8 mm")), "length": mm(b, 10, "10 mm"),
+             "width": mm(b, 8, "8 mm"), "depth": {"through": True, "from": said(b, "right through")},
              "place": {"x": {"side": "-x", "distance": assumed("at the end", 0), "to": "edge"},
                        "y": {"centred": assumed("t")}}},
         ], material=made_of(b, "PLA"))  # fmt: skip
@@ -353,14 +356,12 @@ class WhereTheLayoutCantTellItSaysSo(unittest.TestCase):
             id="bar",
             brief=bar,
             expect="verified",
-            envelope_mm=[5, 20, 60],
+            envelope_mm=[5, 20, 70],
             volume_mm3=[1, 99999],
         )
-        size = next(
-            f
-            for f in grade_spec(key_, check_draft(b, d)).facts
-            if f.fact.startswith("overall")
-        )
+        report = check_draft(b, d)
+        self.assertEqual(report.problems, ())
+        size = next(f for f in grade_spec(key_, report).facts if f.fact.startswith("overall"))
         self.assertEqual((size.verdict, size.detail),
                          ("not graded", "notch goes through at the edge of a face: checked on the built part"))  # fmt: skip
 

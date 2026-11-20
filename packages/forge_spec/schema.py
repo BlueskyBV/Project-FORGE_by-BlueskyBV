@@ -47,7 +47,11 @@ walls: ``inner -z`` is the inside of a block's -z wall, a tray's floor, facing
 up into the hollow; ``inner side`` is the inside of a hollowed cylinder's wall.
 The faces a shell leaves open can't be stood on but for their rim: a ring
 round a cylinder's mouth, a frame round a block's (its four walls there), the
-wall under it, takes what a face does. A cone with a flat top is hollowed too
+wall under it, takes what a face does. What stands in a hollow stands clear of
+its walls or flat against them: a round boss or post just touching a wall
+meets it along a line, which isn't made; a square post flush with a box's two
+inside walls in its corner joins them (a screw post set into the corner), and
+a round one stands a little clear of them. A cone with a flat top is hollowed too
 (a cup wider at its rim, a funnel): its side wall is the thickness square to
 its side; its ends take what an end takes, but its side, its rim and its
 inside take nothing yet, and its edges aren't rounded or bevelled.

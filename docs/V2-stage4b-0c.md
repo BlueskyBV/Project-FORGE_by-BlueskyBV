@@ -2064,6 +2064,13 @@ judged, now:
   the side at its corner was put at the corner of what the side's own band
   left, not of the side; it lies within that band, and is left out
   (`checks._common._rounded_face`).
+- The practice set's open box with a round post in each inside corner,
+  each just touching both walls: asked how far clear of them (it would
+  meet them along lines). The writer is told what stands in a hollow
+  stands clear of its walls or flat against them: a square post flush with
+  both walls in a corner joins them, as a screw post set into the corner
+  is (built and verified), a round one a little clear of them (the guide,
+  version 32).
 - Generated part 1528: lettering reading "PC" was taken for a material
   the spec didn't record; the letters to be engraved or embossed are the
   lettering's words, whatever they spell (`checks._check_requirements`).
