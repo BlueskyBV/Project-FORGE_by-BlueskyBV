@@ -212,6 +212,20 @@ class AKnobsBore(unittest.TestCase):
         self.assertEqual([k for k, m in found if "Make knob first" in m], ["fault"], found)
         self.assertEqual(check_draft(b, draft("knob", _knob(b, False)), strict=False).problems, ())
 
+    def test_a_face_with_its_own_axes_is_left_alone(self) -> None:
+        # A cut too deep on a face placed in its own axes (u, v) is asked about as before: the check of what stands
+        # beyond reads a face in the part's axes (generated parts 5143, 5396, 5409, 5435, 7889: KeyError 'u').
+        from forge_eval.generator import draft_of, generate
+        from forge_spec.checks import check_draft
+        from forge_spec.words import number_words
+        from v2_exit4 import resolved
+
+        for seed in (5143, 7889):
+            with self.subTest(seed=seed):
+                case = generate(seed)
+                report = check_draft(number_words(case.brief), resolved(draft_of(case.items)))
+                self.assertEqual(report.problems, ())
+
     @needs_occ
     def test_made_the_other_way_round_it_is_built_and_judged(self) -> None:
         from forge_checks.classes import Verdict

@@ -2057,7 +2057,8 @@ judged, now:
   asked as too deep, which the person can't settle. The writer is told to
   make the knob first and the neck standing on it (frame.md; the guide,
   version 31), the bore then going on into the knob
-  (`placement._standing_beyond`).
+  (`placement._standing_beyond`, which leaves a face placed in its own
+  axes, u and v, alone: generated parts 5143 and 7889 stopped there).
 - Generated parts 3063 and 3703 (the spec checks over 5,000 generated
   drafts, which found these three alone): a post by a block's side's
   corner, below its top edges' bevel, was asked about as within it. The round or bevel of the edge square to

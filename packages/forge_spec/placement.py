@@ -1737,6 +1737,8 @@ def _standing_beyond(item: Item, face: FlatFace, host: tuple[str, int, str], cop
     if not isinstance(back, FlatFace) or back.local is not None or face.local is not None:
         return None
     far = back.upright()
+    if not {*face.axes, *far.axes} <= {"x", "y", "z"}:  # a face's own axes (u, v): placed in them, not the part's
+        return None
     across = abs(sum((a - b) * d for a, b, d in zip(far.centre, face.centre, face.frame.n, strict=True)))
     if abs(face.depth_below - across) > EPS:
         return None
