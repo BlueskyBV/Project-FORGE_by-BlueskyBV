@@ -2031,9 +2031,12 @@ judged, now:
 - A rebate along a plate's edge, a groove right across a bar, a notch in a
   corner: accepted (a straight side along the edge only opens the cut),
   built, and held for want of a wall to measure the cut's size and place
-  from. Where a cut's side has no material behind it anywhere, the check
-  compiler measures from the face beside the cut in its plane, wherever it
-  is built (`compiler.cut_wall`).
+  from. Where a cut's side lies along the edge of its rectangular face and
+  has no material behind it anywhere, the check compiler measures from the
+  face beside the cut in its plane, wherever it is built
+  (`compiler.cut_wall`). Only there: elsewhere what is behind a wall may be
+  another cut's air (generated parts 1132 and 1207, held when any wall
+  with nothing behind it was taken for open).
 - A cut right across a bar's end and through it takes the end away, the bar
   only shorter and its length nowhere on the part: asked about now
   (`placement._check_severs`).
@@ -2085,6 +2088,19 @@ judged, now:
   30 s and 0.6 GB. Each exit-harness worker is held to 3.5 GB on the
   runners now, a part needing more recorded as running out, not its
   shard's every seed lost.
+- The spec checks over seeds 5,000 to 9,999 (the exit pair runs 0 to
+  4,999) found the generator drawing what the solver doesn't take: a hole
+  in the far face of a block leaning on a turned block's side (5332; such
+  an item's faces take nothing yet), a ball whose sunk half fills the way
+  of a pocket through the next face made before it (5469; the generator
+  counted only its half out of the face); and the solver asking about what
+  it should take: a square-ended slot through a hollow cylinder's wall,
+  its corners' reach taken for how far it runs along the axis (6642), and
+  two blind holes on opposite sides of a boss taken to overlap where their
+  floors are nearer than their width (7380), which heading towards each
+  other they don't: compared as the strips they sweep across the axis
+  (`placement._check_round_overlaps`). Tests:
+  `tests/test_v2_eval_held_out_drafts.py`.
 - Generated part 1570: the second kernel missed a slim boss's base on a
   cone's side, the boss's foot 0.04 mm under the side and trimmed to it. A
   face a step lost is taken for kept only within the exact kernel's own

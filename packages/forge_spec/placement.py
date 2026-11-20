@@ -2116,6 +2116,14 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
     bore at its tip. A hole through a solid rod passes the axis and comes
     out on the far side, so its far end is compared too; two such holes
     crossing at the axis (a cross-drilled pin) is how they are meant to be.
+
+    Holes that stop short of the axis are compared as what each sweeps
+    across the side's axis, a strip from the side in to where it stops, as
+    wide as the hole: far round from each other they head towards each
+    other, not side by side (two blind holes on opposite sides of a boss,
+    their floors 1.25 mm apart across its axis, were asked about as
+    overlapping, their floors' centres nearer than their width: generated
+    part 7380).
     """
     entry = SOLVE[item.kind]
     if face.outward and entry.cut:
@@ -2152,8 +2160,30 @@ def _check_round_overlaps(item: Item, face: SideFace, footprints: Sequence[tuple
             points[i][1] - points[j][1]
         )
 
+    sweeps = entry.cut and face.outward and EPS < inner < face.radius - EPS
+
+    def strips_meet(j: int, i: int) -> bool:
+        """Whether the strips the two sweep across the axis, from the side in to ``inner``, meet."""
+        rects = []
+        for k in (j, i):
+            c, s_ = fs.cos(points[k][0]), fs.sin(points[k][0])
+            mid = (face.radius + inner) / 2
+            rects.append(((mid * c, mid * s_), (c, s_), (-s_, c), ((face.radius - inner) / 2, sizes[k][0])))
+        for _, u, v, _ in rects:  # separated along some side's direction: they don't meet
+            for d in (u, v):
+                spans = []
+                for centre, a, b, (hu, hv) in rects:
+                    mid_ = centre[0] * d[0] + centre[1] * d[1]
+                    half = hu * abs(a[0] * d[0] + a[1] * d[1]) + hv * abs(b[0] * d[0] + b[1] * d[1])
+                    spans.append((mid_ - half, mid_ + half))
+                if spans[0][1] <= spans[1][0] + EPS or spans[1][1] <= spans[0][0] + EPS:
+                    return False
+        return True
+
     def close(j: int, i: int) -> bool:
         chord, gap_along = apart(j, i)
+        if sweeps:
+            return gap_along < sizes[i][1] + sizes[j][1] - EPS and strips_meet(j, i)
         if round_:
             return fs.hypot(chord, gap_along) < sizes[i][0] + sizes[j][0] - EPS
         return (
@@ -3076,7 +3106,9 @@ def _check_into_hollows(spec: PartSpec, layout: Layout) -> None:
             placed = _place_values(item)
             if isinstance(near, SideFace) and isinstance(inner, SideFace):
                 k = _INDEX[inner.axis]
-                half = reach(_outline(item, layout, (near.reference[0], inner.axis)))
+                # How far it reaches along the axis (a slot's half length; its corners' reach is farther, round it).
+                outline = _outline(item, layout, (near.reference[0], inner.axis))
+                half = bbox(outline)[1] if outline else 0.0
                 lo, hi = inner.start[k], inner.start[k] + inner.length
                 if lo - EPS <= mine.origin[k] - half and mine.origin[k] + half <= hi + EPS:
                     continue

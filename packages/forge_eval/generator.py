@@ -1112,7 +1112,9 @@ def _on_flat_leaning(f: Feature, face: _Flat, index: int, part: _Part, strict: b
                          height)  # fmt: skip
             top = height * lean.c + along * lean.s + 1.0
             part.steps.append(Step(f.id, copy_index, True, Kept(body, _t(p), _t(n), 0.0, top), (REACH, 0.0)))
-            if f.turn is None:
+            # Leaning on a turned item's face, its faces take nothing yet, as the solver has them (generated part 5332:
+            # a hole in the far face of a block leaning on a turned block's side).
+            if f.turn is None and not face.turned:
                 _leaning_far(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, face, part)
                 if not _draw(f.kind).leans_round:
                     _leaning_sides(f, copy_index, p, n, u, w, tilted, side, height, along, across, lean, part)
@@ -3374,6 +3376,11 @@ def _out_of_its_face(step: Step, part: _Part) -> tuple[Array, Array]:
         # it (generated part 2009: a post leaning under a block's floor, its foot back into the block across the way
         # of a hole through the next face made before it).
         return tuple(np.array(x, dtype=np.float64) for x in bounds(step.solid.solid))  # type: ignore[return-value]
+    if part.kinds.get(step.item) == "sphere":
+        # A whole ball is half sunk into what it stands on, and the solver counts that half as it: it fills what a cut
+        # made before it took there (generated part 5469: a ball on a block's side in the way of a pocket right
+        # through the next face, made before it).
+        return lo, hi
     d = _v(copy.direction)
     k = int(np.argmax(np.abs(d)))
     if abs(abs(float(d[k])) - 1.0) > 1e-12:

@@ -115,6 +115,23 @@ class BuiltAsPlaced(unittest.TestCase):
             self.assertTrue(accounting.verdict is Verdict.FAIL or failed)
 
 
+class OnlyAlongItsFacesEdge(unittest.TestCase):
+    def test_a_wall_with_another_cuts_air_behind_it_is_a_wall(self) -> None:
+        # Generated part 1132: a pocket through everything, mostly out in the air beside the block it is cut into, and
+        # where it is in the block a round pocket's air behind its wall. Nothing behind it was taken for its side
+        # being open; only a wall along the edge of its face may be (generated part 1207, a hexagonal pocket, alike).
+        from forge_checks.judge import Judge
+        from forge_checks.kinds.size import Between
+        from forge_eval.generator import generate
+        from v2_exit4 import _spec
+
+        judge = Judge.of(_spec(generate(1132).items))
+        walls = [p for c in judge.suite.checks if c.item == "i1" and isinstance(c.target, Between)
+                 for p in (c.target.a, c.target.b)]  # fmt: skip
+        self.assertGreater(len(walls), 0)
+        self.assertTrue(all(p.half is not None for p in walls), walls)
+
+
 def _box(b: Any, corners: tuple[str, float], top: tuple[str, float]) -> list[dict[str, Any]]:
     def edge(n: int, kind: str, which: str, size: float) -> dict[str, Any]:
         return {"id": f"e{n}", "kind": kind, "words": cite(b, "bar"), "edges": {"of": "bar", "which": which},

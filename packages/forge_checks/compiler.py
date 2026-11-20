@@ -587,14 +587,36 @@ class _Compiler:
         n = _v(copy.direction)
         depth = copy.span[1]
         centre = _v(copy.point) - depth / 2 * n + at * way
-        # Behind it all over, from its mouth to its floor and from end to end: a cut on into a hollow, or through
-        # what it stands on, has walls where it is in material.
-        u = np.asarray(across, dtype=np.float64) / float(fv.norm(np.asarray(across, dtype=np.float64)))
-        grid = np.array([[s * half, t * depth / 2] for s in (-0.9, 0.0, 0.9) for t in (-0.9, -0.45, 0.0, 0.45, 0.9)])
-        behind = centre + _OPEN_BEHIND * way / float(fv.norm(way)) + grid[:, :1] * u + grid[:, 1:] * n
-        if np.all(self.part.classify(behind) == Side.OUT):
-            return Plane(_t(centre), _t(way))
+        if self._on_its_faces_edge(copy, way, at):
+            # Behind it all over, from its mouth to its floor and from end to end: a cut on into a hollow, or
+            # through what it stands on, has walls where it is in material.
+            u = np.asarray(across, dtype=np.float64) / float(fv.norm(np.asarray(across, dtype=np.float64)))
+            grid = np.array([[s * half, t * depth / 2] for s in (-0.9, 0.0, 0.9)
+                             for t in (-0.9, -0.45, 0.0, 0.45, 0.9)])  # fmt: skip
+            behind = centre + _OPEN_BEHIND * way / float(fv.norm(way)) + grid[:, :1] * u + grid[:, 1:] * n
+            if np.all(self.part.classify(behind) == Side.OUT):
+                return Plane(_t(centre), _t(way))
         return Plane(_t(centre), _t(-way), first=_t(across), half=(half, depth / 2))
+
+    def _on_its_faces_edge(self, copy: Copy, way: Array, at: float) -> bool:
+        """Whether a cut's wall, ``at`` from its centre along ``way``, lies along the edge of the rectangular face it is
+        cut into: only there may it have no material behind it. Anywhere else, what is behind it may be another cut's
+        air, not the part's outside (generated part 1132: a pocket through everything, mostly out in the air beside
+        the block it is cut into, and where it is in the block a round pocket's air behind its wall)."""
+        face = self.placed.face(copy.host) if copy.host is not None else None
+        if not isinstance(face, FlatFace) or face.outline.shape != "rect" or face.turn != 0.0 or face.local is not None:
+            return False
+        w = np.asarray(way, dtype=np.float64) / float(fv.norm(np.asarray(way, dtype=np.float64)))
+        for k, name in enumerate(face.axes):
+            e = np.zeros(3)
+            e["xyz".index(name)] = 1.0
+            along = float(fv.matmul(w, e))
+            if abs(abs(along) - 1.0) > 1e-9:
+                continue
+            # The outline's centre is where the face's is along its axes, in the part's coordinates.
+            coord = float(fv.matmul(_v(copy.point) + at * w, e)) - face.outline.centre[k]
+            return abs(coord) >= face.outline.half[k] - 1e-6 and coord * along > 0
+        return False
 
     # --- tolerances ---------------------------------------------------
     @staticmethod
