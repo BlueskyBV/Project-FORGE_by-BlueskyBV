@@ -3345,6 +3345,10 @@ the schema or the writer, before any big one. And the owner's second
 false-pass run (fp24 to fp27) joins the first's 23 in the replayed
 fixtures, every ending pinned and every false pass caught.
 
+**The report keeps a blind set blind.** Each fact graded wrong, with the
+key's own fact, goes to the run's `wrong.txt`; the report says how many
+and where. Set 1's keys reached the conversation in a report pasted whole.
+
 Proof: the 27 false passes replayed, endings and reasons byte-identical
 old and new; set 1's 30 drafts regraded (79 of 82 right; asking 11 to 2);
 tests `test_v2_spec_counts.py` (each rule both ways), `test_v2_spec_unable.py`

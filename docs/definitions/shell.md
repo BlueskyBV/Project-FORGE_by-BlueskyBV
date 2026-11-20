@@ -55,6 +55,10 @@ So, by kind:
   (`thickness` when no floor is given), or none when the flat face is left
   open.
 
+A cut right through a closed wall comes out into the hollow all across its
+mouth; one whose mouth runs past the hollow's edge, where more than the
+wall is under it, is asked about ([frame.md](frame.md)).
+
 The shell hollows its body alone, never what stands on it. A block turned
 in its face (place.md, "Turned in the face") is hollowed as it stands
 unturned, its walls, floor and inside faces then turned with it. A block

@@ -209,6 +209,10 @@ class Layout:
     shells: dict[str, Item] = field(default_factory=dict)
     #: The hollow inside each copy of a shelled block or cylinder: its bounds.
     cavities: dict[tuple[str, int], tuple[Vec, Vec]] = field(default_factory=dict)
+    #: Behind each closed end of a hollowed cone or dome, whose inside takes nothing yet, the hollow's section there,
+    #: where the wall's inner face would be (a block's or a cylinder's is its inner face): a cut right through the
+    #: wall comes out into the hollow only within it (:func:`_check_into_hollows`).
+    insides: dict[tuple[str, int, str], FlatFace] = field(default_factory=dict)
     #: Items that couldn't be placed; what stands on them isn't placed either.
     unplaced: set[str] = field(default_factory=set)
     #: What has been placed on each flat face so far, in the order it is made:
@@ -788,7 +792,7 @@ def _hollow(item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout:
     entry = SOLVE[item.kind]
     if not entry.hollowable:
         layout.issue("unable", shell_at,
-                     f"Forge hollows blocks, cylinders and balls for now, not a {item.kind}")  # fmt: skip
+                     f"Forge hollows blocks, cylinders, cones and balls for now, not a {item.kind}")  # fmt: skip
         return
     outer = entry.open_faces_allowed(item)
     bad = sorted(open_faces - outer)
@@ -2508,6 +2512,7 @@ def solve(spec: PartSpec) -> Layout:
                 layout.issue("fault", at, f"{item.id} was not placed")
     spec = placed_spec(spec, layout)
     _check_exits(spec, layout)
+    _check_into_hollows(spec, layout)
     _check_turned_edges(spec, layout, position)
     # Once the bodies are placed: which of a hollowed body's edges border an
     # open face depends on the way it rises.
@@ -2873,6 +2878,70 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
                                f"{owner.id} copy {other.index + 1} on {far[2]}: should it go on through {owner.id}, "
                                "or stop?", values)  # fmt: skip
                 break
+
+
+def _check_into_hollows(spec: PartSpec, layout: Layout) -> None:
+    """A cut right through a hollowed body's wall comes out into the hollow all across its mouth (frame.md, "A hollowed
+    body's face"; shell.md).
+
+    The material under a closed face of a hollowed body is its wall: a cut
+    right through goes through the wall and comes out on the wall's inner
+    face. Where its mouth runs past the hollow's edge it is over more than
+    the wall there (a side wall under a floor's rim, a floor's edge beside a
+    side wall's foot): it would stop in the wall there, or, through the most
+    under its mouth, go on through all of it. Neither is plainly what was
+    meant: asked about, with the values that put it there. Round a hollowed
+    cylinder's side, it comes out into the hollow only between the hollow's
+    ends.
+    """
+    position = {item.id: n for n, item in enumerate(spec.items)}
+    for item in spec.items:
+        if (
+            not SOLVE[item.kind].cut
+            or type(end_of(item)) is not ThroughAll  # through the next face, or everything: as the shape says
+            or item.id in layout.unplaced
+        ):
+            continue
+        for cut in layout.instances.get(item.id, []):
+            if cut.host is None:
+                continue
+            host, index, face_name = cut.host
+            faces = layout.faces.get((host, index), {})
+            near, inner = faces.get(face_name), faces.get(f"inner {face_name}") or layout.insides.get(cut.host)
+            mine = cut.local or cut  # on a turned body, everything held to it upright
+            placed = _place_values(item)
+            if isinstance(near, SideFace) and isinstance(inner, SideFace):
+                k = _INDEX[inner.axis]
+                half = reach(_outline(item, layout, (near.reference[0], inner.axis)))
+                lo, hi = inner.start[k], inner.start[k] + inner.length
+                if lo - EPS <= mine.origin[k] - half and mine.origin[k] + half <= hi + EPS:
+                    continue
+                where = _place_of(item)  # where along it, not round it
+                placed = [] if where is None else [p.distance for a, p in where.axes.items() if a == inner.axis]
+            elif isinstance(near, FlatFace) and isinstance(inner, FlatFace):
+                near_face, inner_face = near.upright(), inner.upright()
+                if inner_face.axes != near_face.axes:
+                    continue
+                parts = _outline(item, layout, near_face.axes)
+                turned = turned_outline(item, layout, near_face.axes)
+                normal = near_face.frame.n
+                out_at = mine.origin
+                if mine.direction is not None:  # leaning, it comes out where its axis meets the inner face
+                    across = abs(sum((a - b) * d for a, b, d in zip(inner_face.centre, near_face.centre, normal,
+                                                                    strict=True)))  # fmt: skip
+                    square = sum(mine.direction[j] * normal[j] for j in range(3))
+                    out_at = tuple(mine.origin[j] - across / square * mine.direction[j] for j in range(3))  # type: ignore[assignment]
+                if inner_face.holds(turned if turned is not None else parts, inner_face.frame.on(out_at), cut=True):
+                    continue
+            else:
+                continue
+            values = [*_item_values(item, *_outline_fields(item)), *placed, *layout.values_of(near.depth_sources),
+                      *layout.values_of(inner.sources)]  # fmt: skip
+            layout.problem("question", pointer("items", position[item.id]),
+                           f"{item.id} copy {cut.index + 1} goes right through {host}'s {face_name} wall but runs past "
+                           "the edge of the hollow behind it: there it would end in the wall, not come out. Should it "
+                           "lie wholly over the hollow, or stop short?", values)  # fmt: skip
+            break
 
 
 def _seen(parts: list[tuple[Part, dict[str, float]]], turned: Shape | None, origin: Vec, axes: tuple[str, str],

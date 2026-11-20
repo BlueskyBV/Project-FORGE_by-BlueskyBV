@@ -22,7 +22,7 @@ class TheRolesFactsAgreeWithTheDefinitions(unittest.TestCase):
         from forge_spec.items.solve import SOLVE
 
         solve = {k for k, e in SOLVE.items() if e.hollowable}
-        self.assertEqual(solve, {"block", "cylinder", "sphere"})  # shell.md
+        self.assertEqual(solve, {"block", "cylinder", "cone", "sphere"})  # shell.md
         self.assertEqual({k for k, v in KINDS.items() if v.hollowable}, solve)
         self.assertEqual({k for k, e in PLACE.items() if e.hollowable}, solve)
         self.assertEqual({k for k, e in DRAW.items() if e.openable}, solve)

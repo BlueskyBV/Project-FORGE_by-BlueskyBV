@@ -28,7 +28,9 @@ part inside it. A blind hole has a flat bottom.
   - **Through a tube's wall, or a hollowed cylinder's, from outside:** until
     it is in the bore all across its mouth, √(bore radius² − hole radius²)
     from the axis. A hole as wide as the bore is asked about: one wall, or
-    both?
+    both? Into a hollowed cylinder, it comes out into the hollow only
+    between the hollow's ends: one reaching past them, beside an end's
+    wall, is asked about too.
   - **Out through a wall from inside:** until it is out of the outside all
     across its mouth.
   - A counterbore's or countersink's depth is measured the same way, from

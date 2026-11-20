@@ -719,7 +719,7 @@ class TheGeneratorDrawsThroughEverythingThere(unittest.TestCase):
         from forge_eval.generator import _build, generate
 
         found = set()
-        for seed in (0, 16, 29, 209):  # generated part 85 is drawn otherwise since nut traps came
+        for seed in (0, 16, 98, 209):  # 85 is drawn otherwise since nut traps came, 29 since cones are first bodies
             case = generate(seed)
             part = _build(case.plan, False)
             for f in case.plan:

@@ -1950,7 +1950,30 @@ every face accounted for and every check passing, its volume within the
 oracle's; eight drawn at random; walls 0.3 mm thicker or thinner and a floor
 0.3 mm off caught by face accounting and by their own checks; the second
 kernel agreeing). Sixty more drawn at random, outside the suite: each built
-and judged so. The generator doesn't draw one yet.
+and judged so.
+
+**Hollow walls (revision 18).** Drawing hollowed cones at random found
+what the hand-drawn tests hadn't. The solver kept a hollowed cone's closed
+end's material the solid cone's (its length, falling off past its smaller
+end's radius), so a blind hole 10 mm deep in a cup's 3 mm floor was
+accepted and built as a hole into the cup; it now keeps the wall
+(`cone.walled`: the wall's thickness, and the cone's own where that is
+less, near its larger end's rim), and a hollowed dome's floor no more than
+the dome over it near its rim (`Dome.cap`). And a cut right through a
+hollowed body's wall whose mouth ran past the hollow's edge (a drain hole
+half under a planter's side wall, a hole in a tray's side half beside its
+floor, a hole round a hollowed cylinder's side beside its floor) was built
+through the wall's thickness and passed: there it ended in the wall. It is
+now asked about (`placement._check_into_hollows`, frame.md): on a block's
+face, a cylinder's end or side, a cone's end, a dome's floor, each against
+the hollow's section behind the wall (`Layout.insides` for a cone's and a
+dome's, whose inside takes nothing yet). **The generator** draws a cone as
+the first body (one seed in twenty: narrower or wider at its top, or to a
+point; its ends take what an end takes, its side what a cone's side takes),
+hollowed half the time where its top is flat (open at an end, both or
+none), a cut right through a closed end coming out on the hollow's section
+there, which takes nothing else; and a hollowed dome's floor no more than
+the dome near its rim. Tests: `tests/test_v2_spec_hollow_walls.py`.
 
 ### 3.6 The proof, and what each step costs
 

@@ -129,6 +129,9 @@ class SetRun:
     two_drafts: TwoDrafts | None = None
     #: Readings drafted afresh after an error stopped an earlier try partway.
     afresh: tuple[str, ...] = ()
+    #: Where the facts graded wrong are listed, each with the key's fact: not said in the report, which a person may
+    #: paste where a blind set's keys mustn't go (blind set 1's first run, docs/V2-stage4.md 14.5). "" for none.
+    wrong_file: str = ""
 
 
 #: What a measurement rests on: every module of these packages, and these files.
@@ -297,6 +300,8 @@ def run_set(directory: Path, provider: Provider, out: Path, *, strict: bool = Fa
     _write(out, "summary.json", summary)
     with (out / "history.jsonl").open("a", encoding="utf-8") as history:
         history.write(json.dumps(summary, ensure_ascii=False) + "\n")
+    wrong = _wrong_lines(result)
+    (out / "wrong.txt").write_text("".join(f"{line}\n" for line in wrong), encoding="utf-8")
     return SetRun(
         result,
         drafted,
@@ -308,6 +313,7 @@ def run_set(directory: Path, provider: Provider, out: Path, *, strict: bool = Fa
         other_code,
         compared,
         tuple(afresh),
+        str(out / "wrong.txt"),
     )
 
 
@@ -535,6 +541,12 @@ def _write(folder: Path, name: str, content: Any) -> None:
 # ----------------------------------------------------------------------
 # What the person reads
 # ----------------------------------------------------------------------
+def _wrong_lines(grade: SetGrade) -> list[str]:
+    """Each fact graded wrong, by key, with what the draft has: the keys' own facts."""
+    return [f"  {x.key}: {f.fact}" + (f" ({f.detail})" if f.detail else "")
+            for x in grade.grades for f in x.facts if f.verdict == "wrong"]  # fmt: skip
+
+
 def report_lines(run: SetRun, confidence: float = 0.95) -> list[str]:
     """The run's grade in a few lines: rates with their bound and denominator, and what waits."""
     g = run.grade
@@ -561,13 +573,13 @@ def report_lines(run: SetRun, confidence: float = 0.95) -> list[str]:
             else ""
         )
         lines.append(f"Spent    : {run.usage.total_tokens:,} tokens{cost}")
-    wrong = [(x.key, f) for x in g.grades for f in x.facts if f.verdict == "wrong"]
-    if wrong:
+    wrong = _wrong_lines(g)
+    if wrong and run.wrong_file:
+        lines.append(f"Wrong    : {len(wrong)} fact(s), each with its key's fact, in {run.wrong_file} (keep it to "
+                     "yourself while the set is blind)")  # fmt: skip
+    elif wrong:
         lines.append("Wrong    :")
-        lines += [
-            f"  {key}: {f.fact}" + (f" ({f.detail})" if f.detail else "")
-            for key, f in wrong
-        ]
+        lines += wrong
     if run.dropped:
         lines.append(
             f"Dropped  : marks made against another draft of {', '.join(run.dropped)}"

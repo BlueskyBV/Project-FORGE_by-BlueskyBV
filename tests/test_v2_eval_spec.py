@@ -534,9 +534,12 @@ class TheSetRunner(RunFolder):
             "Endings  : cant: 1 refused; question: 1 asked; verified: 1 assumed, 1 gave up",
             text,
         )
-        self.assertIn(
-            "  bad: it can be made (the writer couldn't clear its own faults)", text
-        )
+        # Each fact wrong, the key's own, in a file of its own: the report a person pastes keeps a blind set blind.
+        self.assertIn(f"Wrong    : 3 fact(s), each with its key's fact, in {self.out / 'wrong.txt'}", text)
+        self.assertNotIn("bad: it can be made", text)
+        listed = (self.out / "wrong.txt").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(listed), 3)
+        self.assertIn("  bad: it can be made (the writer couldn't clear its own faults)", listed)
 
     def test_running_again_regrades_the_records_and_drafts_nothing(self) -> None:
         first = self.run_it(script("bad", "cube", "deep", "plate"))

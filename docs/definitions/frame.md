@@ -95,7 +95,9 @@ direction.
 - A round side: the material a cut along the radius meets. A solid rod's is
   its whole diameter: a cut goes in, across the axis, and out of the far
   side. A tube's, or a hollowed cylinder's, is its wall.
-- A hollowed body's face: its wall's thickness there.
+- A hollowed body's face: its wall's thickness there, and no more than the
+  body's own (near a cone's larger end's rim, or a dome's, the body is
+  lower than its wall).
 - A leaning item's far face: its own, from each point back along its axis to
   the face it leans on: its height on the axis, less by tan(tilt) for each
   millimetre towards the way it leans (place.md, "A leaning item's far
@@ -110,7 +112,9 @@ direction.
 Under a cut's mouth the material may vary (on a cone, a dome, a round side,
 an overhang). A blind cut must fit in the **least** material under its mouth.
 A cut **through** goes through the **most**: it comes out of the far side
-everywhere across its mouth. A cut **through everything** (schema 1.7) isn't
+everywhere across its mouth. Through a hollowed body's wall, that is into
+the hollow: a cut whose mouth runs past the hollow's edge, over more than
+the wall there, is asked about. A cut **through everything** (schema 1.7) isn't
 measured in the material under its face: it goes on past everything made
 before it, as far as the part reaches behind its mouth ([sizes.md](sizes.md)).
 A cut **up to a face** goes to that face's plane, less its offset, and must

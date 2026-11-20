@@ -116,9 +116,11 @@ class Taper:
 
 @dataclass(frozen=True)
 class Dome:
-    """The material under a dome's flat face: its height above each point."""
+    """The material under a dome's flat face: its height above each point; a hollowed dome's floor, no more than
+    ``cap``, its floor's thickness (frame.md, "A hollowed body's face"): near its rim the dome is lower than its floor."""
 
     radius: float
+    cap: float = math.inf
 
 
 @dataclass(frozen=True)
@@ -1239,7 +1241,7 @@ def _depth_at(face: FlatFace, rho: float) -> float:
     if isinstance(model, Turned):
         return turned_depth(model.shape, model.top, rho, rho, model.extra)[0]
     if isinstance(model, Dome):
-        return math.sqrt(max(model.radius * model.radius - rho * rho, 0.0))
+        return min(model.cap, math.sqrt(max(model.radius * model.radius - rho * rho, 0.0)))
     assert not isinstance(model, Slant), "a slant's material isn't by distance from the centre"
     if rho <= model.flat:
         return face.depth_below

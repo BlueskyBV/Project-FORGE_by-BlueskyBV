@@ -82,6 +82,9 @@ class DrawKind:
     rod_length = "length"
     #: Published: the faces a shell may leave open (shell.md), in this order; none where no shell hollows it.
     openable: tuple[str, ...] = ()
+    #: How often it is hollowed as the first body, where it may be (its edges not rounded): the generator's own rate
+    #: when None.
+    shelled: float | None = None
     #: It rounds another's edges (a fillet, a chamfer); ``bevels``, by a chamfer's flat; ``rounding_size``, the size
     #: that says how much.
     rounds_edges = False
@@ -93,8 +96,10 @@ class DrawKind:
     follows_roundings = False
     #: Published: a rounding rounds its rim, on a flat face (a hole's, a pocket's): never recessed, nor round a side.
     round_rim = False
-    #: A face of its first copy may take standing items the generator draws (a body's).
+    #: A face of its first copy may take standing items the generator draws (a body's); ``first_hosts_standing``, as
+    #: the first body only (a cone: standing on a face, its top takes only what is cut).
     hosts_standing = False
+    first_hosts_standing = False
     #: Drawn now and then flush with a face's edge (a post, a block), over its edge (a block), or touching it (a boss).
     drawn_flush = False
     drawn_overhung = False
@@ -510,7 +515,7 @@ class DrawKind:
                wall: Callable[[str], float]) -> None:  # fmt: skip
         """Its hollow, taken away just after it is made (shell.md): ``t`` its walls' thickness, ``floor`` its floor's, ``wall`` each face's."""
         raise DoesNotFitError(
-            f"{f.id}: the generator hollows a block, a cylinder or a dome, not a {body.kind}"
+            f"{f.id}: the generator hollows a block, a cylinder, a cone or a dome, not a {body.kind}"
         )
 
     def curved_sizes(self, rng: random.Random, radius: float) -> tuple[dict[str, float], float | None, float]:
@@ -529,7 +534,7 @@ class DrawKind:
                         opened: set[str], wall: Callable[[str], float]) -> None:  # fmt: skip
         """Its hollow standing on a face (step 5.1): a block's only."""
         raise DoesNotFitError(
-            f"{f.id}: the generator hollows its first body: a block, a cylinder or a dome"
+            f"{f.id}: the generator hollows its first body: a block, a cylinder, a cone or a dome"
         )
 
     def shell_opening(

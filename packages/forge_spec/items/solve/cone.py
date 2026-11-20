@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from forge_numeric import scalar as fs
@@ -13,7 +14,9 @@ from forge_spec.draft import (
 from forge_spec.geometry import (
     EPS,
     ConeFace,
+    DepthModel,
     FlatFace,
+    Taper,
     Vec,
     disc,
 )
@@ -56,6 +59,19 @@ def cone_hollow(base: float, top: float, length: float, t: float, low: float, hi
 def hollow_radius(base: float, top: float, length: float, t: float, slant: float, s: float) -> float:
     """The hollow's radius ``s`` along a hollowed cone's axis from its -end: the cone's there less its side wall."""
     return base + (top - base) * s / length - t * slant
+
+
+def walled(model: DepthModel | None, wall: float) -> Taper | None:
+    """The material under a hollowed cone's closed end (frame.md, "A hollowed body's face"): its wall's thickness, and
+    where the cone's own falls below that towards its larger end's rim (past where its flank is the wall's height), the
+    cone's own, falling as before to nothing at the rim.
+
+    >>> walled(Taper(15.0, 25.0, 60.0), 3.0)
+    Taper(flat=24.5, edge=25.0, own=3.0)
+    """
+    if not isinstance(model, Taper):
+        return None
+    return Taper(model.edge - wall * (model.edge - model.flat) / model.own, model.edge, wall)
 
 
 class Cone(SolveKind):
@@ -142,7 +158,8 @@ class Cone(SolveKind):
         for name, depth in (("+end", plus), ("-end", minus)):
             face = faces.get(name)
             if isinstance(face, FlatFace):
-                faces[name] = _with(face, depth_below=depth, depth_sources=h.walls)
+                faces[name] = _with(face, depth_below=depth, depth_model=walled(face.depth_model, depth),
+                                    depth_sources=h.walls)  # fmt: skip
         layout.close(key, "side", "unable", f"{h.shell.id} hollows {item.id}: Forge doesn't place on a hollow cone's "
                                             "side yet")  # fmt: skip
         for n, other in enumerate(layout.items.values()):
@@ -153,6 +170,13 @@ class Cone(SolveKind):
         k = _INDEX[up[1]]
         sign = 1.0 if up[0] == "+" else -1.0  # from the -end towards the +end
         minus_end = lo[k] if sign > 0 else hi[k]
+        for name, s, radius in (("+end", end, b), ("-end", start, a)):
+            face = faces.get(name)
+            if isinstance(face, FlatFace):  # closed: the hollow's section where its wall's inner face would be
+                centre = list(face.centre)
+                centre[k] = minus_end + sign * s
+                layout.insides[(key[0], key[1], name)] = replace(
+                    face, centre=(centre[0], centre[1], centre[2]), half=(radius, radius), depth_model=None)
         widest = max(a, b)
         middle = [(lo[i] + hi[i]) / 2 for i in range(3)]
         inner_lo = [middle[i] - widest for i in range(3)]

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from forge_spec.draft import (
@@ -119,9 +121,11 @@ class Sphere(SolveKind):
                          f"{item.id} is hollowed: Forge places on a hollowed ball's surface in a later step")  # fmt: skip
         flat = faces.get("-end")
         if isinstance(flat, FlatFace) and "-end" not in open_faces:
-            faces["-end"] = _with(
-                flat, depth_below=f, depth_model=None, depth_sources=walls
-            )
+            # Its floor: no more than its thickness, nor than the dome over it near its rim (frame.md).
+            faces["-end"] = _with(flat, depth_below=f, depth_model=Dome(radius, f), depth_sources=walls)
+            inside = math.sqrt(max((radius - t) * (radius - t) - f * f, 0.0))  # the hollow's section over its floor
+            layout.insides[(key[0], key[1], "-end")] = replace(
+                flat, centre=_add(flat.centre, _dir(up), f), half=(inside, inside), depth_model=None)
 
     def edges(self, which: str, up: str) -> list[tuple[str, str]]:
         if which == "bottom":

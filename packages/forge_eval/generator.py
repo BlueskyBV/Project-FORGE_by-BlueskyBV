@@ -404,6 +404,9 @@ class _Flat:
     #: of the side where its foot follows the curve below it. A cut square into it goes on one, from a stream of its
     #: own (:func:`_onto_footed_side`).
     footed: bool = False
+    #: Whether things are put on it: not on a hollow cone's section behind its closed end, where a cut right through
+    #: the end comes out, which takes nothing else yet (shell.md, "cone").
+    takes: bool = True
 
     @property
     def turned(self) -> bool:
@@ -460,7 +463,7 @@ class _Flat:
                 return self.material
             top = self.half[0]
             return length * max(top - widest, 0.0) / (top - base)
-        return math.sqrt(max(self.dome * self.dome - widest * widest, 0.0))
+        return min(self.material, math.sqrt(max(self.dome * self.dome - widest * widest, 0.0)))
 
     @property
     def uniform(self) -> bool:
@@ -1435,6 +1438,13 @@ def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes
 
 def _first(f: Feature, part: _Part) -> None:
     _draw(f.kind).first(f, part)
+
+
+def _hosts_standing(part: _Part, item: str) -> bool:
+    """Whether things are drawn standing on a face of ``item``: as its kind's entry says, and a first body's also as
+    its entry says of one (a cone takes what stands on its ends as the first body; standing on a face, what is cut)."""
+    entry = _draw(part.kinds[item])
+    return entry.hosts_standing or (entry.first_hosts_standing and item == next(iter(part.kinds)))
 
 
 # ----------------------------------------------------------------------
@@ -3419,7 +3429,10 @@ def _shell(f: Feature, plan: Plan, part: _Part) -> None:
     walls, is its wall, and a cut through it comes out into the hollow (on the
     inside face, which must take all of it). A face left open takes nothing.
     A cylinder's side becomes a tube's: a hole through it goes through its
-    wall. A dome's flat face is its floor all across.
+    wall. A dome's flat face is its floor all across, no more than the dome
+    near its rim. A cone's closed end is its wall, no more than the cone near
+    its larger end's rim; a cut through it comes out on the hollow's section
+    there (:func:`_hollow_cone`).
     """
     body = next((g for g in plan if g.id == f.of), None)
     standing = body is not None and body.on is not None  # a block standing on a face (step 5.1)
@@ -3429,7 +3442,7 @@ def _shell(f: Feature, plan: Plan, part: _Part) -> None:
         or not _draw(body.kind).may_hollow(body)
     ):
         raise DoesNotFitError(
-            f"{f.id}: the generator hollows its first body: a block, a cylinder or a dome"
+            f"{f.id}: the generator hollows its first body: a block, a cylinder, a cone or a dome"
         )
     t = f.sizes["thickness"]
     opened = set(f.faces or ())
@@ -3486,6 +3499,42 @@ def _hollow_cylinder(f: Feature, body: Feature, part: _Part, t: float, wall: Cal
     )
 
 
+def _hollow_cone(f: Feature, body: Feature, part: _Part, t: float, wall: Callable[[str], float],
+                 opened: set[str]) -> None:  # fmt: skip
+    """A cone's hollow (shell.md, "cone"): a cone of its own, its side ``t`` in from the cone's square to it (its radius
+    the cone's less ``t`` times the side's slant over its length), its ends in by their walls. A closed end's wall is
+    the material under it, and the cone's own where that is less, near its larger end's rim (frame.md); a cut right
+    through it comes out on the hollow's section there, which takes nothing else. Its side, an open end's rim and its
+    inside take nothing yet."""
+    s = body.sizes
+    rb, rt, length = s["base_diameter"] / 2, s["top_diameter"] / 2, s["length"]
+    top, bottom = wall("+end"), wall("-end")
+    slant = fs.hypot(length, rt - rb) / length
+
+    def inside(z: float) -> float:
+        return rb + (rt - rb) * z / length - t * slant
+
+    low, high = inside(bottom), inside(length - top)
+    if min(low, high) < 2 * GAP + 1.0 or length - top - bottom < 2 * GAP + 1.0:
+        raise DoesNotFitError(f"{f.id}'s walls leave too little hollow in {body.id}")
+    part.steps.append(Step(f.id, 0, False, Frustum((0.0, 0.0, bottom), (0.0, 0.0, 1.0), (low, high),
+                                                   length - top - bottom),
+                           (REACH if "-end" in opened else 0.0, REACH if "+end" in opened else 0.0)))  # fmt: skip
+    part.cones.pop((body.id, 0, "side"), None)  # its side takes nothing yet
+    for name, height, depth, radius in (("+end", length - top, top, high), ("-end", bottom, bottom, low)):
+        outer = (body.id, 0, name)
+        if name in opened:
+            part.flats.pop(outer, None)  # its rim takes nothing yet
+            continue
+        face, inner = part.flats[outer], (body.id, 0, f"inner {name}")
+        edge, (smaller, own) = face.half[0], face.flare
+        # Past where its flank is its wall's height, the cone's own, falling as before to nothing at its rim.
+        face.flare = (edge - depth * (edge - smaller) / own, depth) if own > 0 else (0.0, 0.0)
+        face.material, face.exit = depth, inner
+        part.flats[inner] = _Flat(inner, _v((0.0, 0.0, height)), -face.normal, ("x", "y"), "disc", (radius, radius),
+                                  depth, outer, room=0.0, hollow=(body.id, 0), takes=False)  # fmt: skip
+
+
 def _hollow_dome(
     f: Feature, body: Feature, part: _Part, t: float, floor: float, opened: bool
 ) -> None:
@@ -3511,10 +3560,8 @@ def _hollow_dome(
     if opened:
         del part.flats[flat]
         return
-    part.flats[flat].material, part.flats[flat].dome = (
-        floor,
-        0.0,
-    )  # its floor all across (shell.md)
+    # Its floor all across (shell.md), and no more than the dome over it near its rim (frame.md).
+    part.flats[flat].material = floor
 
 
 # ----------------------------------------------------------------------
@@ -4663,6 +4710,20 @@ def _choose_dome(rng: random.Random) -> Feature:
     )
 
 
+def _choose_cone(rng: random.Random) -> Feature:
+    """A cone as the first body: 20 to 90 mm across its base, 15 to 60 mm long; its top a point one time in eight,
+    else narrower or wider than its base (a cup, a funnel, a lamp shade), by 2 mm or more."""
+    base = _q(rng.uniform(20, 90))
+    roll = rng.random()
+    if roll < 0.125:
+        top = 0.0
+    else:
+        top = _q(rng.uniform(0.3, 1.7) * base)
+        if abs(top - base) < 2.0:
+            top = _q(base + 2.0 if top >= base else base - 2.0)
+    return Feature("body", "cone", {"base_diameter": base, "top_diameter": top, "length": _q(rng.uniform(15, 60))})
+
+
 def _choose_tube(rng: random.Random) -> Feature:
     """A tube as the first body: 30 to 90 mm across, its wall 3 mm or more and no more than 15, 10 to 50 mm long."""
     outer = _q(rng.uniform(30, 90))
@@ -5109,7 +5170,7 @@ def _decorate(seed: int, plan: list[Feature], tries: int) -> None:
         part = _build(tuple(plan), True)
         # Not on a turned item's far face: what goes there is drawn from a stream of its own (_onto_turned).
         hosts = sorted(key for key, face in part.flats.items()
-                       if key[1] == 0 and not face.turned and face.shape != "frame")  # a rim's: _onto_rim
+                       if key[1] == 0 and not face.turned and face.shape != "frame" and face.takes)  # a rim's: _onto_rim
         for _ in range(tries if hosts else 0):
             key = rng.choice(hosts)
             candidates = draw(rng, _next_index(plan), key[0], part.flats[key])
@@ -5146,6 +5207,7 @@ def _next_index(plan: list[Feature]) -> int:
 #: be is hollowed.
 _TUBES = 0.08
 _DOMES = 0.04
+_CONES = 0.05
 _NEW_STANDING = 0.12
 _PROFILED = 0.07
 _SHELLED = 0.15
@@ -5172,6 +5234,8 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         first = _choose_tube(other)
     elif roll < _TUBES + _DOMES:
         first = _choose_dome(other)
+    elif roll < _TUBES + _DOMES + _CONES:
+        first = _choose_cone(other)
     plan: list[Feature] = [first]
     # Its own roundings are made before its hollow (frame.md): drawn first, and a shell must agree with them.
     _round_now_and_then(seed, None, first, plan)
@@ -5182,7 +5246,7 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
         for f in plan
     )
     if _draw(first.kind).openable and hollowed.random() < (
-        0.5 if rounded else _SHELLED
+        0.5 if rounded else _draw(first.kind).shelled or _SHELLED
     ):
         shell = _choose_shell(hollowed, first)
         try:
@@ -5249,13 +5313,13 @@ def generate(seed: int, size: int = 6, tries: int = 12) -> Case:
             # A turned item's far face takes things from a stream of its own (_onto_turned): a seed whose items
             # turn nothing, or put nothing on such a face, stays as it was drawn.
             hosts = [key for key, face in part.flats.items()
-                     if key[1] == 0 and not face.turned and not face.footed and face.shape != "frame"] + [
+                     if key[1] == 0 and not face.turned and not face.footed and face.shape != "frame" and face.takes] + [
                 key for key, side in part.rounds.items() if key[1] == 0 and not side.leans
             ]
             if not hosts:  # a dome open underneath: nothing takes anything
                 break
             key = rng.choice(hosts)
-            standing_ok = _draw(part.kinds[key[0]]).hosts_standing and len(plan) < size
+            standing_ok = _hosts_standing(part, key[0]) and len(plan) < size
             turned = leaned = None
             if key in part.rounds:
                 candidate = _side_hole(rng, k, key[0], part.rounds[key])
@@ -5638,7 +5702,7 @@ def _onto_turned(rng: random.Random, k: int, plan: list[Feature], part: _Part, s
         return False
     key = rng.choice(faces)
     face = part.flats[key]
-    standing_ok = standing_ok and _draw(part.kinds[key[0]]).hosts_standing
+    standing_ok = standing_ok and _hosts_standing(part, key[0])
     for _ in range(10):
         candidate = replace(_feature(rng, k, key[0], face, standing_ok), own_axes=face.axes)
         for more in (_leaned_now_and_then(rng, candidate, face), _turned_now_and_then(rng, candidate, face), None):
@@ -5665,7 +5729,7 @@ def _onto_leaning(rng: random.Random, k: int, plan: list[Feature], part: _Part, 
         return False
     key = rng.choice(faces)
     face = part.flats[key]
-    standing_ok = standing_ok and _draw(part.kinds[key[0]]).hosts_standing
+    standing_ok = standing_ok and _hosts_standing(part, key[0])
     for _ in range(10):
         candidate = replace(_feature(rng, k, key[0], face, standing_ok), own_axes=face.axes)
         if _draw(candidate.kind).cut_out and candidate.depth is None:
@@ -5699,7 +5763,7 @@ def _onto_leaning_side(rng: random.Random, k: int, plan: list[Feature], part: _P
             candidate = _side_hole(rng, k, key[0], part.rounds[key])
         else:
             candidate = replace(_feature(rng, k, key[0], part.flats[key], standing_ok
-                                         and _draw(part.kinds[key[0]]).hosts_standing), own_axes=part.flats[key].axes)
+                                         and _hosts_standing(part, key[0])), own_axes=part.flats[key].axes)
         try:
             render((*plan, candidate))
         except DoesNotFitError:
@@ -5749,7 +5813,7 @@ def _onto_rim(rng: random.Random, k: int, plan: list[Feature], part: _Part, stan
     key = rng.choice(faces)
     face = part.flats[key]
     for _ in range(10):
-        candidate = _feature(rng, k, key[0], face, standing_ok and _draw(part.kinds[key[0]]).hosts_standing)
+        candidate = _feature(rng, k, key[0], face, standing_ok and _hosts_standing(part, key[0]))
         try:
             render((*plan, candidate))
         except DoesNotFitError:
@@ -5770,7 +5834,7 @@ def _onto_nut_trap(rng: random.Random, k: int, plan: list[Feature], part: _Part)
     the rest by the box round it; its solid, its side and its rims by its own outline (DrawKind.corners). Whether one
     was added to the plan."""
     hosts = [key for key, face in part.flats.items()
-             if key[1] == 0 and not face.turned and not face.footed and face.shape != "frame"]  # fmt: skip
+             if key[1] == 0 and not face.turned and not face.footed and face.shape != "frame" and face.takes]  # fmt: skip
     if not hosts or rng.random() >= _NUT_TRAP:
         return False
     key = rng.choice(hosts)
@@ -5817,7 +5881,8 @@ def _onto_outlined_pocket(rng: random.Random, k: int, plan: list[Feature], part:
     pattern of them. What fits, and keeps clear, by the box round its outline; its solid and its side by its outline
     (DrawKind.own_outline). Whether one was added to the plan."""
     hosts = [key for key, face in part.flats.items()
-             if key[1] == 0 and not face.turned and not face.footed and face.shape in ("rect", "disc", "profile")]  # fmt: skip
+             if key[1] == 0 and not face.turned and not face.footed and face.shape in ("rect", "disc", "profile")
+             and face.takes]  # fmt: skip
     if not hosts or rng.random() >= _OUTLINED:
         return False
     key = rng.choice(hosts)

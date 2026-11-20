@@ -763,8 +763,9 @@ class Hollows(unittest.TestCase):
             ([item("c", "sphere", diameter=a(20), portion=pick("upper_half")), shell("c", 6)], ["cant"]),
             ([item("c", "sphere", diameter=a(20), portion=pick("upper_half")), shell("c", 3, "-end")], []),
             ([item("c", "tube", outer_diameter=a(30), inner_diameter=a(24), length=a(80)), shell("c", 3)], ["fault"]),
-            ([item("c", "cone", base_diameter=a(40), top_diameter=a(50), length=a(60)), shell("c", 2, "+end")],
-             ["unable"]),
+            ([item("c", "cone", base_diameter=a(40), top_diameter=a(50), length=a(60)), shell("c", 2, "+end")], []),
+            ([item("c", "cone", base_diameter=a(40), top_diameter=a(0), length=a(60)), shell("c", 2, "-end")],
+             ["unable"]),  # a cone that comes to a point isn't hollowed yet (shell.md, "cone")
             ([item("c", "cylinder", diameter=a(60), length=a(80)), shell("c", 2, "+end", floor=a(3))], []),
             ([item("c", "cylinder", diameter=a(60), length=a(80)), shell("c", 2, "side")], ["fault"]),
         ]  # fmt: skip
