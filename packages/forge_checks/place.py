@@ -1217,7 +1217,7 @@ def _read_shell(shell: Item, layout: _Layout) -> None:
     if not _entry(target.kind).hollowable:
         raise PlaceError(
             shell.id,
-            f"a shell hollows a block, a cylinder or a sphere, not a {target.kind}",
+            f"a shell hollows a block, a cylinder, a cone or a sphere, not a {target.kind}",
         )
     if of in layout.shells:
         raise PlaceError(

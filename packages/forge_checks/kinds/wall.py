@@ -6,8 +6,9 @@ out of the material, and the hollow's face behind it, facing into the
 hollow, each within ``reach`` of its point; the wall is the distance between
 them across it.
 
-**A round wall** (:class:`Annulus`): a hollowed rod's side, or a hollowed
-ball's: the body's round surface and the hollow's behind it. Every part of
+**A round wall** (:class:`Annulus`): a hollowed rod's side, a hollowed
+ball's, or a hollowed cone's: the body's round surface and the hollow's
+behind it. Every part of
 the wall must be within the tolerance, so the measurement is all of it at
 once, measured from one line or point: the outside's fitted axis, or its
 fitted centre. Each built point's distance from it is within its
@@ -20,6 +21,8 @@ outside's greatest less the hollow's least. An off-centre hollow is thin on
 one side and thick on the other, and found so on its own points, where two
 centres each fitted to within a few times the deflection would only bound
 it. Between its points a face is as round as face accounting holds it.
+A cone's wall is measured the same way square to its side: each point's
+distance in from the outside's fitted cone, along its slant.
 
 **Tolerance policy:** a linear size: the thickness's own tolerance, or ISO
 2768-m by the nominal (docs/definitions/sizes.md).
@@ -46,7 +49,15 @@ from ..classes import Tolerance, bracket_mutants
 from ..measure import Measurement, Probe, Window
 from .size import Between
 from .size import measure as measure_between
-from .surfaces import Ball, Round, fitted_ball, fitted_round, width_for
+from .surfaces import (
+    Ball,
+    Cone,
+    Round,
+    fitted_ball,
+    fitted_cone,
+    fitted_round,
+    width_for,
+)
 
 __all__ = ["Annulus", "measure", "mutants"]
 
@@ -57,8 +68,8 @@ Array = NDArray[np.float64]
 class Annulus:
     """A round wall: between the body's round surface ``outer`` and the hollow's ``inner`` behind it (two coaxial round surfaces, or two concentric balls)."""
 
-    outer: Round | Ball
-    inner: Round | Ball
+    outer: Round | Ball | Cone
+    inner: Round | Ball | Cone
 
 
 def _band(window: Window, distance: Array, lean: float) -> tuple[float, float]:
@@ -145,6 +156,38 @@ def _balls(outer: Ball, inner: Ball, width: float, probe: Probe) -> Measurement:
                    "the wall from the outside's fitted centre")  # fmt: skip
 
 
+def _cones(outer: Cone, inner: Cone, width: float, probe: Probe) -> Measurement:
+    """A hollowed cone's side wall, square to its side: each built point's distance in from the outside's fitted cone,
+    along its slant (the outside's points about nothing, the hollow's about the wall); then as a round wall."""
+    a = fitted_cone(outer, width, probe)
+    b = fitted_cone(inner, width, probe)
+    if isinstance(a, str):
+        return Measurement(None, 0, f"its outside: {a}", missing=a.startswith("no built"))
+    if isinstance(b, str):
+        return Measurement(None, a.found, f"its inside: {b}", missing=b.startswith("no built"))
+    assert a.window is not None and b.window is not None
+    w, e1, e2 = a.frame
+    axis = np.asarray(outer.centre, dtype=np.float64) + a.fit.centre[0] * e1 + a.fit.centre[1] * e2
+    cos = 1.0 / math.sqrt(1.0 + a.fit.b * a.fit.b)
+
+    def inward(window: Window) -> Array:
+        # Negative: in from the outside, so the outside's band lies above the hollow's as a rod's does.
+        d = window.points - axis
+        along = fv.matmul(d, w)
+        across = np.asarray(fv.norm(d - np.outer(along, w), axis=1), dtype=np.float64)
+        return np.asarray((across - (a.fit.a + a.fit.b * (along - a.fit.at))) * cos, dtype=np.float64)
+
+    # How far each fitted axis may be off the outside's, any way across it.
+    off_a = fs.hypot(a.fit.u_centre[0], a.fit.u_centre[1])
+    gap = np.asarray(inner.centre, dtype=np.float64) + b.fit.centre[0] * b.frame[1] + b.fit.centre[1] * b.frame[2] - axis
+    off_b = float(fv.norm(gap - fv.matmul(gap, w) * w)) + fs.hypot(b.fit.u_centre[0], b.fit.u_centre[1])
+    radius = max(min(b.fit.a, a.fit.a), 1e-9)
+    outside = _band(a.window, inward(a.window), off_a / radius)
+    hollow = _band(b.window, inward(b.window), off_b / radius)
+    return _across(outside, hollow, off_a + off_b, radius, a.found + b.found,
+                   "the wall square to the side from the outside's fitted cone")  # fmt: skip
+
+
 def measure(
     target: Between | Annulus, nominal: float, tolerance: Tolerance, probe: Probe
 ) -> Measurement:
@@ -156,8 +199,10 @@ def measure(
         return _rounds(outer, inner, width, probe)
     if isinstance(outer, Ball) and isinstance(inner, Ball):
         return _balls(outer, inner, width, probe)
+    if isinstance(outer, Cone) and isinstance(inner, Cone):
+        return _cones(outer, inner, width, probe)
     raise TypeError(
-        f"a round wall is two round surfaces or two balls, not {outer!r} and {inner!r}"
+        f"a round wall is two round surfaces, two balls or two cones, not {outer!r} and {inner!r}"
     )
 
 

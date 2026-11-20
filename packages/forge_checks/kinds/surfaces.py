@@ -282,6 +282,8 @@ class FittedCone:
     fit: ConeFit
     found: int
     frame: tuple[Array, Array, Array]
+    #: The built points it was fitted to (a hollowed cone's wall is measured on them: wall.py).
+    window: Window | None = None
 
 
 def fitted_cone(target: Cone, width: float, probe: Probe) -> FittedCone | str:
@@ -309,7 +311,7 @@ def fitted_cone(target: Cone, width: float, probe: Probe) -> FittedCone | str:
     )
     if fit is None:
         return "the built points don't fix a cone"
-    return FittedCone(replace(fit, at=middle), len(window), (w, e1, e2))
+    return FittedCone(replace(fit, at=middle), len(window), (w, e1, e2), window)
 
 
 @dataclass(frozen=True)

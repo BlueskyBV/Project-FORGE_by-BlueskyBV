@@ -1925,6 +1925,33 @@ refused now (`tests/v2_regressions.py`'s `REFUSED`):
   the next face comes out through may stand on, or be cut into, the face
   there now (`_through_everything`).
 
+**A hollow cone (revision 17).** Blind set 1 (V2-stage4.md, 14.6) refused
+a cup wider at its rim: Forge hollowed blocks, cylinders and balls only. A
+shell now hollows a cone with a flat top (shell.md, "cone"): its hollow a
+cone of its own, its side wall `thickness` square to its side, so the
+hollow's radius at a height is the cone's less the thickness times the
+side's slant over its length; its ends' walls in from its ends, none where
+open, `floor` opposite an opening. **The solver** (`Cone.hollow`) and
+**the judge** keep its ends' walls under its end faces, close its side and
+an open end's rim to what would stand there (they take nothing yet), and
+refuse a rounding or a chamfer of its edges and a cone that comes to a
+point (face accounting can't yet tell either side of the point its hollow
+would come to; a solid cone's point it can). **The oracle** takes the
+hollow as the body less its bands: outside the hollow's cone, run on a
+millimetre past each open end, and past each closed end's wall. **The
+planner** cuts a cone of its own and names its inside faces. **The check
+compiler** measures its length from an open end's plane, and its side wall
+square to its side (`wall._cones`: each built point's distance in from the
+outside's fitted cone along its slant, then as a round wall), through a
+hook a hollowed body answers (`CompileKind.hollow_side`). Tests:
+`tests/test_v2_plan_hollow_cone.py` (a cup wider or narrower at its rim,
+a funnel, sealed, upside down; every program's layout agreeing; each built,
+every face accounted for and every check passing, its volume within the
+oracle's; eight drawn at random; walls 0.3 mm thicker or thinner and a floor
+0.3 mm off caught by face accounting and by their own checks; the second
+kernel agreeing). Sixty more drawn at random, outside the suite: each built
+and judged so. The generator doesn't draw one yet.
+
 ### 3.6 The proof, and what each step costs
 
 | Step | Proof | Runner time |

@@ -47,7 +47,10 @@ walls: ``inner -z`` is the inside of a block's -z wall, a tray's floor, facing
 up into the hollow; ``inner side`` is the inside of a hollowed cylinder's wall.
 The faces a shell leaves open can't be stood on but for their rim: a ring
 round a cylinder's mouth, a frame round a block's (its four walls there), the
-wall under it, takes what a face does.
+wall under it, takes what a face does. A cone with a flat top is hollowed too
+(a cup wider at its rim, a funnel): its side wall is the thickness square to
+its side; its ends take what an end takes, but its side, its rim and its
+inside take nothing yet, and its edges aren't rounded or bevelled.
 
 Where a value may come from
 ---------------------------
@@ -259,7 +262,7 @@ class KindSpec:
     edges: tuple[str, ...] = ()
     #: Whether a count of more than one makes sense ("4 holes"; not "2 shells").
     countable: bool = False
-    #: Whether a shell may hollow it (shell.md: a block, a cylinder or a sphere).
+    #: Whether a shell may hollow it (shell.md: a block, a cylinder, a cone or a sphere).
     hollowable: bool = False
     #: The verification class of the item's own surfaces (plan, section 4.5).
     verification: str = "exact"
@@ -435,6 +438,7 @@ KINDS: Mapping[str, KindSpec] = {
             ),
             faces=ROUND_FACES,
             edges=ROUND_EDGES,
+            hollowable=True,
         ),
         KindSpec(
             "extrusion",

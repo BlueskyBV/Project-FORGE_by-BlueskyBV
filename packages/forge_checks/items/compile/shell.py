@@ -12,7 +12,7 @@ from forge_checks.items.compile._common import _WALL_REACH, _mm, _t, _v
 from forge_checks.items.compile.protocol import CompileKind
 from forge_checks.kinds.position import BallCentre
 from forge_checks.kinds.size import Between
-from forge_checks.kinds.surfaces import Ball, Plane, Round
+from forge_checks.kinds.surfaces import Ball, Cone, Plane, Round
 from forge_checks.kinds.wall import Annulus
 from forge_checks.place import FlatFace, RoundSide, unit
 from forge_checks.telling import Alternative
@@ -56,6 +56,12 @@ class Shell(CompileKind):
                         hollow_ball = Ball(ball.centre, ball.radius - wall, True)
                         if c.seen_ball(ball) and c.seen_ball(hollow_ball):
                             walls.append((wall, Annulus(ball, hollow_ball)))
+            from forge_checks.items.compile import COMPILE
+
+            own = COMPILE[body.kind].hollow_side(c, body, c.copies(body)[index], hollow)
+            if (own is not None and isinstance(own.outer, Cone) and isinstance(own.inner, Cone)
+                    and c.seen_cone(own.outer) and c.seen_cone(own.inner)):  # fmt: skip
+                walls.append((thickness, own))
             side, inside = faces.get("side"), faces.get("inner side")
             if isinstance(side, RoundSide) and isinstance(inside, RoundSide):
                 axis = unit("+" + side.axis)

@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 27
+GUIDE_VERSION = 28
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -713,7 +713,9 @@ edge of the face to the item's centre (or "to": "edge", to its near edge).
 An axis place doesn't give is centred, as an assumption Forge shows. On a \
 round side, place gives the position along the rod's axis and an "angle" \
 round it (0 deg towards the next axis: for a rod along z, +x; along x, +y; \
-along y, +z). A boss, a post, a tab or a rib stands round it at any angle; \
+along y, +z). A boss, a post, a tab or a rib stands round it at any angle \
+(a body doesn't: a round leg, peg or standoff there is a post, a square lug \
+a tab); \
 at one that isn't 0, 90, 180 or 270 deg its faces and axes are named as at \
 the one of those at or below it, turned with the side about its axis, and \
 what goes on its far face is placed along that face's own "u" and "v"; its \

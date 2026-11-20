@@ -814,9 +814,10 @@ def _hollow(item: Item, key: tuple[str, int], lo: Vec, hi: Vec, up: str, layout:
         if rim is not None:
             rims[name] = replace(rim, axis_sources=tuple(s + walls for s in rim.axis_sources))  # type: ignore[arg-type]
             continue
+        inside = any(f.startswith("inner ") for f in KINDS[item.kind].faces)
         layout.close(key, name, "unable",
                      f"{shell.id} leaves {item.id}'s {name} open: Forge doesn't place on the rim of an open hollow "
-                     "yet; stand things on its inner faces")  # fmt: skip
+                     "yet" + ("; stand things on its inner faces" if inside else ""))  # fmt: skip
     entry.hollow(item, key, lo, hi, up, layout, dict(fields),
                  Hollowing(shell, shell_at, t, f, thickness_value, floor_value, frozenset(open_faces), walls))  # fmt: skip
     if key in layout.cavities:
@@ -1746,7 +1747,7 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
     if not entry.on_round_side:
         layout.issue("unable", at + pointer("on"),
                      f"on a round side, Forge cuts round holes and keyways and stands bosses, posts, tabs and ribs; "
-                     f"not a {item.kind}, for now")  # fmt: skip
+                     f"not a {item.kind}, for now (a round leg or peg there is a post, a square lug a tab)")  # fmt: skip
         return []
     # A slot round a side (slot.md, "Round a side"): a keyway, along the side's axis, square to the plane touching it.
     keyway = entry.cut and not entry.round_foot

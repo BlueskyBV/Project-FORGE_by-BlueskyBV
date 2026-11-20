@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     from forge_checks.items.compile._context import CompileContext
     from forge_checks.kinds.position import Ref
     from forge_checks.kinds.surfaces import Plane, Round
-    from forge_checks.place import Copy, RoundSide
+    from forge_checks.kinds.wall import Annulus
+    from forge_checks.place import Copy, Hollow, RoundSide
 
 
 class CompileKind:
@@ -129,6 +130,11 @@ class CompileKind:
         self, c: CompileContext, owner: Item, copy: Copy, face: str
     ) -> tuple[Ref | str, Ref | str, Ref | str] | str | None:
         """A round face of the item's (``face``, of ``copy``) as references: its edges, each as measured from it into the face, and its centre, each or why it isn't found; None where they aren't fitted."""
+        return None
+
+    def hollow_side(self, c: CompileContext, body: Item, copy: Copy, hollow: Hollow) -> Annulus | None:
+        """A hollowed body's side wall as its two surfaces, where it is measured so (a cone's: its side and the
+        hollow's behind it); None where its faces say it (a rod's, a ball's) or it has none."""
         return None
 
     def seam(

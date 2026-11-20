@@ -198,5 +198,5 @@ class PlaceKind:
         """Hollow one copy: its walls as the material under its faces, its inside faces, and the hollow."""
         raise PlaceError(
             shell.id,
-            f"a shell hollows a block, a cylinder or a sphere, not a {item.kind}",
+            f"a shell hollows a block, a cylinder, a cone or a sphere, not a {item.kind}",
         )

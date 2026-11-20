@@ -35,6 +35,18 @@ So, by kind:
 - **cylinder:** the hollow is a cylinder `thickness` in from the side, its
   ends in from the +end and -end by their walls' thickness (none where
   open; `floor` opposite an open end).
+- **cone**, with a flat top: the hollow is a cone of its own, its side
+  `thickness` in from the cone's square to it, so its radius at a height
+  is the cone's there less `thickness` times the side's slant over the
+  cone's length; its ends in from the +end and -end by their walls'
+  thickness (none where open; `floor` opposite an open end). A cup wider
+  at its rim is a cone open at its +end with a floor; a funnel, open at
+  both. Its ends take what an end takes, the wall under them; its side,
+  an open end's rim and its inside take nothing yet, its edges aren't
+  rounded or bevelled yet, and a cone that comes to a point isn't
+  hollowed yet (face accounting can't yet tell either side of the point
+  its hollow would come to). Its side wall is measured square to its side
+  (wall.py).
 - **sphere**, whole: the hollow is a ball `thickness` smaller in radius,
   with the same centre, sealed.
 - **sphere**, dome: the hollow is every point within `thickness` less than
@@ -61,7 +73,7 @@ hollow already, and other kinds can't be hollowed, for now.
 
 ### `of`
 
-The body to hollow: a block, a cylinder or a sphere.
+The body to hollow: a block, a cylinder, a cone with a flat top or a sphere.
 
 ### `thickness`
 
@@ -70,8 +82,8 @@ The thickness of its walls.
 ### `open`
 
 The faces left open, with no wall; none for a sealed hollow. A block may
-leave open any of its six faces, a cylinder its ends, a dome its flat face;
-a whole ball none.
+leave open any of its six faces, a cylinder or a cone its ends, a dome its
+flat face; a whole ball none.
 
 ### `floor`
 

@@ -342,6 +342,22 @@ class _Compiler:
         )
         return bool(np.any(self.part.classify(points) == Side.ON))
 
+    def seen_cone(self, surface: Cone) -> bool:
+        """Whether any of the spec's cone is on the part's surface: tried every 15 degrees round it, at nine places along it."""
+        w, e1, e2 = basis(surface.axis)
+        (r0, r1), (s0, s1) = surface.radii, surface.ends
+        turns = np.linspace(0.0, 2 * math.pi, 24, endpoint=False)
+        along = np.linspace(s0, s1, 11)[1:-1]
+        a, t = np.meshgrid(along, turns)
+        radius = r0 + (r1 - r0) * (a - s0) / (s1 - s0)
+        points = (
+            _v(surface.centre)
+            + a.reshape(-1, 1) * w
+            + radius.reshape(-1, 1)
+            * (fv.cos(t).reshape(-1, 1) * e1 + fv.sin(t).reshape(-1, 1) * e2)
+        )
+        return bool(np.any(self.part.classify(points) == Side.ON))
+
     def seen_ball(self, ball: Ball) -> bool:
         """Whether any of the spec's ball is on the part's surface: tried at 400 points spread over it."""
         k = np.arange(400) + 0.5
