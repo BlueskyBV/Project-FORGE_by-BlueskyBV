@@ -1502,7 +1502,9 @@ def _check_requirements(spec: PartSpec, c: _Collect) -> None:
     another thing's ("it fits a steel shaft"), listed as not modelled, which
     only a part with a material of its own may do. A material word left in a
     silent sentence or among an item's words is a fault: the strength and
-    print checks would never hear of it.
+    print checks would never hear of it. The letters to be engraved or
+    embossed are words of the lettering, not of a material, whatever they
+    spell (lettering reading "PC" or "ABS": generated part 1528).
     """
     material = spec.requirements.material
     at = pointer("requirements", "material")
@@ -1532,11 +1534,15 @@ def _check_requirements(spec: PartSpec, c: _Collect) -> None:
                         "another thing's may be left out here once the part has one of its own")  # fmt: skip
                 break
     labels = c.brief.answer_labels()
+    lettered = {i for item in spec.items for name, value in item.fields.items()
+                if isinstance(value, Text) and name != "describe" and value.provenance is not None
+                for i in value.provenance.words}  # fmt: skip
     for i in range(len(c.brief.words)):
         if (
             i in named
             or i in not_modelled
             or i in labels
+            or i in lettered
             or not _names_material(c.brief, i)
         ):
             continue

@@ -2059,11 +2059,24 @@ judged, now:
   version 31), the bore then going on into the knob
   (`placement._standing_beyond`).
 - Generated parts 3063 and 3703 (the spec checks over 5,000 generated
-  drafts): a post by a block's side's corner, below its top edges' bevel,
-  was asked about as within it. The round or bevel of the edge square to
+  drafts, which found these three alone): a post by a block's side's
+  corner, below its top edges' bevel, was asked about as within it. The round or bevel of the edge square to
   the side at its corner was put at the corner of what the side's own band
   left, not of the side; it lies within that band, and is left out
   (`checks._common._rounded_face`).
+- Generated part 1528: lettering reading "PC" was taken for a material
+  the spec didn't record; the letters to be engraved or embossed are the
+  lettering's words, whatever they spell (`checks._check_requirements`).
+- Generated part 2759 took its exit pair's runner down twice: a cone 50 mm
+  across to a point, ten things standing on its side. Each trims its tool
+  to the side by the cone's complement, whose flipped side lay whole on the
+  side ten times over, every cell of each beside another surface: the
+  judge's coverage split them all to its finest (out of memory; fourteen
+  other cones took 3.5 to 14.5 GB and up to 13 minutes). A complement's
+  pieces keep to their step's box (`shapes.Flipped`): 2759 is judged in
+  30 s and 0.6 GB. Each exit-harness worker is held to 3.5 GB on the
+  runners now, a part needing more recorded as running out, not its
+  shard's every seed lost.
 - Generated part 1570: the second kernel missed a slim boss's base on a
   cone's side, the boss's foot 0.04 mm under the side and trimmed to it. A
   face a step lost is taken for kept only within the exact kernel's own

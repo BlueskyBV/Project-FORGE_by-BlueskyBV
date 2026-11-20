@@ -1748,10 +1748,21 @@ class TorusPatch(Patch):
 
 @dataclass(frozen=True)
 class Flipped(Patch):
-    """A patch of a complement: the same points, facing the other way."""
+    """A patch of a complement: the same points, facing the other way; within its step's box (``lo``, ``hi``) where
+    that is given.
+
+    A complement's surface is its solid's, all of it; in a step, only what is
+    in the step's box can be the part's surface there. Each standing item on a
+    cone's side trims its tool to the side by the cone's complement: with ten
+    of them, ten whole flipped copies of the side lay on the side itself, every
+    cell of each beside another surface, and the judge's coverage split them
+    all to its finest (generated part 2759, a 50 mm cone: out of memory).
+    """
 
     of: Patch
     owner: Solid
+    lo: Vec | None = None
+    hi: Vec | None = None
     size: tuple[float, float] = field(init=False)
 
     def __post_init__(self) -> None:
@@ -1762,7 +1773,15 @@ class Flipped(Patch):
         return p, -n, valid
 
     def inside(self, u: Array, v: Array, reach: Array) -> NDArray[np.int8]:
-        return self.of.inside(u, v, reach)
+        found = self.of.inside(u, v, reach)
+        if self.lo is None or self.hi is None:
+            return found
+        # Every point of a cell lies within its reach of its middle (the parameters are lengths, or shorter).
+        p = self.of.at(u, v)[0]
+        lo, hi = np.asarray(self.lo, dtype=np.float64), np.asarray(self.hi, dtype=np.float64)
+        out = np.max(np.maximum(lo - p, p - hi), axis=1)
+        within = np.min(np.minimum(p - lo, hi - p), axis=1)
+        return np.where(out > reach, -1, np.where(within >= reach, found, np.minimum(found, 0))).astype(np.int8)
 
     def foot(self, x: Array) -> Array:
         return self.of.foot(x)
@@ -1835,7 +1854,8 @@ def patches(solid: Solid, lo: Vec, hi: Vec) -> list[Patch]:
     if own is not None:
         return own
     if isinstance(solid, Complement):
-        return [Flipped(p, solid) for p in patches(solid.of, lo, hi)]
+        boxed = all(math.isfinite(x) for x in (*lo, *hi))
+        return [Flipped(p, solid, lo if boxed else None, hi if boxed else None) for p in patches(solid.of, lo, hi)]
     if isinstance(solid, Prism):
         f = solid.frame
         o, u, v, w = (np.asarray(x, dtype=float) for x in (f.origin, f.u, f.v, f.w))

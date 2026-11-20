@@ -114,6 +114,22 @@ class ItIsNeverLeftOut(unittest.TestCase):
                                   "so leave it out here"])  # fmt: skip
 
 
+class LetteringIsNoMaterial(unittest.TestCase):
+    def test_letters_that_spell_one(self) -> None:
+        # Lettering reading "PC" (polycarbonate's name too) is the lettering's, not a material's (generated part 1528).
+        b = number_words("An aluminium 6061 plate 60 mm long, 40 mm wide and 5 mm thick, engraved with the letters "
+                         "PC 5 mm tall and 0.5 mm deep in the middle of its top.")  # fmt: skip
+        d = draft("plate", [
+            {"id": "plate", "kind": "block", "words": cite(b, "plate"), "length": mm(b, 60, "60 mm long"),
+             "width": mm(b, 40, "40 mm wide"), "height": mm(b, 5, "5 mm thick")},
+            {"id": "letters", "kind": "text", "words": cite(b, "letters"), "on": {"item": "plate", "face": "+z"},
+             "mode": {"choose": "engrave", "from": said(b, "engraved")}, "text": {"text": "PC", "from": said(b, "PC")},
+             "height": mm(b, 5, "5 mm tall"), "depth": mm(b, 0.5, "0.5 mm deep"),
+             "place": {"x": {"centred": said(b, "in the middle")}, "y": {"centred": said(b, "in the middle")}}},
+        ], material=made_of(b, "aluminium 6061"))  # fmt: skip
+        self.assertEqual([p.message for p in check_draft(b, d).problems if "names a material" in p.message], [])
+
+
 class ItTravelsWithTheSpec(unittest.TestCase):
     def test_written_read_and_hashed(self) -> None:
         d = plate(material=made_of(B, "aluminium 6061"))

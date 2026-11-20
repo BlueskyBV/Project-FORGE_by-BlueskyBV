@@ -611,6 +611,28 @@ class Patches(unittest.TestCase):
                 self.assertAlmostEqual(found, area, delta=1e-6 * area)
         self.assertEqual(patches(Halfspace((2, 3, 5), (1, 1, 1)), lo, hi), [])
 
+    def test_a_complement_s_pieces_keep_to_its_step_s_box(self) -> None:
+        """In a step, only what is in the step's box can be the part's surface: a complement's pieces there keep to it
+        (ten whole flipped copies of a cone's side, one for each item standing on it, put the judge out of memory)."""
+        cone = Frustum(Frame((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)), 0.0, 50.0, 25.0, 5.0)
+        lo, hi = (20.0, -3.0, 5.0), (26.0, 3.0, 11.0)  # round a point of its side at height 8
+        (side,) = [p for p in patches(Complement(cone), lo, hi)
+                   if type(getattr(p, "of", None)).__name__ == "ConePatch"]  # fmt: skip
+        su, sv = side.size
+        u, v = np.meshgrid(np.linspace(0, su, 400), np.linspace(0, sv, 400), indexing="ij")
+        u, v = u.ravel(), v.ravel()
+        found = side.inside(u, v, np.full(len(u), 0.05))
+        q = side.at(u, v)[0]
+        boxed = np.all((q >= np.array(lo) + 0.05) & (q <= np.array(hi) - 0.05), axis=1)
+        away = np.any((q < np.array(lo) - 0.05) | (q > np.array(hi) + 0.05), axis=1)
+        self.assertTrue(np.all(found[away] == -1))
+        self.assertTrue(np.all(found[boxed] == 1))
+        self.assertGreater(int(boxed.sum()), 0)
+        # Unboxed (an endless box), it is all of the side, as before.
+        (whole,) = [p for p in patches(Complement(cone), (-math.inf,) * 3, (math.inf,) * 3)
+                    if type(getattr(p, "of", None)).__name__ == "ConePatch"]  # fmt: skip
+        self.assertTrue(np.all(whole.inside(u, v, np.full(len(u), 0.05)) == 1))
+
     def test_every_solid_s_pieces(self) -> None:
         rng = random.Random(31)
         nrng = np.random.default_rng(31)

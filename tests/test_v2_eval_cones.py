@@ -65,5 +65,19 @@ class TheGeneratorsCones(unittest.TestCase):
         self.assertTrue(any(f.on == ("body", "side") for f in case.plan))
 
 
+class WithMuchOnItsSide(unittest.TestCase):
+    def test_the_judge_covers_it_within_bounds(self) -> None:
+        # A cone 50 mm across to a point, ten things standing on its side: each trims its tool to the side by the
+        # cone's complement, whose flipped side lay whole on the side ten times over; the judge's coverage split
+        # every copy to its finest, and ran out of memory (generated part 2759, twice taking its runner down).
+        from forge_checks.judge import Judge
+        from v2_exit4 import _spec
+
+        case = generate(2759)
+        judge = Judge.of(_spec(case.items))
+        covered = judge.part.coverage(judge.suite.resolution)
+        self.assertLess(len(covered.points), 1_500_000)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -166,8 +166,8 @@ jobs:
             $B tests/v2_fingerprint.py --seeds "$MINE" --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" --workers 4 $EXTRA
           else
             read FROM TO < <(python3.13 -c "import sys; a, b = map(int, sys.argv[1].split('-')); n, k = int(sys.argv[2]), int(sys.argv[3]); print(a + (b - a) * k // n, a + (b - a) * (k + 1) // n)" "$SEEDS" "$SHARDS" "$SHARD")
-            python3.13 tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/base/shard-$SHARD" || true
-            $B tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" || true
+            python3.13 tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --memory 3500 --out "$GITHUB_WORKSPACE/out/base/shard-$SHARD" || true
+            $B tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --memory 3500 --out "$GITHUB_WORKSPACE/out/fin/shard-$SHARD" || true
           fi
       - name: Exit pair
         if: inputs.mode == 'exitpair'
@@ -178,8 +178,10 @@ jobs:
           SHARD: ${{ matrix.shard }}
         run: |
           read FROM TO < <(python -c "import sys; a, b = map(int, sys.argv[1].split('-')); n, k = int(sys.argv[2]), int(sys.argv[3]); print(a + (b - a) * k // n, a + (b - a) * (k + 1) // n)" "$SEEDS" "$SHARDS" "$SHARD")
+          # Each worker held to 3.5 GB (4 on a 16 GB runner): a part that needs more is recorded as running out of it,
+          # not the runner lost with every seed of its shard (generated part 2759 took a shard down twice).
           for side in base fin; do
-            (cd $side && python tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD") || true
+            (cd $side && python tests/v2_exit4.py --from "$FROM" --to "$TO" --workers 4 --memory 3500 --out "$GITHUB_WORKSPACE/out/$side/shard-$SHARD") || true
           done
       - name: Migrations
         if: inputs.mode == 'migrations'
