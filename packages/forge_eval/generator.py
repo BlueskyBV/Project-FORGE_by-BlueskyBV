@@ -3376,7 +3376,7 @@ def _out_of_its_face(step: Step, part: _Part) -> tuple[Array, Array]:
         # it (generated part 2009: a post leaning under a block's floor, its foot back into the block across the way
         # of a hole through the next face made before it).
         return tuple(np.array(x, dtype=np.float64) for x in bounds(step.solid.solid))  # type: ignore[return-value]
-    if part.kinds.get(step.item) == "sphere":
+    if step.item in part.kinds and _draw(part.kinds[step.item]).sinks_into_its_face:
         # A whole ball is half sunk into what it stands on, and the solver counts that half as it: it fills what a cut
         # made before it took there (generated part 5469: a ball on a block's side in the way of a pocket right
         # through the next face, made before it).

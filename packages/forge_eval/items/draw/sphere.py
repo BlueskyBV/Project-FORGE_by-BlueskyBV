@@ -39,6 +39,7 @@ class Sphere(DrawKind):
     new_rank = 3
     openable = ("-end",)
     hosts_standing = True
+    sinks_into_its_face = True
 
     def footprint(
         self, f: Feature, axes: tuple[str, str]

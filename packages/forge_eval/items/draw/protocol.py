@@ -101,6 +101,9 @@ class DrawKind:
     #: the first body only (a cone: standing on a face, its top takes only what is cut).
     hosts_standing = False
     first_hosts_standing = False
+    #: Standing on a face, sunk into it as far as it stands out of it (a whole ball, centred on its point): what is
+    #: sunk fills what a cut made before took there, and is counted against that cut's way.
+    sinks_into_its_face = False
     #: Drawn now and then flush with a face's edge (a post, a block), over its edge (a block), or touching it (a boss).
     drawn_flush = False
     drawn_overhung = False
