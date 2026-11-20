@@ -13,6 +13,9 @@ there it ended in the wall, short of coming out. What these hold:
 - **Right through a wall:** wholly over the hollow behind it, or asked
   about: on a block's face, a cylinder's end or side, a cone's end, a
   dome's floor.
+- **Coming out on the wall's other face:** under what stands on the
+  hollow's inside floor, or (from inside) under its floor, it is asked about
+  as through a solid plate under a boss.
 
 The briefs are written here, not taken from any blind set.
 """
@@ -178,6 +181,42 @@ class RightThroughAWall(unittest.TestCase):
         for up in (3, 2):  # half beside its floor, its edge at its foot
             with self.subTest(up=up):
                 self.assertEqual([k for k, m in pot(up) if PAST in m], ["question"], pot(up))
+
+
+POT = ("A pot: a cylinder 50 mm across and 60 mm tall, hollow with 2 mm walls and a 3 mm floor, open at the top, with "
+       "a boss 10 mm across and 5 mm tall on its {} {} mm from its centre, and a 4 mm hole through its floor from {} at "
+       "its centre.")  # fmt: skip
+
+
+def pot_with_a_boss(boss_on: str, at: int, hole_from: str) -> list[tuple[str, str]]:
+    brief = POT.format("inside floor" if boss_on == "inner -end" else "underside", at,
+                       "inside" if hole_from == "inner -end" else "below")  # fmt: skip
+    b = number_words(brief)
+    return problems(brief, [
+        {"id": "pot", "kind": "cylinder", "words": cite(b, "cylinder"), "axis": {"choose": "z", "from": assumed("up")},
+         "diameter": mm(b, 50, "50 mm across"), "length": mm(b, 60, "60 mm tall")},
+        shell(b, "pot", ["+end"], "3"),
+        {"id": "boss", "kind": "boss", "words": cite(b, "boss"), "on": {"item": "pot", "face": boss_on},
+         "diameter": mm(b, 10, "10 mm across"), "height": mm(b, 5, "5 mm tall"),
+         "place": off(b, at, f"{at} mm from its centre")},
+        hole(b, "pot", hole_from, "4 mm hole through its floor", "4",
+             {"x": {"centred": said(b, "at its centre")}, "y": {"centred": said(b, "at its centre")}}, THROUGH),
+    ])  # fmt: skip
+
+
+class ComingOutUnderWhatStandsThere(unittest.TestCase):
+    """Through a hollowed body's wall a cut comes out on the wall's other face: under what stands on the hollow's
+    inside floor, or under the floor from inside, it is asked about as through a solid plate under a boss."""
+
+    def test_from_outside_under_what_stands_in_the_hollow(self) -> None:
+        found = pot_with_a_boss("inner -end", 0, "-end")
+        self.assertEqual([k for k, m in found if "comes out under boss" in m and "inner -end" in m], ["question"], found)
+        self.assertEqual(pot_with_a_boss("inner -end", 12, "-end"), [])  # beside it
+
+    def test_from_inside_under_what_stands_below(self) -> None:
+        found = pot_with_a_boss("-end", 0, "inner -end")
+        self.assertEqual([k for k, m in found if "comes out under boss" in m], ["question"], found)
+        self.assertEqual(pot_with_a_boss("-end", 12, "inner -end"), [])
 
 
 if __name__ == "__main__":

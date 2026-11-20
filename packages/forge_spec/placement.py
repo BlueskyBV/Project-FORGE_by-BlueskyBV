@@ -2778,7 +2778,9 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
     over its mouth would close it, the cut ending in that item, which isn't
     through (a hole drilled up through a plate under a boss): asked about,
     with the values that put them there. Inside a tube's bore it comes out
-    into the bore, which is open.
+    into the bore, which is open. Through a hollowed body's wall, it comes
+    out on the wall's inner face, under what stands there in the hollow (a
+    drain hole under a boss on a pot's inside floor).
     """
     position = {item.id: n for n, item in enumerate(spec.items)}
     standing: dict[tuple[str, int, str], list[Instance]] = {}
@@ -2796,11 +2798,21 @@ def _check_exits(spec: PartSpec, layout: Layout) -> None:
         ):
             continue
         for cut in layout.instances.get(item.id, []):
-            if cut.host is None or cut.host[2] not in _ACROSS:
+            if cut.host is None:
                 continue
             host, index, face_name = cut.host
-            far = (host, index, _ACROSS[face_name])
             faces = layout.faces.get((host, index), {})
+            # Through a hollowed body's wall it comes out on the wall's other face: its inner face from outside, the
+            # outside from within.
+            inner = f"inner {face_name}"
+            if face_name.startswith("inner "):
+                far = (host, index, face_name.removeprefix("inner "))
+            elif isinstance(faces.get(inner), FlatFace):
+                far = (host, index, inner)
+            elif face_name in _ACROSS:
+                far = (host, index, _ACROSS[face_name])
+            else:
+                continue
             near, back = faces.get(face_name), faces.get(far[2])
             near_face = None if near is None else _upright(near)
             far_face = None if back is None else _upright(back)

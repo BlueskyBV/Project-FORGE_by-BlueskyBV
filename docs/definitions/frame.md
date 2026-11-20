@@ -114,7 +114,8 @@ an overhang). A blind cut must fit in the **least** material under its mouth.
 A cut **through** goes through the **most**: it comes out of the far side
 everywhere across its mouth. Through a hollowed body's wall, that is into
 the hollow: a cut whose mouth runs past the hollow's edge, over more than
-the wall there, is asked about. A cut **through everything** (schema 1.7) isn't
+the wall there, is asked about, as is one coming out under what stands on
+the wall's other face. A cut **through everything** (schema 1.7) isn't
 measured in the material under its face: it goes on past everything made
 before it, as far as the part reaches behind its mouth ([sizes.md](sizes.md)).
 A cut **up to a face** goes to that face's plane, less its offset, and must

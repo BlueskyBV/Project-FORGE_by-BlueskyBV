@@ -1967,7 +1967,11 @@ through the wall's thickness and passed: there it ended in the wall. It is
 now asked about (`placement._check_into_hollows`, frame.md): on a block's
 face, a cylinder's end or side, a cone's end, a dome's floor, each against
 the hollow's section behind the wall (`Layout.insides` for a cone's and a
-dome's, whose inside takes nothing yet). **The generator** draws a cone as
+dome's, whose inside takes nothing yet). And one that comes out on the
+wall's other face under what stands there (a drain hole under a boss on a
+pot's inside floor, or from inside under a foot below) is asked about as
+through a solid plate under a boss (`_check_exits`): it was built ending in
+what stood there. **The generator** draws a cone as
 the first body (one seed in twenty: narrower or wider at its top, or to a
 point; its ends take what an end takes, its side what a cone's side takes),
 hollowed half the time where its top is flat (open at an end, both or
