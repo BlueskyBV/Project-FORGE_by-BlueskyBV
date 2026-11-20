@@ -304,6 +304,29 @@ class Hollowing:
         return self.floor if opposite in self.open_faces else self.thickness
 
 
+def uneven_roundings(item: Item, layout: Layout, walls: Mapping[str, float],
+                     pairs: Callable[[str], list[tuple[str, str]]]) -> None:  # fmt: skip
+    """A rounding or a chamfer of a hollowed body's edge between two walls of different thickness (a floor thicker or
+    thinner than the walls it meets): the hollow there is what the walls' distances leave (shell.md), which Forge
+    doesn't make yet. Said before anything is built, not found when the hollow is (each kind's ``pairs``: the faces an
+    edge set's edges lie between; ``walls``: each closed face's wall, none where open)."""
+    from forge_spec.draft import EdgeSet
+    from forge_spec.problems import pointer
+
+    for n, other in enumerate(layout.items.values()):
+        edges = other.get("edges")
+        if not isinstance(edges, EdgeSet) or edges.of != item.id:
+            continue
+        for a, b in pairs(edges.which):
+            wa, wb = walls.get(a, 0.0), walls.get(b, 0.0)
+            if wa > 0.0 and wb > 0.0 and abs(wa - wb) > EPS:
+                layout.issue("unable", pointer("items", n, "edges"),
+                             f"Forge doesn't yet round or bevel an edge where walls of different thickness meet: "
+                             f"{item.id}'s {a}-{b} edge, between {wa:g} and {wb:g} mm walls (the hollow there is what "
+                             "their distances leave)")  # fmt: skip
+                break
+
+
 def profiled(item: Item, base: Vec, up: str, axes: tuple[str, str], key: tuple[str, int], layout: Layout,
              ends: Ends) -> tuple[Vec, Vec]:  # fmt: skip
     """An extrusion's or a revolution's bounds and flat ends (extrusion.md, revolution.md; docs/V2-stage4.md, 6.6).

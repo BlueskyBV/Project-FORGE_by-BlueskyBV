@@ -25,6 +25,7 @@ from forge_spec.items.solve._common import (
     _round_faces,
     _size,
     _with,
+    uneven_roundings,
 )
 from forge_spec.items.solve.protocol import SolveKind
 from forge_spec.problems import pointer
@@ -109,6 +110,7 @@ class Cylinder(SolveKind):
             face = faces.get(name)
             if isinstance(face, FlatFace):
                 faces[name] = _with(face, depth_below=depth, depth_sources=walls)
+        uneven_roundings(item, layout, {"+end": top, "-end": bottom, "side": t}, lambda which: self.edges(which, up))
         side = faces.get("side")
         if isinstance(side, SideFace):
             faces["side"] = _with(side, wall=t, depth_sources=walls)

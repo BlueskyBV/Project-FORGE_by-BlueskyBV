@@ -31,7 +31,8 @@ So, by kind:
   hollow's corners are bevelled to keep the wall's thickness. (So it is with
   one thickness all round. Where the floor is thicker or thinner than the
   walls, a rounded floor edge's corner is what the distances above leave:
-  the floor ends where the rounding meets it.)
+  the floor ends where the rounding meets it. Forge doesn't make that yet,
+  and says so before anything is built.)
 - **cylinder:** the hollow is a cylinder `thickness` in from the side, its
   ends in from the +end and -end by their walls' thickness (none where
   open; `floor` opposite an open end).

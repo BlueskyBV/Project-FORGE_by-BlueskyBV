@@ -16,6 +16,9 @@ there it ended in the wall, short of coming out. What these hold:
 - **Coming out on the wall's other face:** under what stands on the
   hollow's inside floor, or (from inside) under its floor, it is asked about
   as through a solid plate under a boss.
+- **Said before anything is built:** a rim rounded right over (the two
+  roundings meeting in its middle), and a floor's edge rounded where the
+  floor is thicker than the walls, which the part then failed to build.
 
 The briefs are written here, not taken from any blind set.
 """
@@ -217,6 +220,43 @@ class ComingOutUnderWhatStandsThere(unittest.TestCase):
         found = pot_with_a_boss("-end", 0, "inner -end")
         self.assertEqual([k for k, m in found if "comes out under boss" in m], ["question"], found)
         self.assertEqual(pot_with_a_boss("-end", 12, "inner -end"), [])
+
+
+CUP_ROUNDED = ("A cup: a cylinder 50 mm across and 60 mm tall, hollow with 2 mm walls and a {} mm floor, open at the top, "
+               "its {} edge {} {} mm.")  # fmt: skip
+
+
+def cup_rounded(floor: int, which: str, kind: str, size: float) -> list[tuple[str, str]]:
+    brief = CUP_ROUNDED.format(floor, which, "rounded" if kind == "fillet" else "bevelled", f"{size:g}")
+    b = number_words(brief)
+    edge = {"id": "edge", "kind": kind, "words": cite(b, f"its {which} edge"),
+            "edges": {"of": "cup", "which": which, "words": cite(b, f"its {which} edge")},
+            "radius" if kind == "fillet" else "size": mm(b, size, f"{size:g} mm")}  # fmt: skip
+    return problems(brief, [
+        {"id": "cup", "kind": "cylinder", "words": cite(b, "cylinder"), "axis": {"choose": "z", "from": assumed("up")},
+         "diameter": mm(b, 50, "50 mm across"), "length": mm(b, 60, "60 mm tall")},
+        shell(b, "cup", ["+end"], str(floor)),
+        edge,
+    ])  # fmt: skip
+
+
+class WhatIsNotMadeYetIsSaidBeforeAnythingIsBuilt(unittest.TestCase):
+    """Two roundings OpenCascade couldn't make, or the planner had no construction for, were accepted, and the part
+    then failed to build: each is said at the spec now, before the person confirms it."""
+
+    def test_a_rim_rounded_right_over(self) -> None:
+        self.assertEqual(cup_rounded(3, "top", "fillet", 0.8), [])
+        for kind in ("fillet", "chamfer"):
+            with self.subTest(kind):
+                found = cup_rounded(3, "top", kind, 1)  # half its 2 mm wall: the two meet in its middle
+                self.assertEqual([k for k, m in found if "right over" in m], ["question"], found)
+
+    def test_a_floor_edge_rounded_where_the_floor_is_thicker_than_the_walls(self) -> None:
+        self.assertEqual(cup_rounded(2, "bottom", "fillet", 4), [])  # one thickness all round: the hollow follows it
+        for kind in ("fillet", "chamfer"):
+            with self.subTest(kind):
+                found = cup_rounded(3, "bottom", kind, 4)
+                self.assertEqual([k for k, m in found if "walls of different thickness" in m], ["unable"], found)
 
 
 if __name__ == "__main__":

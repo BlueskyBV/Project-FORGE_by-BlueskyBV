@@ -7,15 +7,22 @@ asked of the registry.
 
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
+from dataclasses import replace
 from typing import Protocol
 
-from forge_spec.draft import EdgeSet, Faces, Item, On, PartSpec
+from forge_spec.draft import EdgeSet, Faces, Item, On, PartSpec, Place
 from forge_spec.geometry import (
     EPS,
+    ConeFace,
     FlatFace,
     SideFace,
+    bbox,
     disc,
+    shapes_overlap,
 )
+from forge_spec.outline import Line, Shape
 from forge_spec.placement import (
     Layout,
     _outline,
@@ -214,6 +221,8 @@ def check_rounding(
             c.problem("cant", at + pointer(size_name),
                      f"a {size:g} mm {item.kind} doesn't fit where {target.id} meets {edges.where_meets} "
                      f"(at most {joint[0]:g} mm)", size_value, *joint[1])  # fmt: skip
+        else:
+            joint_reached_into(spec, item, target, edges, size, layout, at, c)
         return
     limit = (
         None
@@ -229,18 +238,234 @@ def check_rounding(
                  f"a {size:g} mm {item.kind} doesn't fit on {target.id}'s {edges.which} edges "
                  f"(at most {limit:g} mm)", size_value, *dims)  # fmt: skip
         return
+    reached_into(spec, item, target, edges, size, size_name == "size", layout, at, c)
     shell = layout.shells.get(target.id)
     if shell is not None:
         thickness = shell.get("thickness")
         opened = shell.get("open")
         open_faces = opened.faces if isinstance(opened, Faces) else ()
-        # A rim's outside and inside edges are both rounded: two in the wall's thickness.
-        if isinstance(thickness, Value) and rim_rounded(target, edges.which, open_faces, layout) \
-                and size > mm(thickness) / 2 + 1e-9:  # fmt: skip
+        # A rim's outside and inside edges are both rounded: two in the wall's thickness. Each half of it, they
+        # meet in the middle, rounding the rim right over or bevelling it to a ridge: not made yet (OpenCascade
+        # can't make the two meet).
+        wall = mm(thickness) if isinstance(thickness, Value) else None
+        half = None if wall is None else wall / 2
+        if half is not None and rim_rounded(target, edges.which, open_faces, layout) and size > half - 1e-9:
+            whole = size <= half + 1e-9
             c.problem("question", at + pointer(size_name),
-                     f"a {size:g} mm {item.kind} on both edges of the {mm(thickness):g} mm wall at the open rim of "
-                     f"{target.id} doesn't fit (at most {mm(thickness) / 2:g} mm): which edges get it, or how big "
-                     "may the rim's be?", size_value, thickness)  # fmt: skip
+                     f"a {size:g} mm {item.kind} on both edges of the {wall:g} mm wall at the open rim of "
+                     + (f"{target.id} {'rounds' if size_name == 'radius' else 'bevels'} it right over, the two "
+                        f"meeting in its middle, which Forge doesn't make yet (each less than {half:g} mm leaves a "
+                        "flat between them): " if whole else
+                        f"{target.id} doesn't fit (at most {half:g} mm): ")
+                     + "which edges get it, or how big may the rim's be?", size_value, thickness)  # fmt: skip
+
+
+def _rounded_face(face: FlatFace, name: str, pairs: list[tuple[str, str]], size: float,
+                  bevel: bool) -> tuple[FlatFace, tuple[float, float]] | None:  # fmt: skip
+    """A body's flat face as a rounding (a bevel) of its edges leaves it, made after what is on it, and where its old
+    centre is from the new one; None where it takes none of the face. A rectangle's side along a rounded edge is
+    ``size`` further in, a corner where a rounded edge square to it ends is rounded (bevelled) by ``size``; a disc's
+    rim, ``size`` in. (Faces at right angles: a block's, a cylinder's ends and its side.)"""
+    if face.shape == "disc":
+        if not any(name in pair for pair in pairs):
+            return None
+        r = face.half[0] - size
+        return (replace(face, half=(r, r)), (0.0, 0.0)) if r > EPS else None
+    if face.shape != "rect" or any(face.corners):
+        return None
+    a1, a2 = face.axes
+    lo, hi = [-face.half[0], -face.half[1]], [face.half[0], face.half[1]]
+    corners: dict[tuple[int, int], float] = {}
+    for a, b in pairs:
+        if name in (a, b):  # along one of its sides: that side further in
+            other = b if a == name else a
+            if other[1] in (a1, a2):
+                k = (a1, a2).index(other[1])
+                if other[0] == "+":
+                    hi[k] -= size
+                else:
+                    lo[k] += size
+        elif {a[1], b[1]} == {a1, a2}:  # square to it, at a corner
+            first, second = (a, b) if a[1] == a1 else (b, a)
+            corners[(1 if first[0] == "+" else -1, 1 if second[0] == "+" else -1)] = size
+    if hi[0] - lo[0] <= EPS or hi[1] - lo[1] <= EPS:
+        return None
+    middle = ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)
+    half = ((hi[0] - lo[0]) / 2, (hi[1] - lo[1]) / 2)
+    if not corners and (lo[0], lo[1], hi[0], hi[1]) == (-face.half[0], -face.half[1], face.half[0], face.half[1]):
+        return None
+    quadrants = ((1, 1), (-1, 1), (-1, -1), (1, -1))
+    if not bevel:
+        radii = tuple(min(corners.get(q, 0.0), *half) for q in quadrants)
+        return replace(face, half=half, corners=(radii[0], radii[1], radii[2], radii[3])), middle
+    points: list[tuple[float, float]] = []
+    for s1, s2 in quadrants:  # anticlockwise, each corner cut by its bevel's legs
+        c1, c2 = s1 * half[0], s2 * half[1]
+        cut = min(corners.get((s1, s2), 0.0), *half)
+        if cut <= 0.0:
+            points.append((c1, c2))
+        elif s1 == s2:
+            points += [(c1, c2 - s2 * cut), (c1 - s1 * cut, c2)]
+        else:
+            points += [(c1 - s1 * cut, c2), (c1, c2 - s2 * cut)]
+    outline = Shape(tuple(Line(p, q) for p, q in zip(points, [*points[1:], points[0]], strict=True) if p != q))
+    return replace(face, shape="profile", profile=outline, half=half), middle
+
+
+def reached_into(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size: float, bevel: bool, layout: Layout,
+                 at: str, c: Collect) -> None:  # fmt: skip
+    """What is on a face a rounding (a bevel) of a body's edges takes some of, made before it: asked about.
+
+    A rounding is made after what is on the faces either side of its edge
+    (frame.md): where a hole's mouth, or what stands there, comes within its
+    size of the edge, the ball rolling along the edge meets it, and the round
+    isn't one (it runs into the hole, or cuts away what stands there).
+    OpenCascade refuses to make most such roundings, and where it makes one
+    the part is not what the definitions say. Asked, with the values that put
+    it there: further in, or a smaller rounding. A block's faces, a
+    cylinder's and a cone's: their ends and their sides.
+    """
+    from forge_spec.items.solve import SOLVE
+    from forge_spec.placement import _covered, _footing, _place_values, turned_outline
+
+    copies = layout.instances.get(target.id) or []
+    for copy in copies:
+        k = max(range(3), key=lambda i: abs(copy.normal[i]))
+        rising = copy.normal[k] > 0  # its -end at the smaller coordinate along its axis
+        pairs = edges_of(target.kind, edges.which, ("+" if rising else "-") + "xyz"[k])
+        faces = layout.faces.get((target.id, copy.index), {})
+        side = next((f for f in faces.values() if isinstance(f, ConeFace) and f.local is None), None)
+        for name, face in faces.items():
+            ends = [a if b == name else b for a, b in pairs if name in (a, b)]
+            if isinstance(face, (SideFace, ConeFace)) and face.local is None and ends:
+                if isinstance(face, SideFace) and not face.outward:
+                    continue
+                axis = "xyz".index(face.axis)
+                low, high = face.start[axis], face.start[axis] + face.length
+                for end in ends:
+                    at_start = (end == "-end") == rising
+                    band = _cone_band(face, at_start, size, bevel)[1] if isinstance(face, ConeFace) else size
+                    low, high = (low + band, high) if at_start else (low, high - band)
+                for other in spec.items:
+                    for inst in layout.instances.get(other.id) or []:
+                        if inst.host != (target.id, copy.index, name):
+                            continue
+                        if inst.lo is not None and inst.hi is not None:  # what stands round it: its box along it
+                            first, last = inst.lo[axis], inst.hi[axis]
+                        else:  # a cut: its outline along it (a cone's: along its slope, seen along its axis)
+                            parts = _outline(other, layout, (face.reference[0], face.axis))
+                            along = bbox(parts)[1] if parts else 0.0
+                            if isinstance(face, ConeFace):
+                                along *= face.lean[0]
+                            first, last = inst.origin[axis] - along, inst.origin[axis] + along
+                        if first < low - EPS or last > high + EPS:
+                            where = other.get("place")
+                            along_values = [p.distance for a, p in where.axes.items() if a == face.axis] if isinstance(
+                                where, Place) else []  # fmt: skip
+                            _asked(item, other, inst.index, target, name, size, bevel, at, c, along_values)  # not round it
+                            break
+                continue
+            if not isinstance(face, FlatFace) or face.local is not None or face.turn != 0.0:
+                continue
+            band = size
+            if side is not None and face.shape == "disc" and ends:  # a cone's end: as far in as the round meets it
+                axis = "xyz".index(side.axis)
+                band = _cone_band(side, abs(face.centre[axis] - side.start[axis]) < EPS, size, bevel)[0]
+            found = _rounded_face(face, name, pairs, band, bevel)
+            if found is None:
+                continue
+            rounded, middle = found
+            for other in spec.items:
+                for inst in layout.instances.get(other.id) or []:
+                    if inst.host != (target.id, copy.index, name):
+                        continue
+                    footing = _footing(other)
+                    turned = turned_outline(other, layout, face.axes)
+                    footprint = turned if turned is not None else footing if footing is not None else _covered(
+                        other, layout, face)  # fmt: skip
+                    if not footprint:
+                        continue
+                    p1, p2 = face.frame.on(inst.origin)
+                    cut = SOLVE[other.kind].cut
+                    if face.holds(footprint, (p1, p2), cut=cut) and not rounded.holds(
+                            footprint, (p1 - middle[0], p2 - middle[1]), cut=cut):  # fmt: skip
+                        _asked(item, other, inst.index, target, name, size, bevel, at, c, _place_values(other))
+                        break
+
+
+def joint_reached_into(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size: float, layout: Layout,
+                       at: str, c: Collect) -> None:  # fmt: skip
+    """What is on a face round the foot of something standing there, within a joint's rounding (bevel) of it: asked
+    about, as by a body's edge (:func:`reached_into`). The rounding fills the corner where it stands, out over the face
+    by its size, after what is cut into the face or stands on it: a hole there would be filled over."""
+    from forge_spec.placement import _covered, _footing, _place_values
+
+    other_id = edges.where_meets
+    meets = spec.item(other_id) if other_id is not None else None
+    if meets is None:
+        return
+    on = target.get("on")
+    standing, host = (target, meets) if isinstance(on, On) and on.item == meets.id else (meets, target)
+    bevel = item.get("size") is not None
+    for copy in layout.instances.get(standing.id) or []:
+        if copy.host is None or copy.host[0] != host.id:
+            continue
+        face = layout.faces.get((copy.host[0], copy.host[1]), {}).get(copy.host[2])
+        if not isinstance(face, FlatFace) or face.local is not None or face.turn != 0.0:
+            continue
+        foot = _covered(standing, layout, face)
+        if not foot or _footing(standing) is not None:
+            continue
+        grown = [Shape.disc(p.centre, p.half[0] + size) if p.disc else
+                 Shape.rect(p.centre, (p.half[0] + size, p.half[1] + size), (size, size, size, size)) for p in foot]  # fmt: skip
+        here = face.frame.on(copy.origin)
+        for other in spec.items:
+            if other.id == standing.id:
+                continue
+            for inst in layout.instances.get(other.id) or []:
+                if inst.host != copy.host:
+                    continue
+                parts = _covered(other, layout, face)
+                if not parts:
+                    continue
+                there = face.frame.on(inst.origin)
+                shapes = [(Shape.disc(p.centre, p.half[0]) if p.disc else Shape.rect(p.centre, p.half)).moved(*there)
+                          for p in parts]  # fmt: skip
+                feet = [Shape.disc(p.centre, p.half[0]) if p.disc else Shape.rect(p.centre, p.half) for p in foot]
+                apart = not any(shapes_overlap(f.moved(*here), q) for f in feet for q in shapes)
+                if apart and any(shapes_overlap(g.moved(*here), q) for g in grown for q in shapes):
+                    _asked(item, other, inst.index, host, copy.host[2], size, bevel, at, c,
+                           [*_place_values(other), *_place_values(standing)],
+                           f"the foot of {standing.id}, whose joint {item.id} {'bevels' if bevel else 'rounds'}")  # fmt: skip
+                    return
+
+
+def _cone_band(cone: ConeFace, at_start: bool, size: float, bevel: bool) -> tuple[float, float]:
+    """How far a rounding (a bevel) of a cone's rim at its start or its end reaches back from the edge: on its end, and
+    along its axis on its side. A bevel's legs are its size; a round's, its radius over the tangent of half the angle
+    the material makes there: 90 degrees less the cone's half angle at its wider end, more at its narrower
+    (fillet.md: further back for faces at a narrower angle)."""
+    here, there = (cone.start_radius, cone.end_radius) if at_start else (cone.end_radius, cone.start_radius)
+    k = abs(cone.slope)
+    q = math.sqrt(1.0 + k * k)
+    t = k / (q + 1.0)  # the tangent of half the cone's half angle
+    back = size if bevel else size * ((1.0 + t) / (1.0 - t) if here >= there else (1.0 - t) / (1.0 + t))
+    return back, back / q  # along its slope, seen along its axis
+
+
+def _asked(item: Item, other: Item, index: int, target: Item, face: str, size: float, bevel: bool, at: str,
+           c: Collect, placed: Sequence[object] | None = None, edge: str | None = None) -> None:  # fmt: skip
+    from forge_spec.items.solve._common import _item_values
+    from forge_spec.placement import _outline_fields, _place_values
+
+    what = "bevel" if bevel else "rounding"
+    near = edge or f"an edge that {item.id} {'bevels' if bevel else 'rounds'}"
+    c.problem("question", at,
+              f"{other.id} copy {index + 1} on {target.id}'s {face} face is within {size:g} mm of {near}: the "
+              f"{what}, made after it, would run into it. Should it be further from {'it' if edge else 'the edge'}, "
+              f"or the {what} smaller?",
+              item.get("size" if bevel else "radius"), *_item_values(other, *_outline_fields(other)),
+              *(placed if placed is not None else _place_values(other)))  # fmt: skip
 
 
 def base_edges_missing(

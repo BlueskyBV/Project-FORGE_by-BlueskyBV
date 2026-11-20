@@ -23,6 +23,7 @@ from forge_spec.items.solve._common import (
     _opposite,
     _size,
     _with,
+    uneven_roundings,
 )
 from forge_spec.items.solve.protocol import SolveKind
 from forge_spec.outline import Shape
@@ -113,6 +114,7 @@ class Block(SolveKind):
             return
         layout.cavities[key] = ((cavity_lo[0], cavity_lo[1], cavity_lo[2]),
                                 (cavity_hi[0], cavity_hi[1], cavity_hi[2]))  # fmt: skip
+        uneven_roundings(item, layout, th, lambda which: self.edges(which, up))
         for d in DIRECTIONS:
             face = faces.get(d)
             if isinstance(face, FlatFace):

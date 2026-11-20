@@ -25,6 +25,7 @@ from forge_spec.items.solve._common import (
     _item_values,
     _size,
     _with,
+    uneven_roundings,
 )
 from forge_spec.items.solve.protocol import SolveKind
 from forge_spec.problems import pointer
@@ -126,6 +127,7 @@ class Sphere(SolveKind):
             inside = math.sqrt(max((radius - t) * (radius - t) - f * f, 0.0))  # the hollow's section over its floor
             layout.insides[(key[0], key[1], "-end")] = replace(
                 flat, centre=_add(flat.centre, _dir(up), f), half=(inside, inside), depth_model=None)
+            uneven_roundings(item, layout, {"-end": f, "surface": t}, lambda which: self.edges(which, up))
 
     def edges(self, which: str, up: str) -> list[tuple[str, str]]:
         if which == "bottom":

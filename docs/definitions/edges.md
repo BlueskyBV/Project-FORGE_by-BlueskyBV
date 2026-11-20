@@ -36,7 +36,15 @@ position or by number.
   there is no corner left to round there.
 - On a body a shell opens, an edge that borders an open face is the rim's:
   rounding it rounds the outside edge and the inside edge of the walls' ends
-  alike, so each rounding is at most half the wall's thickness.
+  alike, so each rounding is at most half the wall's thickness. At exactly
+  half, the two meet in the middle, rounding the rim right over (or
+  bevelling it to a ridge): Forge doesn't make that yet, and asks.
+- A rounding (a bevel) is made after what is on the faces either side of
+  its edges: a hole's mouth, or what stands there, within its size of an
+  edge it rounds would be run into, and the round wouldn't be one (on a
+  face square to a rounded edge, within the corner it rounds). You are
+  asked: further from the edge, or a smaller rounding. (A block's faces; a
+  cylinder's and a cone's ends and sides.)
 - An edge set that names no edges at all is never skipped: a whole ball has
   no rim to round (the writer is asked again); a body standing wholly on a
   face has no outside edges round its base, only its `joint` (you are

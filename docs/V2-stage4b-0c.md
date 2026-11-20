@@ -1971,7 +1971,22 @@ dome's, whose inside takes nothing yet). And one that comes out on the
 wall's other face under what stands there (a drain hole under a boss on a
 pot's inside floor, or from inside under a foot below) is asked about as
 through a solid plate under a boss (`_check_exits`): it was built ending in
-what stood there. **The generator** draws a cone as
+what stood there. Two roundings of a hollowed body were accepted and
+then failed to build: a rim rounded right over (each of its two roundings
+half its wall, meeting in its middle: OpenCascade can't make them meet),
+and a floor's edge rounded where the floor is thicker or thinner than the
+walls (the planner has no construction for the hollow there). Each is said
+at the spec now (`checks._common`, `solve._common.uneven_roundings`), before
+the person confirms it. And what stands on, or is cut into, a face either
+side of an edge a later rounding or bevel takes (four holes 3 mm in from
+the edges of a plate whose top edges are rounded 2 mm) was accepted: the
+part failed to build, or was built and failed its rounding's checks. It is
+asked about now (`checks._common.reached_into`): a block's faces, their
+corners where edges square to them are rounded, a cylinder's and a cone's
+ends and sides (a cone's round reaching further back at its wider end,
+less at its narrower); the generator already kept everything clear of a
+rounding's band. **The
+generator** draws a cone as
 the first body (one seed in twenty: narrower or wider at its top, or to a
 point; its ends take what an end takes, its side what a cone's side takes),
 hollowed half the time where its top is flat (open at an end, both or

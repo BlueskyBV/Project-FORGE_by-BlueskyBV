@@ -272,7 +272,9 @@ class ShapesAndFaces(unittest.TestCase):
 
         rim = "on both edges of the 2 mm wall at the open rim of box doesn't fit (at most 1 mm)"
         self.assertTrue(any(rim in m for m in rounded(1.5)), rounded(1.5))
-        self.assertFalse(any("open rim" in m for m in rounded(1.0)), rounded(1.0))
+        # Half the wall each: the two meet in the rim's middle, which OpenCascade can't make (asked; revision 18).
+        self.assertTrue(any("open rim of box rounds it right over" in m for m in rounded(1.0)), rounded(1.0))
+        self.assertFalse(any("open rim" in m for m in rounded(0.9)), rounded(0.9))
 
     def test_a_hollowed_body_s_roundings_either_side_of_its_hollow(self) -> None:
         # The tray's corners are rounded before its hollow (its walls follow
