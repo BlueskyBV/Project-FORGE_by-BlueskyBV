@@ -24,6 +24,7 @@ from forge_eval.generator import (
     DoesNotFitError,
     Feature,
     Plan,
+    _exit_over,
     _first,
     _Flat,
     _flat_axes,
@@ -345,7 +346,7 @@ class DrawKind:
             far = (f.id, index, "+end")
             part.flats[far] = _Flat(far, base + height * n, n.copy(), _flat_axes(up), "ring" if inner > 0 else "disc",
                                     (outer, outer), least + under if through else least,
-                                    face.exit if through else None, inner=inner)  # fmt: skip
+                                    _exit_over(face, under) if through else None, inner=inner)  # fmt: skip
 
     def stand_flat(self, f: Feature, copy_index: int, p: Array, n: Array, e1: Array, e2: Array, face: _Flat,
                    part: _Part, strict: bool, feet: list[_Foot], k: int, beyond: frozenset[tuple[int, float]],
@@ -377,24 +378,24 @@ class DrawKind:
             turn = face.turn + (f.turn or 0.0)
             if self.round_far_end:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),
-                                        height + under, face.exit, turn=turn)  # fmt: skip
+                                        height + under, _exit_over(face, under), turn=turn)  # fmt: skip
                 return
             if face.level and face.dome <= 0 and face.flare[1] <= 0:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
                                         height + face.material, face.exit, level=True, turn=turn)  # fmt: skip
             else:
                 part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "rect", (h1, h2),
-                                        height + under, face.exit, turn=turn)  # fmt: skip
+                                        height + under, _exit_over(face, under), turn=turn)  # fmt: skip
             if face.hollow is None and math.isinf(face.room):
                 _turned_sides(part, f.id, copy_index, p, up, face.axes, (2 * h1, 2 * h2, height), turn)
             return
         if self.round_far_end:
             far = (f.id, copy_index, "+end")
             part.flats[far] = _Flat(far, p + height * n, n.copy(), _flat_axes(up), "disc", (h1, h1),
-                                    height + under, face.exit)  # fmt: skip
+                                    height + under, _exit_over(face, under))  # fmt: skip
         else:
             _register_box(part, f.id, copy_index, p, up, face.axes, (2 * h1, 2 * h2, height),
-                          under, None if beyond else face.exit)  # fmt: skip
+                          under, None if beyond else _exit_over(face, under))  # fmt: skip
             if flush and not face.key[2].startswith("inner"):
                 _pressed_sides(f, copy_index, p, (e1, e2, n), (h1, h2), height, face, part, flush, strict)
             if face.key[2].startswith("inner"):

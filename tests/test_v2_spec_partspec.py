@@ -348,9 +348,7 @@ class TheChecksCatchWhatIsWrong(unittest.TestCase):
              "length": mm(b, 12, "12 mm"), "axis": choose("z", said(b, "on the axis"))},
             {"id": "set_screw", "kind": "hole", "words": cite(b, "set screw hole"),
              "on": {"item": "collar", "face": "side"}, "diameter": mm(b, 5, "5 mm"),
-             "depth": {"value": 7, "unit": "mm", "from": {
-                 "formula": "(30 mm - 16 mm) / 2",
-                 "words": cite(b, "30 mm") + cite(b, "16 mm") + cite(b, "through the wall")}},
+             "depth": {"through_next": True, "from": said(b, "through the wall from the outside into the bore")},
              "count": count(b, 1, "One"),
              "place": {"z": {"centred": said(b, "halfway along the length")},
                        "angle": {"value": 0, "unit": "deg", "from": {"assumed": "any angle around the collar"}}}},

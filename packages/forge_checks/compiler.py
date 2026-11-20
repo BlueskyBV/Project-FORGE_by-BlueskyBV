@@ -569,15 +569,31 @@ class _Compiler:
             return found
         return (c * found[0] - s * along * n[0], c * found[1] - s * along * n[1], c * found[2] - s * along * n[2])
 
-    @staticmethod
     def cut_wall(
-        copy: Copy, way: Array, at: float, across: Array, half: float
+        self, copy: Copy, way: Array, at: float, across: Array, half: float
     ) -> Plane:
-        """A cut's flat wall ``at`` from its centre along ``way``, facing back into the cut, as its own rectangle: ``half`` each way along ``across``, and from its mouth down to its floor."""
+        """A cut's flat wall ``at`` from its centre along ``way``, facing back into the cut, as its own rectangle: ``half`` each way along ``across``, and from its mouth down to its floor.
+
+        Where the wall lies along the edge of the face the cut is in, with no
+        material behind it (a rebate along a plate's edge, a groove right
+        across a bar, a notch in its corner), the cut only opens there: there
+        is no wall. What is built in its plane is the face beside the cut,
+        facing out of it (the plate's side, round and under the rebate): that
+        plane, wherever it is built, stands for the wall (generated briefs
+        never drew one; a rebate's width and place were held for want of a
+        wall to find).
+        """
         assert copy.span is not None
         n = _v(copy.direction)
         depth = copy.span[1]
         centre = _v(copy.point) - depth / 2 * n + at * way
+        # Behind it all over, from its mouth to its floor and from end to end: a cut on into a hollow, or through
+        # what it stands on, has walls where it is in material.
+        u = np.asarray(across, dtype=np.float64) / float(fv.norm(np.asarray(across, dtype=np.float64)))
+        grid = np.array([[s * half, t * depth / 2] for s in (-0.9, 0.0, 0.9) for t in (-0.9, -0.45, 0.0, 0.45, 0.9)])
+        behind = centre + _OPEN_BEHIND * way / float(fv.norm(way)) + grid[:, :1] * u + grid[:, 1:] * n
+        if np.all(self.part.classify(behind) == Side.OUT):
+            return Plane(_t(centre), _t(way))
         return Plane(_t(centre), _t(-way), first=_t(across), half=(half, depth / 2))
 
     # --- tolerances ---------------------------------------------------
@@ -2097,7 +2113,11 @@ class _Compiler:
         along it, and the longest run of them that is kept: where the
         oracle has it on the part, or can't tell (where roundings meet, a
         post's joint at its corners); only air or material there says a
-        later step took it away.
+        later step took it away. A run the oracle can't tell anywhere along
+        has nothing to measure: the measurement takes only built points the
+        oracle has on its surface (a box's corners bevelled 2 mm, then its
+        top edges 1 mm: each short stretch round a corner lay all within the
+        zones round its ends, and its size, measured, found no bevel).
         """
         edge = stretch.edge
         if not isinstance(edge, rounds.StraightEdge):
@@ -2116,9 +2136,11 @@ class _Compiler:
         step = (stretch.b - stretch.a) / _ALONG_STRETCH
         at = stretch.a + step * (np.arange(_ALONG_STRETCH) + 0.5)
         points = o + middle[0] * u + middle[1] * v + at[:, None] * along
-        still = np.isin(self.part.classify(points), (Side.ON, Side.UNKNOWN))
+        sides = self.part.classify(points)
+        on = sides == Side.ON
+        still = on | (sides == Side.UNKNOWN)
         if still.all():
-            return stretch
+            return stretch if on.any() else None
         best, start = (0, 0), None
         for k, kept in enumerate([*still.tolist(), False]):
             if kept and start is None:
@@ -2127,7 +2149,7 @@ class _Compiler:
                 if k - start > best[1] - best[0]:
                     best = (start, k)
                 start = None
-        if best[1] == best[0]:
+        if not on[best[0] : best[1]].any():
             return None
         return replace(
             stretch, a=stretch.a + best[0] * step, b=stretch.a + best[1] * step
@@ -2223,6 +2245,9 @@ def _resolution(
             finer.append(Finer(item, box, size / 2))
     return radius, tuple(finer)
 
+
+#: How far behind a cut's wall the material is looked for, to tell a wall from a side the cut only opens (mm).
+_OPEN_BEHIND = 1e-3
 
 #: A step whose surface is held by more pieces than this asks for its finer coverage round its own box (:func:`_resolution`).
 _PIECES = 256

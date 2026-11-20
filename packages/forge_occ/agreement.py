@@ -768,9 +768,14 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
             return None
         return "its inside is off the exact part everywhere (a tool's face in the air, its rim an edge of the part)"
     there = exact.products.get(lost_at)
+    # Both parts are the exact kernel's, made by booleans with no fuzz: a face the step kept is on its part to
+    # OpenCascade's own tolerance. Within ``reach``, as a view is held, a standing item's foot carried a hair into a
+    # side (a slim boss round a cone, its base 0.04 mm under the side, the step trimming the tool to the side) would be
+    # taken for kept (generated part 1570).
+    kept = max(float(solid.envelope.diagonal) * 1e-6, 1e-6)
     if (
         not isinstance(there, SolidProduct)
-        or (distances_to(clear, there.shape) <= reach).any()
+        or (distances_to(clear, there.shape) <= kept).any()
     ):
         return None
     return (f"step {lost_at} lost it rightly: its inside is nowhere on that step's part (in the air or inside it, "

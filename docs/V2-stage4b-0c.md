@@ -2008,6 +2008,51 @@ none), a cut right through a closed end coming out on the hollow's section
 there, which takes nothing else; and a hollowed dome's floor no more than
 the dome near its rim. Tests: `tests/test_v2_spec_hollow_walls.py`.
 
+**Beyond the generator's reach (revision 19).** Copies round a round side
+may go in a row along its axis too (place.md, "On a round side": a drip
+line along a tube), drawn now and then by the generator. The exit pair on
+a5763b8 found generated part 4468 graded wrong: a pocket right through a
+post standing on a cone's base, the cone narrower at its top, was cut by the
+generator only as deep as the least material under the whole post, by
+Forge, rightly, on out of the cone's top; the generator now keeps cuts right
+through off what stands on a flared cone's end past its smaller end's radius
+(`generator._exit_over`). And every draft the spec tests accept (some two
+hundred, many of shapes the generator never draws) was built and judged as
+`forge build` does. What was accepted and then held is said at the spec, or
+judged, now:
+
+- A set screw's hole into a collar's wall as deep as the wall (two corpus
+  drafts): its flat floor touched the bore along its middle, the part's
+  surface pinched there. A blind cut exactly as deep as the least material
+  under its mouth, where the far side falls away under the rest of it (a
+  bore, a rod's far side, a ball's, a slanting hollow wall, a leaning cut's
+  low edge), is asked about, as one deeper is (`placement._check_depth`).
+  As deep as a flat far side it comes out across it, as a through cut does.
+- A rebate along a plate's edge, a groove right across a bar, a notch in a
+  corner: accepted (a straight side along the edge only opens the cut),
+  built, and held for want of a wall to measure the cut's size and place
+  from. Where a cut's side has no material behind it anywhere, the check
+  compiler measures from the face beside the cut in its plane, wherever it
+  is built (`compiler.cut_wall`).
+- A cut right across a bar's end and through it takes the end away, the bar
+  only shorter and its length nowhere on the part: asked about now
+  (`placement._check_severs`).
+- A round end meeting the face's edge just where a straight side along it
+  ends (a round-ended slot along the edge, a rebate's rounded corners)
+  leaves a knife edge: built, and held there. Asked about now
+  (`geometry.touches_edge`).
+- Edges rounded or bevelled round corners an earlier bevel cut, refused at
+  revision 18, are made and judged: the short stretches round each corner's
+  bevel lying wholly within the zones at their ends, where the judge's shape
+  isn't known exactly, are no longer measured for nothing
+  (`compiler._still_on`), and such a rounding is less than 1.707 times the
+  corners' bevel, leaving some of it to run along (OpenCascade made none
+  bigger: `checks._common.earlier_roundings`).
+
+Tests: `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
+`tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,
+`tests/test_v2_spec_placement.py`.
+
 ### 3.6 The proof, and what each step costs
 
 | Step | Proof | Runner time |

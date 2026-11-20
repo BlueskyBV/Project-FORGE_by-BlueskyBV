@@ -11,6 +11,7 @@ from forge_eval.generator import (
     REACH,
     Array,
     Feature,
+    _exit_over,
     _first_extrusion,
     _Flat,
     _flat_axes,
@@ -86,7 +87,7 @@ class Extrusion(DrawKind):
         middle = _point(face, ((l1 + h1) / 2, (l2 + h2) / 2)) + length * n
         far = (f.id, index, "+end")
         part.flats[far] = _Flat(far, middle, n.copy(), _flat_axes(up), "profile", ((h1 - l1) / 2, (h2 - l2) / 2),
-                                length + under, face.exit, outline=moved, widest=_widest(moved))  # fmt: skip
+                                length + under, _exit_over(face, under), outline=moved, widest=_widest(moved))  # fmt: skip
         return
 
     def faces_of(self, f: Feature) -> tuple[str, ...]:

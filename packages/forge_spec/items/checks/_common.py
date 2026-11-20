@@ -327,11 +327,17 @@ def reached_into(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size:
     the part is not what the definitions say. Asked, with the values that put
     it there: further in, or a smaller rounding. A block's faces, a
     cylinder's and a cone's: their ends and their sides.
+
+    Just touching a round's band is within it: the round would end right on
+    the hole's mouth or on what stands there, which OpenCascade doesn't make
+    (a hole's rim on the line where a rod's rounded rim starts: not built). A
+    bevel ending there is made.
     """
     from forge_spec.items.solve import SOLVE
     from forge_spec.placement import _covered, _footing, _place_values, turned_outline
 
     copies = layout.instances.get(target.id) or []
+    size += 0.0 if bevel else 2 * EPS  # a round's band, touched, is reached into
     for copy in copies:
         k = max(range(3), key=lambda i: abs(copy.normal[i]))
         rising = copy.normal[k] > 0  # its -end at the smaller coordinate along its axis
@@ -406,8 +412,10 @@ def earlier_roundings(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, 
     spec's order). Edges another rounds already aren't there to round again: the writer's to fix (all of a box's
     edges rounded 2 mm, then its top edges 1 mm, wasn't built). Edges running round corners an earlier rounding has
     rounded follow them, so the round is no bigger than theirs (it would reach past its own middle: the judge can't
-    make it); round corners another has bevelled, Forge doesn't round or bevel yet (built, the part failed its
-    checks). Whether it said so."""
+    make it). Round corners another has bevelled ``s``, they run along each corner's bevel, ``s`` root 2 wide, cut
+    back at each end by their own size times tan 22.5 degrees where they meet the edges beside it: less than
+    ``s (1 + 1/root 2)``, they leave some of it (OpenCascade makes none that takes it all: a box's corners bevelled
+    1 mm, then its top edges 2 mm, wasn't built). Whether it said so."""
     mine = _SETS.get(edges.which, frozenset({edges.which}))
     bevel = size_name == "size"
     for other in spec.items[: spec.items.index(item)]:
@@ -424,9 +432,13 @@ def earlier_roundings(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, 
             continue
         their_size = other.get("size")
         if isinstance(their_size, Value):
-            c.add("unable", at + pointer("edges", "which"),
-                  f"Forge doesn't yet round or bevel edges running round corners another bevels: {item.id}'s "
-                  f"{edges.which} edges of {target.id}, round the corners {other.id} bevels")  # fmt: skip
+            most = mm(their_size) * (1 + math.sqrt(0.5))
+            if size < most - 1e-9:
+                continue
+            c.problem("cant", at + pointer(size_name),
+                      f"a {size:g} mm {item.kind} of {target.id}'s {edges.which} edges runs round its corners, which "
+                      f"{other.id} bevels {mm(their_size):g} mm: it would take each corner's bevel away along them, "
+                      f"so it must be less than {most:.4g} mm", item.get(size_name), their_size)  # fmt: skip
             return True
         radius = other.get("radius")
         if isinstance(radius, Value) and size > mm(radius) + 1e-9:

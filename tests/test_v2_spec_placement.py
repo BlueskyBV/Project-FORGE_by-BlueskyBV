@@ -360,14 +360,20 @@ class FeaturesFitExactly(unittest.TestCase):
                                        "nothing there")])  # fmt: skip
         clear = hole("plate", "+z", 10, place={"x": {"offset": a(29.9)}})
         self.assertEqual(issues(layout_of(PLATE, clear)), [])
-        # A rebate along the edge, and a round-ended slot along it: their round ends meet the edge where a
-        # straight side does too.
+        # A rebate along the edge, and a square-ended slot along it: a straight side along it only opens them.
         rebate = item("p", "pocket", on=on("plate", "+z"), shape=pick("rectangle"), length=a(10), width=a(20),
-                      corner_radius=a(3), depth=a(2), place={"x": {"offset": a(30)}})  # fmt: skip
+                      depth=a(2), place={"x": {"offset": a(30)}})  # fmt: skip
         slot = item("s", "slot", on=on("plate", "+z"), width=a(6), length=a(30), along=pick("x"),
-                    ends=pick("round"), depth=a(2), place={"y": {"offset": a(22)}})  # fmt: skip
+                    ends=pick("square"), depth=a(2), place={"y": {"offset": a(22)}})  # fmt: skip
         self.assertEqual(issues(layout_of(PLATE, rebate)), [])
         self.assertEqual(issues(layout_of(PLATE, slot)), [])
+        # Its corners rounded, or its ends round, they meet the edge just where its side does: a knife edge there,
+        # the wall growing from nothing (built, and held).
+        rounded = item("p", "pocket", on=on("plate", "+z"), shape=pick("rectangle"), length=a(10), width=a(20),
+                       corner_radius=a(3), depth=a(2), place={"x": {"offset": a(30)}})  # fmt: skip
+        self.assertIn("touches the edge", issues(layout_of(PLATE, rounded))[0][1])
+        slot["ends"] = pick("round")
+        self.assertIn("touches the edge", issues(layout_of(PLATE, slot))[0][1])
         # Its round end against the edge, it touches.
         slot["place"] = {"x": {"offset": a(20)}}
         self.assertIn("touches the edge", issues(layout_of(PLATE, slot))[0][1])
@@ -522,7 +528,7 @@ class OnARoundSide(unittest.TestCase):
 
     def test_a_radial_hole(self) -> None:
         place = {"z": centred(), "angle": a(90, "deg")}
-        layout = layout_of(self.collar, hole("c", "side", 5, depth=a(7), place=place))
+        layout = layout_of(self.collar, hole("c", "side", 5, depth=a(6), place=place))
         self.assertEqual(issues(layout), [])
         h = layout.instances["h"][0]
         self.assertAlmostEqual(h.origin[0], 0.0)
@@ -531,7 +537,7 @@ class OnARoundSide(unittest.TestCase):
     def test_past_the_end_counts_the_hole_s_size(self) -> None:
         near_end = {"z": at("+z", 1), "angle": a(0, "deg")}
         layout = layout_of(
-            self.collar, hole("c", "side", 5, depth=a(7), place=near_end)
+            self.collar, hole("c", "side", 5, depth=a(6), place=near_end)
         )
         self.assertIn(("question", "h runs past the end of c"), issues(layout))
 
@@ -546,6 +552,9 @@ class OnARoundSide(unittest.TestCase):
         radial = {"z": centred(), "angle": a(0, "deg")}
         layout = layout_of(self.collar, hole("c", "side", 5, depth=a(9), place=radial))
         self.assertIn("9 mm deep in 7 mm of material", issues(layout)[0][1])
+        # As deep as the wall, its floor would only touch the bore along its middle: asked too.
+        layout = layout_of(self.collar, hole("c", "side", 5, depth=a(7), place=radial))
+        self.assertIn("7 mm deep in 7 mm of material, its floor just touching the far side", issues(layout)[0][1])
         # Across a solid rod, a hole meets the far side first at its edge:
         # 15 + sqrt(15^2 - 2.5^2) mm from where it goes in.
         layout = layout_of(self.rod, hole("c", "side", 5, depth=a(40), place=radial))
@@ -563,7 +572,7 @@ class OnARoundSide(unittest.TestCase):
         self.assertEqual(kinds(layout_of(self.collar, pocket)), ["unable"])
 
     def test_a_circle_round_the_side_takes_only_a_count(self) -> None:
-        holes = hole("c", "side", 4, depth=a(7), count=n(2),
+        holes = hole("c", "side", 4, depth=a(6), count=n(2),
                      place={"z": centred(), "angle": a(90, "deg"),
                             "pattern": {"circle": {"count": n(2), "start": a(90, "deg")}}})  # fmt: skip
         self.assertEqual(kinds(layout_of(self.collar, holes)), ["fault"])

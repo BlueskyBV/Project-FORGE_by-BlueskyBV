@@ -35,8 +35,11 @@ position or by number.
   corner away and the edge runs on smoothly into that rounding's own edge,
   there is no corner left to round there. Round a corner it follows, a
   rounding is no bigger than the corner's (it would reach past its own
-  middle); round corners an earlier bevel has cut, Forge doesn't round or
-  bevel yet. An edge already rounded or bevelled isn't rounded again.
+  middle). Round corners an earlier bevel has cut (`s` each way), it runs
+  along each corner's bevel, cut back at each end where it meets the edges
+  beside it: it is less than `s (1 + 1/√2)`, about 1.7 times the bevel, so
+  that some of the corner's bevel is left to run along. An edge already
+  rounded or bevelled isn't rounded again.
 - On a body a shell opens, an edge that borders an open face is the rim's:
   rounding it rounds the outside edge and the inside edge of the walls' ends
   alike, so each rounding is at most half the wall's thickness. At exactly

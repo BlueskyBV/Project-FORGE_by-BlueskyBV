@@ -101,8 +101,10 @@ class WhatALaterRoundingRunsInto(unittest.TestCase):
         self.assertEqual(runs_into(plate(5, "top", 1.5, bevel=True, counterbore=True)), ["question"])
 
     def test_a_rods_end_and_side_near_its_rounded_rim(self) -> None:
-        self.assertEqual(rod("+end", 15), [])
+        self.assertEqual(rod("+end", 14), [])
         self.assertEqual(runs_into(rod("+end", 17)), ["question"])  # its edge 19 mm out, the rim's round from 17
+        # Its edge 17 mm out, just touching the round's band: the round would end on its rim (not built).
+        self.assertEqual(runs_into(rod("+end", 15)), ["question"])
         self.assertEqual(rod("side", 8), [])
         self.assertEqual(runs_into(rod("side", 4)), ["question"])  # its edge 2 mm from the top, the round 3 mm
 
@@ -235,8 +237,9 @@ def block(vertical: tuple[str, float], then: tuple[str, str, float]) -> list[tup
 
 class RoundCornersRoundedBefore(unittest.TestCase):
     """Edges running round corners an earlier rounding has rounded follow them: no bigger than they are (the judge
-    couldn't make a bigger one); round bevelled corners, not made yet (built, the part failed its checks); and an edge
-    another has rounded already isn't rounded again (all of a box's edges, then its top's, wasn't built)."""
+    couldn't make a bigger one); round bevelled corners, less than about 1.7 times the bevel, leaving some of it to run
+    along (OpenCascade made none that took it all); and an edge another has rounded already isn't rounded again (all
+    of a box's edges, then its top's, wasn't built)."""
 
     def test_no_bigger_than_the_corners(self) -> None:
         self.assertEqual(block(("rounded", 3), ("top", "rounded", 3)), [])
@@ -246,8 +249,10 @@ class RoundCornersRoundedBefore(unittest.TestCase):
     def test_round_bevelled_corners(self) -> None:
         for how in ("rounded", "bevelled"):
             with self.subTest(how):
-                found = block(("bevelled", 2), ("top", how, 1))
-                self.assertEqual([k for k, m in found if "corners another bevels" in m], ["unable"], found)
+                self.assertEqual(block(("bevelled", 2), ("top", how, 1)), [])
+                self.assertEqual(block(("bevelled", 2), ("top", how, 3)), [])
+                found = block(("bevelled", 1), ("top", how, 2))  # 2 mm is past 1.707 mm: the corners' bevel is gone
+                self.assertEqual([k for k, m in found if "must be less than 1.707 mm" in m], ["cant"], found)
 
     def test_an_edge_rounded_twice(self) -> None:
         found = block(("rounded", 2), ("vertical", "rounded", 1))

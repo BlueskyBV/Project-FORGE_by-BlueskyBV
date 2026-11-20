@@ -893,15 +893,18 @@ def touches_edge(face: FlatFace, parts: Sequence[Part], p1: float, p2: float) ->
     the outline meets the edge where it lies on the face but, grown by a
     hair, would not; a straight side lying along the edge only opens the cut
     there (a rebate), and so does a round end where another part of the same
-    outline meets the edge too (a round-ended slot along the edge). A cut
-    round the face's centre that covers it, or a ring's bore, all round
+    outline is cut on past the place it meets the edge. Where it only meets
+    the end of another's straight side there, it leaves a knife edge, the
+    wall between it and the face's side growing from nothing (a round-ended
+    slot along the edge, its side along it: built, and held there); asked. A
+    cut round the face's centre that covers it, or a ring's bore, all round
     touches nothing at a point.
 
     >>> face = FlatFace("+z", (0.0, 0.0, 6.0), "+z", ("x", "y"), "rect", (30.0, 10.0))
     >>> touches_edge(face, (disc(2.5),), 0, 7.5), touches_edge(face, (disc(2.5),), 0, 7)
     (True, False)
     >>> touches_edge(face, slot_outline(12, 4, along_first=True), 0, 8)
-    False
+    True
     """
     if face.shape == "profile" and len(parts) > 1:
         return False  # where on an outline each part's touch lies isn't worked out: one disc alone is asked
@@ -923,7 +926,9 @@ def touches_edge(face: FlatFace, parts: Sequence[Part], p1: float, p2: float) ->
         elif part_on_face(face, grown, p1, p2):
             continue
         at = _touching(face, part, c1, c2)
-        others = [other for j, other in enumerate(parts) if j != k]
+        # Within another part, not on its edge: cut on past where this one meets the face's edge.
+        others = [Part(other.centre, (other.half[0] - 3 * EPS, other.half[1] - 3 * EPS), other.disc)
+                  for j, other in enumerate(parts) if j != k]  # fmt: skip
         if at is not None and _point_in_parts(others, (p1, p2), *at):
             continue
         return True

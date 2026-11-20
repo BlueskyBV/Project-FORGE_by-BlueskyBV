@@ -3,8 +3,10 @@
 Briefs written for these tests, never from a blind set.
 
 - A cut right across a body's face, and through it, cuts the part in two:
-  CAN'T. At an end, the same cut only shortens the part; and where something
-  else stands on the body, the layout can't tell, so it says nothing.
+  CAN'T. At an end, the same cut takes the body's end away, leaving it only
+  shorter, its length nowhere on the part (accepted once, then held): asked
+  about. Where something else stands on the body, the layout can't tell
+  whether the two pieces are held together, so it says nothing of that.
 """
 
 from __future__ import annotations
@@ -60,10 +62,15 @@ class ACutRightAcrossAndThrough(unittest.TestCase):
         report = check_draft(b, d)
         self.assertEqual([p.kind for p in report.problems], ["cant"], report.problems)
 
-    def test_at_an_end_it_only_shortens_the_part(self) -> None:
+    def test_at_an_end_it_takes_the_end_away(self) -> None:
         end = {"x": {"side": "-x", "distance": assumed("at the end", 0), "to": "edge"},
                "y": {"centred": assumed("for the test")}}  # fmt: skip
-        self.assertEqual([k for k, m in kinds(bar(end)) if "in two" in m], [])
+        found = kinds(bar(end))
+        self.assertEqual([k for k, m in found if "in two" in m], [])
+        # Where it is rests on an assumed value: the writer's to settle.
+        self.assertEqual([k for k, m in found if "take that end of bar away" in m], ["fault"], found)
+        groove = bar(end, depth={"value": 2, "unit": "mm", "from": {"assumed": "a step"}})
+        self.assertEqual(kinds(groove), [])  # not through: a step at its end, its end face left below it
 
     def test_not_through_it_leaves_the_part_whole(self) -> None:
         middle = {"x": {"centred": assumed("t")}, "y": {"centred": assumed("t")}}

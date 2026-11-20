@@ -493,8 +493,11 @@ it:
   hole against a plate's side, or a disc's rim, or a ring's bore. The
   material between them is pinched to nothing there, an edge on which the
   part meets itself, which no kernel builds soundly. A straight side lying
-  along the edge only opens the cut there (a rebate, a slot along the edge,
-  its round ends meeting the edge where its side does), and is no pinch;
+  along the edge only opens the cut there (a rebate, a groove right across,
+  a square-ended slot along the edge), and is no pinch; a round end meeting
+  the edge just where such a side ends (a round-ended slot along the edge,
+  a rounded corner of a pocket there) leaves a knife edge, the wall growing
+  from nothing, and is asked about too;
 - a cut right through its body that comes out under something standing on
   the face across from it: through is through the body it is cut into, so
   what stands over its far mouth closes it (a hole drilled up through a

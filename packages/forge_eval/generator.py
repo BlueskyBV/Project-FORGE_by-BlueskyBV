@@ -1408,6 +1408,17 @@ def _on_exit(face: _Flat, out: _Flat, foot: _Foot) -> _Foot:
     return _Foot(at, (abs(a1) * h1 + abs(b1) * h2, abs(a2) * h1 + abs(b2) * h2), 0.0)
 
 
+def _exit_over(face: _Flat, under: float) -> tuple[str, int, str] | None:
+    """The face a cut right through what stands on ``face`` comes out on: ``face``'s own, where the material under
+    what stands there is the face's all over it. On a flared cone's end, past its smaller end's radius, it isn't:
+    a line down there comes out of the cone's flank, one further in out of its far end, and right through what
+    stands there has no one depth (generated part 4468: a pocket right through a post on a cone's base, cut by the
+    generator only as deep as the least under the whole post, by Forge out of the cone's top)."""
+    if face.flare[1] > 0 and under < face.material - 1e-9:
+        return None
+    return face.exit
+
+
 def _register_box(part: _Part, item: str, index: int, base: Array, up: str, axes: tuple[str, str],
                   sizes: tuple[float, float, float], under: float, exit_key: tuple[str, int, str] | None) -> None:  # fmt: skip
     """A box's faces (a block's or a post's): its far face over its host's material, its sides across it."""
@@ -2875,7 +2886,8 @@ def _standing_cone(
     if rt > 0:
         far = (f.id, index, "+end")
         part.flats[far] = _Flat(far, base + length * n, n.copy(), _flat_axes(_named(n)), "disc", (rt, rt),
-                                length + under, face.exit, flare=(rb, length) if rt > rb else (0.0, 0.0))  # fmt: skip
+                                length + under, _exit_over(face, under),
+                                flare=(rb, length) if rt > rb else (0.0, 0.0))  # fmt: skip
     way = _named(n)
     if not face.turned and abs(float(n["xyz".index(way[1])])) == 1.0:  # its side takes things (item 3b's third step)
         key = (f.id, index, "side")

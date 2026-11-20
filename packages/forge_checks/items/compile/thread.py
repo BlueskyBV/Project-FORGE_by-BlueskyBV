@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from forge_spec.draft import Item, Text
+from forge_spec.draft import EdgeSet, Item, Text
 from forge_spec.values import Value
 
 from forge_checks.classes import general
@@ -63,6 +64,12 @@ class Thread(CompileKind):
                 if isinstance(length_value, Value)
                 else general(length)
             )
+            foot = _rounded_foot(c, item, body) if length >= whole - 1e-9 else 0.0
+            if foot > 0:
+                # All along a rod whose foot an earlier rounding or bevel rounds, the thread runs on into it and
+                # stops where its teeth meet it: up to the rounding's size, and a pitch more for where on its
+                # turn a tooth is, short of the rod's end (a stud bevelled at both ends, threaded all along).
+                tolerance = replace(tolerance, minus=tolerance.minus + foot + pitch)
             c.check(
                 item,
                 "length",
@@ -75,6 +82,19 @@ class Thread(CompileKind):
             )
 
     implicit = False
+
+
+def _rounded_foot(c: CompileContext, item: Item, body: Item) -> float:
+    """How big a rounding or a bevel, before the thread in the spec, of the threaded rod's foot (its ``bottom`` edge,
+    or ``both``) is: 0 where there is none."""
+    found = 0.0
+    for other in c.spec.items[: c.spec.items.index(item)]:
+        edges = other.get("edges")
+        if isinstance(edges, EdgeSet) and edges.of == body.id and edges.which in ("bottom", "both"):
+            size = other.get("size") if other.get("size") is not None else other.get("radius")
+            if isinstance(size, Value):
+                found = max(found, _mm(size))
+    return found
 
 
 ENTRY = Thread()

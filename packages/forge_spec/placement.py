@@ -89,6 +89,7 @@ from .geometry import (
     shape_holds,
     shapes_overlap,
     side_material,
+    side_most_material,
 )
 from .items.solve import SOLVE
 from .items.solve._common import (
@@ -1131,21 +1132,26 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
     """A cut right across a body's face, and through it, cuts the part in two: CAN'T.
 
     Right across means from one edge of the face to the other, with material
-    left on both sides of it; at an end, the same cut only shortens the part.
-    Settled only where nothing else could hold the two pieces together: the
-    host is a solid body on its own, standing on nothing, with nothing on it.
-    A shelled body is left out: through its wall, a cut only opens it.
+    left on both sides of it. Settled only where nothing else could hold the
+    two pieces together: the host is a solid body on its own, standing on
+    nothing, with nothing on it. A shelled body is left out: through its
+    wall, a cut only opens it.
+
+    At an end, the same cut takes the body's end away: the body is only
+    shorter, its end face gone, and the length it was given is nowhere on the
+    part (a bar's notch right across its end and through it was accepted,
+    built, and held: neither the bar's length nor the notch's was there to
+    measure). Asked about: a shorter body, or some of its end left?
     """
     owner = layout.items.get(host[0])
     if face.shape != "rect" or owner is None or not SOLVE[owner.kind].body:
         return
-    if owner.get("on") is not None or any(
-        (isinstance(on := other.get("on"), On) and on.item == owner.id
-         and SOLVE[other.kind].solid)
-        or (SOLVE[other.kind].hollows and other.get("of") == owner.id)
-        for other in layout.items.values()
-    ):  # fmt: skip
+    if any(SOLVE[other.kind].hollows and other.get("of") == owner.id for other in layout.items.values()):
         return
+    alone = owner.get("on") is None and not any(
+        isinstance(on := other.get("on"), On) and on.item == owner.id and SOLVE[other.kind].solid
+        for other in layout.items.values()
+    )  # fmt: skip
     end = end_of(item)
     far = reach(parts)
     for n, (p1, p2) in enumerate(positions):
@@ -1166,17 +1172,25 @@ def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts:
                           and centre[k] + part.half[k] >= face.half[k] - EPS)  # fmt: skip
                 between = (centre[j] - part.half[j] > -face.half[j] + EPS
                            and centre[j] + part.half[j] < face.half[j] - EPS)  # fmt: skip
-                if across and between:
-                    # Where it is across the cut decides it, centred included: in
-                    # the middle is the worst place there is, not the best.
-                    place = _place_of(item)
-                    where = place.axes.get(face.axes[j]) if place is not None else None
-                    values = [where, *_item_values(item, *_outline_fields(item, face.axes, k)), *_place_values(item, face.axes[j]),
-                              *layout.values_of(face.axis_sources[k]), item.get("depth")]  # fmt: skip
+                if not across or (between and not alone):
+                    continue
+                # Where it is across the cut decides it, centred included: in
+                # the middle is the worst place there is, not the best.
+                place = _place_of(item)
+                where = place.axes.get(face.axes[j]) if place is not None else None
+                values = [where, *_item_values(item, *_outline_fields(item, face.axes, k)), *_place_values(item, face.axes[j]),
+                          *layout.values_of(face.axis_sources[k]), item.get("depth")]  # fmt: skip
+                if between:
                     layout.problem("cant", at,
                                    f"{item.id} copy {first + n + 1} goes right across face {face.name} and through "
                                    "it: it would cut the part in two", values)  # fmt: skip
-                    return
+                else:
+                    layout.problem("question", at,
+                                   f"{item.id} copy {first + n + 1} goes right across face {face.name} at its end, "
+                                   f"and through it: it would take that end of {owner.id} away, leaving {owner.id} "
+                                   f"only shorter. Should {owner.id} be shorter instead, or some of its end be left?",
+                                   values)  # fmt: skip
+                return
 
 
 def _concentric_positions(item: Item, place: Place, face: FlatFace, host: tuple[str, int, str],
@@ -1290,7 +1304,7 @@ def _flat_instances(item: Item, face: FlatFace, host: tuple[str, int, str], host
     if entry.cut and out:
         _check_depth(item, parts,
                      lambda mouth: min(face.material_under(mouth, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources, resolved)  # fmt: skip
+                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions))  # fmt: skip
     return out
 
 
@@ -1454,7 +1468,7 @@ def _turned_copies(item: Item, place: Place | None, face: FlatFace, host: tuple[
         )
     if entry.cut and out:
         _check_depth(item, (), lambda _mouth: min(face.material_under(covered, (p1, p2)) for p1, p2 in positions),
-                     layout, at, face.depth_sources, resolved)  # fmt: skip
+                     layout, at, face.depth_sources, resolved, _most_of_flat(face, positions, covered))  # fmt: skip
     return out
 
 
@@ -1474,8 +1488,10 @@ def _leaning_copies(item: Item, lean: Lean, face: FlatFace, host: tuple[str, int
     if entry.cut:
         hole = layout.diameters.get(item.id, 0.0) / 2
         material = along(hole)
+        # Its floor, square to its axis, comes down to the far side first at its lowest edge.
         _check_depth(item, (), lambda mouth: along(max(p.half[0] for p in mouth) if mouth else hole),
-                     layout, at, face.depth_sources)  # fmt: skip
+                     layout, at, face.depth_sources,
+                     most_of=lambda mouth: along(-max(p.half[0] for p in mouth) if mouth else -hole))  # fmt: skip
     else:
         sizes = entry.turnable(item, layout, face.axes)
         if sizes is not None:
@@ -1702,8 +1718,29 @@ def cut_depth(item: Item, copy: Instance, layout: Layout) -> float | None:
     return None
 
 
+def _most_of_flat(face: FlatFace, positions: Sequence[tuple[float, float]],
+                  footprint: Footprint | None = None) -> Callable[[tuple[Part, ...]], float] | None:
+    """The most material under a mouth on a flat face, where the face's far side curves or slopes away under it (its
+    depth model: a hollow ball's floor, a hollow cone's walls, a turned or leaning item's): there a blind cut as deep
+    as the least only touches it. None where it is flat: as deep as the material, the cut comes out across a face, or
+    onto one beside it (a boss's top over its host's edge), the same as a through cut."""
+    if face.depth_model is None:
+        return None
+    return lambda mouth: min(face.most_material_under(footprint if footprint is not None else mouth, (p1, p2))
+                             for p1, p2 in positions)  # fmt: skip
+
+
+def _most_round_a_side(face: SideFace, mouth: tuple[Part, ...], angle: float) -> float:
+    """The most material a radial cut of that mouth meets round a side: into a round-ended tab's end, the farther of
+    its two sides' (:meth:`SideFace._half_exits`); else until it is out all across its mouth."""
+    if face.half is not None:
+        return max(face._half_exits(reach(mouth), angle))
+    return face.most_material_under(mouth, (angle, 0.0))
+
+
 def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[tuple[Part, ...]], float],
-                 layout: Layout, at: str, sources: Iterable[Source], up_to: float | None = None) -> None:  # fmt: skip
+                 layout: Layout, at: str, sources: Iterable[Source], up_to: float | None = None,
+                 most_of: Callable[[tuple[Part, ...]], float] | None = None) -> None:  # fmt: skip
     """A blind cut, a counterbore, a countersink or engraving no deeper than the material.
 
     Each is measured against the least material under its own mouth
@@ -1712,6 +1749,13 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
     under its ``outline``. A cut exactly as deep as the material breaks
     through it, the same as a through cut; a counterbore that deep leaves no
     hole below it.
+
+    Where the far side curves or slopes away under the mouth (``most_of``,
+    the most material under it, is more), a blind cut exactly as deep as the
+    least only touches it there, along a line or at a point: asked about too.
+    A set screw's hole into a collar's wall, as deep as the wall, met the
+    bore along its middle and was built with its faces touching there (held:
+    its surface wasn't closed).
     """
     deep: list[tuple[str, float, tuple[Part, ...], list[object], bool]] = []
     end = end_of(item)
@@ -1751,9 +1795,13 @@ def _check_depth(item: Item, outline: tuple[Part, ...], material_of: Callable[[t
         )
     for name, how_deep, mouth, values, inclusive in deep:
         material = material_of(mouth)
-        if how_deep > material + 1e-9 or (inclusive and how_deep >= material - 1e-9):
+        touching = (not inclusive and most_of is not None and abs(how_deep - material) <= 1e-9
+                    and most_of(mouth) > material + EPS)  # fmt: skip
+        if how_deep > material + 1e-9 or (inclusive and how_deep >= material - 1e-9) or touching:
             layout.problem("question", at + pointer(name),
-                           f"{item.id}'s {name} is {how_deep:g} mm deep in {material:g} mm of material: "
+                           f"{item.id}'s {name} is {how_deep:g} mm deep in {material:g} mm of material"
+                           + (", its floor just touching the far side, which falls away under the rest of it"
+                              if touching else "") + ": "
                            + ("should it go through, or be shallower?" if name == "depth"
                               else "it leaves no hole below it"),
                            [*values, *layout.values_of(sources)])  # fmt: skip
@@ -1975,11 +2023,13 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
         # keyway's, how far it reaches round the side: along the axis the side is the same all the way.
         if keyway:
             _check_depth(item, _outline(item, layout, (reference[0], axis)),
-                         lambda mouth: side_material(face, bbox(mouth)[0]), layout, at, face.depth_sources)  # fmt: skip
+                         lambda mouth: side_material(face, bbox(mouth)[0]), layout, at, face.depth_sources,
+                         most_of=lambda mouth: side_most_material(face, bbox(mouth)[0]))  # fmt: skip
         else:
             _check_depth(item, _outline(item, layout, ("x", "y")),
                          lambda mouth: min(face.material_under(mouth, (angle, 0.0)) for angle in angles), layout, at,
-                         face.depth_sources)  # fmt: skip
+                         face.depth_sources,
+                         most_of=lambda mouth: min(_most_round_a_side(face, mouth, angle) for angle in angles))  # fmt: skip
         bore = face.radius - face.wall
         hole = layout.diameters.get(item.id, 0.0) / 2
         if face.outward and _is_through(item) and not isinstance(end_of(item), ThroughNext) and 0 < bore <= hole + EPS:
@@ -2177,7 +2227,8 @@ def _ball_instances(item: Item, face: BallFace, host: tuple[str, int, str], layo
         return []
     if entry.cut:
         _check_depth(item, outline, lambda mouth: face.material_under(mouth, (angles[0], latitude)), layout, at,
-                     face.depth_sources)  # fmt: skip
+                     face.depth_sources,
+                     most_of=lambda mouth: face.most_material_under(mouth, (angles[0], latitude)))  # fmt: skip
     if len(angles) > 1:
         _check_ball_overlaps(item, face, angles, latitude, far, layout, at, first)
     frame = face.frame
@@ -2308,7 +2359,8 @@ def _cone_instances(item: Item, face: ConeFace, host: tuple[str, int, str], layo
         return []
     if entry.cut:
         _check_depth(item, _outline(item, layout, ("x", "y")),
-                     lambda mouth: face.material_under(mouth, (0.0, along)), layout, at, face.depth_sources)  # fmt: skip
+                     lambda mouth: face.material_under(mouth, (0.0, along)), layout, at, face.depth_sources,
+                     most_of=lambda mouth: face.most_material_under(mouth, (0.0, along)))  # fmt: skip
     if len(angles) > 1:
         _check_cone_overlaps(item, face, angles, along, across_size, layout, at, first)
     material = face.material_under((disc(across_size),), (0.0, along))
