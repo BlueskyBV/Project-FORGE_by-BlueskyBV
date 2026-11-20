@@ -172,5 +172,87 @@ class RoundWhatStandsThere(unittest.TestCase):
         self.assertEqual(runs_into(boss(8)), ["question"])  # 1 mm clear: the fillet's 2 mm would fill over it
 
 
+STUD = "A stud: a rod 8 mm across and 30 mm long, with an M8 thread {} and a 1 mm chamfer on its {}."
+
+
+def stud(threaded: str, ends: str, chamfer_first: bool) -> list[tuple[str, str]]:
+    brief = STUD.format(threaded, ends)
+    b = number_words(brief)
+    which = {"both ends": "both", "top": "top", "bottom": "bottom"}[ends]
+    thread: dict[str, Any] = {"id": "thread", "kind": "thread", "words": cite(b, "M8 thread"), "of": "rod",
+                              "designation": {"text": "M8", "from": {"words": cite(b, "M8")}},
+                              "hand": {"choose": "right", "from": {"assumed": "a standard thread"}}}  # fmt: skip
+    if threaded != "all along it":
+        thread["length"] = mm(b, 20, "20 mm")
+    chamfer = {"id": "chamfer", "kind": "chamfer", "words": cite(b, "1 mm chamfer"),
+               "edges": {"of": "rod", "which": which, "words": cite(b, f"its {ends}")}, "size": mm(b, 1, "1 mm")}  # fmt: skip
+    rod = {"id": "rod", "kind": "cylinder", "words": cite(b, "rod"), "axis": {"choose": "z", "from": assumed("up")},
+           "diameter": mm(b, 8, "8 mm across"), "length": mm(b, 30, "30 mm long")}  # fmt: skip
+    return asked(brief, [rod, chamfer, thread] if chamfer_first else [rod, thread, chamfer])
+
+
+class AThreadedEnd(unittest.TestCase):
+    """A thread is cut into a bevelled end: the chamfer comes before the thread in the spec (made in its order), or
+    the writer is told to put it there (made after, it would bevel the thread's own end, which isn't built)."""
+
+    def test_the_chamfer_before_the_thread(self) -> None:
+        self.assertEqual(stud("all along it", "both ends", chamfer_first=True), [])
+        self.assertEqual(stud("20 mm from its top", "top", chamfer_first=True), [])
+
+    def test_after_it_where_the_thread_reaches(self) -> None:
+        for threaded, ends in (("all along it", "both ends"), ("20 mm from its top", "top"),
+                               ("all along it", "bottom")):  # fmt: skip
+            with self.subTest(threaded=threaded, ends=ends):
+                found = stud(threaded, ends, chamfer_first=False)
+                self.assertEqual([k for k, m in found if "comes after the thread" in m], ["fault"], found)
+
+    def test_after_it_where_it_doesnt(self) -> None:
+        self.assertEqual(stud("20 mm from its top", "bottom", chamfer_first=False), [])
+
+
+BLOCK = "A block 60 x 40 x 20 mm, its vertical edges {} {} mm, and then its {} edges {} {} mm."
+
+
+def block(vertical: tuple[str, float], then: tuple[str, str, float]) -> list[tuple[str, str]]:
+    (first_how, first_size), (which, how, size) = vertical, then
+    brief = BLOCK.format(first_how, f"{first_size:g}", which, how, f"{size:g}")
+    b = number_words(brief)
+
+    def edge(n: int, id_: str, set_: str, how_: str, value: float) -> dict[str, Any]:
+        bevel = how_ == "bevelled"
+        return {"id": id_, "kind": "chamfer" if bevel else "fillet", "words": cite(b, f"its {set_} edges"),
+                "edges": {"of": "block", "which": set_, "words": cite(b, f"its {set_} edges")},
+                "size" if bevel else "radius": mm(b, value, f"{value:g} mm", n)}  # fmt: skip
+
+    second = 2 if f"{size:g} mm" == f"{first_size:g} mm" else 1
+    return asked(brief, [
+        {"id": "block", "kind": "block", "words": cite(b, "block"), "length": mm(b, 60, "60"),
+         "width": mm(b, 40, "40"), "height": mm(b, 20, "20 mm")},
+        edge(1, "corners", "vertical", first_how, first_size),
+        edge(second, "rim", which, how, size),
+    ])  # fmt: skip
+
+
+class RoundCornersRoundedBefore(unittest.TestCase):
+    """Edges running round corners an earlier rounding has rounded follow them: no bigger than they are (the judge
+    couldn't make a bigger one); round bevelled corners, not made yet (built, the part failed its checks); and an edge
+    another has rounded already isn't rounded again (all of a box's edges, then its top's, wasn't built)."""
+
+    def test_no_bigger_than_the_corners(self) -> None:
+        self.assertEqual(block(("rounded", 3), ("top", "rounded", 3)), [])
+        found = block(("rounded", 2), ("top", "rounded", 3))
+        self.assertEqual([k for k, m in found if "no bigger than they are" in m], ["cant"], found)
+
+    def test_round_bevelled_corners(self) -> None:
+        for how in ("rounded", "bevelled"):
+            with self.subTest(how):
+                found = block(("bevelled", 2), ("top", how, 1))
+                self.assertEqual([k for k, m in found if "corners another bevels" in m], ["unable"], found)
+
+    def test_an_edge_rounded_twice(self) -> None:
+        found = block(("rounded", 2), ("vertical", "rounded", 1))
+        self.assertEqual([k for k, m in found if "rounded or bevelled once" in m], ["fault"], found)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -238,7 +238,10 @@ def check_rounding(
                  f"a {size:g} mm {item.kind} doesn't fit on {target.id}'s {edges.which} edges "
                  f"(at most {limit:g} mm)", size_value, *dims)  # fmt: skip
         return
+    if earlier_roundings(spec, item, target, edges, size, size_name, at, c):
+        return
     reached_into(spec, item, target, edges, size, size_name == "size", layout, at, c)
+    after_thread(spec, item, target, edges, layout, at, c)
     shell = layout.shells.get(target.id)
     if shell is not None:
         thickness = shell.get("thickness")
@@ -391,6 +394,79 @@ def reached_into(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size:
                             footprint, (p1 - middle[0], p2 - middle[1]), cut=cut):  # fmt: skip
                         _asked(item, other, inst.index, target, name, size, bevel, at, c, _place_values(other))
                         break
+
+
+#: The edge sets one names, by name (edges.md): "all" a box's every edge, "both" a rod's two rims.
+_SETS = {"all": frozenset({"vertical", "top", "bottom"}), "both": frozenset({"top", "bottom"})}
+
+
+def earlier_roundings(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size: float, size_name: str, at: str,
+                      c: Collect) -> bool:  # fmt: skip
+    """A rounding (a bevel) against those of the same body before it in the spec (edges.md; frame.md: made in the
+    spec's order). Edges another rounds already aren't there to round again: the writer's to fix (all of a box's
+    edges rounded 2 mm, then its top edges 1 mm, wasn't built). Edges running round corners an earlier rounding has
+    rounded follow them, so the round is no bigger than theirs (it would reach past its own middle: the judge can't
+    make it); round corners another has bevelled, Forge doesn't round or bevel yet (built, the part failed its
+    checks). Whether it said so."""
+    mine = _SETS.get(edges.which, frozenset({edges.which}))
+    bevel = size_name == "size"
+    for other in spec.items[: spec.items.index(item)]:
+        theirs_edges = other.get("edges")
+        if not isinstance(theirs_edges, EdgeSet) or theirs_edges.of != target.id or theirs_edges.which == "joint":
+            continue
+        theirs = _SETS.get(theirs_edges.which, frozenset({theirs_edges.which}))
+        if theirs & mine:
+            c.fault(at + pointer("edges", "which"),
+                    f"{item.id} {'bevels' if bevel else 'rounds'} {target.id}'s {', '.join(sorted(theirs & mine))} "
+                    f"edges, which {other.id} has already: an edge is rounded or bevelled once")  # fmt: skip
+            return True
+        if "vertical" not in theirs or not mine & {"top", "bottom"}:
+            continue
+        their_size = other.get("size")
+        if isinstance(their_size, Value):
+            c.add("unable", at + pointer("edges", "which"),
+                  f"Forge doesn't yet round or bevel edges running round corners another bevels: {item.id}'s "
+                  f"{edges.which} edges of {target.id}, round the corners {other.id} bevels")  # fmt: skip
+            return True
+        radius = other.get("radius")
+        if isinstance(radius, Value) and size > mm(radius) + 1e-9:
+            c.problem("cant", at + pointer(size_name),
+                      f"a {size:g} mm {item.kind} of {target.id}'s {edges.which} edges runs round its corners, which "
+                      f"{other.id} rounds {mm(radius):g} mm: it can be no bigger than they are", item.get(size_name),
+                      radius)  # fmt: skip
+            return True
+    return False
+
+
+def after_thread(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, layout: Layout, at: str,
+                 c: Collect) -> None:  # fmt: skip
+    """A rounding or a bevel of a rod's end its thread reaches, after the thread in the spec: the writer's to reorder.
+
+    Roundings, bevels and threads are made last, in the spec's order
+    (frame.md): made after the thread, it would round or bevel the thread's
+    end, which OpenCascade can't (an M8 rod, its thread then its ends'
+    chamfers, was accepted and not built). A thread is cut into a bevelled
+    end: listed before the thread, it is made so.
+    """
+    copies = layout.instances.get(target.id) or []
+    if not copies:
+        return
+    k = max(range(3), key=lambda i: abs(copies[0].normal[i]))
+    ends = {e for pair in edges_of(target.kind, edges.which, ("+" if copies[0].normal[k] > 0 else "-") + "xyz"[k])
+            for e in pair if e in ("+end", "-end")}  # fmt: skip
+    rod = height_of(target)
+    for thread in spec.items[: spec.items.index(item)]:
+        if thread.get("of") != target.id or "designation" not in KINDS[thread.kind].field_names:
+            continue
+        length = thread.get("length")
+        reached = {"+end"} | ({"-end"} if not isinstance(length, Value) or rod is None or mm(length) >= rod[0] - EPS
+                              else set())  # fmt: skip
+        if ends & reached:
+            c.fault(at + pointer("edges"),
+                    f"{item.id} {'bevels' if item.get('size') is not None else 'rounds'} the end of {target.id} its "
+                    f"thread {thread.id} reaches, but comes after the thread in the spec: list it before {thread.id} "
+                    "(a thread is cut into a bevelled or rounded end; the thread's own end can't be bevelled after)")  # fmt: skip
+            return
 
 
 def joint_reached_into(spec: PartSpec, item: Item, target: Item, edges: EdgeSet, size: float, layout: Layout,

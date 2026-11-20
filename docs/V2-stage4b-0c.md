@@ -1985,7 +1985,21 @@ asked about now (`checks._common.reached_into`): a block's faces, their
 corners where edges square to them are rounded, a cylinder's and a cone's
 ends and sides (a cone's round reaching further back at its wider end,
 less at its narrower); the generator already kept everything clear of a
-rounding's band. **The
+rounding's band. An M8 stud whose thread came before its ends' chamfer in
+the spec was accepted and not built (the chamfer, made after, would bevel
+the thread's own end): the writer is told to list the chamfer first, a
+thread being cut into a bevelled end (`checks._common.after_thread`; the
+guide says so too, version 29). And four bosses in a box's inside corners,
+each just touching the two walls, were built touching them along lines and
+failed face accounting: asked about now (`placement._against_a_wall`).
+A slot the whole length of a tube's side (a cable clip split into a C) was
+built and failed its checks (its ends on the tube's: no end walls to
+find): a cut just reaching a round side's end is asked about, as one
+touching a flat face's edge was. A block's top edges rounded bigger than its
+rounded corners (the judge couldn't make it), round corners an earlier
+bevel cut (built, failing its checks), or edges another rounding had
+already rounded (not built): each said at the spec now
+(`checks._common.earlier_roundings`). **The
 generator** draws a cone as
 the first body (one seed in twenty: narrower or wider at its top, or to a
 point; its ends take what an end takes, its side what a cone's side takes),

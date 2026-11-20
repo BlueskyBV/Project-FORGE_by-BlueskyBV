@@ -286,7 +286,8 @@ def _outline_fields(
 
 
 def _place_values(item: Item, axis: str | None = None) -> list[object]:
-    """The values an item's position comes from; with ``axis``, only those along it.
+    """The values an item's position comes from; with ``axis``, only those along it (not its angle round a side,
+    which is along none: a slot running past a tube's end isn't where it is round it).
 
     An assumed "centred" is not counted: on a symmetric face it is the best
     place there is, so whatever doesn't fit centred fits nowhere else either.
@@ -297,7 +298,7 @@ def _place_values(item: Item, axis: str | None = None) -> list[object]:
     found: list[object] = [
         p.distance for a, p in place.axes.items() if axis in (None, a)
     ]
-    if place.angle is not None:
+    if place.angle is not None and axis is None:
         found.append(place.angle)
     pattern = place.pattern
     if pattern is not None:
@@ -1068,6 +1069,8 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
                                f"{item.id} copy {first + n + 1} doesn't meet the {face.name} face it stands on",
                                blamed([0, 1], placed=True))  # fmt: skip
                 return
+            if _against_a_wall(item, face, parts, (p1, p2), layout, at, first + n, blamed([0, 1], placed=True)):
+                return
         return
     cut = entry.cut
     b1, b2 = bbox(centred(parts))
@@ -1104,6 +1107,22 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
             layout.problem("question", at, f"{item.id} copy {first + n + 1} touches the edge of face {face.name}: "
                            "the wall between them would be nothing there", blamed([0, 1], placed=True))  # fmt: skip
             return
+        if not cut and _against_a_wall(item, face, parts, (p1, p2), layout, at, first + n, blamed([0, 1], placed=True)):
+            return
+
+
+def _against_a_wall(item: Item, face: FlatFace, parts: Sequence[Part], at_: tuple[float, float], layout: Layout,
+                    at: str, n: int, values: list[object]) -> bool:  # fmt: skip
+    """Something round standing inside a hollow, on a face at whose edge a wall rises, touching that edge from within:
+    it would lie against the wall along a line, on which the part meets itself (a boss in a box's corner, its side
+    just touching the two walls). Asked how far clear of it (it can't run into the wall: off its face). A flat side
+    flush with the wall joins it."""
+    if not face.name.startswith("inner ") or not parts or not face.touches_its_edge(parts, at_):
+        return False
+    layout.problem("question", at,
+                   f"{item.id} copy {n + 1} touches the wall at the edge of face {face.name} along a line, where the "
+                   "part would meet itself: how far clear of the wall should it stand?", values)  # fmt: skip
+    return True
 
 
 def _check_severs(item: Item, face: FlatFace, host: tuple[str, int, str], parts: Sequence[Part],
@@ -1900,6 +1919,11 @@ def _side_instances(item: Item, face: SideFace, host: tuple[str, int, str], layo
                 f"{item.id} runs past the end of {host[0]}",
                 along_values,
             )
+        elif entry.cut and abs(along) + along_size > half - EPS:
+            # Its mouth just reaching an end of the side (a slot the side's whole length, splitting a tube into a C):
+            # the wall between it and the end is nothing there, as a cut touching a flat face's edge.
+            layout.problem("question", at, f"{item.id} touches the end of {host[0]}'s {face.name}: the wall between "
+                                           "them would be nothing there", along_values)  # fmt: skip
         if face.half is not None:
             # On a round-ended tab's end, all of it stays on the half: no further round from its middle than a
             # quarter turn, its reach round it from its point included.

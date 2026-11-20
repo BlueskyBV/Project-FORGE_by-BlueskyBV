@@ -16,6 +16,8 @@ there it ended in the wall, short of coming out. What these hold:
 - **Coming out on the wall's other face:** under what stands on the
   hollow's inside floor, or (from inside) under its floor, it is asked about
   as through a solid plate under a boss.
+- **Against a wall:** something round standing in the hollow, touching a
+  wall along a line, is asked about.
 - **Said before anything is built:** a rim rounded right over (the two
   roundings meeting in its middle), and a floor's edge rounded where the
   floor is thicker than the walls, which the part then failed to build.
@@ -257,6 +259,35 @@ class WhatIsNotMadeYetIsSaidBeforeAnythingIsBuilt(unittest.TestCase):
             with self.subTest(kind):
                 found = cup_rounded(3, "bottom", kind, 4)
                 self.assertEqual([k for k, m in found if "walls of different thickness" in m], ["unable"], found)
+
+
+BOX = ("A box 80 x 60 x 30 mm, hollow with 2 mm walls and a 3 mm floor, open at the top, with four bosses 8 mm across "
+       "and 10 mm tall on its floor inside, one in each corner {} mm in from both walls.")  # fmt: skip
+
+
+def box_with_bosses(inset: float) -> list[tuple[str, str]]:
+    brief = BOX.format(f"{inset:g}")
+    b = number_words(brief)
+    inset_value = mm(b, inset, f"{inset:g} mm in from")
+    return problems(brief, [
+        {"id": "box", "kind": "block", "words": cite(b, "box"), "length": mm(b, 80, "80"), "width": mm(b, 60, "60"),
+         "height": mm(b, 30, "30 mm")},
+        shell(b, "box", ["+z"], "3"),
+        {"id": "bosses", "kind": "boss", "words": cite(b, "four bosses") + cite(b, "one in each corner"),
+         "on": {"item": "box", "face": "inner -z"}, "diameter": mm(b, 8, "8 mm across"),
+         "height": mm(b, 10, "10 mm tall"), "count": {"count": 4, "from": {"words": cite(b, "four")}},
+         "place": {"pattern": {"corners": {"inset_u": inset_value, "inset_v": {**inset_value}}}}},
+    ])  # fmt: skip
+
+
+class AgainstAWall(unittest.TestCase):
+    """A boss in a box's inside corner, its side just touching the two walls, was built touching them along a line,
+    where the part meets itself, and failed its face accounting. Asked now; clear of them, it stands."""
+
+    def test_just_touching_the_walls(self) -> None:
+        self.assertEqual(box_with_bosses(5), [])
+        found = box_with_bosses(4)
+        self.assertEqual([k for k, m in found if "touches the wall" in m], ["question"], found)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forge_plan import plan
 from forge_plan.tools import CARRY, Context, carried_ways, clear_of, early_applies
 from forge_plan.write import Box, Chain
+from forge_spec.lock import LockError
 from test_v2_plan import LATER, confirmed, item
 from v2_occ import needs_occ
 from v2_reference import PARTS, on, side, through
@@ -298,9 +299,12 @@ class TheProofsRefuse(unittest.TestCase):
         self.assertEqual(
             ways(tube, wall, wide=2 * math.sqrt(100 - (CARRY / 2) ** 2)), (True, False)
         )
-        # Through a hollowed cylinder's wall by its cap: the hollow doesn't hold the hole's span.
+        # Through a hollowed cylinder's wall by its cap: the hollow doesn't hold the hole's span. Its mouth runs past
+        # the hollow's end, beside the cap's wall: asked about at the spec now (placement._check_into_hollows), it
+        # never comes to be carried.
         cap = [_CAN, _HOLLOW, _hole(("c", "side"), place={**_AT, "z": side("-z", 2.5)})]
-        self.assertEqual(ways(cap), (True, False))
+        with self.assertRaises(LockError):
+            ways(cap)
         # Out of a bore: it starts at the axis, its mouth in air already, and only its far end is carried.
         self.assertEqual(
             ways(ROUND_SIDE_HOLES["out of a tube's bore"], wall), (False, True)

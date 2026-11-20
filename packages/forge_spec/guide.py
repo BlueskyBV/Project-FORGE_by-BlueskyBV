@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 28
+GUIDE_VERSION = 29
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -656,7 +656,8 @@ A choice ({{"choose": "round", "from": ...}}) cites the words that name it \
 out. A text (engraved letters, a description) is the brief's characters \
 exactly, punctuation and all: a quotation is taken whole, without its quote \
 marks. A standard part (a fit's "for", a thread's designation) is named as \
-the brief names it: M8, M8x1, 608.
+the brief names it: M8, M8x1, 608. A rod's end chamfer or rounding comes \
+before its thread in "items": the thread is cut into the bevelled end.
 
 ## Nothing in the brief is left out
 
