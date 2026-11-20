@@ -48,9 +48,15 @@ class RenderedSpec:
     answers: tuple[str, ...] = ()
     #: What the part must be beyond its shape: "Material: 'PETG'".
     requirements: tuple[str, ...] = ()
+    #: What the brief asks that Forge can't make yet (schema 1.10): first, it decides the part.
+    unable: tuple[str, ...] = ()
 
     def text(self) -> str:
         out = [self.title, ""]
+        if self.unable:
+            out.append("Forge can't make yet:")
+            out += [f"  - {u}" for u in self.unable]
+            out.append("")
         if self.requirements:
             out += [*self.requirements, ""]
         if self.answers:
@@ -123,5 +129,6 @@ def render(report: SpecReport, brief: NumberedBrief, *,
         if material is not None
         else ()
     )
+    unable = tuple(f"{e.what}: {_quote(brief, e.words)}" for e in spec.unable)
     return RenderedSpec(f"{spec.name} - {len(spec.items)} item(s)", assumptions, caveats,
-                        tuple(lines), not_modelled, tuple(silent), answers, requirements)  # fmt: skip
+                        tuple(lines), not_modelled, tuple(silent), answers, requirements, unable)  # fmt: skip

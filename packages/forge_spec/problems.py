@@ -21,6 +21,7 @@ from typing import Any
 __all__ = [
     "MAX_NAME",
     "MAX_REASON",
+    "READ_REASON",
     "Problem",
     "Problems",
     "clean_text",
@@ -65,6 +66,10 @@ _UNPRINTABLE = frozenset({"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"})
 #: reads each whole, on one line.
 MAX_NAME = 80
 MAX_REASON = 200
+#: The longest a writer's reason may be and still be read: it is asked for MAX_REASON, and a little over is
+#: read rather than sent back, since sending it back is a paid model call (blind set 1: 5 of 403 reasons ran
+#: 201 to 240 characters, and two of its briefs spent a redraft on one).
+READ_REASON = 300
 
 
 def one_line(raw: object, limit: int) -> str | None:

@@ -520,7 +520,10 @@ class WhatThePersonReadsIsOneLineEach(unittest.TestCase):
         report = check_draft(b, d)
         assert report.spec is not None
         self.assertEqual(report.spec.not_modelled[0].reason, "what it is for")
-        d["not_modelled"][0]["reason"] = "x" * 201
+        # Asked for at most 200 characters, read up to 300 (READ_REASON): a redraft is a paid call.
+        d["not_modelled"][0]["reason"] = "x" * 260
+        self.assertNotIn("/not_modelled/0", [p.at for p in check_draft(b, d).problems])
+        d["not_modelled"][0]["reason"] = "x" * 301
         self.assertIn("/not_modelled/0", [p.at for p in check_draft(b, d).problems])
 
     def test_the_writer_s_words_are_quoted(self) -> None:

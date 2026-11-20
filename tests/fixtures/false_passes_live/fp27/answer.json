@@ -1,0 +1,296 @@
+{
+  "name": "rounded PLA strip with holes and slot",
+  "items": [
+    {
+      "id": "strip",
+      "kind": "extrusion",
+      "words": [
+        1,
+        3
+      ],
+      "axis": {
+        "choose": "z",
+        "from": {
+          "words": [
+            1
+          ]
+        }
+      },
+      "length": {
+        "value": 2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            11,
+            12,
+            13
+          ]
+        }
+      },
+      "profile": {
+        "unit": "mm",
+        "start": [
+          -47,
+          8
+        ],
+        "from": {
+          "words": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            16,
+            17,
+            18
+          ]
+        },
+        "segments": [
+          {
+            "line_to": [
+              47,
+              8
+            ]
+          },
+          {
+            "arc_to": [
+              47,
+              -8
+            ],
+            "centre": [
+              47,
+              0
+            ],
+            "clockwise": true
+          },
+          {
+            "line_to": [
+              -47,
+              -8
+            ]
+          },
+          {
+            "arc_to": [
+              -47,
+              8
+            ],
+            "centre": [
+              -47,
+              0
+            ],
+            "clockwise": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "holes",
+      "kind": "hole",
+      "words": [
+        22
+      ],
+      "on": {
+        "item": "strip",
+        "face": "+end"
+      },
+      "diameter": {
+        "value": 4.3,
+        "unit": "mm",
+        "from": {
+          "words": [
+            20,
+            21
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            23,
+            24
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            19
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 8,
+            "unit": "mm",
+            "from": {
+              "words": [
+                29,
+                30,
+                34,
+                36
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "centred": {
+            "words": [
+              26,
+              27,
+              28
+            ]
+          }
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "x",
+              "from": {
+                "words": [
+                  34,
+                  35,
+                  36
+                ]
+              }
+            },
+            "pitch": {
+              "value": 20,
+              "unit": "mm",
+              "from": {
+                "formula": "28 mm - 8 mm",
+                "words": [
+                  29,
+                  30,
+                  32,
+                  33
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  19
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "slot",
+      "kind": "slot",
+      "words": [
+        38
+      ],
+      "on": {
+        "item": "strip",
+        "face": "+end"
+      },
+      "width": {
+        "value": 4.4,
+        "unit": "mm",
+        "from": {
+          "words": [
+            39,
+            40,
+            41
+          ]
+        }
+      },
+      "length": {
+        "value": 24,
+        "unit": "mm",
+        "from": {
+          "words": [
+            43,
+            44,
+            45,
+            46
+          ]
+        }
+      },
+      "along": {
+        "choose": "x",
+        "from": {
+          "words": [
+            53,
+            54,
+            55,
+            56
+          ]
+        }
+      },
+      "ends": {
+        "choose": "round",
+        "from": {
+          "assumed": "the brief gives the slot's width and overall length but not its end shape; a round-ended slot is the usual form for a through-cut of this kind"
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            47,
+            48
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 90,
+            "unit": "mm",
+            "from": {
+              "words": [
+                57,
+                58,
+                59,
+                60,
+                61,
+                62,
+                63
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "centred": {
+            "words": [
+              50,
+              51,
+              52
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "not_modelled": [],
+  "silent": [
+    {
+      "sentence": 3,
+      "reason": "says the part's strength is checked outside Forge and that there is no load case; this is about analysis, not the part's shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          2
+        ]
+      }
+    }
+  },
+  "spec_format": 1
+}

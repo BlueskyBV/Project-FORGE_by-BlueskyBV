@@ -74,6 +74,7 @@ from .outline import Shape, sizes
 from .placement import (
     Assumption,
     Layout,
+    edges_of,
     route,
     solve,
 )
@@ -280,6 +281,141 @@ def _check_values(spec: PartSpec, c: _Collect) -> None:
                 raw.words, base + pointer(name, "words")
             ):
                 c.mentions.append(raw.words)
+
+
+#: Words after a count of one that say which of a thing's several it picks: "at one end", "along one edge".
+_PICKED = frozenset({"end", "ends", "edge", "edges", "side", "sides", "face", "faces", "corner", "corners"})
+#: Words after "one" that make it one at each of several places: "one in each corner", "one near each end".
+_EACH = frozenset({"each", "every", "per"})
+#: How far after a count word, in words, what it counts or where it goes is looked for.
+_COUNT_REACH = 3
+
+
+def _counts_held(spec: PartSpec, c: _Collect) -> None:
+    """Use each count word the spec holds by what it is, not by a value (docs/V2-stage4.md, 14.6).
+
+    Blind set 1 asked on 11 of 26 clear briefs about count words the spec
+    held all the same: "four 4.5 mm holes, one in each corner", "all four
+    corners rounded", "a chamfer on both ends", "two plates", "6 mm in from
+    both edges". A count word is used here only where what holds it comes in
+    exactly that many, so one the spec gets wrong is still asked about:
+
+    - **an item's copies**, the count word in its own words ("two 5 mm holes":
+      two copies). One copy, "one", and where "one" picks which of a thing's
+      ends, edges or sides ("at one end"), only if the item is placed on one
+      of them or measured from one; "one in each corner", one at each of
+      several copies;
+    - **the edges an edge set picks**, the count word in the rounding's or the
+      chamfer's words ("all four corners": a block's four vertical edges;
+      "both ends": a rod's two rims);
+    - **the items of one kind that cite it**, in their own words ("two 40 mm
+      plates": two blocks, each citing "two");
+    - **the values one measure is given to**, the count word among or just
+      after the words they all cite ("6 mm in from both edges": two insets
+      citing "6 mm in from ... edges").
+    """
+    brief = c.brief
+    kinds = {item.id: item.kind for item in spec.items}
+    citing: dict[int, list[Item]] = {}
+    for item in spec.items:
+        copies = _copies(item)
+        for i, n in _count_words(item.words, brief):
+            citing.setdefault(i, []).append(item)
+            if n == copies and (n != 1 or not _picks(i, brief) or _picks_side(item)):
+                _numbers_named((i,), c, _reads(n))
+            elif n == 1 and copies >= 2 and _ahead(i, brief, _EACH):
+                _numbers_named((i,), c, _reads(1))
+        for raw in item.fields.values():
+            if not isinstance(raw, EdgeSet) or raw.where_meets is not None or raw.of not in kinds:
+                continue
+            edges = len(edges_of(kinds[raw.of], raw.which, "+z"))
+            for i, n in _count_words((*item.words, *raw.words), brief):
+                if edges and n == edges:
+                    _numbers_named((i,), c, _reads(n))
+    for i, items in citing.items():
+        many = _count_value(i, brief)
+        if many is not None and many >= 2 and len(items) == many and len({it.kind for it in items}) == 1:
+            _numbers_named((i,), c, _reads(many))
+    shared: dict[tuple[int, ...], int] = {}
+    for item in spec.items:
+        for raw in item.fields.values():
+            for _, thing, _ in _provenances(raw, "", None):
+                p = getattr(thing, "provenance", None)
+                if isinstance(thing, Value) and isinstance(p, Provenance) and p.source is Source.BRIEF and p.words:
+                    key = tuple(sorted(set(p.words)))
+                    shared[key] = shared.get(key, 0) + 1
+    for words, given in shared.items():
+        if given < 2 or not all(0 <= i < len(brief.words) for i in words):
+            continue
+        sentence = brief.word(words[0]).sentence
+        last = words[-1]
+        for i in range(words[0] + 1, min(len(brief.words), last + 1 + _COUNT_REACH)):
+            if i in words or brief.word(i).sentence != sentence:
+                continue
+            if i > last and _CLAUSE_BREAK.search(brief.text[brief.word(last).end : brief.word(i).start]):
+                break
+            if _count_value(i, brief) == given:
+                _numbers_named((i,), c, _reads(given))
+
+
+#: What ends a clause between two words.
+_CLAUSE_BREAK = re.compile(r"[,;:.!?()\[\]{}]")
+
+
+def _reads(n: int) -> Callable[[Reading], bool]:
+    """A reading that states ``n``."""
+    return lambda reading: reading.value == n
+
+
+def _copies(item: Item) -> int:
+    count = item.get("count")
+    return count.n if isinstance(count, Count) else 1
+
+
+def _count_value(i: int, brief: NumberedBrief) -> int | None:
+    """The count a spelled number word states ("four", "both", "pair"), or None."""
+    if not 0 <= i < len(brief.words) or not numeric_at(brief, i):
+        return None
+    if any(ch.isdigit() for ch in brief.word(i).text):
+        return None
+    for reading in readings(brief, (i,)):
+        if reading.unit is None and float(reading.value).is_integer():
+            return int(reading.value)
+    return None
+
+
+def _count_words(words: Iterable[int], brief: NumberedBrief) -> list[tuple[int, int]]:
+    found = []
+    for i in dict.fromkeys(words):
+        n = _count_value(i, brief)
+        if n is not None:
+            found.append((i, n))
+    return found
+
+
+def _ahead(i: int, brief: NumberedBrief, wanted: frozenset[str]) -> bool:
+    """Whether one of ``wanted`` follows the word at ``i`` closely, in its clause."""
+    here = brief.word(i)
+    for later in brief.words[i + 1 : i + 1 + _COUNT_REACH]:
+        if later.sentence != here.sentence or _CLAUSE_BREAK.search(brief.text[here.end : later.start]):
+            return False
+        if later.text.lower() in wanted:
+            return True
+    return False
+
+
+def _picks(i: int, brief: NumberedBrief) -> bool:
+    """Whether "one" at ``i`` picks one of a thing's ends, edges, sides or faces: "at one short end"."""
+    return _ahead(i, brief, _PICKED)
+
+
+def _picks_side(item: Item) -> bool:
+    """Whether an item is placed on one of its host's ends or sides, or measured from one of its edges."""
+    on = item.get("on")
+    if on is not None and getattr(on, "face", None) not in (None, "+z"):
+        return True
+    place = item.get("place")
+    return isinstance(place, Place) and any(p.mode == "side" for p in place.axes.values())
 
 
 def _copies_named(item: Item, place: Place, c: _Collect) -> None:
@@ -1301,6 +1437,31 @@ def _owners(spec: PartSpec, brief: NumberedBrief) -> dict[int, frozenset[str]]:
     return {i: frozenset(owners) for i, owners in found.items()}
 
 
+#: Words a sentence that names the part may label it with: "Part: sensor mount".
+_NAME_LABELS = frozenset({"part", "name", "title", "item", "project", "design"})
+
+
+def _named_by_the_spec(spec: PartSpec, brief: NumberedBrief) -> list[tuple[int, ...]]:
+    """The sentences that only name the part, every word of them the spec's name's: "An L-bracket.", "Part: sensor mount".
+
+    Blind set 1 asked about both, its writers having named the part from
+    them and cited them nowhere else. Only a sentence with no number, whose
+    every word but a common one or a label ("Part:") is a word of the name:
+    it says what the part is called, and the name says it too. A shape it
+    names is the items' to make, as it is for any word an item cites.
+    """
+    name = {piece for piece in _plain(spec.name).split() if piece}
+    found = []
+    for sentence in brief.sentences:
+        words = [brief.word(i) for i in sentence.words]
+        if not words or any(numeric_at(brief, w.index) for w in words):
+            continue
+        content = [w for w in words if w.text.lower() not in FUNCTION_WORDS and _plain(w.text) not in _NAME_LABELS]
+        if content and all(_plain(w.text).split() and set(_plain(w.text).split()) <= name for w in content):
+            found.append(tuple(sentence.words))
+    return found
+
+
 def _part_named(spec: PartSpec, brief: NumberedBrief) -> set[tuple[int, str]]:
     """The words the first body's own words cite, by sentence: the part's name, as the brief gives it."""
     first = next(
@@ -1453,6 +1614,7 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
         return SpecReport(None, None, tuple(problems), (), (), notes, None, strict)
     c = _Collect(brief, [], [], [], problems, [], [], strict)
     _check_values(spec, c)
+    _counts_held(spec, c)
     _check_requirements(spec, c)
     layout = solve(spec)
     problems.extend(SpecProblem(i.kind, i.at, i.message) for i in layout.issues)
@@ -1462,6 +1624,14 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
     for n, entry in enumerate(spec.not_modelled):
         if c.words_exist(entry.words, pointer("not_modelled", n, "words")):
             not_modelled.append(entry.words)
+    # What no kind makes yet, said by the writer instead of a stand-in (schema 1.10): its words are accounted for,
+    # and the part can't be made yet.
+    for n, beyond in enumerate(spec.unable):
+        if c.words_exist(beyond.words, pointer("unable", n, "words")):
+            not_modelled.append(beyond.words)
+            problems.append(SpecProblem("unable", pointer("unable", n),
+                                        f"Forge can't make {beyond.what} yet (the brief's "
+                                        f"{brief.quote(beyond.words)!r})"))  # fmt: skip
     _replaced_by_answers(spec, c)
     silent = []
     for n, quiet in enumerate(spec.silent):
@@ -1472,6 +1642,7 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
                     f"sentence {quiet.sentence} doesn't exist: the brief has sentences 0 to "
                     f"{len(brief.sentences) - 1}")  # fmt: skip
     owners = _owners(spec, brief)
+    c.mentions.extend(_named_by_the_spec(spec, brief))
     try:
         accounting = account(brief, readings=c.readings, cited=c.cited, mentions=c.mentions,
                              not_modelled=not_modelled, silent=silent, owners=owners)  # fmt: skip

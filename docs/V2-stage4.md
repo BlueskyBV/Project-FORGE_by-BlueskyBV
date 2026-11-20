@@ -3293,6 +3293,63 @@ pyproject's, held by a test); and `tests/test_v2_eval_keys.py`'s check of
 the blind set fails wherever `eval/` isn't, which is everywhere but the
 owner's machine (it is skipped there now, with that reason).
 
+### 14.6 Blind set 1's second run, and what it changed
+
+The owner ran it again on 96f534a, into a new folder (20 November):
+**80 of the 83 facts Forge grades itself right (96.4%), wrong at most
+9.1% at 95%**, 30 briefs drafted for $8.42, the one that can't be made
+refused. The three wrong: a spur gear drafted as a plain disc at its pitch
+diameter, its teeth "not modelled"; a hollow cone and legs standing under a
+round bar, both refused as Forge can't make them yet. With the owner's
+leave, the run was read (set 1 is a practice set, 14.5), and the drafts
+replayed on each change below, no model called.
+
+**Questions nobody needed: 11 of the 26 clear briefs.** Nearly all of them
+"the brief says 'four' ('one', 'both', 'two'); nothing in the spec uses
+it", where the spec held the count all the same. A count word is now used
+where what holds it comes in exactly that many (`_counts_held`), and still
+asked about where it doesn't: an item's copies, the count word in its own
+words (one copy for "one", and where "one" picks an end, an edge or a side,
+only if the item is placed on one or measured from one; "one in each
+corner", one at each of several); the edges an edge set picks ("all four
+corners": four vertical edges; "both ends": two rims); the items of one
+kind that cite it ("two plates", two blocks); the values one measure is
+given to ("6 mm in from both edges", two insets). A "one" that points back
+("the middle one in the middle of the bar") is no count at all
+(`citations._pronoun`). A sentence that only names the part ("An
+L-bracket.", "Part: sensor mount"), every word of it the spec's name's, is
+the name's (`_named_by_the_spec`). Replayed: 11 asking become 2, one a
+clearance to another part the brief gives (now listed as not modelled, the
+guide says), one an angle from the base (below).
+
+**An angle measured from a face.** "Leans back at 65 degrees from the
+base" is a tilt of 25 degrees from square to it; no formula could say so
+while every number had to be the brief's, so the writer assumed it, and 65
+was asked about. A formula may now add or take away 90 deg or 180 deg
+where its other side holds an angle from the brief (`derived._right_angle`):
+it brings in no size. The same brief spent $3.49 on three drafts, one of
+them over a reason 230 characters long; the writer is asked for 200 and
+read to 300 now (`READ_REASON`), a redraft being a paid call.
+
+**What no kind makes, said (schema 1.10).** A draft lists it in `unable`,
+its words and what it is ("involute spur gear teeth"), and drafts no
+stand-in for it; Forge says it can't make the part yet, first in what the
+person reads. Below 1.10 such an entry is a fault. A record's version given
+as a number of an earlier minor ("1.9" as 1.9) still reads as that version.
+
+**A live smoke check.** `forge eval-corpus --smoke` drafts four of the
+suite's briefs afresh (R05, R02, C09, X02: counts and corners, a cross hole
+in a round side, a hollow, a gear), into a new folder each time, within
+`--max-cost` (default $2): the cheap live run after a change to the guide,
+the schema or the writer, before any big one. And the owner's second
+false-pass run (fp24 to fp27) joins the first's 23 in the replayed
+fixtures, every ending pinned and every false pass caught.
+
+Proof: the 27 false passes replayed, endings and reasons byte-identical
+old and new; set 1's 30 drafts regraded (79 of 82 right; asking 11 to 2);
+tests `test_v2_spec_counts.py` (each rule both ways), `test_v2_spec_unable.py`
+(unable, the right angle, the reason's length).
+
 ## 15. What is tested
 
 | Test file | What |

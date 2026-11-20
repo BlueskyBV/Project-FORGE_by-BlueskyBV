@@ -4,7 +4,7 @@
   "case": "R11 spacer, base on its edge",
   "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "spacer block",
    "items": [
     {
@@ -315,7 +315,7 @@
   "case": "R11 spacer, wrong plane",
   "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "spacer block",
    "items": [
     {
@@ -626,7 +626,7 @@
   "case": "R11 spacer, mounting holes at the edges",
   "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "spacer block",
    "items": [
     {
@@ -937,7 +937,7 @@
   "case": "R11 spacer as a bar",
   "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "spacer block",
    "items": [
     {
@@ -1248,7 +1248,7 @@
   "case": "R11 spacer, base a fillet thick",
   "brief": "A 3D-printed PLA spacer block. The base is a 30 mm square plate 4 mm thick. A 12 mm diameter post 10 mm tall stands in the middle of it, with a 2 mm fillet where the post meets the plate. A 5 mm hole runs all the way through the post and the plate. Two 3 mm mounting holes pass all the way through the plate, 20 mm apart. It must weigh no more than 8 g. It carries no load - it is a printed spacer, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "spacer block",
    "items": [
     {
@@ -1559,7 +1559,7 @@
   "case": "R12 collar, “90 degrees” unread",
   "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "shaft collar",
    "items": [
     {
@@ -1722,7 +1722,7 @@
   "case": "R12 collar, parallel screws",
   "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "shaft collar",
    "items": [
     {
@@ -1885,7 +1885,7 @@
   "case": "R12 collar, four openings",
   "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "shaft collar",
    "items": [
     {
@@ -2048,7 +2048,7 @@
   "case": "R12 collar, screws at the bore's size",
   "brief": "A machined aluminium shaft collar. The outer diameter is 25 mm and it is 15 mm long. A 12 mm bore runs all the way through on the axis. Two 4 mm set screw holes pass through the wall from the outside into the bore, 90 degrees apart, both halfway along the length. It carries no load - it is a locating collar, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "shaft collar",
    "items": [
     {
@@ -2211,7 +2211,7 @@
   "case": "R09 L-bracket, upright too wide",
   "brief": "A PLA L-bracket 40 mm wide, made of 5 mm thick plate. The base leg is 50 mm long and lies flat; the upright leg stands on the back end of the base and is 40 mm tall overall. Two 5 mm holes pass through the base, 20 mm apart across its width, centred 25 mm from the front end. Two 5 mm holes pass through the upright, 20 mm apart across its width, centred 25 mm above the bottom. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "L-bracket",
    "items": [
     {
@@ -2550,7 +2550,7 @@
   "case": "R08 open-top box",
   "brief": "A PLA open-top box, 60 mm long, 40 mm wide and 30 mm tall on the outside, with 2 mm walls and a 2 mm thick floor. The top is completely open. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "open-top box",
    "items": [
     {
@@ -2664,7 +2664,7 @@
   "case": "hollow cube",
   "brief": "A 30 mm cube in PLA, hollow on the inside with an open top. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "hollow cube",
    "items": [
     {
@@ -2765,7 +2765,7 @@
   "case": "dome",
   "brief": "A PLA dome: exactly half of a 50 mm sphere, sitting flat side down. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "dome",
    "items": [
     {
@@ -2832,7 +2832,7 @@
   "case": "sphere",
   "brief": "A PLA sphere with a 100mm diameter",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "sphere",
    "items": [
     {
@@ -2880,7 +2880,7 @@
   "case": "L-bracket turned",
   "brief": "A PLA L-bracket 60 mm wide, made of 2 mm thick plate. The base leg is 50 mm long and lies flat; the upright leg stands on the back end of the base and is 40 mm tall overall. Two 10 mm holes pass through the base, 20 mm apart across its width, centred 25 mm from the front end. Two 5 mm holes pass through the upright, 20 mm apart across its width, centred 25 mm above the bottom. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "L-bracket",
    "items": [
     {
@@ -3219,7 +3219,7 @@
   "case": "hollow dome, sealed",
   "brief": "A PLA dome: exactly half of a 70 mm sphere, sitting flat side to the right side, hollow on the inside. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "hollow dome",
    "items": [
     {
@@ -3315,7 +3315,7 @@
   "case": "P11 doughnut",
   "brief": "A PLA ring shaped like a doughnut: an 8 mm round section bent into a full ring 40 mm across at the centre line of the section. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "ring",
    "items": [
     {
@@ -3409,7 +3409,7 @@
   "case": "H03 counterbores",
   "brief": "A steel plate 60 mm long, 40 mm wide and 10 mm thick with two counterbored holes for M5 screws, 40 mm apart along the length: each a 5.5 mm through hole with a 10 mm counterbore 5 mm deep from the top face. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "counterbored plate",
    "items": [
     {
@@ -3594,7 +3594,7 @@
   "case": "L05 steel cube",
   "brief": "A 20 mm cube of 1018 steel. It must weigh no more than 50 g. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "cube",
    "items": [
     {
@@ -3677,7 +3677,7 @@
   "case": "X03 bolt",
   "brief": "An M8 steel bolt 40 mm long with a standard hex head. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "hex bolt",
    "items": [
     {
@@ -3849,7 +3849,7 @@
   "case": "hollow dome's STL",
   "brief": "A PLA dome: exactly half of a 70 mm sphere, sitting flat side to the right side, hollow on the inside. It carries no load, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "hollow dome",
    "items": [
     {
@@ -3945,7 +3945,7 @@
   "case": "exo upper rail's STL",
   "brief": "A PLA upper-arm rail for an elbow brace: a flat bar 36 mm wide and 20 mm thick. One end of the bar is a round end 48 mm in diameter centred on the pivot point. The bar runs along its centreline from the pivot point to a fully rounded far end whose centre is 245 mm from the pivot point. At the pivot point, cut a round pocket 22.1 mm in diameter and 7 mm deep into the top face and an identical pocket 7 mm deep into the bottom face, and cut a 17 mm hole through the 6 mm of material left between the two pockets. Add four 8.2 mm through holes on the bar's centreline at 85, 115, 225 and 245 mm from the pivot point. Give only the two holes at 225 and 245 mm a 15 mm counterbore 5 mm deep from the bottom face. Its strength is checked outside Forge, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "upper-arm rail",
    "items": [
     {
@@ -4713,7 +4713,7 @@
   "case": "exo upper rail, 8 mm blend",
   "brief": "A PLA upper-arm rail for an elbow brace: a flat bar 36 mm wide and 20 mm thick. One end of the bar is a round end 48 mm in diameter centred on the pivot point. The bar runs along its centreline from the pivot point to a fully rounded far end whose centre is 245 mm from the pivot point. At the pivot point, cut a round pocket 22.1 mm in diameter and 7 mm deep into the top face and an identical pocket 7 mm deep into the bottom face, and cut a 17 mm hole through the 6 mm of material left between the two pockets. Add four 8.2 mm through holes on the bar's centreline at 85, 115, 225 and 245 mm from the pivot point. Give only the two holes at 225 and 245 mm a 15 mm counterbore 5 mm deep from the bottom face. Its strength is checked outside Forge, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "upper-arm rail",
    "items": [
     {
@@ -5481,7 +5481,7 @@
   "case": "exo forearm lug",
   "brief": "A PLA forearm rail for an elbow brace: a flat bar 36 mm wide and 16 mm thick, lying flat. One end is a round end 48 mm in diameter centred on the pivot point, with an 8.2 mm hole straight through at the pivot. The bar runs along its centreline from the pivot point to a fully rounded far end whose centre is 175 mm from the pivot point. Two more 8.2 mm through holes sit on the centreline at 125 mm and 155 mm from the pivot point. Seen from above, with the pivot end on the left and the far end on the right, a lug the full 16 mm thick sticks out from the upper long edge: it is 24 mm wide, centred 46 mm from the pivot point along the bar, and ends in a semicircle of radius 12 mm whose centre is 28 mm from the bar's centreline. A 6.4 mm hole goes straight through the lug at that centre. On the top face, a round boss 20 mm in diameter and 6 mm tall stands centred on that hole, and the hole runs through the boss too. On the bottom face, that 6.4 mm hole has an 11.5 mm counterbore 4 mm deep. Its strength is checked outside Forge, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "forearm rail",
    "items": [
     {
@@ -6090,7 +6090,7 @@
   "case": "exo wrist strip",
   "brief": "A flat PLA strip 110 mm long, 16 mm wide and 2 mm thick with both ends fully rounded. Two 4.3 mm holes go through it on its centreline, 8 mm and 28 mm from one end. A slot 4.4 mm wide and 24 mm long overall goes through it on the centreline, running along the strip, centred 90 mm from that same end. Its strength is checked outside Forge, so there is no load case.",
   "key": {
-   "schema_version": "1.9",
+   "schema_version": "1.10",
    "name": "wrist strip",
    "items": [
     {

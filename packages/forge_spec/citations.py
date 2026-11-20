@@ -522,7 +522,58 @@ def _numeric(brief: NumberedBrief, index: int) -> bool:
             return False
     if word.text.lower() == "both" and _correlative(brief, index):
         return False
+    if word.text.lower() == "one" and _pronoun(brief, index):
+        return False
     return is_numeric_word(word.text)
+
+
+#: Words before "one" that make it stand for a thing named before, not a count of one: "each one", "the other one".
+_POINTING = frozenset({"each", "every", "this", "that", "which", "another", "any", "other", "either", "neither"})
+#: Words before "one" that, with an adjective between, do the same: "the middle one", "the left one".
+_DETERMINERS = frozenset({"the", "this", "that", "each", "every", "another", "any"})
+#: What may follow such a "one": it names nothing itself, so no noun it counts follows it.
+_AFTER_PRONOUN = frozenset({"in", "on", "at", "of", "from", "near", "nearest", "closest", "to", "is", "has", "with",
+                            "and", "or", "goes", "sits", "lies", "being", "which", "that"})  # fmt: skip
+
+
+def _pronoun(brief: NumberedBrief, index: int) -> bool:
+    """Whether "one" at ``index`` stands for a thing named before ("the middle one in the middle of the bar"), not a count.
+
+    Observed on blind set 1: "three holes ... 20 mm apart, the middle one in
+    the middle of the bar" was asked about as a count of one nothing used.
+    It is a pronoun only where it points back ("each one", "the other one",
+    "the middle one") and no noun it would count follows: "the one hole" still
+    counts. Unsure, it counts: a count nothing uses is a question, a count
+    passed over is a check lost.
+
+    >>> from forge_spec.words import number_words
+    >>> b = number_words("Three holes, the middle one in the centre. The one hole left is 5 mm. "
+    ...                  "Each one is 4 mm. One end is round.")
+    >>> [_numeric(b, w.index) for w in b.words if w.text.lower() == "one"]
+    [False, True, False, True]
+    """
+    word = brief.words[index]
+    nxt = brief.words[index + 1] if index + 1 < len(brief.words) else None
+    ends_here = (
+        nxt is None
+        or nxt.sentence != word.sentence
+        or _CLAUSE_END.search(brief.text[word.end : nxt.start]) is not None
+    )
+    if not ends_here and (nxt is None or nxt.text.lower() not in _AFTER_PRONOUN):
+        return False
+    before = [w for w in brief.words[max(0, index - 2) : index] if w.sentence == word.sentence]
+    if before and _CLAUSE_END.search(brief.text[before[-1].end : word.start]):
+        return False
+    if before and before[-1].text.lower() in _POINTING:
+        return True
+    return (
+        len(before) == 2
+        and before[0].text.lower() in _DETERMINERS
+        and not _CLAUSE_END.search(brief.text[before[0].end : before[1].start])
+        and before[1].text.lower() not in _DETERMINERS
+        and not is_numeric_word(before[1].text)
+        and before[1].text.lower() not in ("only", "same")
+    )
 
 
 #: What ends a clause between two words.

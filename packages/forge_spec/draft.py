@@ -43,6 +43,7 @@ from forge_units.dimension import DIMENSIONLESS, LENGTH
 from .problems import (
     MAX_NAME,
     MAX_REASON,
+    READ_REASON,
     Problems,
     clean_text,
     one_line,
@@ -103,6 +104,7 @@ __all__ = [
     "Silent",
     "Text",
     "Through",
+    "Unable",
     "UpTo",
     "axis_names",
     "read_draft",
@@ -313,6 +315,18 @@ class Silent:
 
 
 @dataclass(frozen=True)
+class Unable:
+    """What the brief asks that no kind makes yet, by its words and what it is ("involute gear teeth"): schema 1.10.
+
+    Said instead of a stand-in for it (blind set 1: a gear drafted as a plain
+    disc, its teeth "not modelled"). Forge says it can't make the part yet.
+    """
+
+    words: WordRef
+    what: str
+
+
+@dataclass(frozen=True)
 class Requirements:
     """What the part must be beyond its shape (plan, 4.1): for now, its material.
 
@@ -333,6 +347,7 @@ class PartSpec:
     not_modelled: tuple[NotModelled, ...] = ()
     silent: tuple[Silent, ...] = ()
     requirements: Requirements = Requirements()
+    unable: tuple[Unable, ...] = ()
 
     def item(self, item_id: str) -> Item | None:
         return next((i for i in self.items if i.id == item_id), None)
@@ -1198,6 +1213,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
             "not_modelled",
             "silent",
             "requirements",
+            "unable",
         ),
     )
     if unknown:
@@ -1257,7 +1273,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                                        f'a {item.kind}\'s {leans} is schema {since[0]}.{since[1]}\'s: give the '
                                        f'draft\'s "schema_version": "{since[0]}.{since[1]}"')  # fmt: skip
                 _check_axis_names(item, pointer("items", n), version, problems)
-    for listed in ("not_modelled", "silent"):
+    for listed in ("not_modelled", "silent", "unable"):
         if not isinstance(raw.get(listed, []), list):
             problems.fault(pointer(listed), f"{listed} is a list")
     not_modelled: list[NotModelled] = []
@@ -1267,7 +1283,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
         if obj is None:
             continue
         words = _words_or_empty(obj.get("words"), at + pointer("words"), problems)
-        reason = one_line(obj.get("reason"), MAX_REASON)
+        reason = one_line(obj.get("reason"), READ_REASON)
         if not words or reason is None:
             problems.fault(at, f"cite the words and give the reason they aren't modelled, in one line "
                                f"of at most {MAX_REASON} characters")  # fmt: skip
@@ -1279,7 +1295,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
         obj = _object(entry, at, problems, "a silent sentence", {"sentence", "reason"})
         if obj is None:
             continue
-        sentence, reason = obj.get("sentence"), one_line(obj.get("reason"), MAX_REASON)
+        sentence, reason = obj.get("sentence"), one_line(obj.get("reason"), READ_REASON)
         if isinstance(sentence, bool) or not isinstance(sentence, int) or sentence < 0:
             problems.fault(at + pointer("sentence"), "a sentence number")
             continue
@@ -1288,6 +1304,22 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                                                    f"of at most {MAX_REASON} characters")  # fmt: skip
             continue
         silent.append(Silent(sentence, reason))
+    unable: list[Unable] = []
+    for n, entry in enumerate(_list(raw.get("unable"))):
+        at = pointer("unable", n)
+        obj = _object(entry, at, problems, "an unable entry", {"words", "what"})
+        if obj is None:
+            continue
+        if version < (1, 10):
+            problems.fault(at, 'an "unable" entry is schema 1.10\'s: give the draft\'s "schema_version": "1.10"')
+            continue
+        words = _words_or_empty(obj.get("words"), at + pointer("words"), problems)
+        what = one_line(obj.get("what"), MAX_NAME)
+        if not words or what is None:
+            problems.fault(at, f"cite the words of what no kind makes, and say what it is in a few words (at most "
+                               f"{MAX_NAME} characters): \"involute gear teeth\"")  # fmt: skip
+            continue
+        unable.append(Unable(words, what))
     requirements = _requirements(raw.get("requirements"), problems)
     return PartSpec(
         str(name).strip(),
@@ -1295,6 +1327,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
         tuple(not_modelled),
         tuple(silent),
         requirements,
+        tuple(unable),
     ), problems
 
 

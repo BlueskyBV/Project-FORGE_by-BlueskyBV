@@ -44,10 +44,13 @@ from .citations import CitationCheck, Follows, Reading, check_count, check_quant
 from .citations import _matches as matches
 from .words import NumberedBrief, WordRef
 
-__all__ = ["CONSTANTS", "FUNCTIONS", "FormulaCheck", "check_formula"]
+__all__ = ["CONSTANTS", "FUNCTIONS", "RIGHT_ANGLES", "FormulaCheck", "check_formula"]
 
 #: Bare numbers a formula may use without the brief giving them, where they may go.
 CONSTANTS = frozenset({2.0})
+#: Angles a formula may use without the brief giving them: a right angle and a straight one, added to or taken from
+#: an angle the brief gives ("65 degrees from the base" is a tilt of 90 deg - 65 deg from square to it).
+RIGHT_ANGLES = frozenset({90.0, 180.0})
 #: The functions a formula may call.
 FUNCTIONS = frozenset(
     {"sqrt", "hypot", "sin", "cos", "tan", "asin", "acos", "atan", "atan2"}
@@ -72,7 +75,7 @@ class FormulaCheck:
 class _Literal:
     value: float
     unit: str | None
-    constant: bool = False  # a bare 2, halving, doubling or squaring
+    constant: bool = False  # a bare 2, halving, doubling or squaring; or a right or straight angle
 
 
 def _unit_name(node: ast.AST) -> str | None:
@@ -106,7 +109,8 @@ def _literals(tree: ast.AST) -> list[_Literal] | str:
     for node in ast.walk(tree):
         if (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mult)
                 and _number(node.left) is not None and _unit_name(node.right) is not None):  # fmt: skip
-            found.append(_Literal(_number(node.left) or 0.0, _unit_name(node.right)))
+            figure, unit = _number(node.left) or 0.0, _unit_name(node.right)
+            found.append(_Literal(figure, unit, _right_angle(node, figure, unit, parents)))
             taken.update((id(node.left), id(node.right)))
     for node in ast.walk(tree):
         if id(node) in taken:
@@ -128,6 +132,29 @@ def _literals(tree: ast.AST) -> list[_Literal] | str:
                 )
             )
     return found
+
+
+def _right_angle(node: ast.AST, value: float, unit: str | None, parents: dict[int, ast.AST]) -> bool:
+    """Whether ``90 deg`` or ``180 deg`` is added to or taken from an angle the brief gives: a complement or a supplement.
+
+    Observed on blind set 1: "leans back at 65 degrees from the base" is a
+    tilt of 25 degrees from square to it, which no formula could say while
+    every number had to be the brief's; the writer assumed it, and 65 was
+    asked about as unused. Only in a sum or a difference whose other side
+    holds a number from the brief, and only in degrees: it brings in no size.
+    """
+    if value not in RIGHT_ANGLES or unit is None:
+        return False
+    try:
+        if parse_unit(unit).symbol != "deg":
+            return False
+    except Exception:  # noqa: BLE001 - not a unit: not an angle
+        return False
+    parent = parents.get(id(node))
+    if not isinstance(parent, ast.BinOp) or not isinstance(parent.op, (ast.Add, ast.Sub)):
+        return False
+    other = parent.right if parent.left is node else parent.left
+    return _has_brief_number(other)
 
 
 def _chain_root(node: ast.AST, parents: dict[int, ast.AST]) -> ast.AST:

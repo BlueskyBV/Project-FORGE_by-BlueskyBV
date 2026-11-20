@@ -77,7 +77,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 26
+GUIDE_VERSION = 27
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -474,6 +474,9 @@ def _draft_schema_text() -> str:
              "reason": {"type": "string", "minLength": 1, "maxLength": MAX_REASON}},
             ("sentence", "reason"), "a sentence that says nothing about the shape, and why")},
         "requirements": _obj({"material": _ref("text")}, (), "what the part must be beyond its shape"),
+        "unable": {"type": "array", "items": _obj(
+            {"words": _ref("words"), "what": {"type": "string", "minLength": 1, "maxLength": MAX_NAME}},
+            ("words", "what"), "a shape the brief asks for that no kind here makes, and what it is")},
     }, ("schema_version", "name", "items"), "a part spec drafted from a brief")  # fmt: skip
     document = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -634,8 +637,10 @@ else; a pitch the brief gives must be in the name.
 numbers. Write each number with its unit as the brief gives it, use each \
 number of the cited words once, and only + - * / ** ( ) and sqrt, hypot, \
 sin, cos, tan, asin, acos, atan, atan2. The one number a formula may add is \
-a single 2 that halves, doubles or squares (a radius from a diameter). No \
-comments, one line.
+a single 2 that halves, doubles or squares (a radius from a diameter); and \
+an angle may add or take away 90 deg or 180 deg ("leans at 65 degrees from \
+the base" is a tilt of "90 deg - 65 deg" from square to it). No comments, \
+one line.
 - {{"assumed": "why"}}: the brief doesn't say, so you chose. Say why in a few \
 words (at most {max_reason} characters); the person reads it first. Assume \
 only what a part needs and the brief leaves open: a hole goes through a \
@@ -656,7 +661,15 @@ the brief names it: M8, M8x1, 608.
 ## Nothing in the brief is left out
 
 Every number of the brief (digits, "four", "pair", "half") must be used by a \
-value. Every sentence must feed an item, or be listed:
+value, or held by what the spec is: cite a count word in the words of what \
+comes in that many. "Four 5 mm holes" is a hole with a count of 4 citing \
+"four"; "all four corners rounded" a rounding whose edges cite "four", four \
+edges; "a chamfer on both ends" one whose edges cite "both", two rims; "two \
+plates" two blocks, each citing "two"; "6 mm in from both edges" two insets \
+citing the words round "both"; "one in each corner" the holes, citing "one". \
+A sentence that only names the part ("Part: sensor mount", "An L-bracket.") \
+is the spec's name: name the part in its words. Every other sentence must \
+feed an item, or be listed:
 - "requirements": {{"material": {{"text": "PETG", "from": {{"words": [1]}}}}}}: \
 the part's material, exactly as the brief names it ("aluminium 6061", grade \
 and all), or assumed with its reason. It names a stock: cite no size or \
@@ -665,12 +678,19 @@ out as not modelled. Every other word that names a material is another \
 thing's ("it slides on a steel rod"): list it in not_modelled, saying whose.
 - "not_modelled": [{{"words": [...], "reason": "..."}}]: what the brief says \
 that the part won't have: a colour, a finish, how it is made, what it is for, \
-another thing's material.
+another thing's material, a gap or clearance to another part that no size of \
+this one gives ("leaving a 0.2 mm gap" to the box it fits).
 - "silent": [{{"sentence": 2, "reason": "..."}}]: a sentence that says \
 nothing about the shape ("It carries no load").
+- "unable": [{{"words": [...], "what": "involute gear teeth"}}] \
+("schema_version": "1.10"): a shape the brief asks for that no kind here \
+makes (a gear's teeth, a spring's coils, knurling), with what it is in a few \
+words. Draft no stand-in for it (no plain disc for a gear): Forge tells the \
+person it can't make the part yet. Draft the rest of the brief as usual.
 Never leave out a feature because it is hard: model what you can, and list \
 what you can't in not_modelled with why. The person reads that list before \
-confirming, so it must say plainly what the part won't have.
+confirming, so it must say plainly what the part won't have. A shape no kind \
+makes goes in "unable", never in not_modelled.
 
 ## The frame and faces
 

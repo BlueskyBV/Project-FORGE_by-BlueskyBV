@@ -36,6 +36,7 @@ from forge_models import CancellationToken, Message, Provider, user
 from forge_spec import NumberedBrief, number_words
 from forge_spec.checks import SpecReport, check_draft
 from forge_spec.guide import GUIDE_VERSION, brief_message, draft_schema, instructions
+from forge_spec.versions import CURRENT
 
 from .base import Role, RoleOutputError, RoleResult, answer_in_shape
 
@@ -136,7 +137,10 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
       draft's ``"schema_version": "1.9"`` arrived as the number 1.9 and was
       refused; told so, the writer wrote it the same way again, and all 30
       briefs gave up. The schema names the one text it may be: 1.9 is
-      "1.9", and 1.1 is "1.10" where "1.10" is the text it names.
+      "1.9", and 1.1 is "1.10" where "1.10" is the text it names. A version
+      the schema doesn't name, a record's of an earlier minor version, is
+      the one earlier version it reads as (1.9 is "1.9" once the schema
+      names "1.10"), never two (1.1 where it names neither 1.1 nor 1.10).
     - **The whole draft under a lone wrapper the schema doesn't have**:
       ``{"spec": {"schema_version": ..., "items": [...]}}``. A wrapper whose
       one field is the schema's own is left alone.
@@ -154,6 +158,8 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
         spec = properties.get(name)
         if isinstance(spec, Mapping) and _a_number(value):
             same = [text for text in _texts_of(spec) if _reads_as(text, value)]
+            if not same and name == "schema_version":
+                same = [text for text in _versions() if _reads_as(text, value)]
             if len(same) == 1:
                 out[name] = same[0]
     items = out.get("items")
@@ -173,6 +179,12 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
     elif items is not None:
         out["items"] = items
     return out
+
+
+def _versions() -> list[str]:
+    """Every version of the current major a draft may be written in: "1.0" to "1.10"."""
+    major, minor = CURRENT
+    return [f"{major}.{m}" for m in range(minor + 1)]
 
 
 def _unwrapped(answer: Any, properties: Mapping[str, Any]) -> Any:

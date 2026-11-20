@@ -118,18 +118,18 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
 
     def test_the_version_as_a_number(self) -> None:
         answer = good()
-        answer["schema_version"] = 1.9
+        answer["schema_version"] = float(answer["schema_version"])  # "1.10" arrives as 1.1
         result = write_spec(ScriptedProvider([answer]), EXAMPLE_BRIEF)
         self.assertEqual(result.attempts, 1)
         self.assertEqual(result.value.problems, ())
 
     def test_a_number_the_schema_names_no_text_for_is_still_a_fault(self) -> None:
         answer = good()
-        answer["schema_version"] = 1.8  # the schema asks for "1.9"
+        answer["schema_version"] = 7.3  # no version there is
         with self.assertRaises(RepairExhaustedError) as caught:
             write_spec(ScriptedProvider([answer, answer]), EXAMPLE_BRIEF)
         said = " ".join(caught.exception.detail["last_problems"])
-        self.assertIn('written as text, in quotes: "1.9", not the number 1.8', said)
+        self.assertIn('written as text, in quotes: "1.10", not the number 7.3', said)
 
     def test_a_figure_is_matched_to_the_text_the_schema_names(self) -> None:
         schema = {"properties": {"schema_version": {"const": "1.10"}, "items": {}}}
@@ -137,6 +137,11 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
         self.assertIs(as_drafted({"schema_version": True, "items": []}, schema)["schema_version"], True)
         enum = {"properties": {"schema_version": {"enum": ["1.1", "1.10"]}}}
         self.assertEqual(as_drafted({"schema_version": 1.1}, enum)["schema_version"], 1.1)  # either: left as given
+
+    def test_a_record_of_an_earlier_minor_version(self) -> None:
+        # Blind set 1's second run was drafted at "1.9": replayed once the schema names "1.10", 1.9 is still "1.9".
+        self.assertEqual(as_drafted({"schema_version": 1.9, "items": []})["schema_version"], "1.9")
+        self.assertEqual(as_drafted({"schema_version": 1.1, "items": []})["schema_version"], "1.10")
 
     def test_the_whole_draft_under_a_wrapper(self) -> None:
         result = write_spec(ScriptedProvider([{"spec": good()}]), EXAMPLE_BRIEF)
@@ -162,7 +167,7 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
 
     def test_a_replayed_record_is_read_as_the_live_writer_read_it(self) -> None:
         answer = {"spec": good()}
-        answer["spec"]["schema_version"] = 1.9
+        answer["spec"]["schema_version"] = 1.1  # "1.10", as the transport hands it over
         self.assertEqual(read_answer(answer), good())
 
 

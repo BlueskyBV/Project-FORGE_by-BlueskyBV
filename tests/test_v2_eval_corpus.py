@@ -73,6 +73,22 @@ class TheBriefs(Folder):
         self.assertEqual(found[-1].text, "A PLA cube 10 mm on each side.")
         self.assertEqual(len({b.id for b in found}), 93)
 
+    def test_the_smoke_check_takes_its_few_briefs_afresh_within_a_ceiling(self) -> None:
+        import contextlib
+        import io
+
+        from forge_cli.cli import build_parser
+        from forge_cli.eval_corpus import SMOKE, SMOKE_COST, corpus_briefs
+
+        ids = {b.id for b in corpus_briefs([SUITE])}
+        self.assertTrue(set(SMOKE) <= ids, set(SMOKE) - ids)
+        args = build_parser().parse_args(["eval-corpus", "--smoke", "--replay", "--out", str(self.out)])
+        said = io.StringIO()
+        with contextlib.redirect_stdout(said):
+            args.handler(args)
+        self.assertIn(f"Briefs   : {len(SMOKE)}", said.getvalue())
+        self.assertEqual(args.max_cost, SMOKE_COST)
+
     def test_the_false_passes_keys_are_the_tests(self) -> None:
         from v2_false_passes import KEYS, keys
 

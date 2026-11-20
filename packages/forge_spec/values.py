@@ -47,7 +47,7 @@ from forge_units import ForgeUnitsError, Q, Quantity, Unit, known_units, parse_u
 from forge_units.dimension import DIMENSIONLESS
 
 from .citations import CitationCheck, check_count, check_quantity
-from .problems import MAX_REASON, Problems, one_line, pointer, unknown_keys
+from .problems import MAX_REASON, READ_REASON, Problems, one_line, pointer, unknown_keys
 from .tables import canonical_designation
 from .words import NumberedBrief, WordRef
 
@@ -274,7 +274,7 @@ def read_provenance(
         words = _words(raw["words"], at + pointer("words"), problems) or ()
     texts: dict[str, str] = {}
     for kind in kinds:
-        text = one_line(raw[kind], MAX_REASON)
+        text = one_line(raw[kind], READ_REASON if kind == "assumed" else MAX_REASON)
         if not isinstance(raw[kind], str) or not raw[kind].strip():
             problems.fault(at + pointer(kind), f"{kind} must be non-empty text")
         elif text is None:

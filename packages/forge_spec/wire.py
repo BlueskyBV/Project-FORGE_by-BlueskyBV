@@ -213,6 +213,12 @@ def to_wire(spec: PartSpec, version: Version = CURRENT) -> dict[str, Any]:
             if spec.requirements != Requirements()
             else {}
         ),
+        # Like requirements, only when there is any (schema 1.10).
+        **(
+            {"unable": [{"words": list(e.words), "what": e.what} for e in spec.unable]}
+            if spec.unable
+            else {}
+        ),
     }
 
 

@@ -1,0 +1,683 @@
+{
+  "spec_format": 1,
+  "name": "forearm rail",
+  "items": [
+    {
+      "id": "rail",
+      "kind": "extrusion",
+      "words": [
+        2,
+        3,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        33,
+        34,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153
+      ],
+      "axis": {
+        "choose": "z",
+        "from": {
+          "assumed": "the bar lies flat (words 18,19), so its 16 mm thickness runs vertically along Z"
+        }
+      },
+      "length": {
+        "value": 16,
+        "unit": "mm",
+        "from": {
+          "formula": "(16 mm + 16 mm) / 2",
+          "words": [
+            15,
+            16,
+            17,
+            110,
+            111,
+            112,
+            113
+          ]
+        }
+      },
+      "profile": {
+        "unit": "mm",
+        "start": [
+          15.875,
+          18
+        ],
+        "segments": [
+          {
+            "line_to": [
+              34,
+              18
+            ]
+          },
+          {
+            "line_to": [
+              34,
+              28
+            ]
+          },
+          {
+            "arc_to": [
+              58,
+              28
+            ],
+            "centre": [
+              46,
+              28
+            ],
+            "clockwise": true
+          },
+          {
+            "line_to": [
+              58,
+              18
+            ]
+          },
+          {
+            "line_to": [
+              175,
+              18
+            ]
+          },
+          {
+            "arc_to": [
+              175,
+              -18
+            ],
+            "centre": [
+              175,
+              0
+            ],
+            "clockwise": true
+          },
+          {
+            "line_to": [
+              15.875,
+              -18
+            ]
+          },
+          {
+            "arc_to": [
+              15.875,
+              18
+            ],
+            "centre": [
+              0,
+              0
+            ],
+            "clockwise": true
+          }
+        ],
+        "from": {
+          "words": [
+            11,
+            12,
+            13,
+            26,
+            27,
+            28,
+            29,
+            57,
+            58,
+            64,
+            65,
+            123,
+            124,
+            125,
+            127,
+            128,
+            142,
+            143,
+            144,
+            148,
+            149
+          ]
+        }
+      }
+    },
+    {
+      "id": "hole_pivot",
+      "kind": "hole",
+      "words": [
+        20,
+        21,
+        24,
+        25,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44
+      ],
+      "on": {
+        "item": "rail",
+        "face": "+end"
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 24,
+            "unit": "mm",
+            "from": {
+              "formula": "48 mm / 2",
+              "words": [
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "side": "-y",
+          "distance": {
+            "value": 24,
+            "unit": "mm",
+            "from": {
+              "formula": "48 mm / 2",
+              "words": [
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        }
+      },
+      "diameter": {
+        "value": 8.2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            37,
+            38
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            40,
+            41
+          ]
+        }
+      },
+      "count": {
+        "count": 1,
+        "from": {
+          "words": [
+            20
+          ]
+        }
+      }
+    },
+    {
+      "id": "hole_mid",
+      "kind": "hole",
+      "words": [
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "on": {
+        "item": "rail",
+        "face": "+end"
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 149,
+            "unit": "mm",
+            "from": {
+              "formula": "125 mm + 48 mm / 2",
+              "words": [
+                81,
+                82,
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "side": "-y",
+          "distance": {
+            "value": 24,
+            "unit": "mm",
+            "from": {
+              "formula": "48 mm / 2",
+              "words": [
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "pattern": {
+          "row": {
+            "axis": {
+              "choose": "x",
+              "from": {
+                "words": [
+                  78,
+                  79
+                ]
+              }
+            },
+            "pitch": {
+              "value": 30,
+              "unit": "mm",
+              "from": {
+                "formula": "155 mm - 125 mm",
+                "words": [
+                  84,
+                  85,
+                  81,
+                  82
+                ]
+              }
+            },
+            "count": {
+              "count": 2,
+              "from": {
+                "words": [
+                  70
+                ]
+              }
+            }
+          }
+        }
+      },
+      "diameter": {
+        "value": 8.2,
+        "unit": "mm",
+        "from": {
+          "words": [
+            72,
+            73
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            74,
+            75
+          ]
+        }
+      },
+      "count": {
+        "count": 2,
+        "from": {
+          "words": [
+            70
+          ]
+        }
+      }
+    },
+    {
+      "id": "lug_boss",
+      "kind": "boss",
+      "words": [
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180
+      ],
+      "on": {
+        "item": "rail",
+        "face": "+end"
+      },
+      "diameter": {
+        "value": 20,
+        "unit": "mm",
+        "from": {
+          "words": [
+            173,
+            174,
+            175,
+            176
+          ]
+        }
+      },
+      "height": {
+        "value": 6,
+        "unit": "mm",
+        "from": {
+          "words": [
+            178,
+            179,
+            180
+          ]
+        }
+      },
+      "place": {
+        "x": {
+          "side": "-x",
+          "distance": {
+            "value": 70,
+            "unit": "mm",
+            "from": {
+              "formula": "46 mm + 48 mm / 2",
+              "words": [
+                127,
+                128,
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        },
+        "y": {
+          "side": "-y",
+          "distance": {
+            "value": 52,
+            "unit": "mm",
+            "from": {
+              "formula": "28 mm + 48 mm / 2",
+              "words": [
+                148,
+                149,
+                26,
+                27
+              ]
+            }
+          },
+          "to": "centre"
+        }
+      }
+    },
+    {
+      "id": "hole_lug",
+      "kind": "hole",
+      "words": [
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209
+      ],
+      "on": {
+        "item": "rail",
+        "face": "-end"
+      },
+      "place": {
+        "concentric": {
+          "item": "lug_boss",
+          "from": {
+            "words": [
+              181,
+              182,
+              183,
+              184,
+              185
+            ]
+          }
+        }
+      },
+      "diameter": {
+        "value": 6.4,
+        "unit": "mm",
+        "from": {
+          "formula": "(6.4 mm + 6.4 mm) / 2",
+          "words": [
+            155,
+            156,
+            199,
+            200
+          ]
+        }
+      },
+      "depth": {
+        "through": true,
+        "from": {
+          "words": [
+            158,
+            159,
+            160,
+            189,
+            190,
+            192,
+            193
+          ]
+        }
+      },
+      "counterbore": {
+        "diameter": {
+          "value": 11.5,
+          "unit": "mm",
+          "from": {
+            "words": [
+              204,
+              205
+            ]
+          }
+        },
+        "depth": {
+          "value": 4,
+          "unit": "mm",
+          "from": {
+            "words": [
+              207,
+              208,
+              209
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "not_modelled": [
+    {
+      "words": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "reason": "describes what the rail is used for (an elbow brace), not its shape"
+    }
+  ],
+  "silent": [
+    {
+      "sentence": 8,
+      "reason": "says strength is checked outside Forge and there is no load case; it doesn't describe the shape"
+    }
+  ],
+  "requirements": {
+    "material": {
+      "text": "PLA",
+      "from": {
+        "words": [
+          1
+        ]
+      }
+    }
+  }
+}

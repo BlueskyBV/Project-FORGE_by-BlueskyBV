@@ -324,7 +324,7 @@ class AnAutomaticRunsAccounting(unittest.TestCase):
                          ["the brief says 'both' (sentence 2); nothing in the spec uses it"])  # fmt: skip
 
 
-#: The owner's first live run (9 November 2026), as the rules of 14.4 leave each draft: replayed, no model called.
+#: The owner's live runs (9 and 10 November 2026), as today's rules leave each draft: replayed, no model called.
 ENDINGS = {
     "fp01": "questions", "fp02": "questions", "fp03": "questions", "fp04": "questions", "fp05": "questions",
     "fp06": "stops for a person", "fp07": "stops for a person", "fp08": "stops for a person", "fp09": "questions",
@@ -332,6 +332,8 @@ ENDINGS = {
     "fp14": "BUILT TO DRAFT", "fp15": "stops for a person", "fp16": "questions", "fp17": "questions",
     "fp18": "questions", "fp19": "questions", "fp20": "stops for a person", "fp21": "stops for a person",
     "fp22": "stops for a person", "fp23": "questions",
+    # Its second run (10 November): the last four, drafted within --max-cost 20 (docs/V2-stage4.md, 14.4).
+    "fp24": "refused", "fp25": "questions", "fp26": "questions", "fp27": "questions",
 }  # fmt: skip
 
 

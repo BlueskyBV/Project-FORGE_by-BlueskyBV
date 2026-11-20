@@ -412,6 +412,14 @@ def _write_report(out: Path, briefs: Sequence[Brief], ended: Sequence[Ended], st
 # ----------------------------------------------------------------------
 # The commands
 # ----------------------------------------------------------------------
+#: The live smoke check's briefs (``forge eval-corpus --smoke``): a few of the suite's, chosen to touch what a
+#: change to the guide, the schema or the writer breaks first: counts and corners, a cross hole in a round side, a
+#: hollow, and a shape no kind makes (docs/V2-stage4.md, 14.6). About a dollar.
+SMOKE = ("R05", "R02", "C09", "X02")
+#: The most a smoke check spends unless --max-cost says otherwise (estimated USD).
+SMOKE_COST = 2.0
+
+
 def command_eval_corpus(args: argparse.Namespace) -> int:
     sources = [Path(s) for s in args.sources] or [
         p for p in (SUITE, RUNS) if p.exists()
@@ -419,6 +427,14 @@ def command_eval_corpus(args: argparse.Namespace) -> int:
     briefs = corpus_briefs(sources)
     if args.only:
         briefs = [b for b in briefs if b.id in set(args.only)]
+    if getattr(args, "smoke", False):
+        # A fresh folder each time, so every brief is drafted by the code as it is now: a smoke check
+        # replays nothing.
+        briefs = [b for b in briefs if b.id in SMOKE]
+        if args.max_cost is None:
+            args.max_cost = SMOKE_COST
+        out = Path(args.out or Path("runs") / "smoke" / time.strftime("%Y%m%d-%H%M%S"))
+        return _command(args, briefs, out, strict=args.auto)
     return _command(
         args, briefs, Path(args.out or Path("runs") / "corpus"), strict=args.auto
     )
@@ -473,6 +489,12 @@ def add_eval_corpus_parsers(subparsers: Any) -> None:
         "--auto",
         action="store_true",
         help="draft as an automatic run does: stricter checks",
+    )
+    corpus.add_argument(
+        "--smoke",
+        action="store_true",
+        help=f"a live check after a change: draft {len(SMOKE)} of the suite's briefs afresh into runs/smoke/<time>, "
+        f"within --max-cost (default ${SMOKE_COST:g})",
     )
     _common(corpus)
     corpus.set_defaults(handler=command_eval_corpus)

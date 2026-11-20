@@ -104,6 +104,7 @@ def spec_page(report: SpecReport, brief: NumberedBrief, *, status: str,
         for i in material.provenance.words:
             colours.setdefault(i, []).append(("the material", _MATERIAL))
     left_out = {i for entry in (spec.not_modelled if spec else ()) for i in entry.words}
+    left_out |= {i for beyond in (spec.unable if spec else ()) for i in beyond.words}
     silent = {i for entry in (spec.silent if spec else ()) for s in brief.sentences
               if s.index == entry.sentence for i in s.words}  # fmt: skip
     accounting = report.accounting
@@ -188,7 +189,7 @@ def spec_page(report: SpecReport, brief: NumberedBrief, *, status: str,
         shown = f'{e(body)} <span class="tag">[{e(tag)}</span>' if body else e(line)
         out.append(f"<li>{shown}</li>")
     out.append("</ol>")
-    for title, entries in (("Not modelled", rendered.not_modelled),
+    for title, entries in (("Forge can't make yet", rendered.unable), ("Not modelled", rendered.not_modelled),
                            ("Taken to say nothing about the shape", rendered.silent)):  # fmt: skip
         if entries:
             out.append(
