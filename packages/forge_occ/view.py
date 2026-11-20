@@ -1506,7 +1506,12 @@ def _self_intersections(shape: Any, shape_faces: list[Any]) -> int:
     counted where an edge joins them: they are the ends of an edge shorter
     than they are held to, joined by it (generated part 3500 read back from
     STEP: where a boss's rim touches a block's edge, the reader cut both
-    there 1.7e-8 mm apart).
+    there 1.7e-8 mm apart). Nor is a meeting of edges or faces that lies
+    wholly at an edge no longer than it is held to: that edge is a point,
+    and what meets there meets at it (generated part 3610 read back from
+    STEP: a boss's rim touching a block's edge, the reader cut a loop
+    5.5e-9 mm long into the block's edge there, held to 1.5e-7 mm, which
+    the rim and the boss's side pass through).
     """
     checker = BOPAlgo_CheckerSI()
     arguments = TopTools_ListOfShape()
@@ -1531,10 +1536,14 @@ def _self_intersections(shape: Any, shape_faces: list[Any]) -> int:
         )
         not in joined
     )
-    found += sum(
-        getattr(store, kind)().Size()
-        for kind in ("InterfVE", "InterfEE", "InterfVF", "InterfEF")
-    )
+    points = _point_edges(shape)
+    for kind in ("InterfVE", "InterfEE", "InterfVF", "InterfEF"):
+        table = getattr(store, kind)()
+        found += sum(
+            1
+            for k in range(table.Size())
+            if not _at_a_point_edge(store, table.Value(k), points)
+        )
     own = [frozenset(corners.FindIndex(v) for v in vertices(f)) for f in shape_faces]
     boxes = []
     for face in shape_faces:
@@ -1561,6 +1570,75 @@ def _self_intersections(shape: Any, shape_faces: list[Any]) -> int:
             if not gap.IsDone() or gap.Value() <= reach:
                 found += 1
     return int(found)
+
+
+def _point_edges(shape: Any) -> list[tuple[Array, float]]:
+    """The edges no longer than the tolerance they are held to, each as its middle and how far round it it reaches."""
+    found: list[tuple[Array, float]] = []
+    for edge in edges(shape):
+        edge = TopoDS.Edge(edge)
+        if BRep_Tool.Degenerated_s(edge):
+            continue
+        held = BRep_Tool.Tolerance_s(edge)
+        curve = BRepAdaptor_Curve(edge)
+        length = GCPnts_AbscissaPoint.Length_s(curve)
+        if length <= held:
+            middle = curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()))
+            found.append(
+                (np.array([middle.X(), middle.Y(), middle.Z()]), held + length)
+            )
+    return found
+
+
+def _held_to(piece: Any) -> float:
+    """The tolerance a vertex, an edge or a face is held to."""
+    kind = piece.ShapeType()
+    if kind == TopAbs_VERTEX:
+        return float(BRep_Tool.Tolerance_s(TopoDS.Vertex(piece)))
+    if kind == TopAbs_EDGE:
+        return float(BRep_Tool.Tolerance_s(TopoDS.Edge(piece)))
+    return float(BRep_Tool.Tolerance_s(TopoDS.Face(piece)))
+
+
+def _at_a_point_edge(store: Any, met: Any, points: list[tuple[Array, float]]) -> bool:
+    """Whether a meeting the self-interference checker found lies wholly at one edge no longer than it is held to.
+
+    Where it lies: a vertex in it; the part of an edge two edges, or an
+    edge and a face, have in common (its ends and middle, or the one point
+    where they cross). Undecided (False) when none of that can be read.
+    """
+    if not points:
+        return False
+    i, j = met.Indices()
+    pieces = (store.Shape(i), store.Shape(j))
+    there: list[Array] = []
+    for piece in pieces:
+        if piece.ShapeType() == TopAbs_VERTEX:
+            p = BRep_Tool.Pnt_s(TopoDS.Vertex(piece))
+            there.append(np.array([p.X(), p.Y(), p.Z()]))
+    if hasattr(met, "CommonPart"):
+        part = met.CommonPart()
+        if part.Edge1().IsNull():
+            return False
+        curve = BRepAdaptor_Curve(part.Edge1())
+        if part.Type() == TopAbs_EDGE:
+            first, last = part.Range1()
+            at = [first, 0.5 * (first + last), last]
+        elif part.Type() == TopAbs_VERTEX:
+            at = [part.VertexParameter1()]
+        else:
+            return False
+        for t in at:
+            p = curve.Value(float(t))
+            there.append(np.array([p.X(), p.Y(), p.Z()]))
+    if not there:
+        return False
+    held = _held_to(pieces[0]) + _held_to(pieces[1])
+    found = np.array(there)
+    return any(
+        bool((fv.norm(found - middle, axis=1) <= reach + held).all())
+        for middle, reach in points
+    )
 
 
 def _joined_corners(

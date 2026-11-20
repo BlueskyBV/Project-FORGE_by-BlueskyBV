@@ -2089,15 +2089,21 @@ def _witness(part: Oracle, points: Array, radius: float | Array) -> NDArray[np.b
                     itertools.combinations(chosen, 2)
                 ):
                     continue
-                on_all = _meet([mine[n].patch for n in chosen], x)
-                if on_all is None:
-                    continue
-                gap = float(fv.norm(on_all - x))
-                if many == 2 and gap <= 2 * reach[row] + OFF:
-                    edges.add(chosen)
-                if gap <= reach[row]:
-                    meets.append(on_all)
-                    owner.append(row)
+                patches = [mine[n].patch for n in chosen]
+                on_all = _meet(patches, x)
+                tried = [] if on_all is None else [on_all]
+                # Two pieces met loosely or not at all may meet at a small angle: also where Newton's steps meet them.
+                if many == 2 and (on_all is None or float(fv.norm(patches[0].foot(on_all) - on_all)) > ON):
+                    steep = _meet_steeply(patches[0], patches[1], x)
+                    if steep is not None:
+                        tried.append(steep)
+                for at in tried:
+                    gap = float(fv.norm(at - x))
+                    if many == 2 and gap <= 2 * reach[row] + OFF:
+                        edges.add(chosen)
+                    if gap <= reach[row]:
+                        meets.append(at)
+                        owner.append(row)
         found[_served(part, meets, owner)] = True
     left = {row: pairs for row, pairs in nearest.items() if not found[row]}
     if left:
@@ -2336,6 +2342,54 @@ def _meet(pieces: Sequence[Patch], x: Array, rounds: int = 200) -> Array | None:
         q = q_next
     # On the last piece by making; on the others only where they meet there.
     if any(float(fv.norm(piece.foot(q) - q)) > 10 * ON for piece in pieces[:-1]):
+        return None
+    return q
+
+
+#: The most steps :func:`_meet_steeply` takes.
+_STEEP_ROUNDS = 60
+
+
+def _meet_steeply(first: Patch, second: Patch, x: Array) -> Array | None:
+    """A point on both pieces near ``x`` where they meet at a small angle; None if they don't meet near it.
+
+    Projecting onto each in turn (:func:`_meet`) closes the gap each round
+    only by the square of the cosine of the angle between them: where a
+    hole through everything behind it grazes a tube's side, the wall
+    between thinning to an edge, two hundred rounds leave it far from both,
+    or a few billionths of a millimetre off the first, in the air beside
+    the edge, where the tips of the window it cuts in the side are nearly
+    tangent (generated part 1880). Each step here goes instead to the point nearest the last on the
+    line where the two pieces' tangent planes at its feet meet (their
+    normals the ways to it from its feet), as Newton's method does, and the
+    point found is on both. A foot the point is already on keeps the normal
+    last found there; two pieces parallel where it is don't meet there.
+    """
+    q = np.asarray(x, dtype=float)
+    ways: list[Array | None] = [None, None]
+    for _ in range(_STEEP_ROUNDS):
+        feet = (first.foot(q), second.foot(q))
+        gaps = []
+        for k, foot in enumerate(feet):
+            off = q - foot
+            gap = float(fv.norm(off))
+            if gap > 1e-12 * (1 + float(fv.norm(q))):
+                ways[k] = off / gap
+            gaps.append(gap)
+        if max(gaps) <= ON:
+            break
+        a, b = ways
+        if a is None or b is None:
+            q = feet[0] if a is None else feet[1]
+            continue
+        c = float(fv.dot(a, b))
+        apart = 1.0 - c * c
+        if apart <= 1e-12:
+            return None
+        s, t = float(fv.dot(a, q - feet[0])), float(fv.dot(b, q - feet[1]))
+        q = q - ((s - c * t) / apart) * a - ((t - c * s) / apart) * b
+    q = second.foot(q)
+    if float(fv.norm(first.foot(q) - q)) > 10 * ON:
         return None
     return q
 

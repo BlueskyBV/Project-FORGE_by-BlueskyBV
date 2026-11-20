@@ -382,6 +382,32 @@ class StlAndThreeMf(unittest.TestCase):
             check_mesh_file(stl_bytes(mesh), shape, coarse, tolerance)
         self.assertLessEqual(fine.deviation, tolerance.linear)
 
+    def test_a_wall_thinning_to_an_edge_is_accounted_for(self) -> None:
+        """Generated part 1880: a hole through everything behind it grazes a tube's side under a dome, the wall between thinning to an edge round the window it cuts. The STL's triangles along that edge were 0.002 mm from it; the spec's surface there is found where the hole and the side meet, at so small an angle that projecting onto each in turn crept, and the file is accounted for as the part is."""
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_checks.accounting import account_faces
+        from forge_checks.classes import Verdict
+        from forge_checks.judge import Judge
+        from forge_checks.mesh import Mesh
+        from forge_checks.view import ViewProxy
+        from forge_cli.build import export_tolerance
+        from forge_eval.generator import render
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        spec = _spec(render(REGRESSIONS[1880][1]).items)
+        _, built = _built(spec)
+        judge = Judge.of(spec)
+        tolerance = export_tolerance(judge.suite)
+        meshed = mesh_part(built.result.shape, tolerance)
+        mesh = Mesh.from_triangles(read_stl(stl_bytes(meshed.mesh, "part")).triangles)
+        found = account_faces(judge.part, ViewProxy(export.file_view(mesh, tolerance)), judge.suite.resolution)
+        self.assertIs(found.verdict, Verdict.PASS, found.misses[:2])
+        self.assertGreater(found.built.witnessed, 20)
+
     def test_the_mesh_read_back_is_the_mesh_written(self) -> None:
         part = mesh_part(BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape())
         read = read_stl(stl_bytes(part.mesh))

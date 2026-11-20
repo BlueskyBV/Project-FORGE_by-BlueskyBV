@@ -593,6 +593,73 @@ class AReadersTinyEdges(unittest.TestCase):
 
 
 @needs_occ
+class AReadersTinyLoops(unittest.TestCase):
+    """Generated part 3610 read back from STEP: where a boss's rim touches the block's edge, OpenCascade's reader cut a loop into the block's edge there, 5.5e-9 mm long and held to 1.5e-7 mm, which the rim and the boss's side pass through.
+
+    The self-interference checker finds the rim and the side meeting that
+    loop, and the rim meeting the side, all within it. An edge no longer
+    than it is held to is a point: what meets there meets at it, and the
+    part read back is sound. A meeting anywhere else is still counted.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_eval.generator import render
+        from forge_occ.export import StepPart, read_step, write_step
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        _, built = _built(_spec(render(REGRESSIONS[3610][1]).items))
+        cls.written = built.result.shape
+        cls.back = read_step(write_step([StepPart("part", cls.written)])).parts["part"]
+
+    def test_the_reader_made_them(self) -> None:
+        from forge_occ.view import _point_edges
+
+        self.assertEqual(_point_edges(self.written), [])
+        self.assertEqual(len(_point_edges(self.back)), 2)
+
+    def test_what_meets_at_them_is_not_a_meeting(self) -> None:
+        self.assertEqual(BrepView(self.written).topology().self_intersections, 0)
+        found = BrepView(self.back).topology()
+        self.assertEqual(found.self_intersections, 0)
+        self.assertTrue(found.sound)
+
+    def test_a_meeting_elsewhere_is_counted(self) -> None:
+        """Two boxes' shells crossing in one solid: each meeting the checker finds is at a point edge put where it lies, and at none put away from it."""
+        from forge_occ.view import _CHECKED_LEVEL, _at_a_point_edge
+        from OCP.BOPAlgo import BOPAlgo_CheckerSI
+        from OCP.collections import List_TopoDS_Shape
+
+        solid = TopoDS_Solid()
+        builder = BRep_Builder()
+        builder.MakeSolid(solid)
+        builder.Add(solid, shells(box())[0])
+        builder.Add(solid, shells(box((5.0, 5.0, 5.0)))[0])
+        checker = BOPAlgo_CheckerSI()
+        arguments = List_TopoDS_Shape()
+        arguments.Append(solid)
+        checker.SetArguments(arguments)
+        checker.SetRunParallel(False)
+        checker.SetNonDestructive(True)
+        checker.SetLevelOfCheck(_CHECKED_LEVEL)
+        checker.Perform()
+        store = checker.DS()
+        met = [store.InterfEE().Value(k) for k in range(store.InterfEE().Size())]
+        met += [store.InterfEF().Value(k) for k in range(store.InterfEF().Size())]
+        self.assertGreater(len(met), 0)
+        for meeting in met:
+            self.assertFalse(_at_a_point_edge(store, meeting, [(np.array([-50.0, -50.0, -50.0]), 1e-7)]))
+            self.assertFalse(_at_a_point_edge(store, meeting, []))
+        # A point edge as wide as the whole of them: every meeting lies at it.
+        self.assertTrue(all(_at_a_point_edge(store, m, [(np.array([7.5, 7.5, 7.5]), 100.0)]) for m in met))
+
+
+@needs_occ
 class TheTopologyIsTheMeshViews(unittest.TestCase):
     """The same counts as the stage-2 mesh view of a fine mesh of the same part (11.1)."""
 

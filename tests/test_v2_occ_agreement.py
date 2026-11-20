@@ -343,6 +343,28 @@ class AThinFaceJoinedFlush(unittest.TestCase):
         )
 
 
+@needs_occ
+class ANarrowCutsMouth(unittest.TestCase):
+    def test_its_lost_names_are_excused(self) -> None:
+        """Generated part 670: an L-shaped pocket right through a post, its legs 0.28 mm wide, on a part 119 mm across. No point of its tool's end faces lies twice the view's reach (0.12 mm) clear of their rims; held to the exact kernel's own tolerance, as the step's part is, points clear of the rim show the step that cut it lost them rightly."""
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import v2_exit4
+        from forge_eval.generator import render
+        from v2_regressions import REGRESSIONS
+
+        spec = v2_exit4._spec(render(REGRESSIONS[670][1]).items)
+        plan, built = v2_exit4._built(spec)
+        report = agree(plan.document(built.choice), "part", exact=built.result)
+        self.assertTrue(report.holds, json.dumps(report.as_dict(), default=str)[:2000])
+        self.assertEqual(report.names["missing"], [])
+        excused = " | ".join(report.names["excused"])
+        for face in ("start_face", "end_face"):
+            self.assertIn(f"i4.0.cut.{face}: step i4.cut lost it rightly", excused)
+
+
 class AgreementFindsAnExactPartMadeWrong(unittest.TestCase):
     """The implicit part from the document; the exact one from a document changed on purpose."""
 

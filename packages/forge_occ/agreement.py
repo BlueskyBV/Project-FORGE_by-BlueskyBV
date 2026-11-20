@@ -760,7 +760,17 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
     if _moved_after(steps, owner, last, until):
         return None
     reach = max(float(solid.envelope.diagonal) * 1e-3, 1e-6)
+    # Both parts are the exact kernel's, made by booleans with no fuzz: a face the step kept is on its part to
+    # OpenCascade's own tolerance. Within ``reach``, as a view is held, a standing item's foot carried a hair into a
+    # side (a slim boss round a cone, its base 0.04 mm under the side, the step trimming the tool to the side) would be
+    # taken for kept (generated part 1570).
+    kept = max(float(solid.envelope.diagonal) * 1e-6, 1e-6)
     clear = _clear_inside(made, 2 * reach)
+    if not len(clear) and lost_at is not None:
+        # A face narrower than twice the view's reach has no point that far from its rim (generated part 670: an
+        # L-shaped pocket's mouth on a post, its legs 0.28 mm wide, the part 119 mm across). The step's part is held
+        # to ``kept``, not to the view's reach, so points a few times that clear of the rim will do.
+        clear = _clear_inside(made, 8 * kept)
     if not len(clear):
         return None
     if lost_at is None:
@@ -768,11 +778,6 @@ def _gone_inside(entity: Any, document: DocumentV2, component: str, exact: Build
             return None
         return "its inside is off the exact part everywhere (a tool's face in the air, its rim an edge of the part)"
     there = exact.products.get(lost_at)
-    # Both parts are the exact kernel's, made by booleans with no fuzz: a face the step kept is on its part to
-    # OpenCascade's own tolerance. Within ``reach``, as a view is held, a standing item's foot carried a hair into a
-    # side (a slim boss round a cone, its base 0.04 mm under the side, the step trimming the tool to the side) would be
-    # taken for kept (generated part 1570).
-    kept = max(float(solid.envelope.diagonal) * 1e-6, 1e-6)
     if (
         not isinstance(there, SolidProduct)
         or (distances_to(clear, there.shape) <= kept).any()

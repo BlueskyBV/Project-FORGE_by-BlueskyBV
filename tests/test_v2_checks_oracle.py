@@ -39,7 +39,7 @@ from forge_checks.oracle import (
     thread_pitch,
 )
 from forge_checks.place import place
-from forge_checks.shapes import Frame, Polygon, Prism, Revolved
+from forge_checks.shapes import Frame, Patch, Polygon, Prism, Revolved
 from forge_checks.view import Box, Resolution, Side
 from forge_spec.font import text_width
 from forge_spec.placement import solve
@@ -787,6 +787,56 @@ class Witnesses(unittest.TestCase):
         )
         self.assertEqual(part.witness(line, OFF).tolist(), [True] * 4)
         self.assertEqual(part.witness(one_wall, OFF).tolist(), [False] * 3)
+
+
+class _Plane(Patch):
+    """A whole plane, as a patch: all a meeting asks of a piece is its nearest point."""
+
+    def __init__(self, origin: Any, normal: Any) -> None:
+        self.origin = np.asarray(origin, dtype=float)
+        way = np.asarray(normal, dtype=float)
+        self.normal = way / math.sqrt(float((way * way).sum()))
+
+    def foot(self, x: Any) -> Any:
+        x = np.asarray(x, dtype=float)
+        return x - float(((x - self.origin) * self.normal).sum()) * self.normal
+
+
+class TwoPiecesMeeting(unittest.TestCase):
+    """Where two pieces meet near a point: by projecting onto each in turn, or at a small angle by Newton's steps (part 1880)."""
+
+    def test_at_a_small_angle(self) -> None:
+        """Two planes meeting along the x axis at 0.002 rad: projecting in turn creeps, two hundred rounds leaving it far from the first; Newton's steps come to the nearest point where they meet."""
+        from forge_checks.oracle import _meet, _meet_steeply
+
+        angle = 0.002
+        floor = _Plane((0.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+        tilted = _Plane((0.0, 0.0, 0.0), (0.0, -math.sin(angle), math.cos(angle)))
+        x = np.array([1.0, 0.3, 0.2])
+        self.assertIsNone(_meet([floor, tilted], x))
+        met = _meet_steeply(floor, tilted, x)
+        assert met is not None
+        np.testing.assert_allclose(met, [1.0, 0.0, 0.0], atol=1e-9)
+
+    def test_steeply_where_they_meet_squarely(self) -> None:
+        from forge_checks.oracle import _meet, _meet_steeply
+
+        floor = _Plane((0.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+        wall = _Plane((0.0, 2.0, 0.0), (0.0, 1.0, 0.0))
+        x = np.array([3.0, 2.5, 0.4])
+        both = (_meet([floor, wall], x), _meet_steeply(floor, wall, x))
+        for met in both:
+            assert met is not None
+            np.testing.assert_allclose(met, [3.0, 2.0, 0.0], atol=1e-9)
+
+    def test_parallel_pieces_do_not_meet(self) -> None:
+        from forge_checks.oracle import _meet, _meet_steeply
+
+        floor = _Plane((0.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+        above = _Plane((0.0, 0.0, 1.0), (0.0, 0.0, 1.0))
+        x = np.array([0.5, 0.5, 0.25])
+        self.assertIsNone(_meet([floor, above], x))
+        self.assertIsNone(_meet_steeply(floor, above, x))
 
 
 class Roundings(unittest.TestCase):

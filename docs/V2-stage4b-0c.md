@@ -2105,8 +2105,34 @@ judged, now:
   cone's side, the boss's foot 0.04 mm under the side and trimmed to it. A
   face a step lost is taken for kept only within the exact kernel's own
   tolerance (`agreement._gone_inside`).
+- Generated part 670: an L-shaped pocket right through a post, its legs
+  0.28 mm wide, on a part 119 mm across. No point of its tool's end faces
+  lay twice the view's reach (0.12 mm) clear of their rims, so the
+  agreement couldn't show the step that cut it lost them rightly. That
+  step's part is held to the exact kernel's own tolerance, so points a few
+  times that clear of the rim are taken where none lie farther
+  (`agreement._gone_inside`).
+- Generated part 3610 read back from STEP: where a boss's rim touches a
+  block's edge, the reader cut a loop 5.5e-9 mm long into the edge, held to
+  1.5e-7 mm. The rim and the boss's side passing through it were counted
+  as three places the surface meets itself. An edge no longer than it is
+  held to is a point, and what meets there meets at it. A meeting anywhere
+  else is still counted (`view._self_intersections`).
+- Generated part 1880's STL and 3MF: a hole through everything behind it
+  grazes a tube's side under a dome, the wall between thinning to an edge
+  round the window it cuts. Face accounting missed 21 built points along
+  that edge, each 0.002 mm from it: the witness looks for the spec's
+  surface where the hole and the side meet, and projecting onto each in
+  turn closes the gap each round only by the square of the cosine of the
+  angle between them. Two hundred rounds left it far from both, or, at the
+  window's nearly tangent tips, a few billionths of a millimetre off one,
+  in the air. Where two pieces meet loosely or not at all, the witness also
+  tries Newton's steps to where their tangent planes meet
+  (`oracle._meet_steeply`), which only adds points it may find.
 
-Tests: `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
+Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
+(3610), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`
+(1880), `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
 `tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,
 `tests/test_v2_spec_placement.py`.
 
