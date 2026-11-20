@@ -283,8 +283,9 @@ def _check_values(spec: PartSpec, c: _Collect) -> None:
                 c.mentions.append(raw.words)
 
 
-#: Words after a count of one that say which of a thing's several it picks: "at one end", "along one edge".
-_PICKED = frozenset({"end", "ends", "edge", "edges", "side", "sides", "face", "faces", "corner", "corners"})
+#: Words after a count of one that say which of a thing's several it picks: "at one end", "along one edge". The brief's
+#: words, not a pattern's names ("ends", "corners"), though two are spelled alike.
+_PICKED = frozenset("end ends edge edges side sides face faces corner corners".split())
 #: Words after "one" that make it one at each of several places: "one in each corner", "one near each end".
 _EACH = frozenset({"each", "every", "per"})
 #: How far after a count word, in words, what it counts or where it goes is looked for.
