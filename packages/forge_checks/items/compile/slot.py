@@ -157,10 +157,25 @@ class Slot(CompileKind):
         a, across = _keyway_ways(c, item, copy)
         width, length = _mm(item.get("width")), _mm(item.get("length"))
         straight = (length - width) / 2 if c._choice_value(item, "ends") == "round" else length / 2
-        walls = (c.cut_wall(copy, across, width / 2, a, straight), c.cut_wall(copy, -across, width / 2, a, straight))
+        # Past the side's axis its walls are seen on the near side only, from the mouth to the axis: a slot right
+        # through a rod has walls whose middle runs through the axis, which shows no turn about it as a whole
+        # (generated part 7270: its angle measured from 0.76 mm out, ±1.04 degrees on its files, and blind to a turn).
+        near = min(copy.span[1], side.radius)
+        walls = (_near_wall(c, copy, across, width / 2, a, straight, near),
+                 _near_wall(c, copy, -across, width / 2, a, straight, near))  # fmt: skip
         if not all(c.seen(w) for w in walls):
             return None
-        return Middle(*walls), width, max(side.radius - copy.span[1] / 2, width / 2)
+        return Middle(*walls), width, max(side.radius - near / 2, width / 2)
+
+
+def _near_wall(c: CompileContext, copy: Copy, way: np.ndarray, at: float, across: np.ndarray, half: float,
+               depth: float) -> Plane:  # fmt: skip
+    """A cut's wall round a side (:meth:`CompileContext.cut_wall`), from its mouth only ``depth`` in."""
+    assert copy.span is not None
+    if depth >= copy.span[1]:
+        return c.cut_wall(copy, way, at, across, half)
+    centre = _v(copy.point) - depth / 2 * _v(copy.direction) + at * way
+    return Plane(_t(centre), _t(-way), first=_t(across), half=(half, depth / 2))
 
 
 def _keyway_wall(c: CompileContext, item: Item, copy: Copy) -> Plane:

@@ -4002,6 +4002,8 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
             continue
         ring = Step(f.id, copy.index, False, RingCorner(_t(p), _t(n), r, t, (-1.0, 0.0), (0.0, b), size, round_))
         part.late.append(ring if keep is None else _kept_open(ring, keep))
+        if keep is not None:
+            _dipping_rim_zones(part, p + t * n, n, r, keep, size)
         face = part.flats.get(
             (target.id, copy.index, "+end" if name == "top" else "-end")
         )
@@ -4034,6 +4036,46 @@ def _round_rod(f: Feature, target: Feature, copy: Copy, which: str, size: float,
                 RingCorner(_t(p), _t(n), r, 0.0, (1.0, 0.0), (0.0, 1.0), size, round_),
             )
         )
+
+
+#: Points round a leaning rod's rounded rim that :func:`_dipping_rim_zones` asks how near its face's plane they are.
+_RIM_ROUND = 720
+
+
+def _dipping_rim_zones(part: _Part, centre: Array, axis: Array, radius: float, plane: tuple[Array, Array],
+                       size: float) -> None:  # fmt: skip
+    """Zones where a leaning rod's rounded rim dips to its face's plane: its rounding, kept on the plane's open side,
+    ends there against the face, where the round itself is bounded, not given (fillet.md), as where roundings meet.
+
+    Each stretch of the rim within twice the rounding's size of the plane, a box round it a little more than the size
+    each way (generated part 6872: a boss leaning 60 degrees, its far rim 0.13 mm under its face, its rounding there
+    built otherwise than the truth's, 0.2 mm from where the rim crosses the plane).
+    """
+    origin, normal = plane
+    helper = np.array([1.0, 0.0, 0.0]) if abs(float(axis[0])) < 0.9 else np.array([0.0, 1.0, 0.0])
+    e1 = np.cross(axis, helper)
+    e1 = e1 / float(fv.norm(e1))
+    e2 = np.cross(axis, e1)
+    turn = 2 * math.pi * np.arange(_RIM_ROUND) / _RIM_ROUND
+    rim = centre + radius * (fv.cos(turn)[:, None] * e1 + fv.sin(turn)[:, None] * e2)
+    near = np.abs(fv.matmul(rim - origin, normal)) <= 2 * size
+    if not near.any():
+        return
+    reach = _CORNER * size + _ZONE
+    if near.all():
+        part.zones.append((_t(rim.min(axis=0) - reach), _t(rim.max(axis=0) + reach)))
+        return
+    # Round the rim from a point not near, each run of near ones a stretch.
+    start = int(np.argmin(near))
+    order = [(start + k) % _RIM_ROUND for k in range(_RIM_ROUND)]
+    run: list[int] = []
+    for k in [*order, start]:
+        if near[k]:
+            run.append(k)
+        elif run:
+            points = rim[run]
+            part.zones.append((_t(points.min(axis=0) - reach), _t(points.max(axis=0) + reach)))
+            run = []
 
 
 def _quarter(n: Array, e1: Array, d: Array) -> tuple[float, float]:

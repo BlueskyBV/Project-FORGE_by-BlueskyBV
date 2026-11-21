@@ -63,7 +63,11 @@ from OCP.BRepBndLib import BRepBndLib
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeVertex
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepClass3d import BRepClass3d, BRepClass3d_SolidClassifier
-from OCP.BRepExtrema import BRepExtrema_DistShapeShape, BRepExtrema_IsInFace
+from OCP.BRepExtrema import (
+    BRepExtrema_DistShapeShape,
+    BRepExtrema_IsInFace,
+    BRepExtrema_IsOnEdge,
+)
 from OCP.BRepGProp import BRepGProp
 from OCP.BRepLProp import BRepLProp_SLProps
 from OCP.BRepTools import BRepTools
@@ -92,6 +96,7 @@ from OCP.GProp import GProp_GProps
 from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
 from OCP.IntCurveSurface import IntCurveSurface_In, IntCurveSurface_Out
 from OCP.IntTools import IntTools_FClass2d
+from OCP.ShapeAnalysis import ShapeAnalysis_Surface
 from OCP.TopAbs import (
     TopAbs_EDGE,
     TopAbs_FACE,
@@ -176,19 +181,23 @@ def _xyz(p: Any) -> Array:
     return np.array([p.X(), p.Y(), p.Z()], dtype=np.float64)
 
 
-def _box_of(shape: Any) -> Box:
-    """The box round a shape, face by face (:func:`_add_face`), or OpenCascade's optimal one where it has no face."""
+def _box_of(shape: Any, held: bool = True) -> Box:
+    """The box round a shape, face by face (:func:`_add_face`), or OpenCascade's optimal one where it has no face.
+
+    ``held``: grown round a ball's face's corners by the tolerance they are held to; else round the points alone (a
+    part read back from STEP is held more loosely: measure.properties).
+    """
     box = Bnd_Box()
     found = faces(shape)
     if not found:
         BRepBndLib.AddOptimal_s(shape, box, False, False)
     for face in found:
-        _add_face(face, box)
+        _add_face(face, box, held)
     x0, y0, z0, x1, y1, z1 = box_limits(box)
     return Box((x0, y0, z0), (x1, y1, z1))
 
 
-def _add_face(face: Any, box: Any) -> None:
+def _add_face(face: Any, box: Any, held: bool = True) -> None:
     """A face's box, added: OpenCascade's optimal box; a ball's face's from its boundary and those of the ball's six
     extremes that lie on it. OpenCascade takes a ball's face's box from the whole of its parameters' rectangle, far
     past the face where its boundary isn't one of the ball's own circles (a ball made turned about its centre, then
@@ -202,7 +211,10 @@ def _add_face(face: Any, box: Any) -> None:
     for edge in edges(face):
         BRepBndLib.AddOptimal_s(edge, box, False, False)
     for vertex in vertices(face):
-        BRepBndLib.Add_s(vertex, box)
+        if held:
+            BRepBndLib.Add_s(vertex, box)
+        else:
+            box.Add(BRep_Tool.Pnt_s(TopoDS.Vertex(vertex)))
     classifier = IntTools_FClass2d(face, ON_FACE)
     for k in range(3):
         for sign in (-1.0, 1.0):
@@ -383,20 +395,60 @@ class BrepView:
         p = _xyz(where)
         sides = set()
         for i in range(1, meter.NbSolution() + 1):
-            if meter.SupportTypeShape2(i) != BRepExtrema_IsInFace:
+            kind = meter.SupportTypeShape2(i)
+            q = _xyz(meter.PointOnShape2(i))
+            if kind == BRepExtrema_IsInFace:
+                face = TopoDS.Face(meter.SupportOnShape2(i))
+                u, v = meter.ParOnFaceS2(i)
+                way = _outward(face, BRepAdaptor_Surface(face, False), u, v)
+            elif kind == BRepExtrema_IsOnEdge:
+                found = self._edge_way(TopoDS.Edge(meter.SupportOnShape2(i)), q)
+                if found is None:
+                    return None
+                way = found
+            else:
                 return None
-            face = TopoDS.Face(meter.SupportOnShape2(i))
-            u, v = meter.ParOnFaceS2(i)
-            along = float(
-                fv.matmul(
-                    p - _xyz(meter.PointOnShape2(i)),
-                    _outward(face, BRepAdaptor_Surface(face, False), u, v),
-                )
-            )
+            along = float(fv.matmul(p - q, way))
             if abs(along) < 0.5 * gap:
                 return None
             sides.add(Side.OUT if along > 0.0 else Side.IN)
         return sides.pop() if len(sides) == 1 else None
+
+    def _edge_way(self, edge: Any, q: Array) -> Array | None:
+        """The way out of the part at a point ``q`` of an edge: the sum of its faces' outward normals there, made a unit;
+        None where it has no two faces, they turn back on each other (a knife edge), or a normal can't be found.
+
+        A point whose nearest point of a closed surface is on an edge is off it
+        within the edge's cone of normals (outside a convex edge, inside a
+        concave one), so on the side of that sum (Bærentzen and Aanæs's
+        pseudo-normal): generated part 7920 read back from STEP, a point
+        0.1 mm off an M6 thread's crest, its nearest point on the crest's
+        edge, which OpenCascade's classifier put inside.
+        """
+        if not self._edge_faces.Contains(edge):
+            return None
+        faces = list(self._edge_faces.FindFromKey(edge))
+        if len(faces) != 2:
+            return None
+        total = np.zeros(3)
+        at = gp_Pnt(float(q[0]), float(q[1]), float(q[2]))
+        for shape in faces:
+            face = TopoDS.Face(shape)
+            uv = ShapeAnalysis_Surface(BRep_Tool.Surface_s(face)).ValueOfUV(at, 1e-7)
+            total = total + _outward(
+                face, BRepAdaptor_Surface(face, False), uv.X(), uv.Y()
+            )
+        size = float(fv.norm(total))
+        if size < 1e-3:
+            return None
+        return np.asarray(total / size)
+
+    @cached_property
+    def _edge_faces(self) -> Any:
+        """Each edge of the part and the faces either side of it."""
+        found = TopTools_IndexedDataMapOfShapeListOfShape()
+        TopExp.MapShapesAndAncestors_s(self.shape, TopAbs_EDGE, TopAbs_FACE, found)
+        return found
 
     @cached_property
     def _meter(self) -> Any:

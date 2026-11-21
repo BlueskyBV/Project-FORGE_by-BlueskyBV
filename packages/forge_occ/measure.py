@@ -21,10 +21,8 @@ import numpy as np
 from forge_numeric import vector as fv
 from forge_units import Interval
 from numpy.typing import NDArray
-from OCP.Bnd import Bnd_Box
 from OCP.BRep import BRep_Tool
 from OCP.BRepAdaptor import BRepAdaptor_Surface
-from OCP.BRepBndLib import BRepBndLib
 from OCP.BRepGProp import BRepGProp
 from OCP.GeomAbs import (
     GeomAbs_Cone,
@@ -37,7 +35,7 @@ from OCP.GeomAPI import GeomAPI_ProjectPointOnSurf
 from OCP.gp import gp_Pnt
 from OCP.GProp import GProp_GProps
 
-from .occt import INTEGRATION, boundary, box_limits
+from .occt import INTEGRATION, boundary
 
 __all__ = [
     "VOLUME_RELATIVE",
@@ -93,15 +91,22 @@ class Properties:
 
 
 def properties(shape: Any) -> Properties:
+    """A part's volume, area, centre and box: the box face by face, as a view takes it (``view._box_of``).
+
+    OpenCascade's optimal box takes a ball's face's box from the whole of its parameters' rectangle, which a face read
+    back from STEP may give far past the face (generated part 5980: a dome's face read back 2.9 mm under its base, the
+    box 2 % of the part's size apart from the part written, its volume, area and centre the same to 2e-8).
+    """
+    from .view import _box_of
+
     volume = GProp_GProps()
     area = GProp_GProps()
-    box = Bnd_Box()
     with boundary("measuring a part"):
         BRepGProp.VolumeProperties_s(shape, volume, INTEGRATION, False)
         BRepGProp.SurfaceProperties_s(shape, area, INTEGRATION, False)
-        BRepBndLib.AddOptimal_s(shape, box, False, False)
+        box = _box_of(shape, held=False)
     c = volume.CentreOfMass()
-    x0, y0, z0, x1, y1, z1 = box_limits(box)
+    (x0, y0, z0), (x1, y1, z1) = box.lo, box.hi
     return Properties(
         float(volume.Mass()),
         float(area.Mass()),

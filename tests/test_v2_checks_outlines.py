@@ -304,8 +304,14 @@ class LyingWithin(unittest.TestCase):
         self.assertTrue(Outline.disc(2, (7, 0)).within(ring))
         self.assertFalse(Outline.disc(2, (5, 0)).within(ring))
         self.assertFalse(Outline.disc(2, (9, 0)).within(ring))
-        with self.assertRaises(ValueError):
-            ring.within(Outline.disc(20))
+
+    def test_a_ring_is_asked_as_its_outer_disc(self) -> None:
+        """A tube's end face over its host (generated part 9126, a block turned on a tube's end: the judge stopped there): a ring lies within what its outer disc does; in a ring whose opening its own takes in, it isn't found to (a bound)."""
+        ring = Outline.ring(10, 4)
+        self.assertTrue(ring.within(Outline.disc(20)))
+        self.assertTrue(ring.within(Outline.rect(10, 12)))
+        self.assertFalse(ring.within(Outline.disc(8)))
+        self.assertFalse(ring.within(Outline.ring(12, 3)))
 
     def test_a_disc_in_a_rounded_corner(self) -> None:
         pocket = Outline.rect(10, 10, corners=(5, 5, 5, 5))

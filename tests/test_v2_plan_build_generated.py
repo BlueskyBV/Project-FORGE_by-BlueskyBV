@@ -125,6 +125,18 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
                 # through the tube's wall standing there, which the generator draws no longer (generated part 5468).
                 self.graded(seed, REGRESSIONS[seed][1], strict=seed != 1880)
 
+    def test_a_leaning_rim_dipping_to_its_face_built_judged_and_graded(self) -> None:
+        """A kept plan graded wrong where a leaning boss's rounded rim dips under its face (6872; tests/v2_regressions.py): the rounding, kept on the face's open side, ends against the face there, a zone in the truth as where roundings meet (fillet.md)."""
+        from v2_regressions import REGRESSIONS
+
+        self.graded(6872, REGRESSIONS[6872][1])
+
+    def test_a_block_turned_on_a_tubes_end_built_judged_and_graded(self) -> None:
+        """A kept plan the judge's placement stopped on, asking whether a tube's ring of an end face lay over its host, a block turned on it (9126; tests/v2_regressions.py)."""
+        from v2_regressions import REGRESSIONS
+
+        self.graded(9126, REGRESSIONS[9126][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge

@@ -2166,6 +2166,31 @@ judged, now:
   that takes a standing item off the part: the build refuses it, saying
   the step cut the part apart or OpenCascade misread it
   (`planned._one_solid`), where it used to blame OpenCascade alone.
+- The exit pair on seeds 5,000 to 9,999 (f5cf6f5) found five more, each
+  now fixed and kept as a regression:
+  - 7920 read back from STEP: a fresh probe 0.1 mm off an M6 thread's
+    crest, its nearest point on the crest's edge, was put inside by
+    OpenCascade's classifier. On a part with a B-spline face, a point
+    whose nearest point is on an edge is now on the side of the sum of its
+    two faces' outward normals there, where that is clear
+    (`view.BrepView._edge_way`; outside a convex edge, inside a concave
+    one).
+  - 5980 read back from STEP was refused as not the part written: its
+    ball's face's optimal box, from the whole of its parameters'
+    rectangle, reached 2.9 mm under the dome's base. A part's box is taken
+    face by face, as a view's is (`measure.properties`).
+  - 9126: the judge's placement stopped, asking whether a tube's ring of
+    an end face lay over its host (a block turned on it). A ring is asked
+    as its outer disc (`outlines.Outline.within`).
+  - 6872, graded wrong: a boss leaning 60 degrees, its rounded top rim
+    0.13 mm under its face on its low side. Its rounding, kept on the
+    face's open side, ends against the face there, a zone in the truth as
+    where roundings meet (`generator._dipping_rim_zones`).
+  - 7270: a slot right through a rod's side had its angle measured from
+    its walls' middle 0.76 mm out from the axis, which that middle runs
+    through: inconclusive on its files, and blind to a turn on any view.
+    Its walls are seen on the near side only, from its mouth to the axis
+    (`compile.slot._near_wall`), and a slot turned 2 degrees is caught.
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 (3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`

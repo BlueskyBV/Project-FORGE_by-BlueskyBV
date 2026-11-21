@@ -410,6 +410,37 @@ class StlAndThreeMf(unittest.TestCase):
         self.assertIs(found.verdict, Verdict.PASS, found.misses[:2])
         self.assertGreater(found.built.witnessed, 20)
 
+    def test_a_slot_right_through_a_rod_is_turned_as_built(self) -> None:
+        """Generated part 7270: a slot right through a rod's side. Its angle round the side was measured from its walls' middle 0.76 mm out from the axis, which that middle runs through: inconclusive on the STL (±1.04 degrees), and blind to a turn on any view. Seen on the near side only, from its mouth to the axis, it is judged on the file, and a slot turned 2 degrees is caught."""
+        import dataclasses
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_checks.classes import Verdict
+        from forge_checks.judge import Judge
+        from forge_checks.measure import Probe
+        from forge_checks.mesh import Mesh
+        from forge_checks.view import ViewProxy
+        from forge_cli.build import export_tolerance
+        from forge_eval.generator import render
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        plan = REGRESSIONS[7270][1]
+        spec = _spec(render(plan).items)
+        judge = Judge.of(spec)
+        check = next(c for c in judge.suite.checks if c.id == "i1/place.angle/0")
+        _, built = _built(spec)
+        tolerance = export_tolerance(judge.suite)
+        mesh = Mesh.from_triangles(read_stl(stl_bytes(mesh_part(built.result.shape, tolerance).mesh, "part")).triangles)
+        on_file = check.run(Probe(ViewProxy(export.file_view(mesh, tolerance)), judge.part, judge.suite.resolution))
+        self.assertIs(on_file.verdict, Verdict.PASS, on_file)
+        turned = tuple(dataclasses.replace(f, angle=294.5) if f.id == "i1" else f for f in plan)
+        _, wrong = _built(_spec(render(turned).items))
+        caught = check.run(Probe(ViewProxy(BrepView(wrong.result.shape)), judge.part, judge.suite.resolution))
+        self.assertIs(caught.verdict, Verdict.FAIL, caught)
+
     def test_the_mesh_read_back_is_the_mesh_written(self) -> None:
         part = mesh_part(BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape())
         read = read_stl(stl_bytes(part.mesh))
@@ -656,6 +687,21 @@ class Step(unittest.TestCase):
             judge.suite.resolution,
         )
         self.assertIs(found.verdict, Verdict.PASS, found.misses[:2])
+
+    def test_a_balls_face_read_back_is_boxed_by_its_face(self) -> None:
+        """Generated part 5980: a dome with holes through everything from its surface, read back from STEP. Its ball's face's optimal box, from the whole of its parameters' rectangle, reached 2.9 mm under the dome's base, and the part read back was refused as not the part written (its box 2 % of its size apart, its volume, area and centre the same to 2e-8). Boxed face by face, a ball's face by its boundary and the ball's extremes on it, the two agree."""
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_eval.generator import render
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        _, built = _built(_spec(render(REGRESSIONS[5980][1]).items))
+        shape = built.result.shape
+        _, held = check_step(write_step([StepPart("part", shape)]), [StepPart("part", shape)])
+        self.assertLess(held.parts["part"]["box"], 1e-8)
 
     def test_a_part_read_back_otherwise_is_refused(self) -> None:
         data = write_step(

@@ -682,6 +682,44 @@ class AWindowsTip(unittest.TestCase):
 
 
 @needs_occ
+class APointNearestAnEdge(unittest.TestCase):
+    """On a part with a B-spline face, a point whose nearest point of the surface is on an edge is on the side of the sum of its two faces' outward normals there: outside a convex edge, inside a concave one (generated part 7920 read back from STEP: a point 0.1 mm off an M6 thread's crest, which OpenCascade's classifier put inside)."""
+
+    def test_round_a_box_and_into_an_inside_corner(self) -> None:
+        cube = BRepBuilderAPI_NurbsConvert(box(size=(10.0, 10.0, 10.0)), True).Shape()
+        corner = BRepAlgoAPI_Cut(box(size=(10.0, 10.0, 10.0)), box((5.0, 5.0, -1.0), (6.0, 6.0, 12.0))).Shape()
+        notched = BRepBuilderAPI_NurbsConvert(corner, True).Shape()
+        cases = [
+            (cube, (10.3, 10.2, 5.0), Side.OUT),  # off the edge along z at (10, 10), out
+            (cube, (-0.2, 5.0, 10.3), Side.OUT),  # off the edge along y at x = 0, z = 10
+            (notched, (4.8, 4.9, 5.0), Side.IN),  # in the material, nearest the inside corner's edge at (5, 5)
+        ]
+        for shape, at, side in cases:
+            with self.subTest(at=at):
+                view = BrepView(shape)
+                self.assertTrue(view._by_nearest)
+                where = gp_Pnt(*at)
+                self.assertEqual(view._nearest_side(where), side)
+                self.assertEqual(int(view.classify(np.array([at]))[0]), side)
+
+    def test_a_thread_read_back_from_step(self) -> None:
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forge_eval.generator import render
+        from forge_occ.export import StepPart, read_step, write_step
+        from v2_exit4 import _built, _spec
+        from v2_regressions import REGRESSIONS
+
+        _, built = _built(_spec(render(REGRESSIONS[7920][1]).items))
+        back = read_step(write_step([StepPart("part", built.result.shape)])).parts["part"]
+        at = np.array([[-0.9625, -2.737, -6.342]])
+        self.assertEqual(int(BrepView(built.result.shape).classify(at)[0]), Side.OUT)
+        self.assertEqual(int(BrepView(back, source="step-file").classify(at)[0]), Side.OUT)
+
+
+@needs_occ
 class TheTopologyIsTheMeshViews(unittest.TestCase):
     """The same counts as the stage-2 mesh view of a fine mesh of the same part (11.1)."""
 
