@@ -2489,6 +2489,14 @@ def _taken_where_it_crosses(part: _Part, p: Array, out: Array, radius: float, de
     flat face cut where a hole through everything from its surface had gone through it; 816, 1202 and 4163, a boss
     standing on a dome's flat face where a hole through the next face from its surface had come out, its foot's
     carry into the dome filling the hole's end)."""
+    for g, foot in _crossings(part, p, out, radius, depth):
+        g.taken.append(foot)
+
+
+def _crossings(part: _Part, p: Array, out: Array, radius: float, depth: float) -> list[tuple[_Flat, _Foot]]:
+    """Each flat face the generator keeps that a hole from ``p`` in along ``-out``, ``depth`` deep, crosses, and the box
+    round where it does (along the face's axes: as wide as the hole over the sine of its slant to the face)."""
+    found = []
     for g in part.flats.values():
         slope = float(fv.matmul(out, g.normal))
         if abs(slope) < 1e-6:
@@ -2500,7 +2508,8 @@ def _taken_where_it_crosses(part: _Part, p: Array, out: Array, radius: float, de
         at = g.frame.plane(p - t * out)
         middle = g.coords()
         if abs(at[0] - middle[0]) <= g.half[0] + spread and abs(at[1] - middle[1]) <= g.half[1] + spread:
-            g.taken.append(_Foot(at, (spread, spread), 0.0))
+            found.append((g, _Foot(at, (spread, spread), 0.0)))
+    return found
 
 
 def _everything_round(f: Feature, ways: Sequence[tuple[Array, Array, Array, Array]], radius: float, part: _Part,
@@ -2512,9 +2521,14 @@ def _everything_round(f: Feature, ways: Sequence[tuple[Array, Array, Array, Arra
 
     Strict, as on a flat face: past where it first comes out of what it is cut into all across (crossing its own curved
     face there at a slant), what it goes through lies all across it or not at all, asked round its rim and within it
-    along its axis; and nothing made after it that adds to the part reaches into its way."""
+    along its axis; it crosses no face the generator keeps where something made before it is (stands on it, or is cut
+    into it: as on a flat face, it doesn't come out where something is; generated part 5468, two holes from a dome's
+    surface through its middle, 10.9 mm across, coming out of its flat face round a boss 6.2 mm across that stood
+    there, which they cut off the part); and nothing made after it that adds to the part reaches into its way."""
     made = (*part.steps, *part.late)
     so_far = Truth({}, made)
+    # What was on each face before it: its own copies crossing one another (through a dome's middle) are no matter.
+    before = {key: len(g.taken) for key, g in part.flats.items()}
     rim = [_cos_sin(360.0 * (k + 0.5) / 64) for k in range(64)]
     within = [(a, b) for a in (-0.6, -0.3, 0.0, 0.3, 0.6) for b in (-0.6, -0.3, 0.0, 0.3, 0.6) if a * a + b * b < 1.0]
     found = []
@@ -2541,6 +2555,9 @@ def _everything_round(f: Feature, ways: Sequence[tuple[Array, Array, Array, Arra
                 raise DoesNotFitError(f"{f.id} doesn't come out of what it is cut into")
             if np.any(some[gone:] & ~full[gone:]):
                 raise DoesNotFitError(f"{f.id} through everything meets something that doesn't lie all across it")
+            for g, foot in _crossings(part, p, out, radius, depth - REACH):
+                if any(not foot.clear_of(other, GAP) for other in g.taken[: before.get(g.key, 0)]):
+                    raise DoesNotFitError(f"{f.id} through everything comes out where something is")
         # Its way, which nothing made after it that adds to the part reaches into (the solver asks about one that
         # does): the box round all it sweeps, as wide as its mouth every way.
         ends = np.array([p, p - (depth + _NEXT_KEPT) * out])

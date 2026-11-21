@@ -2155,6 +2155,17 @@ judged, now:
   back as impossible, since it isn't. The generator makes a cut too deep
   only where nothing is on the face it would come out on, under where it
   would (`generator._deep_is_impossible`).
+- Generated part 5468 (unable, seeds 5,000 on): two holes 10.9 mm across
+  through everything from a dome's surface, through its middle and out of
+  its flat face round a boss 6.2 mm across standing there, cut the boss off
+  the part. The generator's own shape was two solids, and every way to
+  build it was too. On a flat face the generator never brings a cut
+  through everything out where something is; from a curved face it does
+  now too (`generator._everything_round`, the plan kept in
+  `tests/v2_regressions.REFUSED`). The spec's checks don't yet find a cut
+  that takes a standing item off the part: the build refuses it, saying
+  the step cut the part apart or OpenCascade misread it
+  (`planned._one_solid`), where it used to blame OpenCascade alone.
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 (3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`
