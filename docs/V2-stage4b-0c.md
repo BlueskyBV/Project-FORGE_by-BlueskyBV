@@ -2198,6 +2198,11 @@ judged, now:
   unfound; built only through the dome, the part was held where the spec
   took it on through the block. The preview measures each piece face by
   face, as a view does (`resolve._along`).
+- 7920's truth, kept as a regression, put its mesh to the reference-part
+  test: a thread's length, found by 64 lines cast down the rod, came out
+  unmeasured, some line of each of the eight turns tried grazing an edge
+  of the mesh's fine thread. The turn with the fewest that do is taken,
+  those left out, where three in four are clear (`kinds.thread._length`).
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 (3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`

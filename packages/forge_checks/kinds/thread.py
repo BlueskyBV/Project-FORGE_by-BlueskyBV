@@ -41,6 +41,7 @@ from numpy.typing import NDArray
 
 from ..classes import Tolerance, Verdict, bracket_mutants
 from ..measure import FEWEST, Measurement, Probe, basis
+from ..view import Crossings
 
 __all__ = [
     "Hand",
@@ -309,6 +310,10 @@ def _length(helix: Helix, nominal: float, probe: Probe) -> Measurement:
     above = 1.0 + helix.pitch
     u = 2 * deflection * _FLANK + helix.pitch / _LINES
     lowest = max(whole - nominal - 2 * helix.pitch, -u)
+    # Turned by eighths of their spacing; where some line of every turn grazes an edge (a fine mesh of a long thread:
+    # generated part 7920's truth, each line through some hundreds of its triangles), the turn with the fewest that
+    # do, those left out, if three in four are clear: half the lines find where the thread starts.
+    fewest: tuple[int, Crossings] | None = None
     for turn in range(8):
         angles = 2 * math.pi * (np.arange(_LINES) + turn / 8) / _LINES
         rings = middle * (fv.cos(angles)[:, None] * e1 + fv.sin(angles)[:, None] * e2)
@@ -316,23 +321,33 @@ def _length(helix: Helix, nominal: float, probe: Probe) -> Measurement:
             np.asarray(helix.centre, dtype=np.float64) + (whole + above) * w + rings
         )
         found = probe.view.crossings(origins, np.tile(-w, (_LINES, 1)))
-        if found.grazed.any():
-            continue
-        s = whole + above - found.t
-        keep = found.entering & (s >= lowest)
-        if not keep.any():
-            return Measurement(None, 0, "no thread found down the rod")
-        starts = np.full(_LINES, np.inf)
-        np.minimum.at(starts, found.ray[keep], s[keep])
-        start = float(starts.min())
-        length = whole - start
-        return Measurement.of(
-            length,
-            u,
-            _LINES,
-            f"the thread starts {length:.4g} mm down from the free end",
-        )
+        grazed = int(found.grazed.sum())
+        if not grazed:
+            return _started(found, whole, above, lowest, u, np.ones(_LINES, dtype=bool))
+        if fewest is None or grazed < fewest[0]:
+            fewest = (grazed, found)
+    if fewest is not None and fewest[0] <= _LINES // 4:
+        return _started(fewest[1], whole, above, lowest, u, ~fewest[1].grazed)
     return Measurement(None, 0, "every line down the rod grazed an edge", missing=False)
+
+
+def _started(found: Crossings, whole: float, above: float, lowest: float, u: float, clear: NDArray[np.bool_]
+             ) -> Measurement:  # fmt: skip
+    """Where the thread starts, as the lines that are ``clear`` find it: the last time any enters material, down the rod."""
+    s = whole + above - found.t
+    keep = found.entering & (s >= lowest) & clear[found.ray]
+    if not keep.any():
+        return Measurement(None, 0, "no thread found down the rod")
+    starts = np.full(_LINES, np.inf)
+    np.minimum.at(starts, found.ray[keep], s[keep])
+    start = float(starts.min())
+    length = whole - start
+    return Measurement.of(
+        length,
+        u,
+        int(clear.sum()),
+        f"the thread starts {length:.4g} mm down from the free end",
+    )
 
 
 def mutants(
