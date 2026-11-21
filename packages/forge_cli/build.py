@@ -361,6 +361,10 @@ def _build(run: _Run) -> str:
     )
     if built.gap is not None:
         run.gap = {"item": built.gap.item, "why": built.gap.reason}
+        apart = _apart(run, planned, built)
+        if apart is not None:  # not Forge's gap: the part as drafted comes apart, which no build makes one piece
+            run.cant = apart
+            return _finish(run, "CAN'T")
         return _finish(run, "UNABLE")
     assert built.result is not None and document is not None
     _judge_brep(run, built.result.shape)
@@ -371,6 +375,23 @@ def _build(run: _Run) -> str:
     if not run.confirmed.by_person:
         return _finish(run, "BUILT TO DRAFT")
     return _finish(run, "VERIFIED EXCEPT" if judge.unchecked else "VERIFIED")
+
+
+def _apart(run: _Run, planned: Any, built: Any) -> str | None:
+    """Why the part as drafted comes apart, where every way to make the refused item left it in pieces and the judge
+    finds the pieces the spec's own shape (:mod:`forge_occ.apart`); None otherwise, and where that can't be told (said):
+    the gap then stands."""
+    from forge_occ.apart import comes_apart
+
+    started = time.perf_counter()
+    try:
+        found = comes_apart(planned, built, run.judge, run.seed)
+    except Exception as error:  # telling it is past the gap: the gap stands, and why it wasn't told is said
+        run.say(f"Apart?   : couldn't tell whether the part comes apart ({type(error).__name__}: {error})")
+        return None
+    finally:
+        run.timed("whether it comes apart", started)
+    return None if found is None else found.message()
 
 
 def _build_record(built: Any) -> dict[str, Any]:
@@ -673,8 +694,9 @@ def _markdown(verdict: dict[str, Any]) -> str:
     if verdict["cant"]:
         lines += ["## Why it can't be made", "", verdict["cant"], ""]
     if verdict["gap"]:
+        # Beside a CAN'T, the build's own refusal that it was told from (forge_occ.apart): not a gap of Forge's.
         lines += [
-            "## The gap",
+            "## What the build refused" if verdict["cant"] else "## The gap",
             "",
             f"{verdict['gap']['item']}: {verdict['gap']['why']}",
             "",

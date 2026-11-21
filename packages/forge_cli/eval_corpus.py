@@ -26,6 +26,11 @@ What a brief ends as:
 - else it is locked as a draft and built: the build's ending (BUILT TO
   DRAFT, HELD, UNABLE, CAN'T; or an error, Forge's own).
 
+A cut through the next face is given how deep it goes by the preview first,
+as ``forge spec`` gives it; one the preview can't find is an UNABLE. Forge's
+own fault on a brief, any stage's, is its **error**, the traceback in its
+folder's error.json, and the run goes on to the next brief.
+
 A false pass is **caught** unless its part is released (BUILT TO DRAFT)
 and its key's judge fails it: a run that stopped to ask, ended otherwise,
 or built a part its key passes has caught it. One not caught is V1's false
@@ -65,7 +70,7 @@ from forge_spec.render import render
 from forge_spec.wire import to_wire
 
 from .design import build_provider
-from .spec import add_model_flags, priced
+from .spec import _resolved, add_model_flags, priced
 
 __all__ = [
     "Brief",
@@ -185,6 +190,7 @@ def run_briefs(briefs: Sequence[Brief], provider: Provider | None, out: Path, *,
     ended: list[Ended] = []
     for brief in briefs:
         folder = out / brief.id
+        recorded = (folder / "record.json").is_file()
         try:
             found = _one(brief, provider, folder, strict)
         except _STOPS as error:
@@ -197,6 +203,8 @@ def run_briefs(briefs: Sequence[Brief], provider: Provider | None, out: Path, *,
             _note(out, brief.id, "interrupted", error=_error_record(error))
             say(f"Left     : {brief.id}: {_said(error)}")
             continue
+        except Exception as error:  # Forge's own fault on one brief: said, and the run goes on to the next
+            found = _faulted(brief, folder, error, drafted=not recorded and (folder / "record.json").is_file())
         if found is None:
             continue
         ended.append(found)
@@ -252,7 +260,9 @@ def _one(
     answer = json.loads((folder / "answer.json").read_text(encoding="utf-8"))
     if answer is None:
         return _ended(brief, "refused", "the writer gave no answer", drafted)
-    report = check_draft(numbered, read_answer(answer), strict=strict)
+    # Each cut through the next face given how deep it goes, as the preview finds it, as forge spec does: one it
+    # can't find is an UNABLE, not a spec that can't be locked.
+    report = _resolved(numbered, check_draft(numbered, read_answer(answer), strict=strict), strict)
     if report.spec is not None:
         _write(folder, "draft.json", to_wire(report.spec))
         (folder / "spec.txt").write_text(
@@ -297,10 +307,16 @@ def _built(brief: Brief, numbered: NumberedBrief, report: SpecReport, folder: Pa
         return _ended(brief, "error", f"{error['error']}: {error['message']}", drafted)
     verdict = json.loads((out / "verdict.json").read_text(encoding="utf-8"))
     ending = str(verdict["ending"])
-    why = (
-        "; ".join(str(h.get("why", h)) for h in verdict.get("held", [])[:2])
-        or "every check passed on every view"
-    )
+    if ending == "CAN'T":
+        why = str(verdict.get("cant"))
+    elif ending == "UNABLE":
+        gap = verdict.get("gap") or {}
+        why = f"{gap.get('item')}: {gap.get('why')}"
+    else:
+        why = (
+            "; ".join(str(h.get("why", h)) for h in verdict.get("held", [])[:2])
+            or "every check passed on every view"
+        )
     if not brief.false_pass or ending not in RELEASED:
         return _ended(brief, ending, why, drafted)
     if brief.key is None:
@@ -339,13 +355,24 @@ def _judged_by_key(brief: Brief, confirmed: Any) -> list[str]:
 
     assert brief.key is not None
     numbered = number_words(brief.text)
-    key = lock(check_draft(numbered, brief.key), numbered, by="draft", strict=False)
+    key = lock(_resolved(numbered, check_draft(numbered, brief.key), False), numbered, by="draft", strict=False)
     built = build_plan(plan(confirmed))
     assert built.result is not None
     judged = Judge.of(key.spec).view(
         ViewProxy(BrepView(built.result.shape)), "B-rep", 1
     )
     return [f"{h.what}: {h.why}" for h in judged.held]
+
+
+def _faulted(brief: Brief, folder: Path, error: Exception, *, drafted: bool) -> Ended:
+    """A brief Forge itself failed on (an exception no stage caught): an "error", its traceback in error.json, so one
+    fault doesn't stop a paid run's other briefs. Its draft is kept, and a replay tries it again."""
+    import traceback
+
+    folder.mkdir(parents=True, exist_ok=True)
+    _write(folder, "error.json", {"error": type(error).__name__, "message": str(error),
+                                  "traceback": traceback.format_exception(error)})  # fmt: skip
+    return _ended(brief, "error", f"{type(error).__name__}: {error}", drafted)
 
 
 def _ended(brief: Brief, ending: str, why: str, drafted: bool) -> Ended:

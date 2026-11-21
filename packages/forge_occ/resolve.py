@@ -55,6 +55,7 @@ from OCP.BRepPrimAPI import BRepPrimAPI_MakePrism
 from OCP.GC import GC_MakeArcOfCircle
 from OCP.gp import gp_Ax2, gp_Ax3, gp_Circ, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 
+from .errors import OccError
 from .occt import boundary, box_limits, solids, volume
 from .planned import build_plan
 
@@ -85,8 +86,8 @@ def resolve_draft(draft: Mapping[str, Any]) -> Resolved:
 
     A draft with none, or that doesn't read or place, is given back as it
     is. A cut whose depth can't be found (what is made before it doesn't
-    build, it doesn't come out, its copies come out at different depths) is
-    left without one, and said.
+    build, it doesn't come out, its copies come out at different depths,
+    OpenCascade refused a step of finding it) is left without one, and said.
     """
     out = copy.deepcopy(dict(draft))
     spec, problems = read_draft(out)
@@ -106,6 +107,9 @@ def resolve_draft(draft: Mapping[str, Any]) -> Resolved:
             found = reaches(spec, layout, item)
         except _UnresolvedError as why:
             notes.append((item.id, str(why)))
+            continue
+        except OccError as error:  # building what is made before it, or its mouth, refused: said, not raised
+            notes.append((item.id, f"OpenCascade refused finding it ({error.message})"))
             continue
         depth = raw_items[n].get("depth") if n < len(raw_items) and isinstance(raw_items[n], dict) else None
         if isinstance(depth, dict):

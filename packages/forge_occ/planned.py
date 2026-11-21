@@ -69,9 +69,9 @@ class PlannedBuild:
 def _one_solid(result: BuildResult, parts: list[str]) -> None:
     """The part made so far is one solid after each join or cut of it (V2-stage4.md, 8): the first that isn't is refused.
 
-    Either OpenCascade misread the step, or the step cut the part apart, which the spec's checks haven't found (a
-    cut taking a standing item off the part: generated part 5468, two holes through a dome's middle and out round a
-    boss on its flat face). Both are said.
+    Either OpenCascade misread the step, or the step cut the part apart (a cut taking a standing item off the part:
+    generated part 5468, two holes through a dome's middle and out round a boss on its flat face). Both are said;
+    which it was, where every way to make the item is refused so, is :func:`forge_occ.apart.comes_apart`'s to tell.
     """
     for step in parts:
         product = result.products.get(step)

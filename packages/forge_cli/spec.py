@@ -56,7 +56,7 @@ from forge_models import (
 from forge_roles.base import RepairExhaustedError, RoleError, RoleResult
 from forge_roles.spec_writer import write_spec
 from forge_spec import NumberedBrief, number_words
-from forge_spec.checks import SpecReport, check_draft
+from forge_spec.checks import SpecProblem, SpecReport, check_draft
 from forge_spec.compare import Difference, differences
 from forge_spec.ends import ThroughNext, end_of
 from forge_spec.lock import ConfirmedSpec, lock
@@ -286,7 +286,7 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
                     if beside is not None:
                         beside.drop()  # done with, or not wanted: it makes no further call
             assert report.spec is not None
-            report = _resolved(numbered, report, strict, say)
+            report = _resolved(numbered, report, strict)
             assert report.spec is not None
             rounds += 1
             shown = render(report, numbered).text()
@@ -302,6 +302,15 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
                 for q in questions(report, pending)
                 if not (q.kind == "assumption" and (q.at, q.text) in kept)
             )
+            if not round_ and not (strict and doubt):
+                # Nothing left to settle: built once, before it is confirmed or locked, to see it holds together.
+                held = _held_together(numbered, report, strict, say)
+                if held is not report:
+                    _write(out, f"round-{rounds}", problems=[asdict(p) for p in held.problems])
+                    if out is not None:
+                        write_spec_page(out, held, numbered, status=f"Draft {drafts}, round {rounds}: can't be made")
+                    return Outcome("refused", numbered, held, rounds=rounds,
+                                   message="\n".join(f"{p.kind.upper()}: {p.message}" for p in _ending(held)))  # fmt: skip
             if out is not None:
                 status = f"Draft {drafts}, round {rounds}: " + (
                     f"{len(round_)} to settle" if round_ else "ready to confirm"
@@ -371,19 +380,61 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
         _write_spent(out, provider)
 
 
-def _resolved(numbered: NumberedBrief, report: SpecReport, strict: bool, say: Say) -> SpecReport:
+def _resolved(numbered: NumberedBrief, report: SpecReport, strict: bool) -> SpecReport:
     """The draft with each cut through the next face given how deep it goes, as the preview finds it (item 2b's second
     step; :mod:`forge_occ.resolve`), checked again: found afresh every round, so an answer that moves what it goes
-    through moves it too. A draft with none is as it is; one the preview can't find is said, and left without it
-    (the spec can't then be confirmed)."""
+    through moves it too. A draft with none is as it is; one the preview can't find is left without it, and is an
+    UNABLE: the spec can't be locked without it (:func:`forge_spec.lock.lock`), and Forge can't yet find it."""
     if report.spec is None or not any(isinstance(end_of(item), ThroughNext) for item in report.spec.items):
         return report
     from forge_occ.resolve import resolve_draft
 
     found = resolve_draft(to_wire(report.spec))
-    for item, why in found.notes:
-        say(f"The preview couldn't find how deep {item} goes through the next face: {why}.")
-    return check_draft(numbered, found.draft, strict=strict)
+    checked = check_draft(numbered, found.draft, strict=strict)
+    return with_unresolved(checked, found.notes)
+
+
+def with_unresolved(report: SpecReport, notes: Sequence[tuple[str, str]]) -> SpecReport:
+    """A report with an UNABLE for each cut through the next face the preview couldn't find how deep goes (``notes``,
+    each the item and why)."""
+    if not notes:
+        return report
+    where = {item.id: n for n, item in enumerate(report.spec.items)} if report.spec is not None else {}
+    unable = tuple(
+        SpecProblem("unable", f"/items/{where[item]}/depth" if item in where else "/items",
+                    f"the preview couldn't find how deep {item} goes through the next face: {why}")
+        for item, why in notes
+    )  # fmt: skip
+    return replace(report, problems=(*report.problems, *unable))
+
+
+def _held_together(numbered: NumberedBrief, report: SpecReport, strict: bool, say: Say) -> SpecReport:
+    """A spec with nothing left to settle, built once before it is confirmed or locked: with a CAN'T where the part as
+    drafted comes apart (a cut taking a standing item, or a piece of a body, off the part; :mod:`forge_occ.apart`),
+    which the spec's other checks, each item read on its face, don't find. Where it builds, or comes apart only as
+    OpenCascade misreads it, the report is as it was; so where it can't be built to see (said): the build says why."""
+    from forge_checks.judge import Judge
+    from forge_occ.apart import comes_apart
+    from forge_occ.planned import build_plan
+    from forge_plan import plan
+
+    say("\nBuilding it once to see that it holds together as one piece...")
+    try:
+        confirmed = lock(report, numbered, by="draft", strict=strict)
+        planned = plan(confirmed)
+        built = build_plan(planned)
+        if built.gap is None:
+            return report
+        apart = comes_apart(planned, built, Judge.of(confirmed.spec))
+    except Exception as error:  # not this check's to say: the build finds it, and says it
+        say(f"It couldn't be built to see ({type(error).__name__}: {error}); forge build will say why.")
+        return report
+    if apart is None:
+        return report
+    assert report.spec is not None
+    where = next((n for n, item in enumerate(report.spec.items) if item.id == apart.item), None)
+    problem = SpecProblem("cant", "/items" if where is None else f"/items/{where}", apart.message())
+    return replace(report, problems=(*report.problems, problem))
 
 
 def _ending(report: SpecReport) -> list[Any]:

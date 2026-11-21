@@ -2162,10 +2162,8 @@ judged, now:
   build it was too. On a flat face the generator never brings a cut
   through everything out where something is; from a curved face it does
   now too (`generator._everything_round`, the plan kept in
-  `tests/v2_regressions.REFUSED`). The spec's checks don't yet find a cut
-  that takes a standing item off the part: the build refuses it, saying
-  the step cut the part apart or OpenCascade misread it
-  (`planned._one_solid`), where it used to blame OpenCascade alone.
+  `tests/v2_regressions.REFUSED`). Such a part is now a CAN'T, before it
+  is built and when it is (revision 20).
 - The exit pair on seeds 5,000 to 9,999 (f5cf6f5) found five more, each
   now fixed and kept as a regression:
   - 7920 read back from STEP: a fresh probe 0.1 mm off an M6 thread's
@@ -2210,6 +2208,49 @@ Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
 `tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,
 `tests/test_v2_spec_placement.py`.
+
+**A part that comes apart (revision 20).** A cut that takes a standing
+item, or a piece of a body, off the part (5468: two holes through a dome's
+middle and out round a boss on its flat face, cutting the boss off) was an
+UNABLE: the spec's checks read each item on its face, not what all of them
+leave, and the build refused every way to make the cut, the part two
+solids after it, as it refuses OpenCascade's misreading (10517's plug kept
+beside the part). Now it is told which:
+
+- Where every way to make the refused item left the part in pieces, the
+  part is built once more, all of its steps, and judged as any build is.
+  Where it is more than one solid, a point well inside each piece is in
+  the spec's material (its oracle), and the judge holds the pieces for
+  nothing but their count (every check, every face accounted for on the
+  spec's surfaces, the volume and fresh probes passed), the pieces are the
+  spec's own shape: the part as drafted comes apart, a CAN'T, saying what
+  cuts what off ("i1 would cut i0 off the part: as drafted it comes apart
+  into 2 pieces, and a part is one piece"; `forge_occ.apart`). A piece
+  where the spec has air (the misread plug) is not said, and the gap
+  stands; so where it can't be told.
+- `forge build` ends CAN'T so (`build._apart`), the build's refusal kept
+  in the record.
+- `forge spec` builds a spec with nothing left to settle once, before any
+  code is shown or the draft is locked, and ends CAN'T on such a part
+  (`spec._held_together`); a part that builds goes on to be confirmed.
+
+And three faults of the corpus run, found replaying generated drafts
+before the first paid one:
+
+- `forge eval-corpus` locked a draft with a cut through the next face
+  without the preview finding how deep it goes, and the lock refused it:
+  the run stopped. It is resolved first, as `forge spec` resolves it.
+- A cut through the next face the preview can't find was said and left,
+  and the spec then couldn't be locked: `forge spec --auto` stopped with
+  the lock's error. It is an UNABLE now (`spec.with_unresolved`), and
+  OpenCascade refusing a step of finding it is said, not raised
+  (`resolve.resolve_draft`).
+- One brief's fault in Forge itself stopped the whole run, every brief
+  after it left. It is that brief's error, its traceback in its folder's
+  `error.json`, and the run goes on (`eval_corpus._faulted`); a build that
+  ended CAN'T or UNABLE is reported with its why, not "every check passed".
+
+Tests: `tests/test_v2_occ_apart.py`.
 
 ### 3.6 The proof, and what each step costs
 
