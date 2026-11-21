@@ -2191,6 +2191,13 @@ judged, now:
     through: inconclusive on its files, and blind to a turn on any view.
     Its walls are seen on the near side only, from its mouth to the axis
     (`compile.slot._near_wall`), and a slot turned 2 degrees is caught.
+- And 8980, held: a hole through the next face from a dome's surface
+  3 degrees from its pole, the dome standing on a block. The preview's
+  optimal box of the dome's face missed its top along the hole by
+  0.002 mm, found no material under the mouth, and left the hole's depth
+  unfound; built only through the dome, the part was held where the spec
+  took it on through the block. The preview measures each piece face by
+  face, as a view does (`resolve._along`).
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 (3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`

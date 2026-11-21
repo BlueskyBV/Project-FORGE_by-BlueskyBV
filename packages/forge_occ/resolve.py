@@ -265,12 +265,18 @@ def _limits(shape: Any) -> tuple[tuple[float, float, float], tuple[float, float,
 
 def _along(piece: Any, origin: Sequence[float], n: Sequence[float]) -> tuple[float, float]:
     """The stretch of depths, in from the cut's face along its axis, a piece of material lies across: exactly, from its
-    bounds with the axis turned to be the third."""
+    bounds with the axis turned to be the third, face by face as a view takes them (``view._box_of``).
+
+    OpenCascade's optimal box of a ball's face misses its extremes by as much as 0.002 mm: a hole through the next
+    face from a dome's surface 3 degrees from its pole had no material under its mouth by it, its depth unfound, and
+    was built only through the dome (generated part 8980; the spec, the judge and the truth took it on through the
+    block the dome stands on, out of its floor)."""
+    from .view import _box_of
+
     trsf = gp_Trsf()
     # Into the frame whose third axis is the cut's way in (against its face's normal), from its point.
     inward = gp_Dir(*(-x for x in n))
     trsf.SetTransformation(gp_Ax3(gp_Pnt(*origin), inward))
     moved = BRepBuilderAPI_Transform(piece, trsf, True).Shape()
-    _, (_, _, top) = _limits(moved)
-    (_, _, bottom), _ = _limits(moved)
-    return bottom, top
+    box = _box_of(moved, held=False)
+    return box.lo[2], box.hi[2]

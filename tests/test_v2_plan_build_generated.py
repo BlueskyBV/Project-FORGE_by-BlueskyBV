@@ -131,6 +131,18 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
 
         self.graded(6872, REGRESSIONS[6872][1])
 
+    def test_a_hole_through_the_next_face_from_a_domes_top_built_judged_and_graded(self) -> None:
+        """A kept plan whose hole through the next face, from a dome's surface 3 degrees from its pole, the preview found no material under (8980; tests/v2_regressions.py): its optimal box of the dome's face missed the top by 0.002 mm. Measured face by face, the hole goes on through the block the dome stands on, as the spec, the judge and the truth take it."""
+        from forge_eval.generator import draft_of, render
+        from forge_occ.resolve import resolve_draft
+        from v2_regressions import REGRESSIONS
+
+        found = resolve_draft(draft_of(render(REGRESSIONS[8980][1]).items))
+        self.assertEqual(found.notes, ())
+        depth = next(item["depth"] for item in found.draft["items"] if item["id"] == "i3")
+        self.assertAlmostEqual(depth["reaches"], 17.341, delta=0.01)
+        self.graded(8980, REGRESSIONS[8980][1])
+
     def test_a_block_turned_on_a_tubes_end_built_judged_and_graded(self) -> None:
         """A kept plan the judge's placement stopped on, asking whether a tube's ring of an end face lay over its host, a block turned on it (9126; tests/v2_regressions.py)."""
         from v2_regressions import REGRESSIONS
