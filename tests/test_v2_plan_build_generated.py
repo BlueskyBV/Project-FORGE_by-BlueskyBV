@@ -28,8 +28,8 @@ SEEDS = range(8)
 
 @needs_occ
 class GeneratedPartsAreTheirSpecs(unittest.TestCase):
-    def graded(self, seed: int, plan: Plan | None = None) -> None:
-        """A generated part planned, built, judged and graded: no gap, face accounting and every check pass, and the built part is the generator's own shape, graded against it both ways (12.3; its volume against the shape made exactly)."""
+    def graded(self, seed: int, plan: Plan | None = None, strict: bool = True) -> None:
+        """A generated part planned, built, judged and graded: no gap, face accounting and every check pass, and the built part is the generator's own shape, graded against it both ways (12.3; its volume against the shape made exactly). ``strict``: a kept plan rendered as the generator now would (else as made when it was found, held to no rule it wasn't made by)."""
         from forge_checks.classes import Verdict
         from forge_checks.view import ViewProxy
         from forge_eval.generator import generate, render
@@ -42,7 +42,7 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
         )
         from v2_truth_occ import build
 
-        case = generate(seed) if plan is None else render(plan)
+        case = generate(seed) if plan is None else render(plan, strict=strict)
         assert case.truth is not None
         spec = _spec(case.items)
         built, accounting, failed = judged_plan(
@@ -121,7 +121,9 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
 
         for seed in (1880, 5035, 5162):
             with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
-                self.graded(seed, REGRESSIONS[seed][1])
+                # 1880 as made when it was found: its hole through everything comes out of the dome's flat face
+                # through the tube's wall standing there, which the generator draws no longer (generated part 5468).
+                self.graded(seed, REGRESSIONS[seed][1], strict=seed != 1880)
 
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""

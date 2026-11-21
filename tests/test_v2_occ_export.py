@@ -398,7 +398,9 @@ class StlAndThreeMf(unittest.TestCase):
         from v2_exit4 import _built, _spec
         from v2_regressions import REGRESSIONS
 
-        spec = _spec(render(REGRESSIONS[1880][1]).items)
+        # As made when it was found: its hole through everything comes out of the dome's flat face through the tube's
+        # wall standing there, which the generator draws no longer (generated part 5468).
+        spec = _spec(render(REGRESSIONS[1880][1], strict=False).items)
         _, built = _built(spec)
         judge = Judge.of(spec)
         tolerance = export_tolerance(judge.suite)
