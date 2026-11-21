@@ -2133,11 +2133,33 @@ judged, now:
   the exit harness on seeds 5,000 on: a hole leaning 5.5 degrees cuts a long
   window in a through pocket's floor; the exact kernel put the window's tip
   1e-8 mm inside the hole, and the built point there on the floor, judged
-  on the B-rep, found the spec's tip only so).
+  on the B-rep, found the spec's tip only so). The truths' meshes of 1880
+  and 5035 stray there past what they say they are within, as a mesh
+  boolean does where surfaces meet at a small angle: their reference-part
+  tests are left out (`test_v2_eval_truth.STRAYING_MESHES`), their B-reps
+  judged and graded instead.
+- Generated part 5162 (held, seeds 5,000 on): round pockets 4.1 mm deep up
+  into a plate 5.1 mm thick, a pocket down from its top 4.1 mm deep over
+  them, so each one's wall is left only 0.99 mm of its depth. Its size, to
+  within a little, was measured; its pattern's place, to within 1.46 mm,
+  took its windows from 1.03 mm in, past the wall, and found no round
+  surface. Where a window short of a round surface's or a cone's ends
+  finds no built points, it is taken again over the longest stretch the
+  spec has on the part's surface (`kinds.surfaces._kept_stretch`): only
+  where it finds none, so nothing measured before changes, and a copy
+  missing from the part is still missing.
+- Generated parts 2780 and 2960's impossible parts (the exit pair on
+  8fba41c): a hole made 1 mm deeper than its body, into a post standing on
+  its floor under it, was told as the writer's to restructure (make the
+  post first and stand the body on it: the guide, version 31), not turned
+  back as impossible, since it isn't. The generator makes a cut too deep
+  only where nothing is on the face it would come out on, under where it
+  would (`generator._deep_is_impossible`).
 
 Tests: `tests/test_v2_occ_agreement.py` (670), `tests/test_v2_occ_view.py`
 (3610, 5035), `tests/test_v2_occ_export.py` and `tests/test_v2_checks_oracle.py`
-(1880), `tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
+(1880), `tests/test_v2_plan_build_generated.py` (1880, 5035, 5162),
+`tests/test_v2_spec_touching.py`, `tests/test_v2_plan_open_sides.py`,
 `tests/test_v2_spec_review4.py`, `tests/test_v2_spec_rounded_edges.py`,
 `tests/test_v2_spec_placement.py`.
 

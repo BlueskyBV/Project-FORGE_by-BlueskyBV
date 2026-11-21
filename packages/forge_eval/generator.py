@@ -6013,6 +6013,30 @@ def _spelled_now_and_then(rng: random.Random, plan: list[Feature], part: _Part) 
 # ----------------------------------------------------------------------
 # Impossible on purpose
 # ----------------------------------------------------------------------
+def _deep_is_impossible(f: Feature, face: _Flat, part: _Part) -> bool:
+    """Whether a cut made deeper than the material under it, by a millimetre, would be impossible: where that is known
+    to the millimetre (through to the face a cut right through comes out on), and nothing is there where it would come
+    out.
+
+    Something standing on that face over where it comes out takes it on into itself (a blind cut stays in its body
+    and what that stands on: the writer is told to make the standing thing first and stand the body on it), and a
+    face pressed against another takes it on into that (generated parts 2780 and 2960's impossible parts, a hole
+    1 mm past its body's floor into a post standing under it, were told as the writer's to restructure, not as
+    impossible). The face keeps what takes it, not what each is, so anything there (another cut coming out too) leaves
+    it out.
+    """
+    if face.exit is None:
+        return False
+    out = part.flats.get(face.exit)
+    if out is None:
+        return False
+    for at in _flat_spots(f, face):
+        mine = _on_exit(face, out, face.foot(f, at))
+        if any(not mine.clear_of(foot, GAP) for foot in out.taken):
+            return False
+    return True
+
+
 def impossible(seed: int) -> Case:
     """A valid part with one item made not to fit, and why: off its face, deeper than its material, or its copies overlapping."""
     rng = random.Random(seed)
@@ -6031,7 +6055,7 @@ def impossible(seed: int) -> Case:
         # cut right through comes out on. Elsewhere the face's material is only how deep cuts are drawn (a
         # boss's far end round a tube's side, its height: the tube's wall is under it too, generated
         # part 870's impossible part, built).
-        ways = ["off", "overlap"] if face.exit is None else ["off", "deep", "overlap"]
+        ways = ["off", "overlap"] if not _deep_is_impossible(f, face, part) else ["off", "deep", "overlap"]
         how = rng.choice(ways)
         (h1, _), _ = _footprint(f, face.axes)
         if how == "off":

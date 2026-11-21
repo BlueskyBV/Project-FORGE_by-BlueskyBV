@@ -42,6 +42,7 @@ from ..measure import (
     fit_offset,
     fit_sphere,
 )
+from ..view import Side
 
 __all__ = [
     "Ball",
@@ -221,6 +222,55 @@ def _margin(width: float, length: float) -> float:
     return min(width, length / 4)
 
 
+#: Places along a round surface or a cone, and ways round it, the spec's surface is asked to be on the part's at,
+#: where a window short of its ends finds no built points (:func:`_kept_stretch`).
+_KEPT_ALONG = 32
+_KEPT_ROUND = 24
+
+
+def _kept_stretch(
+    probe: Probe, centre: Vec, axis: Vec, radii: tuple[float, float], ends: tuple[float, float]
+) -> tuple[float, float] | None:
+    """The longest stretch along a spec's round surface or cone that is on the part's surface somewhere round it; None where all of it is, or none of it.
+
+    A window short of each end by the width (:func:`_margin`) finds no built
+    point where later steps leave only a short stretch of the surface, at an
+    end: generated part 5162, round pockets 4.1 mm deep up into a plate
+    5.1 mm thick, a pocket down from its top 4.1 mm deep over them, leaving
+    each one's wall 0.99 mm of it. Measured as a pattern, to within 1.46 mm,
+    each window began 1.03 mm in, past the wall; its size, to within less,
+    was found. Asked where the spec has the surface on the part's, at
+    :data:`_KEPT_ALONG` places along it and :data:`_KEPT_ROUND` ways round,
+    the stretch kept is where it is measured instead.
+    """
+    (r0, r1), (s0, s1) = radii, ends
+    if not s1 > s0:
+        return None
+    w, e1, e2 = basis(axis)
+    step = (s1 - s0) / _KEPT_ALONG
+    along = s0 + step * (np.arange(_KEPT_ALONG) + 0.5)
+    turns = np.linspace(0.0, 2 * math.pi, _KEPT_ROUND, endpoint=False)
+    a, t = np.meshgrid(along, turns, indexing="ij")
+    radius = r0 + (r1 - r0) * (a - s0) / (s1 - s0)
+    points = (
+        np.asarray(centre, dtype=np.float64)
+        + a.reshape(-1, 1) * w
+        + radius.reshape(-1, 1) * (fv.cos(t).reshape(-1, 1) * e1 + fv.sin(t).reshape(-1, 1) * e2)
+    )
+    on = (probe.part.classify(points) == Side.ON).reshape(_KEPT_ALONG, _KEPT_ROUND).any(axis=1)
+    if on.all() or not on.any():
+        return None
+    best, start = (0, 0), None
+    for k, kept in enumerate([*on.tolist(), False]):
+        if kept and start is None:
+            start = k
+        elif not kept and start is not None:
+            if k - start > best[1] - best[0]:
+                best = (start, k)
+            start = None
+    return s0 + best[0] * step, s0 + best[1] * step
+
+
 def fitted_round(target: Round, width: float, probe: Probe) -> FittedRound | str:
     """The round surface as built, or why it can't be measured ("no built ..." when it isn't there)."""
     margin = _margin(width, target.end - target.start)
@@ -233,6 +283,13 @@ def fitted_round(target: Round, width: float, probe: Probe) -> FittedRound | str
         inside=target.inside,
         width=width,
     )
+    if len(window) < FEWEST:
+        kept = _kept_stretch(probe, target.centre, target.axis, (target.radius, target.radius),
+                             (target.start, target.end))  # fmt: skip
+        if kept is not None:
+            short = _margin(width, kept[1] - kept[0])
+            window = probe.round(target.centre, target.axis, target.radius, kept[0] + short, kept[1] - short,
+                                 inside=target.inside, width=width)  # fmt: skip
     if len(window) < FEWEST:
         return f"no built round surface within {width:.3g} mm of the spec's"
     w, e1, e2 = basis(target.axis)
@@ -296,6 +353,13 @@ def fitted_cone(target: Cone, width: float, probe: Probe) -> FittedCone | str:
     window = probe.turned(
         target.centre, target.axis, radii, ends, inside=target.inside, width=width
     )
+    if len(window) < FEWEST + 1:
+        kept = _kept_stretch(probe, target.centre, target.axis, (r0, r1), (s0, s1))
+        if kept is not None:
+            short = _margin(width, kept[1] - kept[0])
+            a, b = kept[0] + short, kept[1] - short
+            window = probe.turned(target.centre, target.axis, (r0 + slope * (a - s0), r0 + slope * (b - s0)),
+                                  (a, b), inside=target.inside, width=width)  # fmt: skip
     if len(window) < FEWEST + 1:
         return f"no built cone within {width:.3g} mm of the spec's"
     w, e1, e2 = basis(target.axis)

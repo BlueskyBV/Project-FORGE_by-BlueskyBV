@@ -115,6 +115,14 @@ class GeneratedPartsAreTheirSpecs(unittest.TestCase):
 
         self.graded(1911, REGRESSIONS[1911][1])
 
+    def test_the_judges_misses_at_small_angles_and_short_walls_built_judged_and_graded(self) -> None:
+        """Kept plans the exit harness found the judge failing (tests/v2_regressions.py): a hole grazing a tube's side, judged on its files (1880); and on seeds 5,000 on, a leaning hole's window in a pocket's floor, its tip's built point a hair inside the hole (5035), and round pockets whose walls another pocket leaves only their first millimetre, measured as a pattern from past it (5162). Their truths' meshes stray where surfaces meet at small angles (test_v2_eval_truth.STRAYING_MESHES): their B-reps are judged here."""
+        from v2_regressions import REGRESSIONS
+
+        for seed in (1880, 5035, 5162):
+            with self.subTest(seed=seed, found=REGRESSIONS[seed][0]):
+                self.graded(seed, REGRESSIONS[seed][1])
+
     def test_the_parts_that_found_faults_on_their_files_judged_there(self) -> None:
         """Kept plans whose STL found faults in the judge (tests/v2_regressions.py), each built, exported at the tolerance its checks ask and judged on the file read back: nothing held. A rounded pocket's length between its corners' edges (950), a shell's wall all but covered where it is measured (2010)."""
         from forge_checks.judge import Judge

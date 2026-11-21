@@ -64,9 +64,17 @@ from v2_meshes import HAVE_MANIFOLD
 from v2_regressions import REFUSED, REGRESSIONS
 from v2_truth import deflection, meshed
 
+#: Kept plans whose truth's mesh strays past what it says it is within, where two of its surfaces meet at a small
+#: angle: a mesh boolean puts the edge where they meet off by the meshes' deflection over the sine of that angle
+#: (each part's missed points lie 1.1 to 3.9 times their tolerance from the exact part). Their B-reps, and files, are
+#: judged in tests/test_v2_plan_build_generated.py and tests/test_v2_occ_export.py instead.
+STRAYING_MESHES = {
+    1880: "a hole through everything behind it grazing a tube's side",
+    5035: "a hole leaning 5.5 degrees, its window in a pocket's floor",
+}
 #: The generated parts the reference-part and mutant tests build, by seed: the first twelve, and
 #: each that once found a fault in the judge, kept as its plan (tests/v2_regressions.py).
-BUILT = (*range(12), *REGRESSIONS)
+BUILT = (*range(12), *(seed for seed in REGRESSIONS if seed not in STRAYING_MESHES))
 #: The generated parts whose leaves are each mutated (each a test of its own).
 MUTATED = (1, 3, 5, 9)
 
@@ -526,8 +534,10 @@ class ThreePlacements(unittest.TestCase):
         from forge_spec import number_words
         from forge_spec.checks import check_draft
 
-        # And 870's: deeper than its face's material, a boss's height round a tube's side, was not impossible.
-        for seed in (*range(30), 870):
+        # And 870's: deeper than its face's material, a boss's height round a tube's side, was not impossible; and
+        # 2780's and 2960's, a hole 1 mm past its body's floor into a post standing under it, were the writer's to
+        # restructure (the generator draws no such cut too deep now).
+        for seed in (*range(30), 870, 2780, 2960):
             c = impossible(seed)
             with self.subTest(seed=seed, why=c.cant):
                 self.assertIsNone(c.truth)
