@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from forge_spec import NumberedBrief
+from forge_spec.versions import CURRENT, written
 
 
 def cite(brief: NumberedBrief, phrase: str, nth: int = 1) -> list[int]:
@@ -79,7 +80,7 @@ def made_of(brief: NumberedBrief, phrase: str, nth: int = 1) -> dict[str, Any]:
 
 def draft(name: str, items: list[dict[str, Any]], *, not_modelled: list[dict[str, Any]] | None = None,
           silent: list[dict[str, Any]] | None = None, material: dict[str, Any] | None = None) -> dict[str, Any]:  # fmt: skip
-    found = {"schema_version": "1.10", "name": name, "items": items,
+    found = {"schema_version": written(CURRENT), "name": name, "items": items,
              "not_modelled": not_modelled or [], "silent": silent or []}  # fmt: skip
     if material is not None:
         found["requirements"] = {"material": material}

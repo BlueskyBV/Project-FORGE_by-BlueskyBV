@@ -171,7 +171,7 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
 
     def test_a_replayed_record_is_read_as_the_live_writer_read_it(self) -> None:
         answer = {"spec": good()}
-        answer["spec"]["schema_version"] = 1.1  # "1.10", as the transport hands it over
+        answer["spec"]["schema_version"] = float(good()["schema_version"])  # "1.11", as the transport hands it over
         self.assertEqual(read_answer(answer), good())
 
 

@@ -60,7 +60,7 @@ def _verdict(measured: Interval, limit: Limit, unit: str, slack: float) -> tuple
     for bound, most in ((limit.at_most, True), (limit.at_least, False)):
         if bound is None:
             continue
-        value = bound.quantity.value_in(unit)
+        value = bound.made_in(unit)  # a limit takes no tolerance: made where it is said
         inside = measured.hi <= value + slack if most else measured.lo >= value - slack
         outside = measured.lo > value + slack if most else measured.hi < value - slack
         said.append(f"{'at most' if most else 'at least'} {value:g} {unit}")

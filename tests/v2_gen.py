@@ -24,6 +24,7 @@ from forge_spec.schema import (
     FieldSpec,
     FieldType,
 )
+from forge_spec.versions import CURRENT, written
 
 WORDS = [0, 1]
 
@@ -279,7 +280,7 @@ def random_draft(rng: random.Random) -> dict[str, Any]:
         )
         items.append(random_item(rng, f"item{k}", kind, body_kind))
     draft: dict[str, Any] = {
-        "schema_version": "1.10",
+        "schema_version": written(CURRENT),
         "name": rng.choice(["part", "a bracket", "plate 2"]),
         "items": items,
     }
