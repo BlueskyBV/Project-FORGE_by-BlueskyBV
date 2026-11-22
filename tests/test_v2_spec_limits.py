@@ -5,6 +5,8 @@
   an axis, at most and at least so much; below 1.11 a fault, and so is a
   mass in mm, a size in g, a bound with a tolerance, at least more than at
   most, a limit with no bound.
+- **Two drafts compared:** a limit one reads and the other doesn't is a
+  difference, asked about.
 - **Cited as any value:** "no taller than 32 mm and weigh no more than
   30 g" (the corpus's R13) is used whole, and asks nothing; a limit's
   ``of`` cited by words that name another is a fault, by words that name
@@ -126,6 +128,20 @@ class ReadAndWritten(unittest.TestCase):
         self.assertIn("at least more than at most: no part is both", faults(crossed))
         self.assertIn("a limit says at most or at least how much: give at_most, at_least or both", faults(unbounded))
         self.assertTrue(faults(assumed_bound))  # a limit nobody set is none
+
+
+class TwoDraftsCompared(unittest.TestCase):
+    def test_a_limit_read_otherwise_is_a_difference(self) -> None:
+        from forge_spec.compare import differences
+
+        b, d = _mount()
+        other = copy.deepcopy(d)
+        other["requirements"]["limits"] = other["requirements"]["limits"][1:]
+        other["not_modelled"].append({"words": cite(b, "stand no taller than 32 mm"), "reason": "a limit"})
+        found = differences(check_draft(b, d), check_draft(b, other))
+        self.assertIn(("/requirements/limits", "the limits on the part are mass at most 30 g, z at most 32 mm here, "
+                       "mass at most 30 g in the second draft"), [(x.at, x.message) for x in found])  # fmt: skip
+        self.assertEqual(differences(check_draft(b, d), check_draft(b, copy.deepcopy(d))), ())
 
 
 class CitedAsAnyValue(unittest.TestCase):

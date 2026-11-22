@@ -426,6 +426,11 @@ def differences(first: SpecReport, second: SpecReport) -> tuple[Difference, ...]
         found.setdefault(pointer("requirements", "material"), []).append(
             f"the material is {repr(ours) if ours else 'not given'} here, "
             f"{repr(theirs) if theirs else 'not given'} in the second draft")  # fmt: skip
+    mine_limits, their_limits = (_limits(r) for r in (first, second))
+    if mine_limits != their_limits:  # schema 1.11: the limits the brief sets on the part, read alike or asked about
+        found.setdefault(pointer("requirements", "limits"), []).append(
+            f"the limits on the part are {', '.join(mine_limits) or 'none'} here, "
+            f"{', '.join(their_limits) or 'none'} in the second draft")  # fmt: skip
     return tuple(
         Difference(at, "; ".join(dict.fromkeys(messages)))
         for at, messages in found.items()
@@ -489,6 +494,19 @@ def _apart(f: Feature, g: Feature) -> tuple[int, float]:
 def _material(report: SpecReport) -> str:
     material = report.spec.requirements.material if report.spec is not None else None
     return material.text if material is not None else ""
+
+
+def _limits(report: SpecReport) -> list[str]:
+    """A draft's limits on the whole part, each as said in mm or g, in order: "z at most 32 mm"."""
+    if report.spec is None:
+        return []
+    found = []
+    for limit in report.spec.requirements.limits:
+        unit = "g" if limit.of.value == "mass" else "mm"
+        bounds = [f"{word} {bound.quantity.value_in(unit):.6g} {unit}"
+                  for word, bound in (("at least", limit.at_least), ("at most", limit.at_most)) if bound is not None]  # fmt: skip
+        found.append(f"{limit.of.value} {' and '.join(bounds)}")
+    return sorted(found)
 
 
 def _named(text: str) -> str:

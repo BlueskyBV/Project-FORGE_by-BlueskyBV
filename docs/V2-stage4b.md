@@ -414,6 +414,11 @@ conformance matrix (2.3) tests each pairing with the pathfinders.
 
 ## 3. Stages 4b.1 to 4b.10: the new kinds
 
+Every gap open today, each place Forge says it can't do something yet, is
+in [V2-gaps.md](V2-gaps.md) with the sub-stage below (or 4b.0's item) that
+closes it; a test holds the register to the code, so none is written
+without a stage, and V2 is released with none open (V2-plan.md, 8, stage 9).
+
 Each kind arrives as modules: schema entry and written definition (with
 worked numbers every program must reproduce, and the algorithms cited),
 compiler module with proven-equal alternatives, ForgeIR op, after-check,
@@ -921,6 +926,10 @@ section 8).
 
 ## 5. The exit test
 
+- **Its gaps closed:** each sub-stage ends with every row of
+  [V2-gaps.md](V2-gaps.md) it is named to close gone from the register
+  (its test then fails while one stays listed and holds no gap), and no
+  row added without a sub-stage that closes it.
 - **Seeds never used to fix:** each counted run draws a fresh seed range,
   never used in a shakedown. A counted run that fails is fixed and run
   again in full on fresh seeds; every attempt is reported, and no run is

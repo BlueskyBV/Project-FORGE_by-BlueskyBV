@@ -3379,9 +3379,10 @@ questions. Read, with the set's (a practice set, 14.5):
   common grades (`forge_spec.materials`). A part of a printable plastic is
   known only to weigh at most its solid mass: its infill isn't the spec's.
   A material with no density there (a filled one, wood), or none at all,
-  can't be weighed, and is said so. Anything but PASS holds the part. And
-  a build lists, beside any ending, the limits it checked and what the spec
-  leaves out (not modelled), which nothing checks.
+  can't be weighed, and is said so. Anything but PASS holds the part. A
+  build lists, beside any ending, the limits it checked and what the spec
+  leaves out (not modelled), which nothing checks; and two drafts that read
+  a limit otherwise differ, and it is asked (`compare._limits`).
 - **A record's version given as a number reads as the later of two.** With
   the schema at 1.11, every record drafted at 1.10 (handed over as 1.1)
   read as "1.1" or "1.10" and was refused: every corpus and blind-set
@@ -3402,7 +3403,10 @@ questions. Read, with the set's (a practice set, 14.5):
 - **Not changed:** R10's load and safety factor are still asked: Forge
   can't check strength yet (stage 6). B1-16's gear teeth and B1-24's
   rounding where a 3 mm floor meets 2.5 mm walls are still UNABLE: neither
-  is made yet.
+  is made yet. Each, and every other place Forge says it can't do
+  something yet, is in [V2-gaps.md](V2-gaps.md) with the stage that closes
+  it, held to the code by `tests/test_v2_gaps.py`: V2 is released with
+  none open.
 
 Replayed with no model call: the corpus's 41 drafts and the set's 30 are
 read on the new code as on the old, but for exactly those four questions,
