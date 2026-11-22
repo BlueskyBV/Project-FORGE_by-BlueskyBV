@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .checks import SpecReport
-from .draft import Item, PartSpec
+from .draft import Item, Limit, PartSpec
 from .items.words import WORDS
 
 # The template helpers, which the confirmation views word their notes with too.
@@ -81,6 +81,22 @@ class RenderedSpec:
         return "\n".join(out)
 
 
+#: How a limit's ``of`` is said: the part's mass, or how far it reaches along an axis.
+_LIMIT_OF = {"mass": "Mass", "x": "Size along X", "y": "Size along Y", "z": "Height (along Z)"}
+
+
+def _limit_line(limit: Limit) -> str:
+    """A limit on the whole part, as the person reads it: "Mass: at most 30 g, checked on the built part"."""
+    bounds = []
+    if limit.at_least is not None:
+        bounds.append(f"at least {limit.at_least.nominal:g} {limit.at_least.unit}{_tag(limit.at_least.provenance)}")
+    if limit.at_most is not None:
+        bounds.append(f"at most {limit.at_most.nominal:g} {limit.at_most.unit}{_tag(limit.at_most.provenance)}")
+    how = " (by the material's density, as if solid)" if limit.of.value == "mass" else ""
+    return (f"{_LIMIT_OF[limit.of.value]}{_tag(limit.of.provenance)}: {' and '.join(bounds)}, checked on the built "
+            f"part{how}")  # fmt: skip
+
+
 def _line(item: Item) -> str:
     line = _Line(item)
     text = WORDS[item.kind].sentence(line)
@@ -128,7 +144,7 @@ def render(report: SpecReport, brief: NumberedBrief, *,
         (f"Material: {material.text!r}{_tag(material.provenance)}",)
         if material is not None
         else ()
-    )
+    ) + tuple(_limit_line(limit) for limit in spec.requirements.limits)
     unable = tuple(f"{e.what}: {_quote(brief, e.words)}" for e in spec.unable)
     return RenderedSpec(f"{spec.name} - {len(spec.items)} item(s)", assumptions, caveats,
                         tuple(lines), not_modelled, tuple(silent), answers, requirements, unable)  # fmt: skip

@@ -22,7 +22,9 @@ B-rep, a STEP file read back, an STL or 3MF read back):
 3. face accounting at the suite's resolution (its radius, finer in its
    finer boxes) and the view's own tolerance;
 4. topology against the oracle's counts, and volume against its interval;
-5. fresh probes, drawn from the run's seed after the part is built, with
+5. the brief's limits on the whole part, its mass and its size along an
+   axis (schema 1.11; :mod:`.limits`);
+6. fresh probes, drawn from the run's seed after the part is built, with
    one number for the view's tolerance at both ends (:func:`~.probes.draw`
    and :meth:`~.probes.Probes.run`): the greatest point tolerance face
    accounting used on it. Views of one tolerance share one draw.
@@ -48,6 +50,7 @@ from .capabilities import Answer, admit, applicable
 from .checks import Evidence
 from .classes import Verdict, VerificationClass
 from .compiler import CheckSuite, compile_checks
+from .limits import judge_limits
 from .measure import Probe
 from .oracle import ExpectedTopology, Oracle, oracle
 from .place import Placed, place
@@ -73,6 +76,7 @@ DETECTORS = (
     "topology",
     "volume",
     "fresh probes",
+    "requirements",
 )
 #: The oracle's volume is worked out to within this many cells (oracle.volume's budget).
 VOLUME_BUDGET = 1_000_000
@@ -151,6 +155,8 @@ class ViewJudgement:
     no_probes: tuple[tuple[str, str], ...]
     #: Each check's item, by the check's id.
     items: Mapping[str, str] = field(repr=False)
+    #: The brief's limits on the whole part (schema 1.11; :mod:`.limits`), each judged on this view.
+    limits: tuple[Evidence, ...] = ()
 
     @property
     def held(self) -> tuple[Finding, ...]:
@@ -187,6 +193,8 @@ class ViewJudgement:
             )
         found += [Finding(self.name, "fresh probes", e.check.split("/")[0], e.check, e.verdict, e.reason)
                   for e in self.probes if e.verdict is not Verdict.PASS]  # fmt: skip
+        found += [Finding(self.name, "requirements", None, e.check, e.verdict, e.reason)
+                  for e in self.limits if e.verdict is not Verdict.PASS]  # fmt: skip
         return tuple(found)
 
     @property
@@ -231,6 +239,7 @@ class ViewJudgement:
             "fresh_probes": {"seed": self.probe_seed, "margin": self.probe_margin,
                              "items": [evidence_dict(e) for e in self.probes],
                              "none_round": [{"item": i, "why": w} for i, w in self.no_probes]},
+            "limits": [evidence_dict(e) for e in self.limits],
             "held": [f.as_dict() for f in self.held],
         }  # fmt: skip
 
@@ -305,8 +314,9 @@ class Judge:
         """The first detector that fails a view, the cheapest first, or None where none does: what turns back a part one FAIL is enough for, a mutant (docs/V2-stage4.md, 13.2), judged no further.
 
         The view's admission ("admission"), then each check that applies (by
-        its field), the topology, the volume, face accounting and the fresh
-        probes, each as :meth:`view` runs it. An INCONCLUSIVE fails nothing.
+        its field), the topology, the volume, face accounting, the brief's
+        limits ("requirements") and the fresh probes, each as :meth:`view`
+        runs it. An INCONCLUSIVE fails nothing.
         """
         if admit(view):
             return "admission"
@@ -326,6 +336,8 @@ class Judge:
         if accounting.verdict is Verdict.FAIL:
             return "face accounting"
         tolerance = float(accounting.tolerance[1])
+        if any(e.verdict is Verdict.FAIL for e in judge_limits(self.spec, view, "", tolerance)):
+            return "requirements"
         found = self.probes(seed, tolerance).run(view, tolerance)
         if any(e.verdict is Verdict.FAIL for e in found):
             return "fresh probes"
@@ -352,5 +364,6 @@ class Judge:
         drawn = self.probes(seed, tolerance)
         probes = drawn.run(view, tolerance)
         items = {check.id: check.item for check in self.suite.checks}
+        limits = judge_limits(self.spec, view, name, tolerance)
         return ViewJudgement(name, source, admitted, tuple(evidence), tuple(not_applicable), accounting, topology,
-                             volume, probes, seed, drawn.margin, drawn.empty, items)  # fmt: skip
+                             volume, probes, seed, drawn.margin, drawn.empty, items, limits)  # fmt: skip

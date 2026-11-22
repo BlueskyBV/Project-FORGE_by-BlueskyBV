@@ -3354,6 +3354,62 @@ old and new; set 1's 30 drafts regraded (79 of 82 right; asking 11 to 2);
 tests `test_v2_spec_counts.py` (each rule both ways), `test_v2_spec_unable.py`
 (unable, the right angle, the reason's length).
 
+### 14.7 The corpus's first run, and what it changed
+
+The owner ran `forge eval-corpus --smoke` (four briefs, $0.67: three built
+right, the gear UNABLE), blind set 1 a third time on b98f6cb (81 of 84
+facts right, 96.4%; asking nobody needed 11 to 3; $6.64), and the corpus
+to `--max-cost 5` (41 of 161 briefs, $4.16): **37 built, each the size
+and the volume validation/SUITE.md expects of it**, and four stopped on
+questions. Read, with the set's (a practice set, 14.5):
+
+- **A limit on the whole part was never checked, and said as if it were.**
+  R01 and R11 ("it must weigh no more than 10 g", 8 g) were drafted with
+  the limit not modelled, built, and released with "every check passed on
+  every view": the limit was on the spec page alone. R13 ("no taller than
+  32 mm and no more than 30 g") stopped on both numbers, though its part
+  is 31 mm and about 23 g. **Schema 1.11, `requirements.limits`:** a limit
+  the brief sets on the whole part, its "mass" or its overall size along
+  "x", "y" or "z" (how tall it stands), at most and at least so much, cited
+  as any value (a limit is said as a denial, "no taller than", and its
+  words name what it holds all the same). It is checked on every view of
+  the built part (`forge_checks.limits`): its size by the view's box, to
+  within the view's tolerance, a part drawn to the limit within it; its
+  mass by the view's volume and the material's density, a range over its
+  common grades (`forge_spec.materials`). A part of a printable plastic is
+  known only to weigh at most its solid mass: its infill isn't the spec's.
+  A material with no density there (a filled one, wood), or none at all,
+  can't be weighed, and is said so. Anything but PASS holds the part. And
+  a build lists, beside any ending, the limits it checked and what the spec
+  leaves out (not modelled), which nothing checks.
+- **A record's version given as a number reads as the later of two.** With
+  the schema at 1.11, every record drafted at 1.10 (handed over as 1.1)
+  read as "1.1" or "1.10" and was refused: every corpus and blind-set
+  replay would have been. A minor version only adds, so the later reads
+  each draft the earlier does (`spec_writer.as_drafted`).
+- **Questions nobody needed,** each still asked where the spec doesn't hold
+  it: "fixed at one end by two 5 mm bolt holes near that end" (R10), "one"
+  picking the end they are measured from, whatever their count; a tube
+  "open at both ends" (P08), the two ends its bore opens; a screw's size
+  ("for M5 socket head screws", B1-11) where a hole in its sentence is one
+  of that size's own, a clearance or its tap drill; a number in a name the
+  spec repeats ("Raspberry Pi 4", B1-30), a numeral just after a
+  capitalised word not beginning its sentence (`checks._counts_held`,
+  `_screws_held`, `_names_held`). P06's hexagon "20 mm across the
+  corners" was drafted right and assumed: an outline cites the sizes it is
+  drawn to, even where its corners are worked out (guide 33), as its
+  checks already read them.
+- **Not changed:** R10's load and safety factor are still asked: Forge
+  can't check strength yet (stage 6). B1-16's gear teeth and B1-24's
+  rounding where a 3 mm floor meets 2.5 mm walls are still UNABLE: neither
+  is made yet.
+
+Replayed with no model call: the corpus's 41 drafts and the set's 30 are
+read on the new code as on the old, but for exactly those four questions,
+and R01, R11, R13 and P06 are drafted again by the next run. Tests:
+`tests/test_v2_spec_limits.py`; `tests/test_v2_spec_writer.py` (a 1.10
+record under 1.11).
+
 ## 15. What is tested
 
 | Test file | What |

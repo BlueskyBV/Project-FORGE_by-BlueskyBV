@@ -226,4 +226,11 @@ def _requirements(requirements: Requirements) -> dict[str, Any]:
     found: dict[str, Any] = {}
     if requirements.material is not None:
         found["material"] = _field(requirements.material)
+    if requirements.limits:  # schema 1.11: only where there are any, so a spec without reads and hashes as it did
+        found["limits"] = [
+            {"of": _field(limit.of),
+             **({"at_most": _field(limit.at_most)} if limit.at_most is not None else {}),
+             **({"at_least": _field(limit.at_least)} if limit.at_least is not None else {})}
+            for limit in requirements.limits
+        ]  # fmt: skip
     return found

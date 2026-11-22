@@ -129,7 +129,7 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
         with self.assertRaises(RepairExhaustedError) as caught:
             write_spec(ScriptedProvider([answer, answer]), EXAMPLE_BRIEF)
         said = " ".join(caught.exception.detail["last_problems"])
-        self.assertIn('written as text, in quotes: "1.10", not the number 7.3', said)
+        self.assertIn('written as text, in quotes: "1.11", not the number 7.3', said)
 
     def test_a_figure_is_matched_to_the_text_the_schema_names(self) -> None:
         schema = {"properties": {"schema_version": {"const": "1.10"}, "items": {}}}
@@ -142,6 +142,10 @@ class WhatTheTransportHandsOverIsReadAsWritten(unittest.TestCase):
         # Blind set 1's second run was drafted at "1.9": replayed once the schema names "1.10", 1.9 is still "1.9".
         self.assertEqual(as_drafted({"schema_version": 1.9, "items": []})["schema_version"], "1.9")
         self.assertEqual(as_drafted({"schema_version": 1.1, "items": []})["schema_version"], "1.10")
+        # Once the schema names "1.11", a record drafted at "1.10" (handed over as 1.1) is still "1.10", the later of
+        # the two versions it reads as: the corpus's and the blind set's records.
+        self.assertEqual(as_drafted({"schema_version": 1.1, "items": []},
+                                    {"properties": {"schema_version": {"const": "1.11"}}})["schema_version"], "1.10")
 
     def test_the_whole_draft_under_a_wrapper(self) -> None:
         result = write_spec(ScriptedProvider([{"spec": good()}]), EXAMPLE_BRIEF)

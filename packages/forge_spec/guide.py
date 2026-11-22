@@ -43,6 +43,7 @@ from . import schema as _schema_module
 from .draft import (
     FITS,
     GRADES,
+    LIMITS,
     PATTERN_ANGLES,
     PATTERN_FIELDS,
     PATTERN_REQUIRED,
@@ -77,7 +78,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 32
+GUIDE_VERSION = 33
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -460,6 +461,25 @@ def _all_edges() -> list[str]:
     return sorted({edge for spec in KINDS.values() for edge in spec.edges})
 
 
+#: Where a limit's bound comes from: the brief, never an assumption (a limit nobody set is none).
+_LIMIT_SOURCES = ("words", "formula")
+
+
+def _limit_schema() -> dict[str, Any]:
+    """A limit on the whole part (schema 1.11): its mass, or its size along an axis, at most or at least so much."""
+    mass = _obj({"value": {"type": "number", "exclusiveMinimum": 0}, "unit": {"enum": ["g", "kg", "mg"]},
+                 "from": _sources(_LIMIT_SOURCES)}, ("value", "unit", "from"), "a mass")  # fmt: skip
+    size = _obj({"value": {"type": "number", "exclusiveMinimum": 0}, "unit": {"enum": _length_units()},
+                 "from": _sources(_LIMIT_SOURCES)}, ("value", "unit", "from"), "a size")  # fmt: skip
+    of = _obj({"choose": {"enum": list(LIMITS)}, "from": _ref("stated")}, ("choose", "from"),
+              "mass, or the part's overall size along x, y or z (z: how tall it stands)")  # fmt: skip
+    return {"oneOf": [
+        _obj({"of": of, "at_most": mass, "at_least": mass}, ("of",), "schema 1.11: a limit on the part's mass"),
+        _obj({"of": of, "at_most": size, "at_least": size}, ("of",),
+             "schema 1.11: a limit on the part's overall size along an axis"),
+    ]}  # fmt: skip
+
+
 @functools.cache
 def _draft_schema_text() -> str:
     body = _obj({
@@ -473,7 +493,8 @@ def _draft_schema_text() -> str:
             {"sentence": {"type": "integer", "minimum": 0},
              "reason": {"type": "string", "minLength": 1, "maxLength": MAX_REASON}},
             ("sentence", "reason"), "a sentence that says nothing about the shape, and why")},
-        "requirements": _obj({"material": _ref("text")}, (), "what the part must be beyond its shape"),
+        "requirements": _obj({"material": _ref("text"), "limits": {"type": "array", "items": _limit_schema()}}, (),
+                             "what the part must be beyond its shape"),
         "unable": {"type": "array", "items": _obj(
             {"words": _ref("words"), "what": {"type": "string", "minLength": 1, "maxLength": MAX_NAME}},
             ("words", "what"), "a shape the brief asks for that no kind here makes, and what it is")},
@@ -645,6 +666,11 @@ one line.
 words (at most {max_reason} characters); the person reads it first. Assume \
 only what a part needs and the brief leaves open: a hole goes through a \
 mounting plate; a disc lies flat.
+- An outline (a "profile") cites the words of the sizes it is drawn to, \
+even where you work its corners out from them: a hexagon "20 mm across the \
+corners" cites those words, and Forge checks that each is a size the \
+outline has (across it, a side, between parallel sides or two corners). It \
+is assumed only where the brief gives none of its sizes.
 
 A size has a unit: {length_units}. An angle has one too: {angle_units}. A \
 count has none. A tolerance ({{"plus": 0.1, "minus": 0.1}}) is given only \
@@ -677,6 +703,16 @@ and all), or assumed with its reason. It names a stock: cite no size or \
 count with it. It is recorded for the strength and print checks, never left \
 out as not modelled. Every other word that names a material is another \
 thing's ("it slides on a steel rod"): list it in not_modelled, saying whose.
+- "requirements": {{"limits": [{{"of": {{"choose": "mass", "from": \
+{{"words": [40]}}}}, "at_most": {{"value": 30, "unit": "g", "from": \
+{{"words": [43, 44]}}}}}}]}} ("schema_version": "1.11"): a limit the brief \
+sets on the whole part, which Forge checks on the built part: its "mass" \
+("weighs no more than 30 g", by the material's density, as if solid), or its \
+overall size along "x", "y" or "z" ("no taller than 32 mm": "z", how tall \
+it stands, in the part's own frame), "at_most" or "at_least" so much, or \
+both. Cite the words that set it ("no more than 30 g"), never put it in \
+not_modelled or silent. A load, a stress or a safety factor is no limit \
+here: Forge can't check those yet, so they are questions.
 - "not_modelled": [{{"words": [...], "reason": "..."}}]: what the brief says \
 that the part won't have: a colour, a finish, how it is made, what it is for, \
 another thing's material, a gap or clearance to another part that no size of \

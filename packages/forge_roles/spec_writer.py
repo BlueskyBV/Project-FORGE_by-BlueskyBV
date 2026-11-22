@@ -139,8 +139,11 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
       briefs gave up. The schema names the one text it may be: 1.9 is
       "1.9", and 1.1 is "1.10" where "1.10" is the text it names. A version
       the schema doesn't name, a record's of an earlier minor version, is
-      the one earlier version it reads as (1.9 is "1.9" once the schema
-      names "1.10"), never two (1.1 where it names neither 1.1 nor 1.10).
+      the earlier version it reads as (1.9 is "1.9" once the schema names
+      "1.10"), and the later of two it reads as (1.1 is "1.10" once the
+      schema names "1.11": every corpus and blind-set record drafted at 1.10
+      arrived as 1.1). Where the schema itself names two it reads as, it is
+      left as given.
     - **The whole draft under a lone wrapper the schema doesn't have**:
       ``{"spec": {"schema_version": ..., "items": [...]}}``. A wrapper whose
       one field is the schema's own is left alone.
@@ -159,7 +162,9 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
         if isinstance(spec, Mapping) and _a_number(value):
             same = [text for text in _texts_of(spec) if _reads_as(text, value)]
             if not same and name == "schema_version":
-                same = [text for text in _versions() if _reads_as(text, value)]
+                # A record's figure that reads as two versions (1.1: "1.1" or "1.10") is the later one: a minor
+                # version only adds, so the later reads every draft the earlier does, and as it did.
+                same = [text for text in _versions() if _reads_as(text, value)][-1:]
             if len(same) == 1:
                 out[name] = same[0]
     items = out.get("items")
@@ -182,7 +187,7 @@ def as_drafted(answer: Any, schema: Mapping[str, Any] | None = None) -> Any:
 
 
 def _versions() -> list[str]:
-    """Every version of the current major a draft may be written in: "1.0" to "1.10"."""
+    """Every version of the current major a draft may be written in, in order: "1.0" to "1.11"."""
     major, minor = CURRENT
     return [f"{major}.{m}" for m in range(minor + 1)]
 

@@ -26,7 +26,9 @@ placement's ``latitude`` on a ball's or a dome's surface; 1.7, a cut's
 1.9, a hexagonal pocket, ``"shape": "hexagon"`` with its ``across_flats``,
 and a pocket of any outline, ``"shape": "profile"`` with its ``profile``;
 1.10, ``unable``: what the brief asks that no kind makes yet (gear teeth),
-said instead of drafting a stand-in for it.
+said instead of drafting a stand-in for it; 1.11, ``requirements.limits``:
+the brief's limits on the whole part, its mass and how tall, long or wide
+it is, checked on the built part.
 
 >>> version_of({"schema_version": "1.1"})
 (1, 1)
@@ -57,7 +59,7 @@ __all__ = [
 Version = tuple[int, int]
 
 #: The version Forge writes, and the latest it reads.
-CURRENT: Version = (1, 10)
+CURRENT: Version = (1, 11)
 
 #: The major steps, in order: (from this major version, to the next, the migration), from :mod:`.migrations`.
 MIGRATIONS: tuple[tuple[int, int, Migration], ...] = STEPS

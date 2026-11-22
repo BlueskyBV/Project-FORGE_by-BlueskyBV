@@ -38,7 +38,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from forge_numeric import scalar as fs
-from forge_units.dimension import DIMENSIONLESS, LENGTH
+from forge_units.dimension import DIMENSIONLESS, LENGTH, MASS
 
 from .problems import (
     MAX_NAME,
@@ -80,6 +80,7 @@ from .words import WordRef
 __all__ = [
     "FITS",
     "GRADES",
+    "LIMITS",
     "PATTERN_ANGLES",
     "PATTERN_FIELDS",
     "PATTERN_REQUIRED",
@@ -93,6 +94,7 @@ __all__ = [
     "Faces",
     "Fit",
     "Item",
+    "Limit",
     "NotModelled",
     "On",
     "PartSpec",
@@ -326,18 +328,37 @@ class Unable:
     what: str
 
 
+#: What a limit on the whole part holds (schema 1.11): its mass, or how far it reaches along an axis of the part.
+LIMITS = ("mass", "x", "y", "z")
+
+
+@dataclass(frozen=True)
+class Limit:
+    """A limit the brief sets on the whole part (schema 1.11): its mass, or its size along an axis of the part (``z``,
+    how tall it stands), at most and at least so much (either, or both). Checked on the built part
+    (:mod:`forge_checks.limits`)."""
+
+    of: Choice
+    at_most: Value | None = None
+    at_least: Value | None = None
+
+
 @dataclass(frozen=True)
 class Requirements:
-    """What the part must be beyond its shape (plan, 4.1): for now, its material.
+    """What the part must be beyond its shape (plan, 4.1): its material, and the limits the brief sets on it.
 
     The material is the brief's words for it, exactly ("PETG", "aluminium
-    6061"), or an assumption with its reason. It is recorded, not judged:
-    which grade a name means, and whether it is strong enough, is for the
-    strength and print checks (stage 6). Loads, mass, fits and the printer
-    follow there.
+    6061"), or an assumption with its reason. Which grade a name means, and
+    whether it is strong enough, is for the strength and print checks
+    (stage 6); loads, fits and the printer follow there. The limits (schema
+    1.11) are the brief's on the whole part: its mass ("weighs no more than
+    30 g"), how tall, long or wide it is ("no taller than 32 mm"), each
+    checked on the built part (:mod:`forge_checks.limits`), its mass by the
+    material's density (:mod:`forge_spec.materials`).
     """
 
     material: Text | None = None
+    limits: tuple[Limit, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1320,7 +1341,7 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
                                f"{MAX_NAME} characters): \"involute gear teeth\"")  # fmt: skip
             continue
         unable.append(Unable(words, what))
-    requirements = _requirements(raw.get("requirements"), problems)
+    requirements = _requirements(raw.get("requirements"), problems, version)
     return PartSpec(
         str(name).strip(),
         tuple(items),
@@ -1374,17 +1395,70 @@ def _check_axis_names(item: Item, at: str, version: tuple[int, int], problems: P
                        f"not by the part's {part[0][1]} as well")  # fmt: skip
 
 
-def _requirements(raw: Any, problems: Problems) -> Requirements:
+def _requirements(raw: Any, problems: Problems, version: tuple[int, int] = CURRENT) -> Requirements:
     """The part's requirements: absent, or an object with what it says."""
     if raw is None:
         return Requirements()
     at = pointer("requirements")
-    obj = _object(raw, at, problems, 'requirements {"material": ...}', {"material"})
+    obj = _object(raw, at, problems, 'requirements {"material": ..., "limits": [...]}', {"material", "limits"})
     if obj is None:
         return Requirements()
     material = obj.get("material")
+    limits: list[Limit] = []
+    raw_limits = obj.get("limits")
+    if raw_limits is not None and version < (1, 11):
+        problems.fault(at + pointer("limits"), 'limits are schema 1.11\'s: give the draft\'s "schema_version": "1.11"')
+    elif raw_limits is not None and not isinstance(raw_limits, list):
+        problems.fault(at + pointer("limits"), "limits are a list")
+    elif raw_limits is not None:
+        for n, entry in enumerate(raw_limits):
+            limit = _limit(entry, at + pointer("limits", n), problems)
+            if limit is not None:
+                limits.append(limit)
     return Requirements(
         _text(material, at + pointer("material"), problems)
         if material is not None
-        else None
+        else None,
+        tuple(limits),
     )
+
+
+def _limit(raw: Any, at: str, problems: Problems) -> Limit | None:
+    """One limit on the whole part: what it holds (``of``), and at most or at least how much (schema 1.11)."""
+    obj = _object(raw, at, problems, 'a limit {"of": ..., "at_most": ..., "at_least": ...}',
+                  {"of", "at_most", "at_least"})  # fmt: skip
+    if obj is None:
+        return None
+    of = _choice(obj.get("of"), at + pointer("of"), problems, LIMITS)
+    if of is None:
+        return None
+    bounds: dict[str, Value] = {}
+    for name in ("at_most", "at_least"):
+        given = obj.get(name)
+        if given is None:
+            continue
+        value = read_value(given, at + pointer(name), problems, ("words", "formula"))
+        if value is None:
+            continue
+        wanted = MASS if of.value == "mass" else LENGTH
+        if value.quantity.unit.dimension != wanted:
+            problems.fault(at + pointer(name, "unit"),
+                           f"a limit on {'the mass' if of.value == 'mass' else 'a size'} is "
+                           f"{'a mass (g, kg)' if of.value == 'mass' else 'a length'}, got {value.unit!r}")  # fmt: skip
+            continue
+        if value.tolerance is not None:
+            problems.fault(at + pointer(name, "tolerance"), "a limit is a bound already: it takes no tolerance")
+            continue
+        if not value.nominal > 0:
+            problems.fault(at + pointer(name, "value"), "a limit is more than nothing")
+            continue
+        bounds[name] = value
+    if not bounds:
+        if not ({"at_most", "at_least"} & set(obj)):
+            problems.fault(at, "a limit says at most or at least how much: give at_most, at_least or both")
+        return None
+    most, least = bounds.get("at_most"), bounds.get("at_least")
+    if most is not None and least is not None and least.quantity.si_magnitude.midpoint > most.quantity.si_magnitude.midpoint:
+        problems.fault(at + pointer("at_least"), "at least more than at most: no part is both")
+        return None
+    return Limit(of, most, least)

@@ -28,6 +28,7 @@ shown to the person first.
 
 from __future__ import annotations
 
+import itertools
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
@@ -326,6 +327,13 @@ def _counts_held(spec: PartSpec, c: _Collect) -> None:
                 _numbers_named((i,), c, _reads(n))
             elif n == 1 and copies >= 2 and _ahead(i, brief, _EACH):
                 _numbers_named((i,), c, _reads(1))
+            elif n == 1 and _picks(i, brief) and _picks_side(item):
+                # "Fixed at one end by two 5 mm bolt holes near that end": "one" picks the end they are measured
+                # from (corpus R10), whatever their count.
+                _numbers_named((i,), c, _reads(1))
+            elif n == _open_ends(item) and _ahead(i, brief, _ENDS) and _said_near(i, brief, _OPEN):
+                # "A tube ... open at both ends": its bore opens both (corpus P08).
+                _numbers_named((i,), c, _reads(n))
         for raw in item.fields.values():
             if not isinstance(raw, EdgeSet) or raw.where_meets is not None or raw.of not in kinds:
                 continue
@@ -361,6 +369,74 @@ def _counts_held(spec: PartSpec, c: _Collect) -> None:
 
 #: What ends a clause between two words.
 _CLAUSE_BREAK = re.compile(r"[,;:.!?()\[\]{}]")
+#: A thing's ends, after a count of them; and the word that says they are open.
+_ENDS = frozenset({"end", "ends"})
+_OPEN = frozenset({"open", "opened", "open-ended"})
+
+
+def _open_ends(item: Item) -> int:
+    """How many ends a bore through an item opens: a body with a bore between its two ends (a tube) has both open;
+    anything else, none."""
+    faces = KINDS[item.kind].faces
+    return sum(1 for face in faces if face.endswith("end")) if "bore" in faces else 0
+
+
+def _said_near(i: int, brief: NumberedBrief, wanted: frozenset[str]) -> bool:
+    """Whether one of ``wanted`` is close to the word at ``i``, before or after it, in its clause."""
+    here = brief.word(i)
+    for j in range(max(0, i - _COUNT_REACH), min(len(brief.words), i + 1 + _COUNT_REACH)):
+        there = brief.word(j)
+        if j == i or there.sentence != here.sentence:
+            continue
+        a, b = (there, here) if j < i else (here, there)
+        if _CLAUSE_BREAK.search(brief.text[a.end : b.start]):
+            continue
+        if _plain(there.text) in wanted:
+            return True
+    return False
+
+
+def _screws_held(spec: PartSpec, c: _Collect) -> None:
+    """Use a screw's size ("for M5 socket head screws") where a hole the spec makes in its sentence is one of that
+    size's own: its clearance, fine, normal or coarse, or its tap drill (blind set 1, B1-11: "counterbored holes for M5
+    socket head screws ... through hole 5.5 mm"). A hole of no such size leaves it a question: the brief's sizes and
+    its screw then disagree."""
+    brief = c.brief
+    made: dict[int, list[float]] = {}
+    for item in spec.items:
+        kind = KINDS[item.kind]
+        sentences = {brief.word(i).sentence for i in item_words(item) if 0 <= i < len(brief.words)}
+        for name, raw in item.fields.items():
+            sizes: list[float] = []
+            if kind.field(name).type is FieldType.DIAMETER and isinstance(raw, Value):
+                sizes.append(raw.made_in("mm"))
+            elif isinstance(raw, Counterbore):
+                sizes.append(raw.diameter.made_in("mm"))
+            for sentence in sentences:
+                made.setdefault(sentence, []).extend(sizes)
+    for i, word in enumerate(brief.words):
+        size = metric_size(word.text.strip(",.;:()"))
+        if size is None or not numeric_at(brief, i):
+            continue
+        standard = [*CLEARANCE.get(size[0], ()), *TAPPED.get(size[0], ())[1:]]
+        if any(abs(d - s) <= 1e-6 for d in made.get(word.sentence, ()) for s in standard):
+            c.readings.extend(readings(brief, (i,)))
+
+
+def _names_held(spec: PartSpec, c: _Collect) -> None:
+    """Use a number that is part of a thing's name the spec's name repeats: a numeral just after a capitalised word
+    that doesn't begin its sentence, the two in the spec's name together ("A Raspberry Pi 4 mounting plate", named
+    so: blind set 1, B1-30). What the named thing implies is the items' to give, and they cite its sizes."""
+    brief = c.brief
+    name = _plain(spec.name).split()
+    pairs = set(itertools.pairwise(name))
+    for i in range(1, len(brief.words)):
+        word, before = brief.word(i), brief.word(i - 1)
+        if (not word.text.strip(",.;:()").isdigit() or before.sentence != word.sentence
+                or brief.sentences[word.sentence].words[0] == i - 1 or not before.text[:1].isupper()):  # fmt: skip
+            continue
+        if (_plain(before.text), _plain(word.text)) in pairs:
+            _numbers_named((i,), c, lambda reading: True)
 
 
 def _reads(n: int) -> Callable[[Reading], bool]:
@@ -1435,6 +1511,13 @@ def _owners(spec: PartSpec, brief: NumberedBrief) -> dict[int, frozenset[str]]:
         for i in material.provenance.words:
             if 0 <= i < len(brief.words):
                 found.setdefault(i, set()).add(MATERIAL)
+    for n, limit in enumerate(spec.requirements.limits):
+        for thing in (limit.of, limit.at_most, limit.at_least):
+            p = getattr(thing, "provenance", None)
+            if isinstance(p, Provenance) and p.source is Source.BRIEF:
+                for i in p.words:
+                    if 0 <= i < len(brief.words):
+                        found.setdefault(i, set()).add(f"requirements.limits.{n}")
     return {i: frozenset(owners) for i, owners in found.items()}
 
 
@@ -1492,8 +1575,41 @@ def _unused(word: Word, accounting: Accounting) -> str:
     return f"{word.text!r} (sentence {word.sentence + 1})"
 
 
+#: The words that name what a limit holds (schema 1.11), for checking its ``of`` against its citation: its mass, how
+#: tall it stands; how long or wide is along whichever axis the part's frame puts it, so only the axis names it.
+LIMIT_WORDS: Mapping[str, tuple[str, ...]] = {
+    "mass": ("mass", "weigh", "weighs", "weight", "weighing", "heavy", "heavier", "light", "lighter"),
+    "x": AXIS_WORDS["x"],
+    "y": AXIS_WORDS["y"],
+    "z": (*AXIS_WORDS["z"], "tall", "taller", "height", "high", "higher"),
+}
+
+
+def _check_limit_of(thing: Choice, at: str, label: str, c: _Collect) -> None:
+    """What a limit holds, against its cited words: a limit is said as a denial ("no taller than", "must not weigh
+    more"), so a denied word names its option here as any other does."""
+    p = thing.provenance
+    if p.source is Source.ASSUMED:
+        _assume(p, at, f"{label}: {thing.value}", c)
+        return
+    if not c.words_exist(p.words, at + pointer("from", "words")):
+        return
+    c.mentions.append(p.words)
+    cited, denied = _choice_tokens(p.words, c.brief)
+    said = cited | denied
+    own = any(_plain(w) in said for w in LIMIT_WORDS[thing.value])
+    other = [option for option, words in LIMIT_WORDS.items()
+             if option != thing.value and any(_plain(w) in said for w in words)]  # fmt: skip
+    quoted = c.brief.quote(p.words)
+    if other and not own:
+        c.fault(at, f"the cited words ({quoted!r}) say {other[0]}, not {thing.value}")
+    elif not own:
+        c.assumptions.append(Assumption(at, f"{label}: {thing.value} (read from {quoted!r}, which doesn't name it)"))
+
+
 def _check_requirements(spec: PartSpec, c: _Collect) -> None:
-    """The material is the brief's words for it, exactly; and no word naming a material goes unrecorded.
+    """A limit's citations, as any value's and choice's (schema 1.11); the material is the brief's words for it,
+    exactly; and no word naming a material goes unrecorded.
 
     Its words name a stock: a grade's number with them is part of the name
     ("aluminium 6061", "PA12"), and accounted for by it; a size or a count
@@ -1506,6 +1622,12 @@ def _check_requirements(spec: PartSpec, c: _Collect) -> None:
     embossed are words of the lettering, not of a material, whatever they
     spell (lettering reading "PC" or "ABS": generated part 1528).
     """
+    for n, limit in enumerate(spec.requirements.limits):
+        here = pointer("requirements", "limits", n)
+        _check_limit_of(limit.of, here + pointer("of"), f"requirements.limits.{n}.of", c)
+        for name, bound in (("at_most", limit.at_most), ("at_least", limit.at_least)):
+            if bound is not None:
+                _check_number(bound, here + pointer(name), f"requirements.limits.{n}.{name}", c)
     material = spec.requirements.material
     at = pointer("requirements", "material")
     named: set[int] = set()
@@ -1622,6 +1744,8 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
     c = _Collect(brief, [], [], [], problems, [], [], strict)
     _check_values(spec, c)
     _counts_held(spec, c)
+    _screws_held(spec, c)
+    _names_held(spec, c)
     _check_requirements(spec, c)
     layout = solve(spec)
     problems.extend(SpecProblem(i.kind, i.at, i.message) for i in layout.issues)

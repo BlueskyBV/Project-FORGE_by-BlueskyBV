@@ -605,6 +605,12 @@ def _finish(run: _Run, ending: str) -> str:
         "items": _items(judge, run.views) if judge is not None else [],
         "unchecked": [u.as_dict() for u in judge.unchecked] if judge is not None else [],
         "checked_otherwise": [u.as_dict() for u in judge.held_otherwise] if judge is not None else [],
+        # The brief's limits on the whole part (schema 1.11), as the B-rep found them; and what the spec leaves out,
+        # which nothing checks: said beside any ending, never left for the spec page alone (corpus R01: "must weigh
+        # no more than 10 g", left out, and the part released as if every requirement passed).
+        "limits": [{"limit": e.check, "verdict": e.verdict.value, "why": e.reason} for e in brep.limits]
+        if brep is not None else [],
+        "not_modelled": _not_modelled(confirmed.spec),
         "not_cross_checked": sorted({n for v in run.views for n in v.not_cross_checked}),
         "surface": _surface(brep),
         "export_tolerance": None if run.tolerance is None else {
@@ -625,6 +631,18 @@ def _finish(run: _Run, ending: str) -> str:
     os.replace(run.folder / "verdict.json.part", run.folder / "verdict.json")
     _say_ending(run.say, verdict)
     return ending
+
+
+def _not_modelled(confirmed: Any) -> list[dict[str, str]]:
+    """What the confirmed spec leaves out, in the brief's words, and why: nothing checks it."""
+    found = []
+    for entry in confirmed.spec.not_modelled:
+        try:
+            said = confirmed.brief.quote(entry.words)
+        except LookupError:
+            said = f"words {list(entry.words)}"
+        found.append({"what": said, "why": entry.reason})
+    return found
 
 
 def _items(judge: Any, views: Sequence[Any]) -> list[dict[str, Any]]:
@@ -681,6 +699,10 @@ def _say_ending(say: Say, verdict: dict[str, Any]) -> None:
                 + (f".{u['field']}" if u["field"] else "")
                 + f": {u['why']}"
             )
+        for limit in verdict.get("limits", []):
+            say(f"  limit: {limit['why']}: {limit['verdict']}")
+    for left in verdict.get("not_modelled", []):
+        say(f"  not modelled, so not checked: {left['what']!r} ({left['why']})")
 
 
 def _markdown(verdict: dict[str, Any]) -> str:
@@ -720,6 +742,14 @@ def _markdown(verdict: dict[str, Any]) -> str:
         lines += ["## Not checked", ""]
         lines += [f"- {u['item']}" + (f".{u['field']}" if u["field"] else "") + f": {u['why']}"
                   for u in verdict["unchecked"]]  # fmt: skip
+        lines.append("")
+    if verdict.get("limits"):
+        lines += ["## The brief's limits on the part", ""]
+        lines += [f"- {limit['why']}: {limit['verdict']}" for limit in verdict["limits"]]
+        lines.append("")
+    if verdict.get("not_modelled"):
+        lines += ["## Not modelled (the spec leaves these out, so nothing checks them)", ""]
+        lines += [f"- {left['what']!r}: {left['why']}" for left in verdict["not_modelled"]]
         lines.append("")
     if verdict["checked_otherwise"]:
         lines += ["## Checked otherwise (no check of their own)", ""]
