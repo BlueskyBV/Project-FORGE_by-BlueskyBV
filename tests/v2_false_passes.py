@@ -76,6 +76,10 @@ class FalsePass:
     caught: str = "judge"
     #: What in the judge must fail it: a check's id (its item and field), or a detector of the view.
     by: tuple[str, ...] = ()
+    #: Where V2 can't make the brief as given yet (it ends UNABLE: the brief's dome sits on its side, 4b.0c item 1), the
+    #: brief its right part is drafted from for the judge: the same part as V2 makes it, its judge shown failing the
+    #: wrong one. Its key for ``forge eval-false-passes`` is then None: any part released for the brief is wrong.
+    judged_on: str | None = None
 
 
 # ----------------------------------------------------------------------
@@ -191,6 +195,11 @@ DOME_70 = (
     "A PLA dome: exactly half of a 70 mm sphere, sitting flat side to the right side, hollow on the inside. It "
     "carries no load, so there is no load case."
 )
+#: The dome as V2 makes it, flat side down: what the judge of DOME_70's right part is drawn from.
+DOME_70_DOWN = (
+    "A PLA dome: exactly half of a 70 mm sphere, sitting flat side down, hollow on the inside. It carries no load, so "
+    "there is no load case."
+)
 WRIST_STRIP = (
     "A flat PLA strip 110 mm long, 16 mm wide and 2 mm thick with both ends fully rounded. Two 4.3 mm holes go "
     "through it on its centreline, 8 mm and 28 mm from one end. A slot 4.4 mm wide and 24 mm long overall goes "
@@ -257,16 +266,14 @@ def _l_bracket_60(b: NumberedBrief) -> Draft:
 
 
 def _dome_70(b: NumberedBrief) -> Draft:
+    """DOME_70_DOWN's right part (DOME_70's, on its side, V2 can't make yet: :attr:`FalsePass.judged_on`)."""
     return draft("hollow dome", [
-        item("dome", "sphere", cite(b, "dome"), diameter=mm(b, 70, "70 mm sphere"),
+        item("dome", "sphere", cite(b, "dome") + cite(b, "sitting flat side down"), diameter=mm(b, 70, "70 mm sphere"),
              portion=choose("upper_half", said(b, "exactly half of a"))),
         item("hollow", "shell", cite(b, "hollow on the inside"), of="dome",
              thickness=assumed("the brief gives no wall: 2 mm, a printed wall", WALL),
              open={"faces": ["-end"], "from": {"assumed": "a dome hollow on the inside is open on its flat side"}}),
-    ], material=made_of(b, "PLA"),
-       not_modelled=[left_out(b, "sitting flat side to the right side",
-                              "how it sits: a dome is drawn flat side down")],
-       silent=[no_load(b)])  # fmt: skip
+    ], material=made_of(b, "PLA"), silent=[no_load(b)])  # fmt: skip
 
 
 def _wrist_strip(b: NumberedBrief) -> Draft:
@@ -851,7 +858,8 @@ FALSE_PASSES: tuple[FalsePass, ...] = (
               "diameter were checked",
               ("tests/fixtures/real_runs/dome_shelled_after_its_cut_claude.json", "docs/fixlist_v6.txt:27-30",
                "tests/test_the_six_runs.py:1-13"),
-              "sure", "dome_shelled_after_its_cut_claude", _dome_70, _dome_sealed, by=("hollow/open",)),
+              "sure", "dome_shelled_after_its_cut_claude", _dome_70, _dome_sealed, by=("hollow/open",),
+              judged_on=DOME_70_DOWN),
     FalsePass(17, "P11 doughnut", _suite("P11"),
               "the 8 mm section on a 32 mm middle: 40 mm across its outside, for 40 across its centre line",
               "the 40 was read as the outside and claimed along x and y; the right 48 mm design failed those claims "
@@ -900,7 +908,8 @@ FALSE_PASSES: tuple[FalsePass, ...] = (
               "watertight check missed the doubled sheet",
               ("tests/fixtures/real_runs/validation_dome_open_side_drawn_shut.json (run 20261019T131440)",
                "docs/fixlist_v8.txt:561-595", "tests/test_the_validation_suite.py:978-1107"),
-              "sure", "validation_dome_open_side_drawn_shut", _dome_70, None, "the judge of the file shipped", by=("topology",)),
+              "sure", "validation_dome_open_side_drawn_shut", _dome_70, None, "the judge of the file shipped", by=("topology",),
+              judged_on=DOME_70_DOWN),
     FalsePass(24, "exo upper rail's STL", UPPER_RAIL,
               "the right design, its STL meshed in 3 mm cells: the holes 7.3 to 7.7 mm for 8.2, the counterbores "
               "13.5 for 15, the pockets 21.85 for 22.1",
@@ -959,13 +968,13 @@ KEYS = Path(__file__).resolve().parent.parent / "validation" / "false_passes.jso
 
 
 def keys() -> list[dict[str, Any]]:
-    """The 27 as ``forge eval-false-passes`` reads them: each brief and its right spec's draft, the answer key (None for the two briefs with no right part, which no released part can answer: 21, 22)."""
+    """The 27 as ``forge eval-false-passes`` reads them: each brief and its right spec's draft, the answer key (None for the two briefs with no right part, which no released part can answer: 21, 22; and for the two V2 can't make as given yet, so that any part released for them is wrong: 16, 23)."""
     found = []
     for case in FALSE_PASSES:
         b = number_words(case.brief)
         right = case.right
-        key = None if case.caught in ("the accounting", "the assumptions --auto stops at") else (
-            DRAFTS[right](b) if isinstance(right, str) else right(b))  # fmt: skip
+        none = case.caught in ("the accounting", "the assumptions --auto stops at") or case.judged_on is not None
+        key = None if none else (DRAFTS[right](b) if isinstance(right, str) else right(b))
         found.append(
             {"number": case.number, "case": case.case, "brief": case.brief, "key": key}
         )

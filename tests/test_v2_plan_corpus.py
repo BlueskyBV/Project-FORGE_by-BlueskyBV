@@ -10,7 +10,10 @@ STL; and it is the part V1's suite expects, measured independently of
 both: its envelope, its volume and its open holes.
 
 What the stage-4 schema can't hold (a load, a mass or size limit) each
-draft lists as not modelled, checked from stage 6: never said to pass.
+draft lists as not modelled, checked from stage 6: never said to pass. A
+strength Forge can't check (a load, a safety factor) is asked about, until
+the person says it is checked outside Forge (14.8): so said, those drafts
+lock and are built.
 
 One test per part, so that each runs in its own call where calls are
 timed (the laptop's): ``python -m unittest test_v2_plan_corpus.TheSuiteBuilt.test_R01``.
@@ -62,9 +65,32 @@ GENUS = {
 }
 
 
+#: The briefs that ask for a strength Forge can't check yet, which each draft lists as not modelled: asked about until
+#: the person settles it (docs/V2-stage4.md, 14.8), as :data:`SETTLED` does.
+STRENGTH = ("L01", "L02", "L03", "L04", "R10")
+#: The person's answer that settles it.
+SETTLED = "Note from the person: its strength is checked outside Forge."
+
+
+def numbered(part: SuitePart) -> Any:
+    """The brief as the draft is checked against: with the person's answer, where it asks for a strength."""
+    if part.id not in STRENGTH:
+        return number_words(part.brief)
+    return number_words(f"{part.brief} {SETTLED}", answers_from=len(part.brief) + 1)
+
+
+def drafted(part: SuitePart, b: Any) -> dict[str, Any]:
+    """The part's draft, against :func:`numbered`'s brief: the person's answer, where there is one, said silent."""
+    found = DRAFTS[part.id](b)
+    if part.id in STRENGTH:
+        found["silent"] = [*found.get("silent", []), {"sentence": len(b.sentences) - 1,
+                                                      "reason": "the person's: its strength is checked outside Forge"}]  # fmt: skip
+    return found
+
+
 def checked(part: SuitePart, *, strict: bool = False) -> SpecReport:
-    b = number_words(part.brief)
-    return check_draft(b, DRAFTS[part.id](b), strict=strict)
+    b = numbered(part)
+    return check_draft(b, drafted(part, b), strict=strict)
 
 
 def _problems(report: SpecReport) -> list[tuple[str, str, str]]:
@@ -97,9 +123,19 @@ class TheDrafts(unittest.TestCase):
             with self.subTest(id=id_):
                 part = suite()[id_]
                 confirmed = lock(
-                    checked(part), number_words(part.brief), by="draft", strict=False
+                    checked(part), numbered(part), by="draft", strict=False
                 )
                 self.assertEqual(confirmed.by, "draft")
+
+    def test_a_strength_is_asked_until_the_person_settles_it(self) -> None:
+        for id_ in STRENGTH:
+            with self.subTest(id=id_):
+                b = number_words(suite()[id_].brief)
+                found = check_draft(b, DRAFTS[id_](b))
+                self.assertTrue(found.problems)
+                self.assertTrue(all(p.kind == "question" and "which Forge can't check yet" in p.message
+                                    for p in found.problems), _problems(found))  # fmt: skip
+                self.assertEqual(_problems(checked(suite()[id_])), [])
 
     def test_the_impossible_ends_cant_never_built(self) -> None:
         from forge_spec.lock import LockError, lock
@@ -139,7 +175,7 @@ class TheDrafts(unittest.TestCase):
                     {p.kind for p in report.problems}, {"question"}, _problems(report)
                 )
                 if not report.problems and not report.assumptions:
-                    lock(report, number_words(part.brief), by="draft", strict=True)
+                    lock(report, numbered(part), by="draft", strict=True)
                     clean.add(id_)
         # P01, "A 30 mm cube in PLA": its "in" is the material's since 14.4 (a linking word before its words).
         self.assertEqual(
@@ -191,7 +227,7 @@ def built(part: SuitePart) -> tuple[int, dict[str, Any], dict[str, Any], bytes]:
     from forge_spec.lock import lock
 
     report = checked(part)
-    confirmed = lock(report, number_words(part.brief), by="draft", strict=False)
+    confirmed = lock(report, numbered(part), by="draft", strict=False)
     with tempfile.TemporaryDirectory() as folder:
         root = Path(folder)
         sealer = Sealer.of_install(root / "home", create=True)

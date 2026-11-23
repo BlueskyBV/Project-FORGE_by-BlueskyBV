@@ -53,7 +53,9 @@ SURE = ("sure", "fairly sure", "least sure", "weaker")
 
 
 def report(case: FalsePass, *, strict: bool = False) -> SpecReport:
-    b = number_words(case.brief)
+    """The right spec's report, drafted from the brief (or, where V2 can't make it as given yet, from the brief its judge
+    is drawn from: :attr:`FalsePass.judged_on`)."""
+    b = number_words(case.judged_on or case.brief)
     right = case.right
     return check_draft(
         b, DRAFTS[right](b) if isinstance(right, str) else right(b), strict=strict
@@ -76,6 +78,15 @@ class TheList(unittest.TestCase):
         least = [c.number for c in FALSE_PASSES if c.sure.startswith("least sure")]
         self.assertEqual(least, [3, 22, 25])
         self.assertEqual(len(WEAKER) + len(UNDRAFTED), 2)
+
+    def test_what_v2_cant_make_yet_has_no_key(self) -> None:
+        """16 and 23, a dome "sitting flat side to the right side": UNABLE as given (V2-stage4.md, 14.8), so any part
+        released for them is wrong; their judges are drawn from the dome as V2 makes it, flat side down."""
+        from v2_false_passes import keys
+
+        unmade = {c.number for c in FALSE_PASSES if c.judged_on is not None}
+        self.assertEqual(unmade, {16, 23})
+        self.assertEqual({k["number"] for k in keys() if k["key"] is None}, {16, 21, 22, 23})
 
     def test_every_right_spec_checks_clean(self) -> None:
         for case in (*FALSE_PASSES, *WEAKER):
@@ -111,7 +122,7 @@ def _built(case: FalsePass) -> tuple[Any, Any]:
     from forge_plan import plan
     from forge_spec.lock import lock
 
-    confirmed = lock(report(case), number_words(case.brief), by="draft", strict=False)
+    confirmed = lock(report(case), number_words(case.judged_on or case.brief), by="draft", strict=False)
     built = build_plan(plan(confirmed))
     assert built.result is not None, built.gap
     return Judge.of(confirmed.spec), built.result.shape

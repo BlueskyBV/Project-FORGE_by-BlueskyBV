@@ -101,7 +101,7 @@ Say = Callable[[str], None]
 
 @dataclass(frozen=True)
 class Brief:
-    """One brief to draft: its id (a folder's name) and text; a false pass's key, its right spec's draft (None: the brief has no right part, so any part released is wrong)."""
+    """One brief to draft: its id (a folder's name) and text; a false pass's key, its right spec's draft (None: the brief has no right part Forge can make, so any part released is wrong)."""
 
     id: str
     text: str
@@ -323,7 +323,7 @@ def _built(brief: Brief, numbered: NumberedBrief, report: SpecReport, folder: Pa
         return Ended(
             brief.id,
             ending,
-            "released, where the brief has no right part",
+            "released, where the brief has no right part Forge can make",
             drafted,
             False,
         )

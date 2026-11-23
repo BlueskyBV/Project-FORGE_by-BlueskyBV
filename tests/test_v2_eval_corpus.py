@@ -98,7 +98,8 @@ class TheBriefs(Folder):
         briefs = false_pass_briefs(KEYS)
         self.assertEqual([b.id for b in briefs], [f"fp{n:02d}" for n in range(1, 28)])
         self.assertTrue(all(b.false_pass for b in briefs))
-        self.assertEqual([b.id for b in briefs if b.key is None], ["fp21", "fp22"])
+        # No right part: the poem and the washer; none V2 can make as given yet, the dome on its side (V2-stage4.md, 14.8).
+        self.assertEqual([b.id for b in briefs if b.key is None], ["fp16", "fp21", "fp22", "fp23"])
 
 
 @needs_occ

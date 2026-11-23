@@ -588,6 +588,8 @@ _STRENGTH = frozenset({"strong", "stronger", "strongest", "strength", "sturdy", 
                        "withstand", "withstands", "durable", "tough", "toughness"})  # fmt: skip
 #: A word that says the strength is checked elsewhere ("checked outside Forge").
 _ELSEWHERE = frozenset({"outside"})
+#: Words that say a thing is checked, beside "outside": "checked outside Forge".
+_CHECKED = frozenset({"checked", "verified", "tested", "analysed", "analyzed", "calculated"})
 #: Words just after a strength word that say there is none: "Load: none".
 _NONE_AFTER = frozenset({"none", "nil", "n/a", "zero", "nothing", "no"})
 
@@ -603,9 +605,12 @@ def _strength_unchecked(spec: PartSpec, c: _Collect) -> None:
     """A question where the spec puts a strength the brief asks for in ``silent`` or ``not_modelled`` (corpus X11: "a
     PLA hook strong enough to hang a coat on", its strength listed as not modelled and the hook built and released):
     Forge can't check strength yet, so it is asked, unless the brief denies it ("carries no load", "Load: none") or
-    says it is checked outside Forge. A silent sentence with a number in it is asked about already: its numbers are
-    used by nothing ("The pin carries 2000 N")."""
+    says, anywhere, that it is checked outside Forge, as the person may in their answer. A silent sentence with a
+    number in it is asked about already: its numbers are used by nothing ("The pin carries 2000 N")."""
     brief, denied = c.brief, _denied(c.brief)
+    if any(_plain(brief.word(j).text) in _ELSEWHERE for s in brief.sentences for j in s.words
+           if any(_plain(brief.word(k).text) in _STRENGTH | _CHECKED for k in s.words)):  # fmt: skip
+        return  # "Its strength is checked outside Forge", in the brief or the person's answer: settled
     person = {i for s in brief.answers for i in s.words}
     held: list[tuple[str, list[int]]] = []
     for n, quiet in enumerate(spec.silent):

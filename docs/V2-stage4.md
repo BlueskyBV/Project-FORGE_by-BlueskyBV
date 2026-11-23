@@ -3445,8 +3445,11 @@ about (R10, L01 to L04). Read:
   - **Strength can't be dropped** (`_strength_unchecked`): a strength in
     `silent` or `not_modelled` ("strong enough", "sturdy") is asked about,
     as Forge can't check it yet, unless the brief denies it ("carries no
-    load", "Load: none") or says it is checked outside Forge. A silent
-    sentence with a number is asked about already, by its numbers.
+    load", "Load: none") or says, anywhere, that it is checked outside
+    Forge, as the person may in their answer. A silent sentence with a
+    number is asked about already, by its numbers. The suite's loaded parts
+    (L01 to L04, R10), whose drafts list the load as not modelled, are
+    asked so, and are built once the person says it (14.2's test).
   - **A dome standing on nothing sits flat side down** (the sphere's
     `physical`): one the brief has sit any other way is UNABLE (a gap,
     V2-gaps.md: 4b.0c item 1), said once where the draft says so itself.
@@ -3479,7 +3482,10 @@ rectangular mounting plate with four screw holes, one near each corner",
 every size assumed) is now asked its size. Of the owner's first live run
 (14.4), the two domes "sitting flat side to the right side" (fp16, fp23)
 are now UNABLE, and the poem and the washer (fp21, fp22), drafted with
-every size assumed, are asked their size. The briefs whose drafts are now
+every size assumed, are asked their size. Those two domes have no key
+for `forge eval-false-passes` now (any part released for them is wrong);
+their judges are shown failing V1's wrong parts on the dome as V2 makes
+it, flat side down (`FalsePass.judged_on`). The briefs whose drafts are now
 faults are drafted again by the next run. Tests:
 `tests/test_v2_spec_second_run.py`; `tests/test_v2_eval_first_live_run.py`
 (the endings).
