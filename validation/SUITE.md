@@ -269,7 +269,7 @@ Expected: envelope [40, 40, 40], volume 12931 mm³, open holes 0.
 
 **A06 — Bead: ball with a hole** · expect `pass`
 > A 40 mm PLA ball with a 10 mm hole drilled straight through its centre. It carries no load, so there is no load case.
-Expected: envelope [40, 40, 40], volume 30418 mm³, open holes 1.
+Expected: envelope [38.73, 40, 40], volume 30418 mm³, open holes 1 (the hole takes the ball's two poles off: along it the bead is 2 x sqrt(20^2 - 5^2) = 38.73 mm).
 
 **A07 — Stacked discs, getting smaller** · expect `pass`
 > A PLA tower of three discs stacked on top of each other, centred: the bottom one 40 mm across, the middle one 30 mm across and the top one 20 mm across, each 10 mm thick. It carries no load, so there is no load case.

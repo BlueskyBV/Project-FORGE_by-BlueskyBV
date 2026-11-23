@@ -3414,6 +3414,76 @@ and R01, R11, R13 and P06 are drafted again by the next run. Tests:
 `tests/test_v2_spec_limits.py`; `tests/test_v2_spec_writer.py` (a 1.10
 record under 1.11).
 
+### 14.8 The corpus's second run, and what it changed
+
+The owner ran the corpus on 1373566 to `--max-cost 45`: 116 of its 161
+briefs ($31.47; the corpus's 41 before it, $34.84 in all), stopped at the
+budget with 45 to go. **Every SUITE part that was built has the size and
+the volume it should**, A06's included (validation/SUITE.md said its
+envelope was 40 mm along the hole: the hole takes the ball's poles off, so
+it is 38.73 mm, as suite.json already said; corrected). The stops were
+right: the mass and size limits held (L05, X07), the parts that come apart
+CAN'T (X06), the gear, the spring and the lofts UNABLE, and the loads asked
+about (R10, L01 to L04). Read:
+
+- **Seven parts were built that the brief didn't ask for.** The rail's
+  "rounded triangular cutouts" were listed as not modelled, and it was built
+  and released without them; three domes "sitting flat side up" or "flat
+  side to the right side" were built flat side down (one with the
+  orientation not modelled, two with it cited by the dome's portion); and
+  "Make a washer.", "Make me something cool." and "A PLA hook strong
+  enough to hang a coat on." were built with every size made up, the
+  hook's strength listed as not modelled. Now:
+  - **A shape the brief asks for can't be listed as not modelled**
+    (`checks._shapes_left_out`): a fault in every mode, the part drafted
+    again with it, or with it in `unable`. A shape the brief denies ("no
+    cutouts") or one the spec has already ("around every hole") is not a
+    shape left out. Nor is which way a part sits.
+  - **Every size assumed is a question** (`_sizes_all_assumed`): the part
+    would be a guess. Not where the draft says Forge can't make what is
+    asked ("Write me a poem").
+  - **Strength can't be dropped** (`_strength_unchecked`): a strength in
+    `silent` or `not_modelled` ("strong enough", "sturdy") is asked about,
+    as Forge can't check it yet, unless the brief denies it ("carries no
+    load", "Load: none") or says it is checked outside Forge. A silent
+    sentence with a number is asked about already, by its numbers.
+  - **A dome standing on nothing sits flat side down** (the sphere's
+    `physical`): one the brief has sit any other way is UNABLE (a gap,
+    V2-gaps.md: 4b.0c item 1), said once where the draft says so itself.
+- **Questions nobody needed,** each still asked where the spec doesn't hold
+  it: "a stepped shaft on one axis" (C04), where every body after the first
+  stands centred on an end of one before it; "one divider ... splitting it
+  into two compartments" (C10), one more than the divider's copies; a ball
+  "half sunk" into a face (C14), as a whole ball on a face is (a kind's
+  `held_words`); "56 apart one way and 36 the other" (V02), where the item
+  is measured along two axes; a size the brief gives again of the face an
+  item is on, "across its 30 mm width" (L04), "through one of the 50 mm end
+  walls"; "both ends fully rounded" where the outline has two arcs.
+- **What the writer is told.** A depth the preview can't find behind a
+  fault or a question isn't an UNABLE: it hid a cross hole running past a
+  face's edge, which is asked, and the redraft is previewed again
+  (`forge_cli.spec.with_unresolved`). A number with no unit in a formula is
+  a count, and the writer is told so ("-37.5 - (-50)" for a length was
+  "not in the words it cites"). An `unable` said at too great a length is
+  told how long (A04's was 170 characters, of 80).
+- **Not changed, and scheduled:** bodies that cross or overlap (A03's three
+  balls, A08's plus sign, C07's jack), the first body turned (A04),
+  positions from a point of the part (an exoskeleton rail's "from the pivot
+  point"), one body intersected with or subtracted from another (A01, A02)
+  and two parts in one brief (X12) are listed in V2-gaps.md, section 10,
+  with the stages that close them.
+
+Replayed with no model call: the corpus's 117 drafts and blind set 1's 30
+are read on the new code as on the old but for exactly those, and B1-20 ("A
+rectangular mounting plate with four screw holes, one near each corner",
+every size assumed) is now asked its size. Of the owner's first live run
+(14.4), the two domes "sitting flat side to the right side" (fp16, fp23)
+are now UNABLE, and the poem and the washer (fp21, fp22), drafted with
+every size assumed, are asked their size. The briefs whose drafts are now
+faults are drafted again by the next run. Tests:
+`tests/test_v2_spec_second_run.py`; `tests/test_v2_eval_first_live_run.py`
+(the endings).
+
 ## 15. What is tested
 
 | Test file | What |
@@ -3432,6 +3502,7 @@ record under 1.11).
 | `test_v2_eval_widened.py` | The generator's new kinds and limits: the three placements agree; the truth on hand-worked points; mutants change one leaf; briefs cite their words; impossible ones end `cant` |
 | `test_v2_plan_corpus.py`, `test_v2_false_passes.py`, `test_v2_eval_corpus.py` | 14.2 and 14.3: the suite's drafts checked, locked and built; the false passes' right parts passing and wrong parts failing; the two commands with a scripted model |
 | `test_v2_eval_first_live_run.py` | 14.4: the cost ceiling with and without a price, a retry checked again, the two drafts' calls held at their worst, the dearer of two prices; a stopped run's line, ledger and report; an automatic run's accounting (the part named again, linking words, "both" of an item's copies) and where it still asks; the owner's 23 recorded drafts replayed, every ending and all caught |
+| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py` | 14.7 and 14.8: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
 | `v2_exit4.py`, `test_v2_exit4.py` | 14.1 as a script; the test runs it on 3 seeds |
 
 Every test file runs in under 3 minutes on the laptop's VM (its shell's

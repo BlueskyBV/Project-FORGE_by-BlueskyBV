@@ -89,6 +89,7 @@ __all__ = [
     "MATERIAL_PHRASES",
     "MATERIAL_WORDS",
     "NON_SHAPE_WORDS",
+    "PART_SHAPE_WORDS",
     "NUMBER_SOURCES",
     "PRESENT",
     "STATED_SOURCES",
@@ -210,6 +211,17 @@ NON_SHAPE_WORDS = MATERIAL_WORDS | frozenset({
     "purpose", "application", "locating", "outdoor", "outdoors", "indoor", "indoors", "food", "safe", "heat",
     "temperature", "uv", "resistant", "strong", "stiff", "lightweight", "cheap", "durable",
     "quantity", "copies", "spare", "spares", "case",
+})  # fmt: skip
+
+#: Brief words that name a shape of the part: what the spec drafts, or says in ``unable`` that no kind makes yet, and
+#: never lists as not modelled (``forge_spec.checks._shapes_left_out``; V2-stage4.md, 14.8). English words, not kinds:
+#: a brief's "slot" may be drafted as a slot, a pocket or a cut.
+PART_SHAPE_WORDS = frozenset({
+    "cutout", "cutouts", "cut-out", "cut-outs", "hole", "holes", "slot", "slots", "pocket", "pockets", "boss",
+    "bosses", "rib", "ribs", "groove", "grooves", "fillet", "fillets", "chamfer", "chamfers", "tab", "tabs", "opening",
+    "openings", "flange", "flanges", "lip", "lips", "notch", "notches", "thread", "threads", "recess", "recesses",
+    "cavity", "cavities", "channel", "channels", "window", "windows", "lug", "lugs", "counterbore", "counterbores",
+    "countersink", "countersinks", "bevel", "bevels", "spoke", "spokes",
 })  # fmt: skip
 
 #: Something an ``only_when`` names: the other field is present at all.

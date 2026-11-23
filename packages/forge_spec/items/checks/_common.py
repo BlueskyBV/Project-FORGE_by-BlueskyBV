@@ -34,10 +34,14 @@ from forge_spec.placement import (
 from forge_spec.problems import pointer
 from forge_spec.schema import KINDS
 from forge_spec.values import Value
+from forge_spec.words import NumberedBrief
 
 
 class Collect(Protocol):
     """What a kind's check reports through: the spec checks' collector."""
+
+    #: The brief the spec is drafted from.
+    brief: NumberedBrief
 
     def fault(self, at: str, message: str) -> None: ...
 

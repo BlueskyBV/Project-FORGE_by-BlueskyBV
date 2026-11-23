@@ -1336,6 +1336,12 @@ def read_draft(raw: Any) -> tuple[PartSpec | None, Problems]:
             continue
         words = _words_or_empty(obj.get("words"), at + pointer("words"), problems)
         what = one_line(obj.get("what"), MAX_NAME)
+        said = obj.get("what")
+        if words and isinstance(said, str) and len(said.strip()) > MAX_NAME:
+            # Said at too great a length (corpus A04: 170 characters): say how long, or the writer can't tell.
+            problems.fault(at + pointer("what"), f"say what no kind makes in a few words, at most {MAX_NAME} "
+                           f"characters: this is {len(said.strip())} (\"involute gear teeth\")")  # fmt: skip
+            continue
         if not words or what is None:
             problems.fault(at, f"cite the words of what no kind makes, and say what it is in a few words (at most "
                                f"{MAX_NAME} characters): \"involute gear teeth\"")  # fmt: skip

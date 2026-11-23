@@ -329,12 +329,16 @@ ENDINGS = {
     "fp01": "questions", "fp02": "questions", "fp03": "questions", "fp04": "questions", "fp05": "questions",
     "fp06": "stops for a person", "fp07": "stops for a person", "fp08": "stops for a person", "fp09": "questions",
     "fp10": "stops for a person", "fp11": "BUILT TO DRAFT", "fp12": "stops for a person", "fp13": "BUILT TO DRAFT",
-    "fp14": "BUILT TO DRAFT", "fp15": "stops for a person", "fp16": "questions", "fp17": "questions",
-    "fp18": "questions", "fp19": "questions", "fp20": "stops for a person", "fp21": "stops for a person",
-    "fp22": "stops for a person", "fp23": "questions",
+    "fp14": "BUILT TO DRAFT", "fp15": "stops for a person", "fp16": "UNABLE", "fp17": "questions",
+    "fp18": "questions", "fp19": "questions", "fp20": "stops for a person", "fp21": "questions",
+    "fp22": "questions", "fp23": "UNABLE",
     # Its second run (10 November): the last four, drafted within --max-cost 20 (docs/V2-stage4.md, 14.4).
     "fp24": "refused", "fp25": "questions", "fp26": "questions", "fp27": "questions",
 }  # fmt: skip
+# Since the corpus's second run (V2-stage4.md, 14.8): fp16 and fp23, a dome "sitting flat side to the right side",
+# UNABLE, a dome standing on nothing made flat side down only, for now (before, asked about the words their drafts left
+# out); fp21 and fp22, "Write me a poem about bridges." and "Make a washer.", drafted with every size assumed, asked
+# their size (before, stopped on the assumptions).
 
 
 @needs_occ

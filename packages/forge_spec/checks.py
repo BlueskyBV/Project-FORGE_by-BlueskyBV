@@ -31,7 +31,7 @@ from __future__ import annotations
 import itertools
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from forge_units import Q
@@ -61,6 +61,7 @@ from .draft import (
     Faces,
     Fit,
     Item,
+    On,
     PartSpec,
     Place,
     Profile,
@@ -69,6 +70,7 @@ from .draft import (
     UpTo,
     read_draft,
 )
+from .geometry import FlatFace
 from .items.checks import SPEC_CHECKS
 from .items.checks.pattern import PATTERN_CHECKS
 from .outline import Shape, sizes
@@ -84,6 +86,7 @@ from .schema import (
     AXIS_WORDS,
     KINDS,
     NON_SHAPE_WORDS,
+    PART_SHAPE_WORDS,
     FieldType,
     material_words,
 )
@@ -91,7 +94,7 @@ from .tables import CLEARANCE, TAPPED, metric_size, table_target, table_value
 from .values import Count, Provenance, Source, Value, made_note
 from .words import REPLACED_BY_ANSWER, NumberedBrief, Word, WordRef
 
-__all__ = ["SpecProblem", "SpecReport", "check_draft", "item_words"]
+__all__ = ["SpecProblem", "SpecReport", "check_draft", "item_words", "sizes_asked"]
 
 
 @dataclass(frozen=True)
@@ -334,6 +337,20 @@ def _counts_held(spec: PartSpec, c: _Collect) -> None:
             elif n == _open_ends(item) and _ahead(i, brief, _ENDS) and _said_near(i, brief, _OPEN):
                 # "A tube ... open at both ends": its bore opens both (corpus P08).
                 _numbers_named((i,), c, _reads(n))
+            elif n == copies + 1 and _ahead(i, brief, _COMPARTMENTS) and _said_near(i, brief, _INTO):
+                # "One divider wall across the middle splitting it into two compartments": a divider's copies make one
+                # compartment more than there are of them (corpus C10).
+                _numbers_named((i,), c, _reads(n))
+            elif n == 1 and _ahead(i, brief, _WAYS) and _said_near(i, brief, _OTHER, reach=6) and _two_ways(item):
+                # "56 apart one way and 36 the other": "one" picks one of the two axes an item is measured along (V02).
+                _numbers_named((i,), c, _reads(1))
+            elif n == _arcs(item) and _said_near(i, brief, _ROUNDED, reach=4):
+                # "With both ends fully rounded": the item's outline has as many arcs as the count (corpus's exo wrist
+                # strip).
+                _numbers_named((i,), c, _reads(n))
+        for i in SPEC_CHECKS[item.kind].held_words(item, brief):
+            # What a kind holds by what it is: a whole ball on a face is half sunk into it (corpus C14).
+            _numbers_named((i,), c, lambda reading: True)
         for raw in item.fields.values():
             if not isinstance(raw, EdgeSet) or raw.where_meets is not None or raw.of not in kinds:
                 continue
@@ -374,6 +391,38 @@ _ENDS = frozenset({"end", "ends"})
 _OPEN = frozenset({"open", "opened", "open-ended"})
 
 
+#: Words after a count that it splits something into; and the word before it that says so.
+_COMPARTMENTS = frozenset({"compartments", "sections", "cells", "bays", "chambers", "spaces", "parts", "pieces",
+                           "halves", "pockets", "areas", "zones"})  # fmt: skip
+_INTO = frozenset({"into"})
+#: "One way": one of two directions; "the other", the second.
+_WAYS = frozenset({"way", "direction"})
+_OTHER = frozenset({"other"})
+#: Words that say an item's ends or corners are arcs.
+_ROUNDED = frozenset({"rounded", "round", "radiused", "curved", "arced"})
+
+
+def _two_ways(item: Item) -> bool:
+    """Whether an item is measured along two of its face's axes: a pattern with values along both, or a place on both."""
+    place = item.get("place")
+    if not isinstance(place, Place):
+        return False
+    axes: set[str] = set()
+    if place.pattern is not None:
+        axes |= {name.rpartition("_")[2] for name in place.pattern.values if "_" in name}
+    axes |= {axis for axis, position in place.axes.items() if position.distance is not None}
+    return len(axes) >= 2
+
+
+def _arcs(item: Item) -> int:
+    """How many arcs an item's outline has (0 for an item with none)."""
+    found = 0
+    for raw in item.fields.values():
+        if isinstance(raw, Profile):
+            found += sum(1 for segment in raw.segments if segment.centre is not None)
+    return found
+
+
 def _open_ends(item: Item) -> int:
     """How many ends a bore through an item opens: a body with a bore between its two ends (a tube) has both open;
     anything else, none."""
@@ -381,10 +430,10 @@ def _open_ends(item: Item) -> int:
     return sum(1 for face in faces if face.endswith("end")) if "bore" in faces else 0
 
 
-def _said_near(i: int, brief: NumberedBrief, wanted: frozenset[str]) -> bool:
+def _said_near(i: int, brief: NumberedBrief, wanted: frozenset[str], reach: int = _COUNT_REACH) -> bool:
     """Whether one of ``wanted`` is close to the word at ``i``, before or after it, in its clause."""
     here = brief.word(i)
-    for j in range(max(0, i - _COUNT_REACH), min(len(brief.words), i + 1 + _COUNT_REACH)):
+    for j in range(max(0, i - reach), min(len(brief.words), i + 1 + reach)):
         there = brief.word(j)
         if j == i or there.sentence != here.sentence:
             continue
@@ -394,6 +443,189 @@ def _said_near(i: int, brief: NumberedBrief, wanted: frozenset[str]) -> bool:
         if _plain(there.text) in wanted:
             return True
     return False
+
+
+def _one_axis_held(spec: PartSpec, c: _Collect) -> None:
+    """Use "one" in "on one axis" where the spec's bodies are on one axis (corpus C04: "a stepped shaft on one axis"):
+    the first has ends, and each other stands centred on an end of one before it."""
+    bodies = [item for item in spec.items if SPEC_CHECKS[item.kind].body]
+    if not bodies or "+end" not in KINDS[bodies[0].kind].faces:
+        return
+    for item in bodies[1:]:
+        on, place = item.get("on"), item.get("place")
+        if on is None or not str(getattr(on, "face", "")).endswith("end") or not isinstance(place, Place):
+            return
+        if place.concentric is None and not (place.axes and all(p.mode == "centred" for p in place.axes.values())):
+            return
+    for i, word in enumerate(c.brief.words):
+        if _plain(word.text) == "one" and _ahead(i, c.brief, _AXIS):
+            _numbers_named((i,), c, _reads(1))
+
+
+#: The word after "one" that says the bodies share an axis.
+_AXIS = frozenset({"axis"})
+#: Words before a size the brief gives again ("across its 30 mm width"), and after it, what it is the size of.
+_RESTATING = frozenset({"its", "the", "their", "this", "that"})
+_MEASURES = frozenset({"width", "wide", "length", "long", "height", "tall", "thickness", "thick", "depth", "deep",
+                       "diameter", "side", "sides", "end", "ends", "wall", "walls", "face", "faces", "edge",
+                       "edges"})  # fmt: skip
+
+
+def _restated_held(spec: PartSpec, layout: Layout, c: _Collect) -> None:
+    """Use a size an item's own words give again of the face it is on ("a hole ... across its 30 mm width", corpus
+    L04; "through one of the 50 mm end walls"): said after "its" or "the", before what it is the size of, and one of
+    that face's own, as made: its width either way, or the material under it."""
+    brief = c.brief
+    for item in spec.items:
+        on = item.get("on")
+        if not isinstance(on, On):
+            continue
+        face = layout.faces.get((on.item, 0), {}).get(on.face)
+        if not isinstance(face, FlatFace):
+            continue
+        made = (2 * face.half[0], 2 * face.half[1], face.depth_below)
+        for reading in readings(brief, [i for i in item.words if 0 <= i < len(brief.words)]):
+            if reading.unit is None or reading.unit.dimension != LENGTH or not reading.number_words:
+                continue
+            first, last = min(reading.words), max(reading.words)
+            before = brief.word(first - 1) if first > 0 else None
+            if before is None or before.sentence != brief.word(first).sentence or _plain(before.text) not in _RESTATING:
+                continue
+            if not _ahead(last, brief, _MEASURES):
+                continue
+            size = reading.value * reading.unit.scale * 1000.0
+            if any(abs(size - one) <= OUTLINE_MATCH for one in made):
+                c.readings.append(reading)
+
+
+#: Words before a shape that name one the spec has already ("around every hole"), not a new one.
+_NAMED_ALREADY = frozenset({"the", "its", "their", "these", "those", "this", "that", "each", "every", "all",
+                            "existing"})  # fmt: skip
+#: A flat side or face, and a direction other than down: which way a part sits.
+_FLAT = frozenset({"flat"})
+_FLAT_FACE = frozenset({"side", "face", "base", "bottom", "end"})
+_NOT_DOWN = frozenset({"up", "upward", "upwards", "top", "left", "right", "sideways", "front", "back", "rear",
+                       "upright", "vertical", "vertically"})  # fmt: skip
+
+
+def _sits(words: WordRef, brief: NumberedBrief) -> tuple[int, ...] | None:
+    """The words among ``words`` that say a flat side faces other than down ("sitting flat side up"), or None."""
+    cited = sorted(set(words))
+    for n, i in enumerate(cited):
+        if _plain(brief.word(i).text) not in _FLAT:
+            continue
+        ahead = [j for j in cited[n + 1 : n + 7] if brief.word(j).sentence == brief.word(i).sentence]
+        faces = [j for j in ahead[:2] if _plain(brief.word(j).text) in _FLAT_FACE]
+        if faces and any(_plain(brief.word(j).text) in _NOT_DOWN for j in ahead if j > faces[0]):
+            return tuple(j for j in cited if i <= j <= max(ahead))
+    return None
+
+
+def _shapes_left_out(spec: PartSpec, c: _Collect) -> None:
+    """A fault, in every mode, where ``not_modelled`` leaves out a shape of the part the brief asks for, or which way
+    it sits: the part would be built without it and released as if it were what the brief describes (corpus:
+    "rounded triangular cutouts" listed as not modelled, the rail built without them; a dome "sitting flat side up"
+    built flat side down). It is drafted, or said in ``unable`` when no kind makes it yet."""
+    brief, denied = c.brief, _denied(c.brief)
+    person = {i for s in brief.answers for i in s.words}
+    for n, entry in enumerate(spec.not_modelled):
+        if entry.reason.lower().startswith(REPLACED_BY_ANSWER):
+            continue  # the person's answer left it out
+        words = [i for i in entry.words if 0 <= i < len(brief.words) and i not in person]
+        at = pointer("not_modelled", n, "words")
+        shapes = []
+        for i in words:
+            if _plain(brief.word(i).text) not in PART_SHAPE_WORDS or i in denied:
+                continue
+            before = [_plain(brief.word(j).text) for j in range(max(0, i - 3), i)
+                      if brief.word(j).sentence == brief.word(i).sentence]  # fmt: skip
+            if not _NAMED_ALREADY.intersection(before):
+                shapes.append(i)
+        if shapes:
+            c.fault(at, f"not_modelled can't hold {brief.quote(tuple(shapes))!r}: it is a shape of the part the brief asks "
+                    "for, and the part would be built without it. Draft it, or say in unable that Forge can't make "
+                    "it yet")  # fmt: skip
+            continue
+        sits = _sits(tuple(words), brief)
+        if sits is not None:
+            c.fault(at, f"not_modelled can't hold which way the part sits ({brief.quote(sits)!r}): the part would be "
+                    "built some other way. Draft it, or say in unable that Forge can't make it so yet")  # fmt: skip
+
+
+#: What a spec whose every size is assumed is asked (:func:`sizes_asked`).
+NO_SIZE = "the brief gives no size: every size in the spec is assumed, so the part would be a guess. What size should it be?"
+
+
+def sizes_asked(report: SpecReport, brief: NumberedBrief) -> SpecReport:
+    """The report, asked its size where the brief gives none and every size in the spec is assumed (corpus X01 "Make a
+    washer.", X08 "Make me something cool.", X11 "A PLA hook strong enough to hang a coat on."): the part would be a
+    guess, built and released as if it were asked for (V2-stage4.md, 14.8).
+
+    The spec stage asks it of each round's draft (:func:`forge_cli.spec._resolved`), not :func:`check_draft`: it is
+    the whole draft's, settled by the person. Not where the spec says Forge can't make what is asked (``unable``:
+    "Write me a poem"), nor once the person has answered: an answer that gives no size ("use yours") accepts the
+    assumptions, each of them shown, as any is.
+    """
+    spec = report.spec
+    if spec is None or spec.unable or brief.answers or any(p.message == NO_SIZE for p in report.problems):
+        return report
+    sizes = []
+    for item in spec.items:
+        for raw in item.fields.values():
+            for _, thing, _ in _provenances(raw, "", None):
+                if isinstance(thing, AxisPosition):
+                    thing = thing.distance
+                if (isinstance(thing, Value) and thing.quantity.unit.dimension == LENGTH) or isinstance(thing, Profile):
+                    sizes.append(thing.provenance.source)
+    if not sizes or any(source is not Source.ASSUMED for source in sizes):
+        return report
+    return replace(report, problems=(*report.problems, SpecProblem("question", "/items", NO_SIZE)))
+
+
+#: Words that ask for strength, which Forge can't check yet (docs/V2-gaps.md, section 10: R10).
+_STRENGTH = frozenset({"strong", "stronger", "strongest", "strength", "sturdy", "robust", "load", "loads", "loaded",
+                       "loading", "force", "forces", "stress", "stresses", "stiff", "stiffer", "stiffness",
+                       "withstand", "withstands", "durable", "tough", "toughness"})  # fmt: skip
+#: A word that says the strength is checked elsewhere ("checked outside Forge").
+_ELSEWHERE = frozenset({"outside"})
+#: Words just after a strength word that say there is none: "Load: none".
+_NONE_AFTER = frozenset({"none", "nil", "n/a", "zero", "nothing", "no"})
+
+
+def _none_after(i: int, brief: NumberedBrief) -> bool:
+    """Whether the word or two after the one at ``i``, in its sentence, say there is none of it: "Load: none"."""
+    here = brief.word(i)
+    return any(brief.word(j).sentence == here.sentence and _plain(brief.word(j).text) in _NONE_AFTER
+               for j in range(i + 1, min(len(brief.words), i + 3)))  # fmt: skip
+
+
+def _strength_unchecked(spec: PartSpec, c: _Collect) -> None:
+    """A question where the spec puts a strength the brief asks for in ``silent`` or ``not_modelled`` (corpus X11: "a
+    PLA hook strong enough to hang a coat on", its strength listed as not modelled and the hook built and released):
+    Forge can't check strength yet, so it is asked, unless the brief denies it ("carries no load", "Load: none") or
+    says it is checked outside Forge. A silent sentence with a number in it is asked about already: its numbers are
+    used by nothing ("The pin carries 2000 N")."""
+    brief, denied = c.brief, _denied(c.brief)
+    person = {i for s in brief.answers for i in s.words}
+    held: list[tuple[str, list[int]]] = []
+    for n, quiet in enumerate(spec.silent):
+        if 0 <= quiet.sentence < len(brief.sentences):
+            words = [i for i in brief.sentences[quiet.sentence].words if i not in person]
+            if not any(numeric_at(brief, i) for i in words):
+                held.append((pointer("silent", n), words))
+    for n, entry in enumerate(spec.not_modelled):
+        if not entry.reason.lower().startswith(REPLACED_BY_ANSWER):  # else the person's answer left it out
+            held.append((pointer("not_modelled", n),
+                         [i for i in entry.words if 0 <= i < len(brief.words) and i not in person]))  # fmt: skip
+    for at, words in held:
+        sentences = {brief.word(i).sentence for i in words}
+        if any(_plain(brief.word(j).text) in _ELSEWHERE for s in sentences for j in brief.sentences[s].words):
+            continue
+        asked = [i for i in words if _plain(brief.word(i).text) in _STRENGTH and i not in denied
+                 and not _none_after(i, brief)]  # fmt: skip
+        if asked:
+            c.add("question", at, f"the brief asks for strength ({brief.quote(tuple(asked))!r}), which Forge can't check "
+                  "yet: say what the part must carry, or that its strength is checked outside Forge")  # fmt: skip
 
 
 def _screws_held(spec: PartSpec, c: _Collect) -> None:
@@ -1746,11 +1978,15 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
     _counts_held(spec, c)
     _screws_held(spec, c)
     _names_held(spec, c)
+    _one_axis_held(spec, c)
     _check_requirements(spec, c)
     layout = solve(spec)
     problems.extend(SpecProblem(i.kind, i.at, i.message) for i in layout.issues)
     c.assumptions.extend(layout.assumptions)
+    _restated_held(spec, layout, c)
     _physical(spec, layout, c)
+    _shapes_left_out(spec, c)
+    _strength_unchecked(spec, c)
     not_modelled = []
     for n, entry in enumerate(spec.not_modelled):
         if c.words_exist(entry.words, pointer("not_modelled", n, "words")):

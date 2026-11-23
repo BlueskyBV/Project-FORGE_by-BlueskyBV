@@ -56,7 +56,7 @@ from forge_models import (
 from forge_roles.base import RepairExhaustedError, RoleError, RoleResult
 from forge_roles.spec_writer import write_spec
 from forge_spec import NumberedBrief, number_words
-from forge_spec.checks import SpecProblem, SpecReport, check_draft
+from forge_spec.checks import SpecProblem, SpecReport, check_draft, sizes_asked
 from forge_spec.compare import Difference, differences
 from forge_spec.ends import ThroughNext, end_of
 from forge_spec.lock import ConfirmedSpec, lock
@@ -381,6 +381,12 @@ def run_spec(brief: str, provider: Provider, *, ask: Ask, say: Say, private: Pri
 
 
 def _resolved(numbered: NumberedBrief, report: SpecReport, strict: bool) -> SpecReport:
+    """The draft as the spec stage reads it, each round: each cut through the next face given how deep it goes
+    (:func:`_depths_found`), and asked its size where every size is assumed (:func:`forge_spec.checks.sizes_asked`)."""
+    return sizes_asked(_depths_found(numbered, report, strict), numbered)
+
+
+def _depths_found(numbered: NumberedBrief, report: SpecReport, strict: bool) -> SpecReport:
     """The draft with each cut through the next face given how deep it goes, as the preview finds it (item 2b's second
     step; :mod:`forge_occ.resolve`), checked again: found afresh every round, so an answer that moves what it goes
     through moves it too. A draft with none is as it is; one the preview can't find is left without it, and is an
@@ -396,8 +402,11 @@ def _resolved(numbered: NumberedBrief, report: SpecReport, strict: bool) -> Spec
 
 def with_unresolved(report: SpecReport, notes: Sequence[tuple[str, str]]) -> SpecReport:
     """A report with an UNABLE for each cut through the next face the preview couldn't find how deep goes (``notes``,
-    each the item and why)."""
-    if not notes:
+    each the item and why). Where the report has a fault or a question already, it is as it was: the preview found no
+    depth because the spec isn't settled yet, and an UNABLE would end the run before what it asks is answered (corpus:
+    a cross hole running past a face's edge, asked, behind an UNABLE for the hole the preview couldn't place after
+    it). Once it is answered, the redraft is previewed again."""
+    if not notes or any(problem.kind in ("fault", "question") for problem in report.problems):
         return report
     where = {item.id: n for n, item in enumerate(report.spec.items)} if report.spec is not None else {}
     unable = tuple(

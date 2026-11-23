@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from forge_spec.draft import Item, PartSpec
     from forge_spec.items.checks._common import Collect
     from forge_spec.placement import Layout
+    from forge_spec.words import NumberedBrief
 
 
 class SpecCheckKind:
@@ -39,6 +40,11 @@ class SpecCheckKind:
         self, spec: PartSpec, item: Item, at: str, layout: Layout, c: Collect
     ) -> None:
         """What can't be made of it, or needs a person's decision, whatever the brief says (beyond a length of 0, which every kind's is)."""
+
+    def held_words(self, item: Item, brief: NumberedBrief) -> tuple[int, ...]:
+        """The number words in its own words that it holds by what it is, with no value of its own (a whole ball on a
+        face is "half sunk" into it): they are used."""
+        return ()
 
     # ------------------------------------------------------------------
     # Published: asked of the item another acts on

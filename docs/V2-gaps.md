@@ -36,9 +36,10 @@ Stages are as the plan names them: 4b.0c's and 4b.0d's items and 4b.1 to
 
 | Where | What Forge can't do yet | Closed in |
 |---|---|---|
-| `forge_spec/checks.py:check_draft` (1) | A shape the brief asks for that no kind makes, listed by the writer in `unable` (blind set 1's spur gear, the corpus's X02: involute teeth; a spring's coils; knurling) | 4b.1 (gears, splines, sprockets, coils and springs, knurling, wrap and emboss); 4b.2 to 4b.9 for every other family; what stays outside V2 is V2-stage4b.md, 4, by decision |
+| `forge_spec/checks.py:check_draft` (1) | A shape the brief asks for that no kind makes, listed by the writer in `unable` (blind set 1's spur gear, the corpus's X02: involute teeth; a spring's coils, the corpus's X05; knurling; the corpus's calf shells: a loft through five sections) | 4b.1 (gears, splines, sprockets, coils and springs, knurling, lofts, wrap and emboss); 4b.2 to 4b.9 for every other family; what stays outside V2 is V2-stage4b.md, 4, by decision |
 | `forge_plan/planner.py:_constructions` (1) | A kind the compiler writes no construction for yet ("a ... isn't compiled yet") | the kind's own sub-stage, 4b.1 to 4b.18 (each kind lands with its compiler module: V2-stage4b.md, 3) |
 | `forge_plan/planner.py:plan` (1) | A region: designed later, by the construction agent | stage 5 |
+| `forge_spec/items/checks/sphere.py:physical` (1) | A dome standing on nothing that sits other than flat side down (the corpus's domes "sitting flat side up", "flat side to the right side"): the first body has no direction of its own yet | 4b.0c item 1 (frames everywhere: a typed direction field, the first body's own) |
 
 ## 2. Placing on faces
 
@@ -156,6 +157,11 @@ the owner confirms each, or it is raised.
 
 | Gap | Found by | Closed in |
 |---|---|---|
-| A load, a stress or a safety factor ("a load of 150 N ... a safety factor of at least 2"): asked about, as Forge can't check strength | the corpus's R10 | the schema: V2-stage4b.md 2.2 item 25 (loads, supports and requirements); 4b.14 (engineering calculation); 4b.15 (analysis); stage 6 (strength, by 4b.15's core) |
+| A load, a stress or a safety factor ("a load of 150 N ... a safety factor of at least 2"), or strength said in words ("strong enough to hang a coat on"): asked about, as Forge can't check strength | the corpus's R10; X11, asked since its second run | the schema: V2-stage4b.md 2.2 item 25 (loads, supports and requirements); 4b.14 (engineering calculation); 4b.15 (analysis); stage 6 (strength, by 4b.15's core) |
 | Mass properties beyond a limit (centre of mass, inertia), and a material per body | the corpus's R01, R11 and R13 (their mass limits, checked since schema 1.11) | 4b.10 (a material per body, mass, centre of mass and inertia from the B-rep) |
 | A part to fit within a box in any orientation, or a limit on a size not along the part's own axes | the corpus's R13 (its height limit, checked along z since schema 1.11) | 4b.10 (requirements), with item 15's views of them |
+| Bodies that cross or overlap in space (three balls in a row, fused; a plus sign of two bars crossing at their middles; a jack of three rods crossing at their centres): only the first body stands on the origin, each other on a face of one before it | the corpus's A03, A08 and C07 | 4b.0c item 1 (a body's own place and direction), with 4b.3's combine of overlapping bodies and 4b.4's patterns of bodies |
+| The first body turned ("rotated 45 degrees about its 10 mm wide horizontal axis so it leans over") | the corpus's A04 | 4b.0c item 1 (a typed direction field) |
+| Positions measured from a point of the part, not from a face's edge or centre ("from the pivot point") | the corpus's exoskeleton upper rail, its positions assumed | 4b.0 item 8 (datums: points as items others refer to) |
+| One body's shape intersected with another's, or one subtracted from another (a cube and a sphere keeping what they share; a cube less a sphere) | the corpus's A01 and A02 | 4b.3 (combine, subtract, intersect) |
+| Two parts in one brief ("two separate PLA cubes ... not touching") | the corpus's X12 | stage 8 (assemblies) |

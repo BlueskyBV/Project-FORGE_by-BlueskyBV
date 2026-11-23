@@ -309,6 +309,13 @@ def check_formula(
         shown = f"{literal.value:g}" + (
             f" {parse_unit(literal.unit).symbol}" if literal.unit else ""
         )
+        if check is None and literal.unit is None and not literal.value.is_integer():
+            # A number with no unit is a count, and a count is whole (corpus: "-37.5 - (-50)" for a length).
+            return FormulaCheck(
+                False,
+                f"{shown} in the formula {formula!r} has no unit: a number with none is a count of things; "
+                "write a size with its unit (\"37.5 mm\")",
+            )
         if check is None or check.reading is None:
             return FormulaCheck(
                 False,

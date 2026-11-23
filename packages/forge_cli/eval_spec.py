@@ -71,7 +71,7 @@ from forge_models import (
 from forge_roles.base import RepairExhaustedError
 from forge_roles.spec_writer import SpecWriter, read_answer, write_spec
 from forge_spec import number_words
-from forge_spec.checks import SpecReport, check_draft
+from forge_spec.checks import SpecReport, check_draft, sizes_asked
 from forge_spec.compare import differences
 from forge_spec.render import render
 from forge_spec.wire import to_wire
@@ -435,7 +435,8 @@ def _recorded(
         raise RecordError(
             f"{folder}: the model's recorded answer was changed after drafting, or is missing"
         )
-    return True, check_draft(number_words(key.brief), read_answer(answer), strict=strict)
+    brief = number_words(key.brief)
+    return True, sizes_asked(check_draft(brief, read_answer(answer), strict=strict), brief)  # as the spec stage asks
 
 
 def _draft(provider: Provider, key: AnswerKey, folder: Path, strict: bool, *, second: bool = False,
@@ -455,7 +456,7 @@ def _draft(provider: Provider, key: AnswerKey, folder: Path, strict: bool, *, se
         _write(folder, "record.json", {"format": RUN_FORMAT, "refused": True, "when": when,
                                        "after_interruption": after_interruption})  # fmt: skip
         return None
-    report = result.value
+    report = sizes_asked(result.value, brief)  # as the spec stage asks
     assert report.spec is not None  # the writer returns only a draft that was read
     answer = result.responses[-1].structured if result.responses else None
     _write(folder, "calls.json", result.as_dict())
