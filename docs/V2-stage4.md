@@ -3490,6 +3490,64 @@ faults are drafted again by the next run. Tests:
 `tests/test_v2_spec_second_run.py`; `tests/test_v2_eval_first_live_run.py`
 (the endings).
 
+### 14.9 The corpus's third run, and what it changed
+
+The owner ran the corpus on 6f6c88c to its end: all 161 briefs (47
+drafted, 114 replayed; $14.45 for the 46 drafts on record, besides the
+refused bracket's tries), **112 built, every one the size and
+the volume validation/SUITE.md expects where it gives them**, and every
+other part read against its brief. 23 ended UNABLE, each a gap the register
+holds (a loft, a coil, a gear, a boolean, a plate's swept side, a dome on
+its side, two parts, a region); 3 HELD, two of them rightly (L05's mass,
+X07's size); one CAN'T (X06); 18 asked; 4 refused. Read:
+
+- **A part drawn to its limit was held for its file's tolerance.** The
+  stepper plate, "so the part is 14 mm tall overall", drafted as a limit
+  of at least and at most 14 mm, is 14 mm tall: it passed on the B-rep and
+  was INCONCLUSIVE on its STL, known only to within 0.0055 mm. A limit is
+  the part's, judged on the B-rep as exactly as it is made; a file is
+  judged as a view of that part, within its own tolerance of the limit
+  (`forge_checks.limits`). A part past its limit still fails on both.
+- **A coordinate below zero couldn't be used in a formula.** The
+  instrument bracket's holes "at x = -32 and x = 42" were refused: every
+  formula of one, with its minus ("42 mm - -32 mm") or without it ("42 mm
+  + 32 mm"), was "not in the words it cites", and the writer couldn't clear
+  it in four tries (the lower-leg shell's "Z=-37.5" was refused the same
+  way, 14.8). A minus on a number is read as the brief's own sign first
+  (`derived._read_signed`); a coordinate with no unit, used for how far, is
+  read as one with a unit is, the sign said to differ
+  (`citations.check_quantity`).
+- **A part's turn was listed as not modelled,** "turned 30 degrees about
+  the vertical axis", and the block built unturned, as a dome "flat side
+  up" was (14.8): now a fault, drafted or said in `unable` (the first body
+  turned: V2-gaps.md, section 10).
+- **Questions nobody needed,** each still asked where the spec doesn't
+  hold it: three balls in a row drawn as one turned outline of three arcs
+  (A03), a count of round things the outline has as many arcs of; a plus
+  sign of "two bars crossing" drawn as one outline (A08), two bars crossed
+  having four inside corners; "one pin hole through both ears" (the
+  clevis), the two ears another item's words name; "a cross hole right
+  through both walls" of a tube, a cut right through a body with a bore
+  from its side; "an M8 hex nut ... with an 8 mm hole", a metric size
+  naming a thread's own (nut, thread, tapped) held by its nominal size; a
+  pulley "revolved from its half-section", what a revolution's outline is
+  (its `held_words`).
+- **Not changed, and right:** R10 and L01 to L04 ask their loads; L03's
+  holes, assumed across its width, run past its edge, and it is asked; X01,
+  X08 and X11 ask their sizes and strength; the forearm rail's holes,
+  offset from its face's centre where the brief measures them from the
+  pivot, run past its end, and it is asked; the bent strip and L-bracket
+  ask their "90" (a bend: V2-gaps.md, section 10). A04 and the lower-leg
+  shells were refused on the records of earlier runs, whose writer had
+  neither the length nor the sign; they and the instrument bracket are
+  drafted again by the next run.
+
+Replayed with no model call: the run's 157 drafts are read on the new code
+as on the old but for exactly those seven, and the corpus's earlier 117
+and blind set 1's 30 likewise (A03 and A08 among the earlier). Tests:
+`tests/test_v2_spec_third_run.py`, on the run's own drafts
+(`tests/fixtures/corpus_third_run.json`).
+
 ## 15. What is tested
 
 | Test file | What |
@@ -3508,7 +3566,7 @@ faults are drafted again by the next run. Tests:
 | `test_v2_eval_widened.py` | The generator's new kinds and limits: the three placements agree; the truth on hand-worked points; mutants change one leaf; briefs cite their words; impossible ones end `cant` |
 | `test_v2_plan_corpus.py`, `test_v2_false_passes.py`, `test_v2_eval_corpus.py` | 14.2 and 14.3: the suite's drafts checked, locked and built; the false passes' right parts passing and wrong parts failing; the two commands with a scripted model |
 | `test_v2_eval_first_live_run.py` | 14.4: the cost ceiling with and without a price, a retry checked again, the two drafts' calls held at their worst, the dearer of two prices; a stopped run's line, ledger and report; an automatic run's accounting (the part named again, linking words, "both" of an item's copies) and where it still asks; the owner's 23 recorded drafts replayed, every ending and all caught |
-| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py` | 14.7 and 14.8: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
+| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py`, `test_v2_spec_third_run.py` | 14.7 to 14.9: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
 | `v2_exit4.py`, `test_v2_exit4.py` | 14.1 as a script; the test runs it on 3 seeds |
 
 Every test file runs in under 3 minutes on the laptop's VM (its shell's

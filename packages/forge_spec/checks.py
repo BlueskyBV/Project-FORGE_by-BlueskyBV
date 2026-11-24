@@ -344,10 +344,24 @@ def _counts_held(spec: PartSpec, c: _Collect) -> None:
             elif n == 1 and _ahead(i, brief, _WAYS) and _said_near(i, brief, _OTHER, reach=6) and _two_ways(item):
                 # "56 apart one way and 36 the other": "one" picks one of the two axes an item is measured along (V02).
                 _numbers_named((i,), c, _reads(1))
-            elif n == _arcs(item) and _said_near(i, brief, _ROUNDED, reach=4):
-                # "With both ends fully rounded": the item's outline has as many arcs as the count (corpus's exo wrist
-                # strip).
+            elif n == _arcs(item) and _said_near(i, brief, _ROUNDED | _ROUND_THINGS, reach=4):
+                # "With both ends fully rounded", "three 20 mm balls in a row": the item's outline has as many arcs as
+                # the count (the corpus's exo wrist strip; A03, three balls fused, drawn as one turned outline).
                 _numbers_named((i,), c, _reads(n))
+            elif 2 * n == _reflex_corners(item) and _said_near(i, brief, _CROSSING, reach=10):
+                # "Two bars ... crossing at their middles": an outline of n bars crossed has 2n inside corners (A08).
+                _numbers_named((i,), c, _reads(n))
+            elif n == _named_items(i, item, spec, brief):
+                # "One pin hole through both ears": the count of another item's copies, or of the items of one kind,
+                # that its words name (the corpus's clevis).
+                _numbers_named((i,), c, _reads(n))
+        depth = item.get("depth")
+        if isinstance(depth, Through) and _across_a_bore(item, spec):
+            # "A cross hole right through both walls" of a tube: a cut right through a body with a bore, from its
+            # side, crosses its wall twice (the corpus's tube with a cross pin hole).
+            for i, n in _count_words((*item.words, *depth.provenance.words), brief):
+                if n == 2 and _ahead(i, brief, _WALLS):
+                    _numbers_named((i,), c, _reads(2))
         for i in SPEC_CHECKS[item.kind].held_words(item, brief):
             # What a kind holds by what it is: a whole ball on a face is half sunk into it (corpus C14).
             _numbers_named((i,), c, lambda reading: True)
@@ -400,6 +414,61 @@ _WAYS = frozenset({"way", "direction"})
 _OTHER = frozenset({"other"})
 #: Words that say an item's ends or corners are arcs.
 _ROUNDED = frozenset({"rounded", "round", "radiused", "curved", "arced"})
+#: Round things an outline draws one arc of each: "three balls in a row", drawn as one turned outline.
+_ROUND_THINGS = frozenset({"balls", "spheres", "beads", "lobes", "bumps"})
+#: Words that say bars cross.
+_CROSSING = frozenset({"crossing", "crossed", "cross", "crosses"})
+#: The walls a cut crosses.
+_WALLS = frozenset({"walls", "sides"})
+
+
+def _reflex_corners(item: Item) -> int:
+    """How many inside corners an item's outline has (its turns against the way it goes round), or 0."""
+    profile = next((raw for raw in item.fields.values() if isinstance(raw, Profile)), None)
+    if profile is None:
+        return 0
+    points = [profile.start, *(segment.to for segment in profile.segments)]
+    if len(points) > 1 and points[0] == points[-1]:
+        points = points[:-1]
+    if len(points) < 4:
+        return 0
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in itertools.pairwise([*points, points[0]]))
+    turns = 0
+    for k, here in enumerate(points):
+        before, after = points[k - 1], points[(k + 1) % len(points)]
+        cross = (here[0] - before[0]) * (after[1] - here[1]) - (here[1] - before[1]) * (after[0] - here[0])
+        turns += cross * area < 0
+    return turns
+
+
+def _named_items(i: int, item: Item, spec: PartSpec, brief: NumberedBrief) -> int:
+    """How many of one thing the word or two after a count word at ``i`` name, by another item's words: its copies, or
+    the items of one kind that cite that word ("both ears": the two ears); 0 if none does."""
+    here = brief.word(i)
+    ahead = [_plain(brief.word(j).text) for j in range(i + 1, min(len(brief.words), i + 3))
+             if brief.word(j).sentence == here.sentence]  # fmt: skip
+    ahead = [w for w in ahead if w not in FUNCTION_WORDS and not w[:1].isdigit()][:1]
+    if not ahead:
+        return 0
+    naming = [other for other in spec.items if other is not item
+              and any(_plain(brief.word(j).text) == ahead[0] for j in other.words if 0 <= j < len(brief.words))]  # fmt: skip
+    if len(naming) == 1:
+        return _copies(naming[0])
+    if len(naming) > 1 and len({other.kind for other in naming}) == 1 and all(_copies(o) == 1 for o in naming):
+        return len(naming)
+    return 0
+
+
+def _across_a_bore(item: Item, spec: PartSpec) -> bool:
+    """Whether a cut goes right through a body with a bore (a tube, a hollowed body) from its side."""
+    on, depth = item.get("on"), item.get("depth")
+    if not isinstance(on, On) or not isinstance(depth, Through) or on.face.endswith("end"):
+        return False
+    host = next((other for other in spec.items if other.id == on.item), None)
+    if host is None:
+        return False
+    hollowed = any(other.get("of") == host.id and "thickness" in other.fields for other in spec.items)
+    return "bore" in KINDS[host.kind].faces or hollowed
 
 
 def _two_ways(item: Item) -> bool:
@@ -521,6 +590,27 @@ def _sits(words: WordRef, brief: NumberedBrief) -> tuple[int, ...] | None:
     return None
 
 
+#: Words that say a thing is turned by an angle: "turned 30 degrees about the vertical axis".
+_TURNED = frozenset({"turned", "rotated", "tilted", "tipped", "angled", "inclined", "leaning", "leans", "canted",
+                     "twisted", "turn", "rotate", "tilt"})  # fmt: skip
+_DEGREES = frozenset({"degrees", "degree", "deg", "°"})
+
+
+def _turned(words: WordRef, brief: NumberedBrief) -> tuple[int, ...] | None:
+    """The words among ``words`` that say something is turned by an angle ("turned 30 degrees about the vertical
+    axis"), or None."""
+    cited = sorted(set(words))
+    for n, i in enumerate(cited):
+        if _plain(brief.word(i).text) not in _TURNED:
+            continue
+        ahead = [j for j in cited[n + 1 : n + 5] if brief.word(j).sentence == brief.word(i).sentence]
+        angle = next((j for j in ahead if _plain(brief.word(j).text) in _DEGREES
+                      or brief.word(j).text.rstrip(",.;:").endswith("°")), None)  # fmt: skip
+        if angle is not None:
+            return tuple(j for j in cited if i <= j <= angle)
+    return None
+
+
 def _shapes_left_out(spec: PartSpec, c: _Collect) -> None:
     """A fault, in every mode, where ``not_modelled`` leaves out a shape of the part the brief asks for, or which way
     it sits: the part would be built without it and released as if it were what the brief describes (corpus:
@@ -546,7 +636,7 @@ def _shapes_left_out(spec: PartSpec, c: _Collect) -> None:
                     "for, and the part would be built without it. Draft it, or say in unable that Forge can't make "
                     "it yet")  # fmt: skip
             continue
-        sits = _sits(tuple(words), brief)
+        sits = _sits(tuple(words), brief) or _turned(tuple(words), brief)
         if sits is not None:
             c.fault(at, f"not_modelled can't hold which way the part sits ({brief.quote(sits)!r}): the part would be "
                     "built some other way. Draft it, or say in unable that Forge can't make it so yet")  # fmt: skip
@@ -633,6 +723,10 @@ def _strength_unchecked(spec: PartSpec, c: _Collect) -> None:
                   "yet: say what the part must carry, or that its strength is checked outside Forge")  # fmt: skip
 
 
+#: Words that say a metric size is a thread's own, not a screw's that passes through: "M8 hex nut", "M5 tapped".
+_THREADED = frozenset({"nut", "nuts", "thread", "threaded", "tapped", "insert", "inserts"})
+
+
 def _screws_held(spec: PartSpec, c: _Collect) -> None:
     """Use a screw's size ("for M5 socket head screws") where a hole the spec makes in its sentence is one of that
     size's own: its clearance, fine, normal or coarse, or its tap drill (blind set 1, B1-11: "counterbored holes for M5
@@ -656,6 +750,10 @@ def _screws_held(spec: PartSpec, c: _Collect) -> None:
         if size is None or not numeric_at(brief, i):
             continue
         standard = [*CLEARANCE.get(size[0], ()), *TAPPED.get(size[0], ())[1:]]
+        if _ahead(i, brief, _THREADED) or _said_near(i, brief, _THREADED, reach=2):
+            # The size names the thread itself ("an M8 hex nut ... with an 8 mm hole"): its hole is the thread's, at
+            # its nominal size where the thread isn't drawn (the corpus's hex nut).
+            standard.append(float(size[0][1:]))
         if any(abs(d - s) <= 1e-6 for d in made.get(word.sentence, ()) for s in standard):
             c.readings.extend(readings(brief, (i,)))
 

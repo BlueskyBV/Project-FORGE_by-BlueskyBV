@@ -6,6 +6,15 @@ from forge_spec.draft import Item, Profile
 from forge_spec.items.checks.protocol import SpecCheckKind
 from forge_spec.outline import Shape, turned_rims
 from forge_spec.placement import Layout
+from forge_spec.words import NumberedBrief
+
+#: What a turned outline is: its half-section ("revolved from its half-section", the corpus's pulley).
+_HALF_SECTION = frozenset({"half-section", "half-sections", "half-profile"})
+_SECTION = frozenset({"section", "sectional", "profile", "cross-section"})
+
+
+def _plain(text: str) -> str:
+    return text.lower().strip(",.;:()!?\"'")
 
 
 class Revolution(SpecCheckKind):
@@ -30,6 +39,19 @@ class Revolution(SpecCheckKind):
                 return "fault", (f"{target.id}'s side runs on smoothly into its {end}: "
                                  "where they meet is no edge to round")  # fmt: skip
         return super().edges_missing(target, which, layout)
+
+
+    def held_words(self, item: Item, brief: NumberedBrief) -> tuple[int, ...]:
+        # A revolution's outline is its half-section: "half" there is no number of anything (the corpus's pulley).
+        found = []
+        for i in item.words:
+            if not 0 <= i < len(brief.words):
+                continue
+            word = _plain(brief.word(i).text)
+            after = _plain(brief.word(i + 1).text) if i + 1 < len(brief.words) else ""
+            if word in _HALF_SECTION or (word == "half" and after in _SECTION):
+                found.append(i)
+        return tuple(found)
 
 
 ENTRY = Revolution()

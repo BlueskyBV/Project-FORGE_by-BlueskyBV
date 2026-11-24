@@ -45,7 +45,7 @@ Stages are as the plan names them: 4b.0c's and 4b.0d's items and 4b.1 to
 
 | Where | What Forge can't do yet | Closed in |
 |---|---|---|
-| `forge_spec/items/solve/_common.py:profiled` (1) | Placing on an extrusion's or a revolution's side (its outline swept): only its flat ends take items | 4b.0d3 (item 3: swept and freeform hosts) |
+| `forge_spec/items/solve/_common.py:profiled` (1) | Placing on an extrusion's or a revolution's side (its outline swept): only its flat ends take items (the corpus's curved and arched plates, drawn as outlines swept across their width) | 4b.0d3 (item 3: swept and freeform hosts) |
 | `forge_spec/items/solve/pocket.py:floor` (1) | Placing on a pocket's floor that a bore runs through | 4b.0d2 (item 12: a face's loops) |
 | `forge_spec/items/solve/sphere.py:hollow` (1) | Placing on a hollowed ball's surface | 4b.0c item 3b (its later step), with 4b.3's shell of any body |
 | `forge_spec/placement.py:_ball_instances` (3) | On a ball's surface: kinds other than round holes, bosses and posts; placing by anything but latitude and angle; a hole right through a ball that stands on something | 4b.0c item 3b (its later step); 4b.1 (depth modes) |
@@ -161,7 +161,8 @@ the owner confirms each, or it is raised.
 | Mass properties beyond a limit (centre of mass, inertia), and a material per body | the corpus's R01, R11 and R13 (their mass limits, checked since schema 1.11) | 4b.10 (a material per body, mass, centre of mass and inertia from the B-rep) |
 | A part to fit within a box in any orientation, or a limit on a size not along the part's own axes | the corpus's R13 (its height limit, checked along z since schema 1.11) | 4b.10 (requirements), with item 15's views of them |
 | Bodies that cross or overlap in space (three balls in a row, fused; a plus sign of two bars crossing at their middles; a jack of three rods crossing at their centres): only the first body stands on the origin, each other on a face of one before it | the corpus's A03, A08 and C07 | 4b.0c item 1 (a body's own place and direction), with 4b.3's combine of overlapping bodies and 4b.4's patterns of bodies |
-| The first body turned ("rotated 45 degrees about its 10 mm wide horizontal axis so it leans over") | the corpus's A04 | 4b.0c item 1 (a typed direction field) |
-| Positions measured from a point of the part, not from a face's edge or centre ("from the pivot point") | the corpus's exoskeleton upper rail, its positions assumed | 4b.0 item 8 (datums: points as items others refer to) |
+| The first body turned ("rotated 45 degrees about its 10 mm wide horizontal axis so it leans over", "turned 30 degrees about the vertical axis") | the corpus's A04 and its turned block (zoo2_rotated_block) | 4b.0c item 1 (a typed direction field) |
+| Positions measured from a point of the part, not from a face's edge or centre ("from the pivot point") | the corpus's exoskeleton upper and forearm rails, their positions assumed or measured from the face's centre | 4b.0 item 8 (datums: points as items others refer to) |
 | One body's shape intersected with another's, or one subtracted from another (a cube and a sphere keeping what they share; a cube less a sphere) | the corpus's A01 and A02 | 4b.3 (combine, subtract, intersect) |
 | Two parts in one brief ("two separate PLA cubes ... not touching") | the corpus's X12 | stage 8 (assemblies) |
+| A strip, plate or bar bent ("bent 90 degrees in the middle", "bent legs 40 mm long with 15 mm bends", "curved at about 10 degrees"): drawn as blocks meeting at a sharp corner, its bend asked about, or UNABLE | the corpus's bent strip and L-bracket (zoo2_bent_strip, zoo_l_bracket_bent), handle (zoo2_handle) and curved plate (plate_curved_sized_twice) | 4b.1 (bent plate) and 4b.6 (sheet metal: bends, their radii and allowances) |

@@ -1,0 +1,1158 @@
+{
+ "note": "The corpus's third run (24 November 2026): drafts by claude-sonnet-5, as recorded in runs/corpus, for tests/test_v2_spec_third_run.py.",
+ "drafts": {
+  "A03": {
+   "brief": "Three 20 mm PLA balls in a row, their centres 15 mm apart, fused into one piece. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "three fused balls",
+    "items": [
+     {
+      "id": "balls",
+      "kind": "revolution",
+      "words": [
+       0,
+       1,
+       2,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16
+      ],
+      "axis": {
+       "choose": "x",
+       "from": {
+        "assumed": "the brief says the three balls are in a row but does not say which frame axis the row runs along; x is chosen as the row's direction, which the shape as a solid of revolution needs"
+       }
+      },
+      "profile": {
+       "start": [
+        0,
+        -10
+       ],
+       "unit": "mm",
+       "segments": [
+        {
+         "arc_to": [
+          6.6144,
+          7.5
+         ],
+         "centre": [
+          0,
+          0
+         ],
+         "clockwise": false
+        },
+        {
+         "arc_to": [
+          6.6144,
+          22.5
+         ],
+         "centre": [
+          0,
+          15
+         ],
+         "clockwise": false
+        },
+        {
+         "arc_to": [
+          0,
+          40
+         ],
+         "centre": [
+          0,
+          30
+         ],
+         "clockwise": false
+        },
+        {
+         "line_to": [
+          0,
+          -10
+         ]
+        }
+       ],
+       "from": {
+        "words": [
+         1,
+         2,
+         10,
+         11,
+         12
+        ]
+       }
+      }
+     }
+    ],
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "states the part carries no load and so has no load case: not a shape or a checkable mass/size limit"
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "PLA",
+      "from": {
+       "words": [
+        3
+       ]
+      }
+     }
+    }
+   }
+  },
+  "A08": {
+   "brief": "A flat PLA plus sign 5 mm thick: two bars 50 mm long and 10 mm wide crossing at their middles at right angles. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "flat PLA plus sign",
+    "items": [
+     {
+      "id": "plus_sign",
+      "kind": "extrusion",
+      "words": [
+       1,
+       3,
+       4,
+       8
+      ],
+      "axis": {
+       "choose": "z",
+       "from": {
+        "assumed": "the brief calls it 'flat' (word 1); a flat sign's thickness runs vertically, with its outline in the horizontal plane"
+       }
+      },
+      "profile": {
+       "unit": "mm",
+       "start": [
+        5,
+        25
+       ],
+       "segments": [
+        {
+         "line_to": [
+          5,
+          5
+         ]
+        },
+        {
+         "line_to": [
+          25,
+          5
+         ]
+        },
+        {
+         "line_to": [
+          25,
+          -5
+         ]
+        },
+        {
+         "line_to": [
+          5,
+          -5
+         ]
+        },
+        {
+         "line_to": [
+          5,
+          -25
+         ]
+        },
+        {
+         "line_to": [
+          -5,
+          -25
+         ]
+        },
+        {
+         "line_to": [
+          -5,
+          -5
+         ]
+        },
+        {
+         "line_to": [
+          -25,
+          -5
+         ]
+        },
+        {
+         "line_to": [
+          -25,
+          5
+         ]
+        },
+        {
+         "line_to": [
+          -5,
+          5
+         ]
+        },
+        {
+         "line_to": [
+          -5,
+          25
+         ]
+        },
+        {
+         "line_to": [
+          5,
+          25
+         ]
+        }
+       ],
+       "from": {
+        "words": [
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23
+        ]
+       }
+      },
+      "length": {
+       "value": 5,
+       "unit": "mm",
+       "from": {
+        "words": [
+         5,
+         6,
+         7
+        ]
+       }
+      }
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "PLA",
+      "from": {
+       "words": [
+        2
+       ]
+      }
+     }
+    },
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the sign carries no load and so has no load case; this sets no shape, limit, or requirement Forge can check"
+     }
+    ],
+    "not_modelled": [],
+    "unable": []
+   }
+  },
+  "zoo2_clevis": {
+   "brief": "A steel clevis: a base 50 x 40 x 10 mm with two ears 10 mm thick, 40 mm wide and 40 mm tall standing on it at its ends, 30 mm apart, and one 10 mm pin hole through both ears 25 mm above the base. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "steel clevis",
+    "items": [
+     {
+      "id": "base",
+      "kind": "block",
+      "words": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10
+      ],
+      "length": {
+       "value": 50,
+       "unit": "mm",
+       "from": {
+        "words": [
+         5,
+         10
+        ]
+       }
+      },
+      "width": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         7,
+         10
+        ]
+       }
+      },
+      "height": {
+       "value": 10,
+       "unit": "mm",
+       "from": {
+        "words": [
+         9,
+         10
+        ]
+       }
+      }
+     },
+     {
+      "id": "ear_left",
+      "kind": "post",
+      "words": [
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32
+      ],
+      "on": {
+       "item": "base",
+       "face": "+z"
+      },
+      "length": {
+       "value": 10,
+       "unit": "mm",
+       "from": {
+        "words": [
+         14,
+         15,
+         16
+        ]
+       }
+      },
+      "width": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         17,
+         18,
+         19
+        ]
+       }
+      },
+      "height": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         21,
+         22,
+         23
+        ]
+       }
+      },
+      "place": {
+       "x": {
+        "offset": {
+         "value": -20,
+         "unit": "mm",
+         "from": {
+          "formula": "-(30 mm + 10 mm) / 2",
+          "words": [
+           30,
+           31,
+           32,
+           14,
+           15,
+           16
+          ]
+         }
+        }
+       },
+       "y": {
+        "centred": {
+         "assumed": "the brief doesn't say how the ears sit across the base's width, so centring them is assumed"
+        }
+       }
+      }
+     },
+     {
+      "id": "ear_right",
+      "kind": "post",
+      "words": [
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32
+      ],
+      "on": {
+       "item": "base",
+       "face": "+z"
+      },
+      "length": {
+       "value": 10,
+       "unit": "mm",
+       "from": {
+        "words": [
+         14,
+         15,
+         16
+        ]
+       }
+      },
+      "width": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         17,
+         18,
+         19
+        ]
+       }
+      },
+      "height": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         21,
+         22,
+         23
+        ]
+       }
+      },
+      "place": {
+       "x": {
+        "offset": {
+         "value": 20,
+         "unit": "mm",
+         "from": {
+          "formula": "(30 mm + 10 mm) / 2",
+          "words": [
+           30,
+           31,
+           32,
+           14,
+           15,
+           16
+          ]
+         }
+        }
+       },
+       "y": {
+        "centred": {
+         "assumed": "the brief doesn't say how the ears sit across the base's width, so centring them is assumed"
+        }
+       }
+      }
+     },
+     {
+      "id": "pin_hole",
+      "kind": "hole",
+      "words": [
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46
+      ],
+      "on": {
+       "item": "ear_left",
+       "face": "-x"
+      },
+      "diameter": {
+       "value": 10,
+       "unit": "mm",
+       "from": {
+        "words": [
+         35,
+         36,
+         37,
+         38
+        ]
+       }
+      },
+      "depth": {
+       "through_all": true,
+       "from": {
+        "words": [
+         39,
+         40,
+         41
+        ]
+       }
+      },
+      "count": {
+       "count": 1,
+       "from": {
+        "words": [
+         34
+        ]
+       }
+      },
+      "place": {
+       "y": {
+        "centred": {
+         "assumed": "the brief doesn't give a lateral position for the pin hole, so centring it across the ear is assumed"
+        }
+       },
+       "z": {
+        "side": "-z",
+        "distance": {
+         "value": 25,
+         "unit": "mm",
+         "from": {
+          "words": [
+           42,
+           43,
+           44,
+           45,
+           46
+          ]
+         }
+        },
+        "to": "centre"
+       }
+      }
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "steel",
+      "from": {
+       "words": [
+        1
+       ]
+      }
+     }
+    },
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the part carries no load and has no load case; not a shape or a checkable limit"
+     }
+    ]
+   }
+  },
+  "zoo2_tube_cross_pin": {
+   "brief": "An aluminium tube 20 mm in diameter and 60 mm long with an 18 mm bore right through it, and a 4 mm cross hole right through both walls, 10 mm from one end. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "aluminium tube",
+    "items": [
+     {
+      "id": "tube",
+      "kind": "tube",
+      "words": [
+       2
+      ],
+      "outer_diameter": {
+       "value": 20,
+       "unit": "mm",
+       "from": {
+        "words": [
+         3,
+         4,
+         6
+        ]
+       }
+      },
+      "inner_diameter": {
+       "value": 18,
+       "unit": "mm",
+       "from": {
+        "words": [
+         13,
+         14,
+         15
+        ]
+       }
+      },
+      "length": {
+       "value": 60,
+       "unit": "mm",
+       "from": {
+        "words": [
+         8,
+         9,
+         10
+        ]
+       }
+      },
+      "axis": {
+       "choose": "x",
+       "from": {
+        "assumed": "the brief doesn't say how the tube is oriented; a free-standing tube is assumed to lie along X"
+       }
+      }
+     },
+     {
+      "id": "cross_hole",
+      "kind": "hole",
+      "words": [
+       20,
+       21,
+       22,
+       23,
+       24,
+       29,
+       30,
+       31,
+       32,
+       33
+      ],
+      "on": {
+       "item": "tube",
+       "face": "side"
+      },
+      "diameter": {
+       "value": 4,
+       "unit": "mm",
+       "from": {
+        "words": [
+         21,
+         22
+        ]
+       }
+      },
+      "depth": {
+       "through_all": true,
+       "from": {
+        "words": [
+         25,
+         26,
+         27,
+         28
+        ]
+       }
+      },
+      "place": {
+       "x": {
+        "side": "+x",
+        "distance": {
+         "value": 10,
+         "unit": "mm",
+         "from": {
+          "words": [
+           29,
+           30,
+           31,
+           33
+          ]
+         }
+        },
+        "to": "centre"
+       },
+       "angle": {
+        "value": 0,
+        "unit": "deg",
+        "from": {
+         "assumed": "the brief doesn't give the hole's clock position around the tube; placed at 0 degrees"
+        }
+       }
+      }
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "aluminium",
+      "from": {
+       "words": [
+        1
+       ]
+      }
+     }
+    },
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the part carries no load and has no load case, which is a usage/engineering note, not a shape"
+     }
+    ],
+    "not_modelled": [],
+    "unable": []
+   }
+  },
+  "zoo_hex_nut": {
+   "brief": "A steel M8 hex nut, 13 mm across flats and 6.5 mm thick, with an 8 mm hole through it. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "M8 hex nut",
+    "items": [
+     {
+      "id": "nut_body",
+      "kind": "extrusion",
+      "words": [
+       2,
+       3,
+       4
+      ],
+      "axis": {
+       "choose": "z",
+       "from": {
+        "assumed": "a hex nut lies flat with its hexagonal faces up and down, so its thickness runs vertically"
+       }
+      },
+      "profile": {
+       "unit": "mm",
+       "start": [
+        7.5056,
+        0
+       ],
+       "segments": [
+        {
+         "line_to": [
+          3.7528,
+          6.5
+         ]
+        },
+        {
+         "line_to": [
+          -3.7528,
+          6.5
+         ]
+        },
+        {
+         "line_to": [
+          -7.5056,
+          0
+         ]
+        },
+        {
+         "line_to": [
+          -3.7528,
+          -6.5
+         ]
+        },
+        {
+         "line_to": [
+          3.7528,
+          -6.5
+         ]
+        },
+        {
+         "line_to": [
+          7.5056,
+          0
+         ]
+        }
+       ],
+       "from": {
+        "words": [
+         5,
+         6,
+         7,
+         8
+        ]
+       }
+      },
+      "length": {
+       "value": 6.5,
+       "unit": "mm",
+       "from": {
+        "words": [
+         10,
+         11,
+         12
+        ]
+       }
+      }
+     },
+     {
+      "id": "bore",
+      "kind": "hole",
+      "words": [
+       14,
+       15,
+       16,
+       17,
+       18,
+       19
+      ],
+      "on": {
+       "item": "nut_body",
+       "face": "+end"
+      },
+      "diameter": {
+       "value": 8,
+       "unit": "mm",
+       "from": {
+        "words": [
+         15,
+         16,
+         17
+        ]
+       }
+      },
+      "depth": {
+       "through": true,
+       "from": {
+        "words": [
+         18,
+         19
+        ]
+       }
+      },
+      "place": {
+       "x": {
+        "centred": {
+         "assumed": "the hole runs through the nut's centre, as is standard for a nut"
+        }
+       },
+       "y": {
+        "centred": {
+         "assumed": "the hole is centred across the hex face, as is standard for a nut"
+        }
+       }
+      }
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "steel",
+      "from": {
+       "words": [
+        1
+       ]
+      }
+     }
+    },
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the part carries no load and has no load case; gives no shape, material or size information"
+     }
+    ]
+   }
+  },
+  "zoo2_pulley": {
+   "brief": "A nylon pulley, revolved from its half-section: 50 mm across its flanges, a 40 mm groove 6 mm wide, 14 mm wide overall, with a 8 mm bore. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "nylon pulley",
+    "items": [
+     {
+      "id": "pulley_body",
+      "kind": "revolution",
+      "words": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      "axis": {
+       "choose": "z",
+       "from": {
+        "assumed": "the brief doesn't say which way the pulley's axis points; chosen as z since it is the only body and the choice doesn't affect the design"
+       }
+      },
+      "profile": {
+       "unit": "mm",
+       "start": [
+        0,
+        0
+       ],
+       "segments": [
+        {
+         "line_to": [
+          25,
+          0
+         ]
+        },
+        {
+         "line_to": [
+          25,
+          4
+         ]
+        },
+        {
+         "line_to": [
+          20,
+          4
+         ]
+        },
+        {
+         "line_to": [
+          20,
+          10
+         ]
+        },
+        {
+         "line_to": [
+          25,
+          10
+         ]
+        },
+        {
+         "line_to": [
+          25,
+          14
+         ]
+        },
+        {
+         "line_to": [
+          0,
+          14
+         ]
+        },
+        {
+         "line_to": [
+          0,
+          0
+         ]
+        }
+       ],
+       "from": {
+        "words": [
+         7,
+         8,
+         9,
+         10,
+         11,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22
+        ]
+       }
+      }
+     },
+     {
+      "id": "bore",
+      "kind": "hole",
+      "words": [
+       24,
+       25,
+       26,
+       27
+      ],
+      "on": {
+       "item": "pulley_body",
+       "face": "+end"
+      },
+      "place": {
+       "concentric": {
+        "item": "pulley_body",
+        "from": {
+         "assumed": "a shaft bore runs along the pulley's axis"
+        }
+       }
+      },
+      "diameter": {
+       "value": 8,
+       "unit": "mm",
+       "from": {
+        "words": [
+         25,
+         26,
+         27
+        ]
+       }
+      },
+      "depth": {
+       "through": true,
+       "from": {
+        "assumed": "a bore for a shaft is understood to pass all the way through the pulley"
+       }
+      }
+     }
+    ],
+    "requirements": {
+     "material": {
+      "text": "nylon",
+      "from": {
+       "words": [
+        1
+       ]
+      }
+     }
+    },
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the pulley carries no load and has no load case, which is not a shape requirement"
+     }
+    ],
+    "not_modelled": [],
+    "unable": []
+   }
+  },
+  "zoo2_rotated_block": {
+   "brief": "A 40 x 20 x 10 mm block turned 30 degrees about the vertical axis, with a 5 mm hole straight down through its centre. It carries no load, so there is no load case.",
+   "answer": {
+    "schema_version": 1.11,
+    "name": "turned block with centre hole",
+    "items": [
+     {
+      "id": "block",
+      "kind": "block",
+      "words": [
+       7
+      ],
+      "length": {
+       "value": 40,
+       "unit": "mm",
+       "from": {
+        "words": [
+         1,
+         6
+        ]
+       }
+      },
+      "width": {
+       "value": 20,
+       "unit": "mm",
+       "from": {
+        "words": [
+         3,
+         6
+        ]
+       }
+      },
+      "height": {
+       "value": 10,
+       "unit": "mm",
+       "from": {
+        "words": [
+         5,
+         6
+        ]
+       }
+      }
+     },
+     {
+      "id": "centre_hole",
+      "kind": "hole",
+      "words": [
+       16,
+       19,
+       23,
+       24
+      ],
+      "on": {
+       "item": "block",
+       "face": "+z"
+      },
+      "diameter": {
+       "value": 5,
+       "unit": "mm",
+       "from": {
+        "words": [
+         17,
+         18
+        ]
+       }
+      },
+      "depth": {
+       "through": true,
+       "from": {
+        "words": [
+         20,
+         21,
+         22
+        ]
+       }
+      },
+      "place": {
+       "x": {
+        "centred": {
+         "words": [
+          23,
+          24
+         ]
+        }
+       },
+       "y": {
+        "centred": {
+         "words": [
+          23,
+          24
+         ]
+        }
+       }
+      }
+     }
+    ],
+    "not_modelled": [
+     {
+      "words": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14
+      ],
+      "reason": "the part's frame is defined by the block's own length, width and height; turning the whole (and only) body about its own vertical axis does not change its shape, and nothing else in the brief references an absolute orientation, so the turn has no effect on the model"
+     }
+    ],
+    "silent": [
+     {
+      "sentence": 1,
+      "reason": "says the part carries no load and has no load case, which says nothing about its shape"
+     }
+    ]
+   }
+  }
+ }
+}

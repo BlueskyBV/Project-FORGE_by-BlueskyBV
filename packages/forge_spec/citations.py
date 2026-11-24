@@ -1142,6 +1142,19 @@ def check_quantity(
                 f"the brief gives {reading.value:g} but no unit; {value.unit.symbol} "
                 "is an assumption",
             )
+    for reading in usable:
+        # A coordinate the brief gives below zero with no unit ("at x = -32"), used for how far: the sign differs, as
+        # it may with a unit (above), and is said so (the corpus's instrument bracket).
+        if (reading.unit is None and not affine and reading.value != 0
+                and _matches(abs(reading.value), abs(target), converted=False)
+                and not any(r.unit is not None and r.value == reading.value for r in usable)):  # fmt: skip
+            return CitationCheck(
+                Follows.UNIT_NOT_STATED,
+                reading,
+                candidates,
+                f"the brief gives {reading.value:g} but no unit; {value.unit.symbol} is an assumption, and the sign "
+                "differs, which is right only if a direction carries it",
+            )
     shown = ", ".join(r.describe() for r in usable)
     return CitationCheck(
         Follows.NO,

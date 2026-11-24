@@ -35,7 +35,7 @@ from __future__ import annotations
 import ast
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from forge_expr import Expression, ForgeExprError
 from forge_units import Q, Quantity, parse_unit
@@ -76,6 +76,8 @@ class _Literal:
     value: float
     unit: str | None
     constant: bool = False  # a bare 2, halving, doubling or squaring; or a right or straight angle
+    #: A minus written on the number itself ("-32 mm"): it may be the brief's own sign, "at x = -32".
+    negated: bool = False
 
 
 def _unit_name(node: ast.AST) -> str | None:
@@ -106,11 +108,16 @@ def _literals(tree: ast.AST) -> list[_Literal] | str:
             parents[id(child)] = node
     found: list[_Literal] = []
     taken: set[int] = set()
+
+    def negated(node: ast.AST) -> bool:
+        parent = parents.get(id(node))
+        return isinstance(parent, ast.UnaryOp) and isinstance(parent.op, ast.USub)
+
     for node in ast.walk(tree):
         if (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mult)
                 and _number(node.left) is not None and _unit_name(node.right) is not None):  # fmt: skip
             figure, unit = _number(node.left) or 0.0, _unit_name(node.right)
-            found.append(_Literal(figure, unit, _right_angle(node, figure, unit, parents)))
+            found.append(_Literal(figure, unit, _right_angle(node, figure, unit, parents), negated(node)))
             taken.update((id(node.left), id(node.right)))
     for node in ast.walk(tree):
         if id(node) in taken:
@@ -128,7 +135,7 @@ def _literals(tree: ast.AST) -> list[_Literal] | str:
                 return f"{node.value!r} is not a number"
             found.append(
                 _Literal(
-                    value, None, value in CONSTANTS and _free_two(node, parents, taken)
+                    value, None, value in CONSTANTS and _free_two(node, parents, taken), negated(node)
                 )
             )
     return found
@@ -237,6 +244,26 @@ def _groups(cited: tuple[int, ...]) -> list[tuple[int, ...]]:
     return groups + [(i,) for i in cited]
 
 
+def _read_signed(literal: _Literal, cited: tuple[int, ...], brief: NumberedBrief,
+                 used: set[object]) -> CitationCheck | None:  # fmt: skip
+    """:func:`_read`, a number with a minus written on it ("-32 mm") read as the brief's own sign first ("at x =
+    -32"), then as a size taken the other way ("-15 mm" of "15 mm from the edge"): whichever follows with its sign as
+    the brief gives it, else either. The corpus's instrument bracket gave its coordinates below zero, and every formula
+    of one was refused."""
+    if not literal.negated:
+        return _read(literal, cited, brief, used)
+    found = []
+    for value in (-literal.value, literal.value):
+        trial = set(used)
+        check = _read(replace(literal, value=value), cited, brief, trial)
+        if check is not None:
+            found.append((check, trial))
+    for check, trial in (*[f for f in found if "sign differs" not in f[0].message], *found):
+        used.update(trial)
+        return check
+    return None
+
+
 def _read(literal: _Literal, cited: tuple[int, ...], brief: NumberedBrief,
           used: set[object]) -> CitationCheck | None:  # fmt: skip
     """The first cited words that give this number, as a cited value would, not used already."""
@@ -305,7 +332,7 @@ def check_formula(
     for literal in literals:
         if literal.constant:
             continue
-        check = _read(literal, cited, brief, used)
+        check = _read_signed(literal, cited, brief, used)
         shown = f"{literal.value:g}" + (
             f" {parse_unit(literal.unit).symbol}" if literal.unit else ""
         )

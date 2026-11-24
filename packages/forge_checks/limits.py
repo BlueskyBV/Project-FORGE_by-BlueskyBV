@@ -10,7 +10,12 @@ judged on a view as its other detectors are, three ways:
   way, FAIL where it is past it all the way, INCONCLUSIVE between. A part
   drawn to the limit itself ("no taller than 32 mm", 32 mm tall) is within
   it: the limit is read :data:`SLACK` loose, far below any made part's own
-  tolerance.
+  tolerance, and, on a view known only to within its tolerance (a mesh
+  file's), that much looser again. The limit is the part's, judged on the
+  B-rep as exactly as it is made; a file is judged as a view of that part,
+  and a file of a part drawn to its limit is within its own tolerance of
+  it (the corpus's stepper plate, "so the part is 14 mm tall overall", 14 mm
+  tall, was held for its STL's 0.0055 mm: V2-stage4.md, 14.9).
 - **its mass**, the view's volume times the material's density
   (:func:`forge_spec.materials.density`, a range over its common grades):
   a part of a printable plastic may be printed with infill, which the spec
@@ -76,7 +81,7 @@ def _size(limit: Limit, view: ViewProxy, name: str, check: str, tolerance: float
     box = view.bounds()
     extent = box.hi[axis] - box.lo[axis]
     measured = Interval(max(extent - tolerance, 0.0), extent + 2 * tolerance)
-    verdict, bounds = _verdict(measured, limit, "mm", SLACK)
+    verdict, bounds = _verdict(measured, limit, "mm", SLACK + 2 * tolerance)  # the view's own tolerance: see the module
     reason = (f"its size along {limit.of.value}: {extent:.6g} mm (to within {2 * tolerance:.2g} mm), the brief's "
               f"{bounds}")  # fmt: skip
     return Evidence(check, name, verdict, measured, reason)
