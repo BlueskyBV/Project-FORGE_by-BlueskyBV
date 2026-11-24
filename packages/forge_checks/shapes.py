@@ -1183,12 +1183,17 @@ class Torus(Solid):
             else np.zeros((0, 4))
         )
         c2, c1, c0 = coeffs[:, 1:2], coeffs[:, 2:3], coeffs[:, 3:4]
-        with np.errstate(divide="ignore", invalid="ignore"):
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
             for _ in range(3):
                 f = ((s_ * s_ + c2) * s_ + c1) * s_ + c0
                 df = (4 * s_ * s_ + 2 * c2) * s_ + c1
                 better = s_ - f / df
-                s_ = np.where(np.isfinite(better), better, s_)
+                # A step is taken only where it brings the quartic nearer zero: at a double root (a ball's quartic
+                # is a square; a tube's wider than its circle, nearly) its slope is rounding alone, and a step there
+                # threw the root away, by 0.05 mm on the corpus's A03 (three balls fused, drawn as one turned
+                # outline), and no grid line met them: their voids couldn't be counted.
+                gain = np.abs(((better * better + c2) * better + c1) * better + c0) < np.abs(f)
+                s_ = np.where(np.isfinite(better) & gain, better, s_)
         return np.asarray(s_ - shift[:, None])
 
     def _implicit(self, points: Array) -> tuple[Array, tuple[int, ...]]:

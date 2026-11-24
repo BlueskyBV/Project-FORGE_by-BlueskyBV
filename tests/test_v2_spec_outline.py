@@ -326,7 +326,7 @@ class AnOutlinesSizesCited(unittest.TestCase):
             "20 mm", 9.0
         )  # 18 across its corners, 15.6 across its flats
         self.assertIn(("fault", "the outline has no size of 20 mm: none across it, of a side, between parallel sides "
-                                "or corners, of an arc"), found)  # fmt: skip
+                                "or corners, of an arc, nor an angle it is drawn at"), found)  # fmt: skip
 
     def test_a_count_is_its_corners(self) -> None:
         self.assertEqual(self.hexagon("six-sided, 20 mm", 10.0), [])

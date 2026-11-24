@@ -409,7 +409,8 @@ def _numerals(text: str) -> tuple[_Literal, ...]:
         designation = (
             _DESIGNATIONS.get(mark) if before[:-1] in ("", *_IN_WORD_JOINERS) else None
         )
-        if position == 0 and before in ("-", "\u2212"):
+        if (position == 0 and before in ("-", "\u2212")) or (position and before in (",-", ",\u2212", ";-", ";\u2212")):
+            # A minus at the word's start, or straight after a comma between numbers ("0,0,-37.5"), is a sign.
             value = -value
         end = (
             matches[position + 1].start() if position + 1 < len(matches) else len(plain)
@@ -610,9 +611,31 @@ def _correlative(brief: NumberedBrief, index: int) -> bool:
     return False
 
 
+#: A word of numbers joined by commas, each maybe signed: "-36,165", "0,0,-37.5".
+_TUPLE = re.compile(r"^[-\u2212]?\d+(?:\.\d+)?(?:,[-\u2212]?\d+(?:\.\d+)?)+$")
+
+
+def _word_text(brief: NumberedBrief, index: int) -> str:
+    """A word's text as its numbers are read: a coordinate's numbers, joined by commas in brackets ("at (-36,165)",
+    "(0,0,-37.5)"), or signed, or three or more, are each a number, the commas between them no thousands separator
+    or decimal comma (the corpus's lower-leg shell gave its holes so, and no value could cite one). Each comma is
+    read as a semicolon, a character for a character, so every position stays the word's."""
+    word = brief.words[index]
+    text = word.text
+    plain = _plain(text)
+    if "," not in plain or not _TUPLE.match(plain):
+        return text
+    bracketed = (word.start > 0 and brief.text[word.start - 1] in "([" and word.end < len(brief.text)
+                 and brief.text[word.end] in ")]")  # fmt: skip
+    signed = plain[:1] in "-\u2212" or ",-" in plain or ",\u2212" in plain
+    if bracketed or signed or plain.count(",") >= 2:
+        return text.replace(",", ";")
+    return text
+
+
 def slot_count(brief: NumberedBrief, index: int) -> int:
     """How many numbers the word at ``index`` holds (0 if it is no number)."""
-    return len(_slots(brief.words[index].text)) if numeric_at(brief, index) else 0
+    return len(_slots(_word_text(brief, index))) if numeric_at(brief, index) else 0
 
 
 # ----------------------------------------------------------------------
@@ -816,7 +839,7 @@ def _with_unit_after(
 def _readings_of_word(brief: NumberedBrief, index: int) -> list[Reading]:
     if not numeric_at(brief, index):
         return []
-    text = brief.words[index].text
+    text = _word_text(brief, index)
     found: list[Reading] = []
     for literal in _numerals(text):
         slots = [(index, k) for k in _slots_within(text, literal.span)]

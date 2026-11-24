@@ -3548,6 +3548,51 @@ and blind set 1's 30 likewise (A03 and A08 among the earlier). Tests:
 `tests/test_v2_spec_third_run.py`, on the run's own drafts
 (`tests/fixtures/corpus_third_run.json`).
 
+### 14.10 The corpus's fourth run, and what it changed
+
+The owner ran the corpus on e450da9 (5 briefs drafted again, 156
+replayed): 117 built, each as validation/SUITE.md expects where it gives
+it; 26 UNABLE, each a gap the register holds; 13 asked; 2 HELD, rightly
+(L05's mass, X07's size); one CAN'T (X06); one refused; one stopped by
+Forge's own error. The stepper plate, the clevis, the tube with its cross
+hole, the hex nut, the pulley and A08 now built, as 14.9 meant; A04, the
+instrument bracket and the lower-leg shell drafted again ended UNABLE, as
+no kind makes a tilted first body, a bend or a loft yet. Read:
+
+- **A ball's crossings were thrown away.** A03, three balls fused, drawn
+  as one turned outline, built right, and Forge stopped on its own error
+  before judging it ("the void count's grid reaches past the part on every
+  side"): grid lines along and across the balls met none of them. A ball's
+  quartic is a square, its roots double (a tube's a few micrometres off its
+  axis, as A03's first arc, nearly so); the root finder found them, and
+  Newton's method, its slope there rounding alone, threw them 0.05 mm away,
+  off the surface. A step is now taken only where it brings the quartic
+  nearer zero (`shapes.Torus`).
+- **An angle an outline is drawn at was asked about.** The turned block,
+  drafted again, was drawn as a rectangle turned 30 degrees, rightly, and
+  "30" was asked. An outline is drawn at the angles of its straight sides to
+  its axes and of its corners between them; the brief's angle, cited by the
+  outline (checked as its sizes are) or by its item's words, is used where
+  it is one of them (`checks._drawn_at`).
+- **A coordinate was read as a thousands number.** The lower-leg shell
+  gave its holes at "(-36,50), (36,50), (-36,165) ...": "-36,165" was read
+  as -36165 or 36.165, never as -36 and 165, and "0,0,-37.5" lost its
+  minus; the writer couldn't cite one, and was refused again. A word of
+  numbers joined by commas in brackets, or signed, or three or more, is a
+  coordinate, each its own number, a minus after a comma its sign
+  (`citations._word_text`). "1,200 mm" and "2,5 mm" read as before.
+- **Not changed, and right:** the loads, the sizes and the strength asked
+  (R10, L01 to L04, X01, X08, X11); L03's holes, assumed across its width,
+  past its edge; the bent strip and L-bracket's "90" (a bend: V2-gaps.md,
+  section 10). The forearm and upper-arm rails were drafted by earlier
+  runs' writer, and are drafted again by the next, as the lower-leg shell
+  is.
+
+Replayed with no model call: the run's drafts and the earlier runs' are
+read on the new code as on the old but for the turned block, now asking
+nothing. Tests: `tests/test_v2_spec_fourth_run.py`
+(`tests/fixtures/corpus_fourth_run.json`).
+
 ## 15. What is tested
 
 | Test file | What |
@@ -3566,7 +3611,7 @@ and blind set 1's 30 likewise (A03 and A08 among the earlier). Tests:
 | `test_v2_eval_widened.py` | The generator's new kinds and limits: the three placements agree; the truth on hand-worked points; mutants change one leaf; briefs cite their words; impossible ones end `cant` |
 | `test_v2_plan_corpus.py`, `test_v2_false_passes.py`, `test_v2_eval_corpus.py` | 14.2 and 14.3: the suite's drafts checked, locked and built; the false passes' right parts passing and wrong parts failing; the two commands with a scripted model |
 | `test_v2_eval_first_live_run.py` | 14.4: the cost ceiling with and without a price, a retry checked again, the two drafts' calls held at their worst, the dearer of two prices; a stopped run's line, ledger and report; an automatic run's accounting (the part named again, linking words, "both" of an item's copies) and where it still asks; the owner's 23 recorded drafts replayed, every ending and all caught |
-| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py`, `test_v2_spec_third_run.py` | 14.7 to 14.9: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
+| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py`, `test_v2_spec_third_run.py`, `test_v2_spec_fourth_run.py` | 14.7 to 14.10: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
 | `v2_exit4.py`, `test_v2_exit4.py` | 14.1 as a script; the test runs it on 3 seeds |
 
 Every test file runs in under 3 minutes on the laptop's VM (its shell's

@@ -29,11 +29,13 @@ shown to the person first.
 from __future__ import annotations
 
 import itertools
+import math
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
 from typing import Any
 
+from forge_numeric import scalar as fs
 from forge_units import Q
 from forge_units.dimension import LENGTH
 
@@ -865,6 +867,45 @@ def _numbers_named(
 
 #: How near a size the brief gives an outline's own must be (mm): an outline is written to a few figures.
 OUTLINE_MATCH = 0.005
+#: How near an angle the brief gives one an outline is drawn at must be (degrees), for the same reason.
+ANGLE_MATCH = 0.01
+
+
+def _degrees(reading: Reading) -> float | None:
+    """An angle a reading gives, in degrees; None if it gives none."""
+    if reading.unit is None or reading.unit.symbol not in ("deg", "rad"):
+        return None
+    return reading.value * reading.unit.scale * 180.0 / math.pi
+
+
+def _drawn_at(angle: float, profile: Profile) -> bool:
+    """Whether an outline is drawn at an angle: a straight side turned so from its axes (a rectangle "turned 30
+    degrees": the corpus's turned block, drawn so), or a corner between two straight sides."""
+    points = [profile.start, *(segment.to for segment in profile.segments)]
+    sides = [(a, b) for (a, b), segment in zip(itertools.pairwise(points), profile.segments, strict=True)
+             if segment.centre is None and a != b]  # fmt: skip
+    found = []
+    for a, b in sides:
+        found.append((fs.atan2(b[1] - a[1], b[0] - a[0]) * 180.0 / math.pi) % 90.0)
+    for (a, b), (c, d) in itertools.pairwise([*sides, *sides[:1]]):
+        if b == c:
+            turn = fs.atan2(d[1] - c[1], d[0] - c[0]) - fs.atan2(b[1] - a[1], b[0] - a[0])
+            found.append(180.0 - abs(((turn * 180.0 / math.pi) + 180.0) % 360.0 - 180.0))
+    return any(min(abs(angle - f), abs(abs(angle - f) - 90.0)) <= ANGLE_MATCH for f in found
+               if f is not None)  # fmt: skip
+
+
+def _angles_held(spec: PartSpec, c: _Collect) -> None:
+    """Use an angle an item's own words give that its outline is drawn at ("a 40 x 20 x 10 mm block turned 30
+    degrees about the vertical axis", drawn as an outline turned so: the corpus's turned block)."""
+    for item in spec.items:
+        profile = next((raw for raw in item.fields.values() if isinstance(raw, Profile)), None)
+        if profile is None:
+            continue
+        for reading in readings(c.brief, [i for i in item.words if 0 <= i < len(c.brief.words)]):
+            angle = _degrees(reading)
+            if angle is not None and _drawn_at(angle, profile):
+                c.readings.append(reading)
 
 
 def _check_profile(
@@ -900,6 +941,10 @@ def _check_profile(
             said.append((reading, f"{reading.value:g}"))
             if reading.value in counts:
                 good.append(reading)
+        elif (angle := _degrees(reading)) is not None:
+            said.append((reading, f"{reading.value:g} {reading.unit.symbol}"))
+            if _drawn_at(angle, thing):
+                good.append(reading)
     used = {slot for reading in good for slot in reading.numbers}
     missing = [slot for slot in numeric if slot not in used]
     if missing:
@@ -913,7 +958,8 @@ def _check_profile(
             shown += f" (the brief's {word.text!r}, word {word.index})"
         c.fault(at + pointer("from", "words"),
                 f"the outline has no size of {shown}: none across it, of a side, between parallel sides or "
-                f"corners, of an arc{', or a diameter it turns on' if turned else ''}")  # fmt: skip
+                f"corners, of an arc{', or a diameter it turns on' if turned else ''}, nor an angle it is drawn "
+                "at")  # fmt: skip
         return
     c.readings.extend(good)
     if c.strict:
@@ -2082,6 +2128,7 @@ def check_draft(brief: NumberedBrief, raw: Any, *, strict: bool = False) -> Spec
     _screws_held(spec, c)
     _names_held(spec, c)
     _one_axis_held(spec, c)
+    _angles_held(spec, c)
     _check_requirements(spec, c)
     layout = solve(spec)
     problems.extend(SpecProblem(i.kind, i.at, i.message) for i in layout.issues)
