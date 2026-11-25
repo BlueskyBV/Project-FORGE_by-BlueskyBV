@@ -78,7 +78,7 @@ __all__ = [
 
 #: Changes whenever what the writer is told changes, so a recorded answer is
 #: never replayed against instructions it wasn't written for.
-GUIDE_VERSION = 33
+GUIDE_VERSION = 34
 
 #: The worked example the writer is shown: a brief written for it (not from
 #: the corpus or a blind set), and a draft the checks pass with no problem,
@@ -747,6 +747,9 @@ one way. Its patterns' values ("inset_u", "pitch_v", ...), "along" and \
 towards the minus side);
 - {{"side": "+u", "distance": size, "to": "centre"}}: measured in from that \
 edge of the face to the item's centre (or "to": "edge", to its near edge).
+On an outline's end (an extrusion's "+end" or "-end") the face's centre is \
+the middle of the box round the outline, not the outline's point (0, 0): an \
+offset there is from that middle, wherever the outline is drawn about.
 An axis place doesn't give is centred, as an assumption Forge shows. On a \
 round side, place gives the position along the rod's axis and an "angle" \
 round it (0 deg towards the next axis: for a rod along z, +x; along x, +y; \

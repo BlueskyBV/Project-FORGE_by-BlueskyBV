@@ -2258,7 +2258,8 @@ different nodes along the edge they share, and the weld tore (part 4180);
 each face is refined and measured against its own (`face_tolerances`).
 The STL and 3MF can't carry a tolerance per triangle, so the judge works it
 out as the reader does, from the spec alone (`ExportTolerance.of_triangles`,
-`file_view`): a triangle that meets a finer box is held to the box's
+`file_view`): a triangle that meets a finer box (a point of it in the box,
+not merely of the box round its corners: 14.11) is held to the box's
 tolerance (it lies on a face meshed at it, or finer), any other to the
 coarser; the file read back is refused if a triangle's face was meshed
 looser than that.
@@ -3593,6 +3594,51 @@ read on the new code as on the old but for the turned block, now asking
 nothing. Tests: `tests/test_v2_spec_fourth_run.py`
 (`tests/fixtures/corpus_fourth_run.json`).
 
+### 14.11 The corpus's fifth run, and what it changed
+
+The owner ran the corpus on 67f4f3f (3 briefs drafted again, 158
+replayed): 118 built, each as validation/SUITE.md expects where it gives
+it; 27 UNABLE, each a gap the register holds; 12 asked; 3 HELD; one CAN'T
+(X06). A03 now built and passed, as 14.10 meant; the lower-leg shell,
+drafted again, ended UNABLE (a loft). L05's mass and X07's size were HELD
+rightly. Read:
+
+- **A triangle was held to a box it doesn't meet.** The turned block,
+  drawn as a rectangle turned 30 degrees, built and passed on its B-rep,
+  and its STL was HELD: "a triangle read back is held to a finer tolerance
+  than its face was meshed to". Its hole's diameter asks a finer tolerance
+  in the box round the hole (13.10). A long triangle on one of the block's
+  turned sides spans that box corner to corner, so the reader, testing the
+  box round the triangle's corners, held it to the box's tolerance, though
+  the side never comes near the hole and was meshed to the coarser one. A
+  triangle now meets a box only where a point of it is in the box (the
+  separating axis test, `export.triangles_meet`), as 13.10 says: such a
+  triangle is within its face's tolerance of the face, so the face comes
+  near the box and was meshed to the box's tolerance, or finer. The block
+  now builds to its draft, its hole's place on the turned outline left
+  unchecked ("the outline's edge along -x is a corner"), a gap the register
+  holds (section 8, `compiler._axis_position`).
+- **Where a place on an outline's end is measured from was the writer's
+  guess.** The forearm and upper-arm rails were drawn with their pivot at
+  the outline's point (0, 0), and their holes, pockets and boss placed from
+  it. A place on an outline's end is measured from its centre, the middle
+  of the box round the outline (extrusion.md), so the far holes ran past
+  the bar's end and were asked about; any that landed on the bar would have
+  been made where the spec said, not where the brief did. The writer is now
+  told (guide 34), and the question asked of a copy that runs past the edge
+  of an outline's end, doesn't meet it, or touches its edge says where its
+  centre is in the outline's own coordinates (`placement._measured_from`).
+  Positions measured from a point of the part, as the brief gives them, are
+  a gap (V2-gaps.md, section 10: 4b.0 item 8, datums). No part any run
+  built has an outline drawn off its box's middle with something placed on
+  its end: of every run's drafts, only the rails and a lower-leg shell's
+  tab (UNABLE, a loft) do, and the tab measured from the middle, rightly.
+
+Replayed with no model call: the run's drafts and the earlier runs' are
+read on the new code as on the old but for the rails' questions, which say
+where the face's centre is. Tests: `tests/test_v2_spec_fifth_run.py`
+(`tests/fixtures/corpus_fifth_run.json`).
+
 ## 15. What is tested
 
 | Test file | What |
@@ -3611,7 +3657,7 @@ nothing. Tests: `tests/test_v2_spec_fourth_run.py`
 | `test_v2_eval_widened.py` | The generator's new kinds and limits: the three placements agree; the truth on hand-worked points; mutants change one leaf; briefs cite their words; impossible ones end `cant` |
 | `test_v2_plan_corpus.py`, `test_v2_false_passes.py`, `test_v2_eval_corpus.py` | 14.2 and 14.3: the suite's drafts checked, locked and built; the false passes' right parts passing and wrong parts failing; the two commands with a scripted model |
 | `test_v2_eval_first_live_run.py` | 14.4: the cost ceiling with and without a price, a retry checked again, the two drafts' calls held at their worst, the dearer of two prices; a stopped run's line, ledger and report; an automatic run's accounting (the part named again, linking words, "both" of an item's copies) and where it still asks; the owner's 23 recorded drafts replayed, every ending and all caught |
-| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py`, `test_v2_spec_third_run.py`, `test_v2_spec_fourth_run.py` | 14.7 to 14.10: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
+| `test_v2_spec_limits.py`, `test_v2_spec_second_run.py`, `test_v2_spec_third_run.py`, `test_v2_spec_fourth_run.py`, `test_v2_spec_fifth_run.py` | 14.7 to 14.11: limits on the part, read, written and judged on the built part; a shape, a size or a strength the spec can't leave out, a dome that sits flat side down, and the questions the corpus's runs asked that nobody needed |
 | `v2_exit4.py`, `test_v2_exit4.py` | 14.1 as a script; the test runs it on 3 seeds |
 
 Every test file runs in under 3 minutes on the laptop's VM (its shell's

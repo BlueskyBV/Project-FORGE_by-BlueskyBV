@@ -119,7 +119,7 @@ its verdict; never VERIFIED.
 
 | Where | What Forge can't check yet | Closed in |
 |---|---|---|
-| `forge_checks/compiler.py:_axis_position` (5) | A position along a face's axis where the face's edges or the item can't be fitted on the part's surface | 4b.0d1 (fields measured on the oracle's own shape, held by face accounting where no check of their own can see them, as buried faces are) |
+| `forge_checks/compiler.py:_axis_position` (5) | A position along a face's axis where the face's edges or the item can't be fitted on the part's surface (an outline's edge that is a corner: the corpus's turned block) | 4b.0d1 (fields measured on the oracle's own shape, held by face accounting where no check of their own can see them, as buried faces are) |
 | `forge_checks/compiler.py:_along_side` (2) | A position along a round side where its ends or the item's edge can't be fitted | 4b.0d1 |
 | `forge_checks/compiler.py:_row_along_side` (3) | A row's position along a round side where the side's ends or the item can't be fitted | 4b.0d1 |
 | `forge_checks/compiler.py:_concentric` (1) | Two items concentric where their centres can't both be fitted | 4b.0d1 |
@@ -162,7 +162,7 @@ the owner confirms each, or it is raised.
 | A part to fit within a box in any orientation, or a limit on a size not along the part's own axes | the corpus's R13 (its height limit, checked along z since schema 1.11) | 4b.10 (requirements), with item 15's views of them |
 | Bodies that cross or overlap in space (three balls in a row, fused; a plus sign of two bars crossing at their middles; a jack of three rods crossing at their centres): only the first body stands on the origin, each other on a face of one before it | the corpus's A03, A08 and C07 | 4b.0c item 1 (a body's own place and direction), with 4b.3's combine of overlapping bodies and 4b.4's patterns of bodies |
 | The first body turned ("rotated 45 degrees about its 10 mm wide horizontal axis so it leans over", "turned 30 degrees about the vertical axis") | the corpus's A04 and its turned block (zoo2_rotated_block) | 4b.0c item 1 (a typed direction field) |
-| Positions measured from a point of the part, not from a face's edge or centre ("from the pivot point") | the corpus's exoskeleton upper and forearm rails, their positions assumed or measured from the face's centre | 4b.0 item 8 (datums: points as items others refer to) |
+| Positions measured from a point of the part, not from a face's edge or centre ("from the pivot point") | the corpus's exoskeleton upper and forearm rails, their positions assumed, or measured from the outline's point (0, 0) where a place on its end is from its box's middle (asked, the question saying where that middle is: V2-stage4.md, 14.11) | 4b.0 item 8 (datums: points as items others refer to) |
 | One body's shape intersected with another's, or one subtracted from another (a cube and a sphere keeping what they share; a cube less a sphere) | the corpus's A01 and A02 | 4b.3 (combine, subtract, intersect) |
 | Two parts in one brief ("two separate PLA cubes ... not touching") | the corpus's X12 | stage 8 (assemblies) |
 | A strip, plate or bar bent ("bent 90 degrees in the middle", "bent legs 40 mm long with 15 mm bends", "curved at about 10 degrees"): drawn as blocks meeting at a sharp corner, its bend asked about, or UNABLE | the corpus's bent strip and L-bracket (zoo2_bent_strip, zoo_l_bracket_bent), handle (zoo2_handle) and curved plate (plate_curved_sized_twice) | 4b.1 (bent plate) and 4b.6 (sheet metal: bends, their radii and allowances) |

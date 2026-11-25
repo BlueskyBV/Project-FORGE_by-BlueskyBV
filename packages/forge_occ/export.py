@@ -117,6 +117,7 @@ __all__ = [
     "refined_each",
     "stl_bytes",
     "threemf_bytes",
+    "triangles_meet",
     "write_step",
 ]
 
@@ -167,24 +168,39 @@ class ExportTolerance:
         """The least linear tolerance anywhere."""
         return min((self.linear, *(d for _, d in self.finer)))
 
-    def of_boxes(self, lo: Array, hi: Array) -> Array:
-        """The tolerance of each box from ``lo`` to ``hi`` (n, 3): the least of ``linear`` and each finer box's that it meets."""
-        found = np.full(len(lo), float(self.linear))
+    def of_triangles(self, triangles: Array) -> Array:
+        """Each triangle's tolerance, as a mesh file's reader works it out: the least of ``linear`` and each finer box's that the triangle meets (:func:`triangles_meet`).
+
+        A triangle that meets a finer box lies on a face meshed at that box's
+        tolerance, or finer (:func:`face_tolerances`). Its corners' box is not
+        the triangle: a long triangle on a turned block's side spans a box
+        round its hole that the side never comes near (the corpus's turned
+        block).
+        """
+        triangles = np.asarray(triangles, dtype=np.float64).reshape(-1, 3, 3)
+        found = np.full(len(triangles), float(self.linear))
         for box, linear in self.finer:
-            meets = np.all(lo <= np.asarray(box.hi), axis=1) & np.all(
-                hi >= np.asarray(box.lo), axis=1
-            )
+            meets = triangles_meet(triangles, box)
             found[meets] = np.minimum(found[meets], linear)
         return found
 
-    def of_triangles(self, triangles: Array) -> Array:
-        """Each triangle's tolerance, as a mesh file's reader works it out: the least of ``linear`` and each finer box's that the triangle meets (its corners' box).
 
-        A triangle that meets a finer box lies on a face meshed at that box's
-        tolerance, or finer (:func:`face_tolerances`).
-        """
-        triangles = np.asarray(triangles, dtype=np.float64).reshape(-1, 3, 3)
-        return self.of_boxes(triangles.min(axis=1), triangles.max(axis=1))
+def triangles_meet(triangles: Array, box: Box) -> NDArray[np.bool_]:
+    """Whether each triangle (n, 3, 3) meets the box, edges and corners included: no axis of the box's, of its plane's or across one of its edges and one of the box's separates them (the separating axis theorem)."""
+    triangles = np.asarray(triangles, dtype=np.float64).reshape(-1, 3, 3)
+    lo, hi = np.asarray(box.lo, dtype=np.float64), np.asarray(box.hi, dtype=np.float64)
+    half = (hi - lo) / 2.0
+    corners = triangles - (lo + hi) / 2.0
+    edges = np.roll(corners, -1, axis=1) - corners
+    axes = [np.broadcast_to(np.eye(3)[i], (len(corners), 3)) for i in range(3)]
+    axes.append(np.cross(edges[:, 0], edges[:, 1]))
+    axes += [np.cross(np.eye(3)[i], edges[:, j]) for i in range(3) for j in range(3)]
+    meets = np.ones(len(corners), dtype=bool)
+    for axis in axes:
+        on = np.sum(corners * axis[:, None, :], axis=2)
+        reach = np.sum(half * np.abs(axis), axis=1)
+        meets &= (on.min(axis=1) <= reach) & (on.max(axis=1) >= -reach)
+    return meets
 
 
 def face_tolerances(shape: Any, tolerance: ExportTolerance) -> Array:

@@ -48,7 +48,7 @@ class Extrusion(SolveKind):
             for name, height, normal in (("+end", length, up), ("-end", 0.0, down)):
                 faces[name] = FlatFace(name, point(c1, c2, height), normal, FACE_AXES[normal], "profile", half, 0.0,
                                        length, axis_sources=(sources, sources), depth_sources=lengths,
-                                       profile=outline)  # fmt: skip
+                                       profile=outline, drawn_about=(c1, c2))  # fmt: skip
             return (point(l1, l2, 0.0), point(h1, h2, length))
 
         return ends

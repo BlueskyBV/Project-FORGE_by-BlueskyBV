@@ -238,6 +238,10 @@ class FlatFace:
     room_sources: tuple[Source, ...] = ()
     #: A "profile" face's outline, in the face's axes about its centre (the middle of its box).
     profile: Shape | None = None
+    #: An outline's end (an extrusion's): where the middle of the box round its outline is, in the outline's own
+    #: coordinates; None for any other face. A place on the face is measured from there, not from the outline's point
+    #: (0, 0), which a problem with a place on it says.
+    drawn_about: tuple[float, float] | None = None
     over: Over | None = None
     less: Less | None = None
     #: A turned item's far face, and what stands on or is cut in one (schema 1.4; V2-stage4b-0c.md, 3.3, 1b's third

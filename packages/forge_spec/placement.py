@@ -1040,6 +1040,18 @@ def _failing_axes(
     return found or [0, 1]
 
 
+def _measured_from(face: FlatFace) -> str:
+    """Where a place on an outline's end is measured from, said where that isn't the outline's point (0, 0): a writer
+    who drew a pivot there measured from it (the corpus's elbow-brace rails)."""
+    if face.drawn_about is None:
+        return ""
+    c1, c2 = (round(c, 4) + 0.0 for c in face.drawn_about)
+    if abs(c1) <= EPS and abs(c2) <= EPS:
+        return ""
+    return (f" (a place on an outline's end is measured from the middle of the box round the outline, at ({c1:g}, "
+            f"{c2:g}) in the outline's own coordinates, not from its point (0, 0))")
+
+
 def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, float]], layout: Layout,
                 at: str, first: int) -> None:  # fmt: skip
     """Every copy lies on the face; a body at least meets it.
@@ -1067,8 +1079,8 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
         for n, (p1, p2) in enumerate(positions):
             if not face.meets(footing if footing is not None else parts, (p1, p2)):
                 layout.problem("question", at,
-                               f"{item.id} copy {first + n + 1} doesn't meet the {face.name} face it stands on",
-                               blamed([0, 1], placed=True))  # fmt: skip
+                               f"{item.id} copy {first + n + 1} doesn't meet the {face.name} face it stands on"
+                               + _measured_from(face), blamed([0, 1], placed=True))  # fmt: skip
                 return
             if _against_a_wall(item, face, parts, (p1, p2), layout, at, first + n, blamed([0, 1], placed=True)):
                 return
@@ -1101,12 +1113,13 @@ def _check_fits(item: Item, face: FlatFace, positions: Sequence[tuple[float, flo
             )
             where = f"breaks into the hole in the middle of face {face.name}" if into_hole else (
                 f"runs past the edge of face {face.name}")  # fmt: skip
-            layout.problem("question", at, f"{item.id} copy {first + n + 1} {where}",
+            layout.problem("question", at, f"{item.id} copy {first + n + 1} {where}" + _measured_from(face),
                            blamed(_failing_axes(face, parts, p1, p2), placed=True))  # fmt: skip
             return
         if cut and face.touches_its_edge(parts, (p1, p2)):
             layout.problem("question", at, f"{item.id} copy {first + n + 1} touches the edge of face {face.name}: "
-                           "the wall between them would be nothing there", blamed([0, 1], placed=True))  # fmt: skip
+                           "the wall between them would be nothing there" + _measured_from(face),
+                           blamed([0, 1], placed=True))  # fmt: skip
             return
         if not cut and _against_a_wall(item, face, parts, (p1, p2), layout, at, first + n, blamed([0, 1], placed=True)):
             return
